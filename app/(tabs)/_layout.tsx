@@ -57,7 +57,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   });
 
   const exchangeToken = () => {
-    router.navigate("/(subs)/enhanced-crypto-chart");
+    router.navigate("/(subs)/crypto-chart");
   };
 
   return (

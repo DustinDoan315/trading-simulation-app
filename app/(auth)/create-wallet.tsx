@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-import SignWithFaceID from "@/components/SignupWithBiometric";
+// import SignWithFaceID from "@/components/SignupWithBiometric";
 import { width } from "@/utils/response";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -141,7 +141,7 @@ const CreateNewWalletScreen = () => {
         </View>
       </View>
 
-      <SignWithFaceID />
+      {/* <SignWithFaceID /> */}
 
       <View style={styles.buttonContainer}>
         <LinearGradient

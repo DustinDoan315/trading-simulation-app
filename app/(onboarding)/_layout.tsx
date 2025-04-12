@@ -21,7 +21,7 @@ export default function OnboardingLayout() {
         headerShadowVisible: false,
       }}>
       <Stack.Screen
-        name="onboarding"
+        name="index"
         options={{
           headerShown: false,
           title: "Welcome",

@@ -10,9 +10,9 @@ import {
   Image,
 } from "react-native";
 import HeaderProgressBar from "@/components/ui/HeaderProgressBar";
-import { LinearGradient } from "expo-linear-gradient";
 import { generateSeedPhrase } from "@/utils/helper";
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 
 const SecureWalletValidScreen = () => {
   const [appState, setAppState] = useState("active");
