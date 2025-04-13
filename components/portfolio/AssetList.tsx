@@ -24,6 +24,7 @@ const AssetList = ({ assets, onAssetPress }: AssetListProps) => {
       <FlatList
         data={assets}
         keyExtractor={(item) => item.id}
+        scrollEnabled={false}
         renderItem={({ item }) => (
           <AssetItem
             icon={item.icon}

@@ -18,7 +18,7 @@ export default {
   border: {
     light: "#333",
     medium: "#222",
-    dark: "#111",
+    dark: "#1a1a1a",
   },
 
   // Action colors

@@ -1,3 +1,4 @@
+import colors from '@/styles/colors';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Tabs } from 'expo-router';
@@ -162,9 +163,9 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: "#000000",
+    backgroundColor: "#131523",
     borderTopWidth: 1,
-    borderTopColor: "#333333",
+    borderTopColor: colors.border.dark,
     paddingTop: 10,
   },
   tabButton: {

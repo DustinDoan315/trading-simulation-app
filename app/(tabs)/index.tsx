@@ -55,7 +55,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: "#131523",
   },
   scrollView: {
     flex: 1,

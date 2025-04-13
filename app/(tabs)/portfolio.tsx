@@ -1,18 +1,10 @@
-import AssetList from '@/components/portfolio/AssetList';
-import BalanceCard from '@/components/portfolio/BalanceCard';
-import PortfolioHeader from '@/components/portfolio/PortfolioHeader';
-import React from 'react';
-import { router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  Animated,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  View,
-} from "react-native";
-
+import AssetList from "@/components/portfolio/AssetList";
+import BalanceCard from "@/components/portfolio/BalanceCard";
+import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
+import React from "react";
+import { router } from "expo-router";
+import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const mockAssets = [
   {
@@ -41,9 +33,8 @@ const PortfolioScreen = () => {
     router.navigate("/(subs)/crypto-chart");
   };
 
-  // Calculate progress based on actual balance vs target
-  const totalBalance = 1560.6;
-  const targetBalance = 2500; // Example target
+  const totalBalance = 4500.6;
+  const targetBalance = 4500;
   const progress = Math.min(totalBalance / targetBalance, 1);
 
   return (
@@ -60,10 +51,11 @@ const PortfolioScreen = () => {
         />
 
         <BalanceCard
-          balance="$1560.60"
+          balance="$4500.60"
           changePercentage={0.64}
           changeValue="$9.98"
           progress={progress}
+          assets={mockAssets}
         />
 
         <AssetList assets={mockAssets} onAssetPress={handleAssetPress} />

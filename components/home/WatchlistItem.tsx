@@ -20,39 +20,34 @@ export const WatchlistItem: React.FC<WatchlistItemProps> = ({
   crypto,
   onPress,
 }) => {
+  const isPositive = crypto.price_change_percentage_24h >= 0;
+
   return (
     <TouchableOpacity
-      style={styles.cryptoItem}
+      style={styles.container}
       onPress={() => onPress(crypto.id)}>
-      <View style={styles.cryptoInfo}>
-        <Image source={{ uri: crypto.image }} style={styles.cryptoImage} />
-        <View>
-          <Text style={styles.cryptoName}>{crypto.name}</Text>
-          <Text style={styles.cryptoSymbol}>{crypto.symbol.toUpperCase()}</Text>
+      <View style={styles.leftSection}>
+        <Image source={{ uri: crypto.image }} style={styles.icon} />
+        <View style={styles.nameContainer}>
+          <Text style={styles.name}>{crypto.name}</Text>
+          <Text style={styles.symbol}>{crypto.symbol.toUpperCase()}</Text>
         </View>
       </View>
 
-      <View style={styles.cryptoPriceInfo}>
-        <Text style={styles.cryptoPrice}>
-          {formatCurrency(crypto.current_price)}
-        </Text>
-        <View
-          style={[
-            styles.percentageContainer,
-            crypto.price_change_percentage_24h >= 0
-              ? styles.positiveChange
-              : styles.negativeChange,
-          ]}>
+      <View style={styles.rightSection}>
+        <Text style={styles.price}>{formatCurrency(crypto.current_price)}</Text>
+        <View style={styles.changeContainer}>
           <Ionicons
-            name={
-              crypto.price_change_percentage_24h >= 0
-                ? "arrow-up"
-                : "arrow-down"
-            }
+            name={isPositive ? "arrow-up" : "arrow-down"}
             size={12}
-            color="white"
+            color={isPositive ? "#6674CC" : "#FF6B6B"}
+            style={styles.arrow}
           />
-          <Text style={styles.percentageText}>
+          <Text
+            style={[
+              styles.change,
+              isPositive ? styles.positive : styles.negative,
+            ]}>
             {formatPercentage(Math.abs(crypto.price_change_percentage_24h))}
           </Text>
         </View>
@@ -62,60 +57,61 @@ export const WatchlistItem: React.FC<WatchlistItemProps> = ({
 };
 
 const styles = StyleSheet.create({
-  cryptoItem: {
+  container: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: "#1A1D2F",
+    marginVertical: 6,
   },
-  cryptoInfo: {
+  leftSection: {
     flexDirection: "row",
     alignItems: "center",
   },
-  cryptoImage: {
-    width: 36,
-    height: 36,
-    marginRight: 12,
-    borderRadius: 18,
+  icon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
-  cryptoName: {
-    color: "white",
-    fontSize: 16,
+  nameContainer: {
+    marginLeft: 12,
+  },
+  name: {
+    fontSize: 18,
     fontWeight: "600",
+    color: "white",
   },
-  cryptoSymbol: {
-    color: "#999",
+  symbol: {
     fontSize: 14,
+    color: "#9DA3B4",
     marginTop: 2,
   },
-  cryptoPriceInfo: {
+  rightSection: {
     alignItems: "flex-end",
   },
-  cryptoPrice: {
-    color: "white",
-    fontSize: 16,
+  price: {
+    fontSize: 18,
     fontWeight: "600",
+    color: "white",
   },
-  percentageContainer: {
+  changeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginTop: 4,
+    marginTop: 2,
   },
-  positiveChange: {
-    backgroundColor: "#2ecc71",
+  arrow: {
+    marginRight: 2,
   },
-  negativeChange: {
-    backgroundColor: "#e74c3c",
+  change: {
+    fontSize: 14,
   },
-  percentageText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-    marginLeft: 2,
+  positive: {
+    color: "#6674CC",
+  },
+  negative: {
+    color: "#FF6B6B",
   },
 });

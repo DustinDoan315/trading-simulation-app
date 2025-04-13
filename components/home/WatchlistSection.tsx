@@ -77,7 +77,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
   },
-  footerSpace: {
-    height: 80, // Space for the AddButton
-  },
 });
