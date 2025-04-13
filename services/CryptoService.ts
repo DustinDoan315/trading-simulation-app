@@ -1,9 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 /**
  * Functional service for interacting with cryptocurrency APIs and blockchain data
  * Designed for React Native + Web3 integration
  */
-
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Types for cryptocurrency data
 export interface CryptoCurrency {
@@ -17,6 +16,8 @@ export interface CryptoCurrency {
   total_volume: number;
   circulating_supply: number;
   total_supply: number;
+  circulating_percentage?: number;
+  supply_inflation_rate?: number;
   max_supply: number | null;
   ath: number;
   ath_change_percentage: number;
@@ -106,11 +107,13 @@ const cacheMarketData = async (data: CryptoCurrency[]): Promise<void> => {
  *
  * @param forceRefresh - Whether to bypass cache and force a refresh
  * @param limit - Number of cryptocurrencies to fetch
+ * @param includeSupplyMetrics - Whether to include supply metrics in the data
  * @returns Promise with cryptocurrency data
  */
 export const getMarketData = async (
   forceRefresh = false,
-  limit = 20
+  limit = 20,
+  includeSupplyMetrics = true
 ): Promise<CryptoCurrency[]> => {
   try {
     // Try to get cached data first if not forcing refresh
@@ -145,10 +148,15 @@ export const getMarketData = async (
 
       const data: CryptoCurrency[] = await response.json();
 
-      // Cache the new data
-      await cacheMarketData(data);
+      // Enhance with supply metrics if requested
+      const enhancedData = includeSupplyMetrics
+        ? enhanceSupplyMetrics(data)
+        : data;
 
-      return data;
+      // Cache the enhanced data
+      await cacheMarketData(enhancedData);
+
+      return enhancedData;
     } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === "AbortError") {
@@ -480,5 +488,88 @@ export const searchCryptocurrencies = async (
   } catch (error) {
     console.error("Error searching cryptocurrencies:", error);
     return [];
+  }
+};
+
+/**
+ * Calculate additional supply metrics for cryptocurrencies
+ *
+ * @param cryptos - Array of cryptocurrency data
+ * @returns Enhanced cryptocurrency data with additional metrics
+ */
+export const enhanceSupplyMetrics = (
+  cryptos: CryptoCurrency[]
+): CryptoCurrency[] => {
+  return cryptos.map((crypto) => {
+    // Calculate percentage of circulating supply vs total supply
+    const circulating_percentage =
+      crypto.total_supply > 0
+        ? (crypto.circulating_supply / crypto.total_supply) * 100
+        : 0;
+
+    return {
+      ...crypto,
+      circulating_percentage: parseFloat(circulating_percentage.toFixed(2)),
+    };
+  });
+};
+
+/**
+ * Get supply dilution metrics for a specific cryptocurrency
+ *
+ * @param id - Cryptocurrency ID
+ * @returns Detailed supply metrics and dilution data
+ */
+export const getSupplyDilutionMetrics = async (
+  id: string
+): Promise<{
+  currentSupply: number;
+  totalSupply: number;
+  maxSupply: number | null;
+  circulatingPercentage: number;
+  remainingSupply: number | null;
+  dilutionRisk: "None" | "Low" | "Medium" | "High";
+  estimatedYearToFullDilution: number | null;
+}> => {
+  try {
+    const cryptoDetails = await getCryptoDetails(id);
+    const market_data = cryptoDetails.market_data;
+
+    const currentSupply = market_data.circulating_supply || 0;
+    const totalSupply = market_data.total_supply || 0;
+    const maxSupply = market_data.max_supply;
+
+    const circulatingPercentage =
+      totalSupply > 0 ? (currentSupply / totalSupply) * 100 : 0;
+
+    const remainingSupply =
+      maxSupply !== null ? maxSupply - currentSupply : null;
+
+    // Calculate dilution risk based on circulating percentage
+    let dilutionRisk: "None" | "Low" | "Medium" | "High" = "None";
+    if (maxSupply && currentSupply) {
+      const percentageOfMax = (currentSupply / maxSupply) * 100;
+      if (percentageOfMax >= 90) dilutionRisk = "None";
+      else if (percentageOfMax >= 70) dilutionRisk = "Low";
+      else if (percentageOfMax >= 40) dilutionRisk = "Medium";
+      else dilutionRisk = "High";
+    }
+
+    // Estimate years to full dilution based on recent issuance rate
+    // This is a simplified calculation that would need historical data
+    const estimatedYearToFullDilution = null; // Would require historical data analysis
+
+    return {
+      currentSupply,
+      totalSupply,
+      maxSupply,
+      circulatingPercentage: parseFloat(circulatingPercentage.toFixed(2)),
+      remainingSupply,
+      dilutionRisk,
+      estimatedYearToFullDilution,
+    };
+  } catch (error) {
+    console.error(`Error fetching supply metrics for ${id}:`, error);
+    throw error;
   }
 };

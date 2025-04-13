@@ -1,6 +1,6 @@
-import React from "react";
-import { Stack } from "expo-router";
-import { Colors } from "../../constants/Colors";
+import React from 'react';
+import { Colors } from '../../constants/Colors';
+import { Stack } from 'expo-router';
 
 /**
  * Onboarding Navigation Layout
@@ -21,7 +21,7 @@ export default function OnboardingLayout() {
         headerShadowVisible: false,
       }}>
       <Stack.Screen
-        name="index"
+        name="onboarding"
         options={{
           headerShown: false,
           title: "Welcome",

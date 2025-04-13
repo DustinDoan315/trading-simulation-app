@@ -1,16 +1,17 @@
-import React from "react";
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { router, Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Text,
   Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { router, Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type RouteName = "index" | "exchange" | "wallet";
+
+type RouteName = "index" | "portfolio" | "wallet" | "chart";
 
 type IconMapping = {
   [key in RouteName]: {
@@ -28,7 +29,11 @@ const ICON_MAP: IconMapping = {
     inactive: "wallet-outline",
     active: "wallet",
   },
-  exchange: {
+  portfolio: {
+    inactive: "pie-chart-outline",
+    active: "pie-chart",
+  },
+  chart: {
     inactive: "repeat",
     active: "repeat",
   },
@@ -42,7 +47,8 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   state.routes.forEach((route: any) => {
     if (
       route.name === "index" ||
-      route.name === "exchange" ||
+      route.name === "chart" ||
+      route.name === "portfolio" ||
       route.name === "wallet"
     ) {
       orderedRoutes.push(route);
@@ -50,13 +56,13 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   });
 
   orderedRoutes.sort((a, b) => {
-    const order: RouteName[] = ["index", "exchange", "wallet"];
+    const order: RouteName[] = ["index", "chart", "portfolio", "wallet"];
     return (
       order.indexOf(a.name as RouteName) - order.indexOf(b.name as RouteName)
     );
   });
 
-  const exchangeToken = () => {
+  const portfolioToken = () => {
     router.navigate("/(subs)/crypto-chart");
   };
 
@@ -94,7 +100,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
                 accessibilityRole="button"
                 accessibilityState={isActive ? { selected: true } : {}}
                 accessibilityLabel={label}
-                onPress={exchangeToken}
+                onPress={portfolioToken}
                 style={styles.centerButton}>
                 <Ionicons name={iconName} size={24} color="#000" />
               </TouchableOpacity>
@@ -132,19 +138,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "DWallet",
+          title: "Home",
         }}
       />
+
       <Tabs.Screen
-        name="exchange"
+        name="chart"
         options={{
-          title: "Giao dịch",
+          title: "Trading",
         }}
       />
+
       <Tabs.Screen
-        name="wallet"
+        name="portfolio"
         options={{
-          title: "Tài sản",
+          title: "Portfolio",
         }}
       />
     </Tabs>

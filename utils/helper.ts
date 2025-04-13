@@ -1,6 +1,7 @@
-import * as Crypto from "expo-crypto";
-import * as bip39 from "bip39";
-import { Buffer } from "buffer";
+import * as bip39 from 'bip39';
+import * as Crypto from 'expo-crypto';
+import { Buffer } from 'buffer';
+
 
 global.Buffer = Buffer;
 
