@@ -1,17 +1,17 @@
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import {
-  View,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  Platform,
-  ScrollView,
+  View,
 } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons";
-import { router } from "expo-router";
 
 interface SearchHistoryItem {
   id: string;

@@ -1,16 +1,20 @@
-import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-
+import React from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface AddButtonProps {
   onPress?: () => void;
 }
 
+const addToken = () => {
+  router.navigate("/(subs)/crypto-search");
+};
+
 export const AddButton: React.FC<AddButtonProps> = ({ onPress }) => {
   return (
     <View style={styles.addButtonContainer}>
-      <TouchableOpacity style={styles.addButton} onPress={onPress}>
+      <TouchableOpacity style={styles.addButton} onPress={addToken}>
         <Ionicons name="add" size={30} color="white" />
       </TouchableOpacity>
     </View>

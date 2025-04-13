@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import {
   CryptoCurrency,
   UserBalance,
@@ -22,7 +22,6 @@ export function useHomeData() {
       const marketData = await getMarketData(true, 10);
       const balanceData = await getUserBalance();
 
-      // Sort by 24h percentage for trending
       const trendingCoins = [...marketData]
         .sort(
           (a, b) =>

@@ -1,9 +1,9 @@
-import React from 'react';
-import { AddButton } from '@/components/home/AddButton';
-import { BalanceSection } from '@/components/home/BalanceSection';
-import { router } from 'expo-router';
-import { useHomeData } from '@/hooks/useHomeData';
-import { WatchlistSection } from '@/components/home/WatchlistSection';
+import React from "react";
+import { AddButton } from "@/components/home/AddButton";
+import { BalanceSection } from "@/components/home/BalanceSection";
+import { router } from "expo-router";
+import { useHomeData } from "@/hooks/useHomeData";
+import { WatchlistSection } from "@/components/home/WatchlistSection";
 import {
   RefreshControl,
   SafeAreaView,
@@ -11,7 +11,6 @@ import {
   StatusBar,
   StyleSheet,
 } from "react-native";
-
 
 const HomeScreen = () => {
   const { refreshing, trending, balance, isBalanceHidden, onRefresh } =
@@ -22,7 +21,6 @@ const HomeScreen = () => {
   };
 
   const handleAddButtonPress = () => {
-    // Add functionality for the add button
     console.log("Add button pressed");
   };
 

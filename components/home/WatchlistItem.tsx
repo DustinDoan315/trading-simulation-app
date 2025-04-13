@@ -1,15 +1,8 @@
-import React from 'react';
-import { CryptoCurrency } from '@/services/CryptoService';
-import { formatCurrency, formatPercentage } from '@/utils/formatters';
-import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-  } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
+import React from "react";
+import { CryptoCurrency } from "@/services/CryptoService";
+import { formatCurrency, formatPercentage } from "@/utils/formatters";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface WatchlistItemProps {
   crypto: CryptoCurrency;
@@ -21,6 +14,7 @@ export const WatchlistItem: React.FC<WatchlistItemProps> = ({
   onPress,
 }) => {
   const isPositive = crypto.price_change_percentage_24h >= 0;
+  console.log(crypto);
 
   return (
     <TouchableOpacity

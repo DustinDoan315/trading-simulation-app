@@ -1,14 +1,9 @@
-import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-  } from 'react-native';
-import { UserBalance } from '@/services/CryptoService';
-
+import React from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { UserBalance } from "@/services/CryptoService";
 
 // components/home/BalanceSection.tsx
 
@@ -23,17 +18,23 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
   isBalanceHidden,
   onMenuPress,
 }) => {
+  const moveToPortfolio = () => {
+    router.navigate("/portfolio");
+  };
+
   return (
     <LinearGradient
       colors={["#6262D9", "#9D62D9"]}
       style={styles.balanceSection}>
-      <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
-        <Ionicons name="menu-outline" size={24} color="white" />
+      <TouchableOpacity onPress={moveToPortfolio}>
+        <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
+          <Ionicons name="menu-outline" size={24} color="white" />
+        </TouchableOpacity>
+        <Text style={styles.balanceTitle}>Your balance</Text>
+        <Text style={styles.balanceAmount}>
+          {isBalanceHidden ? "********" : `$${balance.totalInUSD.toFixed(2)}`}
+        </Text>
       </TouchableOpacity>
-      <Text style={styles.balanceTitle}>Your balance</Text>
-      <Text style={styles.balanceAmount}>
-        {isBalanceHidden ? "********" : `$${balance.totalInUSD.toFixed(2)}`}
-      </Text>
     </LinearGradient>
   );
 };

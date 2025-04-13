@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 /**
  * Functional service for interacting with cryptocurrency APIs and blockchain data
  * Designed for React Native + Web3 integration
@@ -207,11 +207,6 @@ export const getCryptoDetails = async (id: string): Promise<any> => {
  * @returns Promise with user balance data
  */
 export const getUserBalance = async (): Promise<UserBalance> => {
-  // In a real blockchain app, this would interact with a wallet SDK
-  // For example, with ethers.js:
-  // const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-  // const balance = await provider.getBalance(walletAddress);
-
   try {
     const storedBalance = await AsyncStorage.getItem(USER_BALANCE_CACHE_KEY);
 
@@ -219,7 +214,6 @@ export const getUserBalance = async (): Promise<UserBalance> => {
       return JSON.parse(storedBalance);
     }
 
-    // Default mock balance if none stored
     const defaultBalance: UserBalance = {
       totalInUSD: 53145.76,
       holdings: {
