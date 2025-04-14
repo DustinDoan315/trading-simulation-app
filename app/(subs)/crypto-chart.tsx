@@ -5,9 +5,9 @@ import PriceIndicator from "@/components/trading/PriceIndicator";
 import React, { useCallback, useRef, useState } from "react";
 import SymbolHeader from "../../components/crypto/SymbolHeader";
 import TimeframeSelector from "../../components/crypto/TimeframeSelector";
-import useCryptoWebSocket from "../hooks/useCryptoWebSocket";
 import useHistoricalData from "../hooks/useHistoricalData";
 import useOrderBook from "../hooks/useOrderBook";
+import useCryptoAPI from "../hooks/useCryptoAPI";
 import { ChartType, TimeframeOption } from "../types/crypto";
 import { WebView } from "react-native-webview";
 import {
@@ -45,13 +45,7 @@ const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
     [fetchHistoricalData, webViewRef, isReady, chartType]
   );
 
-  const { wsConnected, currentPrice, priceChange } = useCryptoWebSocket(
-    timeframe,
-    isReady,
-    webViewRef,
-    chartType,
-    fetchData
-  );
+  const { currentPrice, priceChange } = useCryptoAPI(timeframe);
 
   const onMessage = (event: any) => {
     try {
@@ -59,9 +53,7 @@ const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
       console.log("WebView message:", data);
       if (data.type === "ready") {
         setIsReady(true);
-        if (wsConnected) {
-          fetchHistoricalData(timeframe, webViewRef, true, chartType);
-        }
+        fetchHistoricalData(timeframe, webViewRef, true, chartType);
       } else if (data.type === "error") {
         setError(data.message);
       } else if (data.type === "priceSelected") {
@@ -132,7 +124,7 @@ const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
       <ScrollView style={styles.scrollView}>
         {/* Symbol Header */}
         <SymbolHeader
-          priceChange={priceChange}
+          priceChange={priceChange || "0"}
           chartType={chartType}
           toggleChartType={toggleChartType}
           toggleIndicators={toggleIndicators}
@@ -156,7 +148,7 @@ const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
         />
 
         {/* Current Price Indicator */}
-        <PriceIndicator currentPrice={currentPrice} />
+        <PriceIndicator currentPrice={currentPrice || "0"} />
 
         {/* Order Book and Entry Components */}
         <View style={styles.orderSection}>

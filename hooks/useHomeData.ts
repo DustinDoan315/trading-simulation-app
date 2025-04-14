@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   CryptoCurrency,
   UserBalance,
@@ -9,28 +9,20 @@ import {
 export function useHomeData() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [trending, setTrending] = useState<CryptoCurrency[]>([]);
   const [balance, setBalance] = useState<UserBalance>({
     totalInUSD: 0,
     holdings: {},
   });
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
+  const [marketData, setMarketData] = useState<CryptoCurrency[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const marketData = await getMarketData(true, 10);
+      const market = await getMarketData(true, 10);
       const balanceData = await getUserBalance();
 
-      const trendingCoins = [...marketData]
-        .sort(
-          (a, b) =>
-            Math.abs(b.price_change_percentage_24h) -
-            Math.abs(a.price_change_percentage_24h)
-        )
-        .slice(0, 5);
-
-      setTrending(trendingCoins);
+      setMarketData(market);
       setBalance(balanceData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -38,6 +30,16 @@ export function useHomeData() {
       setLoading(false);
     }
   }, []);
+
+  const trendingCoins = useMemo(() => {
+    return [...marketData]
+      .sort(
+        (a, b) =>
+          Math.abs(b.price_change_percentage_24h) -
+          Math.abs(a.price_change_percentage_24h)
+      )
+      .slice(0, 5);
+  }, [marketData]);
 
   useEffect(() => {
     fetchData();
@@ -56,7 +58,7 @@ export function useHomeData() {
   return {
     loading,
     refreshing,
-    trending,
+    trending: trendingCoins,
     balance,
     isBalanceHidden,
     onRefresh,

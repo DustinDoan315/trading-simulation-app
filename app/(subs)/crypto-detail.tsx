@@ -19,6 +19,7 @@ import {
   formatLargeNumber,
 } from "@/utils/formatters";
 import { router, useLocalSearchParams } from "expo-router";
+import colors from "@/styles/colors";
 
 // Mock price history data - in a real app, this would come from an API
 const MOCK_PRICE_HISTORY = [
@@ -117,7 +118,10 @@ const CryptoDetailScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={colors.background.primary}
+      />
 
       {/* Header */}
       <View style={styles.header}>
@@ -339,7 +343,7 @@ const CryptoDetailScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: colors.background.primary,
   },
   loadingContainer: {
     flex: 1,

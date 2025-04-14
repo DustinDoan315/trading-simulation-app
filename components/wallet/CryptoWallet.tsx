@@ -158,7 +158,7 @@ export default function CryptoWalletScreen() {
   };
 
   const exchangeToken = () => {
-    router.navigate("/(subs)/enhanced-crypto-chart");
+    router.navigate("/(subs)/crypto-chart");
   };
 
   return (

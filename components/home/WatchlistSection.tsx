@@ -1,15 +1,8 @@
-import React from 'react';
-import { AddButton } from './AddButton';
-import { CryptoCurrency } from '@/services/CryptoService';
-import {
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View
-  } from 'react-native';
-import { WatchlistItem } from './WatchlistItem';
-
+import React from "react";
+import { AddButton } from "./AddButton";
+import { CryptoCurrency } from "@/services/CryptoService";
+import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { WatchlistItem } from "./WatchlistItem";
 
 // components/home/WatchlistSection.tsx
 
@@ -23,7 +16,7 @@ interface WatchlistSectionProps {
   scrollEnabled?: boolean;
 }
 
-export const WatchlistSection: React.FC<WatchlistSectionProps> = ({
+const WatchlistSectionComponent: React.FC<WatchlistSectionProps> = ({
   title = "Watchlist",
   cryptoList,
   refreshing,
@@ -32,18 +25,11 @@ export const WatchlistSection: React.FC<WatchlistSectionProps> = ({
   onAddPress,
   scrollEnabled,
 }) => {
-  const renderItem = ({
-    item: crypto,
-    index,
-  }: {
-    item: CryptoCurrency;
-    index: number;
-  }) => (
-    <WatchlistItem
-      key={`${crypto.id}-${index}`}
-      crypto={crypto}
-      onPress={onItemPress}
-    />
+  const renderItem = React.useCallback(
+    ({ item: crypto }: { item: CryptoCurrency }) => (
+      <WatchlistItem key={crypto.id} crypto={crypto} onPress={onItemPress} />
+    ),
+    [onItemPress]
   );
 
   return (
@@ -53,7 +39,7 @@ export const WatchlistSection: React.FC<WatchlistSectionProps> = ({
       <FlatList
         data={cryptoList}
         renderItem={renderItem}
-        keyExtractor={(item, index) => `${item.id}-${index}`}
+        keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         scrollEnabled={scrollEnabled !== false}
         refreshControl={
@@ -64,6 +50,8 @@ export const WatchlistSection: React.FC<WatchlistSectionProps> = ({
     </View>
   );
 };
+
+export const WatchlistSection = React.memo(WatchlistSectionComponent);
 
 const styles = StyleSheet.create({
   watchlistContainer: {

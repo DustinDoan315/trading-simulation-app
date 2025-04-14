@@ -1,7 +1,7 @@
 export default {
   // Base colors
   background: {
-    primary: "#000",
+    primary: "#131523",
     secondary: "#111",
     tertiary: "#1a1a1a",
   },

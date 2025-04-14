@@ -201,6 +201,52 @@ export const getCryptoDetails = async (id: string): Promise<any> => {
 };
 
 /**
+ * Get detailed information for a specific cryptocurrency
+ *
+ * @param id - Cryptocurrency ID
+ * @returns Promise with detailed cryptocurrency data
+ */
+export const getCoinData = async (id: string): Promise<any> => {
+  try {
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/coins/${id}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching details for ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Get detailed market data for a specific cryptocurrency
+ *
+ * @param id - Cryptocurrency ID
+ * @returns Promise with detailed cryptocurrency data
+ */
+export const getCoinMarketData = async (id: string): Promise<any> => {
+  try {
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/coins/${id}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching details for ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Get user's cryptocurrency holdings and balance
  * In a real app, this would connect to a wallet or blockchain
  *

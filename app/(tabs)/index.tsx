@@ -43,7 +43,7 @@ const HomeScreen = () => {
           onRefresh={() => {}}
           onItemPress={navigateToDetail}
           onAddPress={handleAddButtonPress}
-          scrollEnabled={false} /* Disable scrolling in WatchlistSection */
+          scrollEnabled={false}
         />
       </ScrollView>
     </SafeAreaView>

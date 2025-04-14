@@ -26,7 +26,9 @@ const OrderBookItem = ({
         <Text style={styles.currentOrderPrice}>{price}</Text>
         <Text style={styles.currentOrderValue}>
           {usdValue ??
-            formatCurrency(parseFloat(price.replace(",", ".")) * 83000)}
+            (price
+              ? formatCurrency(parseFloat(price.replace(",", ".")) * 83000)
+              : formatCurrency(0))}
         </Text>
       </TouchableOpacity>
     );
