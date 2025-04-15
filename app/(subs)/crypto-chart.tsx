@@ -17,11 +17,10 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 
-// Components
-// Custom hooks
-
-const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
+const CryptoChartScreen = () => {
+  const token = useLocalSearchParams();
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");
@@ -32,18 +31,13 @@ const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
   const [orderAmount, setOrderAmount] = useState(30);
   const [sliderPosition, setSliderPosition] = useState(30);
   const [showIndicators, setShowIndicators] = useState(false);
+  const [symbol, setSymbol] = useState(
+    token?.symbol ? `${token?.symbol}/USDT` : "BTC/USDT"
+  );
 
   // Use custom hooks
   const { askOrders, bidOrders } = useOrderBook();
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
-
-  // Prepare the fetchData callback for the WebSocket hook
-  const fetchData = useCallback(
-    (tf: TimeframeOption) => {
-      fetchHistoricalData(tf, webViewRef, isReady, chartType);
-    },
-    [fetchHistoricalData, webViewRef, isReady, chartType]
-  );
 
   const { currentPrice, priceChange } = useCryptoAPI(timeframe);
 
@@ -53,14 +47,13 @@ const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
       console.log("WebView message:", data);
       if (data.type === "ready") {
         setIsReady(true);
-        fetchHistoricalData(timeframe, webViewRef, true, chartType);
+        fetchHistoricalData(timeframe, webViewRef, true, chartType, symbol);
       } else if (data.type === "error") {
         setError(data.message);
       } else if (data.type === "priceSelected") {
-        // Handle price selection from chart
+        console.log("Price Selected", data.price);
       } else if (data.type === "chartInteraction") {
-        // Handle other user interactions with the chart
-        console.log("User interacted with chart:", data.action);
+        console.log("Chart Interaction", data.action);
       }
     } catch (e: any) {
       setError("Message parsing error: " + e.message);
@@ -72,13 +65,13 @@ const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
       setTimeframe(newTimeframe);
       if (webViewRef.current) {
         webViewRef.current.postMessage(JSON.stringify({ type: "clear" }));
-        webViewRef.current.injectJavaScript(`
-          if (typeof chart !== 'undefined') {
-            chart.setTitle({ text: 'BTC/USDT ${newTimeframe} Chart' });
-          }
-          true;
-        `);
-        fetchHistoricalData(newTimeframe, webViewRef, isReady, chartType);
+        fetchHistoricalData(
+          newTimeframe,
+          webViewRef,
+          isReady,
+          chartType,
+          symbol
+        );
       }
     }
   };
@@ -124,6 +117,7 @@ const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
       <ScrollView style={styles.scrollView}>
         {/* Symbol Header */}
         <SymbolHeader
+          symbol={symbol}
           priceChange={priceChange || "0"}
           chartType={chartType}
           toggleChartType={toggleChartType}
@@ -145,10 +139,12 @@ const CryptoChartScreen = ({ navigation }: { navigation: any }) => {
           error={error}
           onMessage={onMessage}
           chartType={chartType}
+          title={`${symbol} Chart`}
+          seriesName={symbol}
         />
 
         {/* Current Price Indicator */}
-        <PriceIndicator currentPrice={currentPrice || "0"} />
+        {/* <PriceIndicator currentPrice={currentPrice || "0"} /> */}
 
         {/* Order Book and Entry Components */}
         <View style={styles.orderSection}>

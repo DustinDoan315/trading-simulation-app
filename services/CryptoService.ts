@@ -23,6 +23,9 @@ export interface CryptoCurrency {
   ath_change_percentage: number;
   ath_date: string;
   last_updated: string;
+  market_cap_change_percentage_24h: number;
+  market_cap_rank: number;
+  market_cap_change_24h: number;
 }
 
 export interface UserBalance {

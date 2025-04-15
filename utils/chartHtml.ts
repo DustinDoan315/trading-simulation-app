@@ -16,7 +16,7 @@ export const chartHtml = `<!DOCTYPE html>
 body {
   margin: 0;
   padding: 0;
-  background-color: #000000;
+  background-color: #131523;
   color: #FFFFFF;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden;
@@ -24,7 +24,7 @@ body {
 }
 #container {
   width: 100%;
-  height: 100vh;
+  height: 125vh;
 }
 .loading {
   position: absolute;
@@ -133,16 +133,18 @@ let showIndicators = false;
 let currentPrice = null;
 let priceLineId = 'current-price-line';
 let highlightedPrice = null;
+let chartTitle = "Placeholder Chart Title";
+let seriesName = "Placeholder Series Name";
 
 // Chart theme and configuration
 Highcharts.theme = {
   colors: ['#058DC7', '#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572', '#FF9655', '#FFF263', '#6AF9C4'],
   chart: {
-    backgroundColor: '#000000',
+    backgroundColor: '#131523',
     borderColor: '#222222',
     borderWidth: 0,
     className: 'dark-container',
-    plotBackgroundColor: '#000000',
+    plotBackgroundColor: '#131523',
     plotBorderWidth: 0,
     plotShadow: false,
   },
@@ -244,7 +246,7 @@ Highcharts.theme = {
     buttonBackgroundColor: '#222222',
     buttonBorderColor: '#444444',
     rifleColor: '#777777',
-    trackBackgroundColor: '#000000',
+    trackBackgroundColor: '#131523',
     trackBorderColor: '#222222'
   }
 };
@@ -294,9 +296,9 @@ document.addEventListener("DOMContentLoaded", () => {
         enabled: false
       },
       navigator: {
-        adaptToUpdatedData: false, // For better performance
         enabled: true,
-        height: 40
+        adaptToUpdatedData: false, // For better performance
+        height: 40,
       },
       scrollbar: {
         enabled: true,
@@ -313,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
         trackBorderWidth: 0
       },
       title: { 
-        text: "BTC/USDT Chart",
+        text: "Placeholder Chart Title",
         style: {
           fontSize: '16px'
         }
@@ -494,7 +496,7 @@ document.addEventListener("DOMContentLoaded", () => {
       series: [
         {
           type: 'candlestick',
-          name: 'BTC/USDT',
+          name: 'Placeholder Series Name',
           id: 'btcusdt',
           data: seriesData,
           tooltip: {
@@ -763,6 +765,16 @@ window.addEventListener("message", (event) => {
         }
         break;
       }
+
+      case "setChartParams": {
+        chartTitle = data.title;
+        seriesName = data.seriesName;
+        if (chart) {
+          chart.setTitle({ text: chartTitle });
+          chart.series[0].update({ name: seriesName });
+        }
+        break;
+      }
       
       case "setData": {
         if (chart) {
@@ -904,12 +916,12 @@ window.addEventListener("message", (event) => {
           }
         } else {
           // Reset to dark theme
-          document.body.style.backgroundColor = '#000000';
+          document.body.style.backgroundColor = '#131523';
           if (chart) {
             chart.update({
               chart: {
-                backgroundColor: '#000000',
-                plotBackgroundColor: '#000000'
+                backgroundColor: '#131523',
+                plotBackgroundColor: '#131523'
               },
               xAxis: {
                 gridLineColor: '#222222',

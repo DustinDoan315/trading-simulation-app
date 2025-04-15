@@ -17,6 +17,8 @@ interface ChartProps {
   error: string | null;
   onMessage: (event: any) => void;
   chartType: ChartType;
+  title: string;
+  seriesName: string;
 }
 
 const Chart = ({
@@ -25,6 +27,8 @@ const Chart = ({
   error,
   onMessage,
   chartType,
+  title,
+  seriesName,
 }: ChartProps) => {
   return (
     <View style={styles.chartContainer}>
@@ -47,8 +51,14 @@ const Chart = ({
         onLoadStart={() => console.log("WebView loading started")}
         onLoad={() => {
           console.log("WebView loaded");
-          // Set initial chart type
           if (webViewRef.current) {
+            webViewRef.current.postMessage(
+              JSON.stringify({
+                type: "setChartParams",
+                title: "",
+                seriesName: seriesName,
+              })
+            );
             webViewRef.current.postMessage(
               JSON.stringify({
                 type: "initialize",

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { TimeframeOption } from "../types/crypto";
 import { getCoinMarketData, getPriceHistory } from "@/services/CryptoService";
+import { formatPercentage } from "@/utils/formatters";
 
 const useCryptoAPI = (timeframe: TimeframeOption) => {
   const [currentPrice, setCurrentPrice] = useState<string | null>(null);
@@ -21,7 +22,7 @@ const useCryptoAPI = (timeframe: TimeframeOption) => {
         const marketData = coinMarketData?.market_data;
         setCurrentPrice(marketData?.current_price?.usd?.toString() || null);
         setPriceChange(
-          marketData?.price_change_percentage_24h?.toString() || null
+          formatPercentage(marketData?.market_cap_change_percentage_24h) || null
         );
 
         // Fetch historical data based on timeframe
