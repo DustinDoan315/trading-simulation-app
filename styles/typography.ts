@@ -34,6 +34,7 @@ export default StyleSheet.create({
   label: {
     color: Colors.text.tertiary,
     fontSize: Dimensions.fontSize.sm,
+    maxWidth: "45%",
     fontWeight: "500",
   },
 

@@ -45,7 +45,7 @@ const ActionButton = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: Dimensions.radius.md,
+    borderRadius: Dimensions.radius.round,
     paddingVertical: Dimensions.spacing.lg,
     marginTop: Dimensions.spacing.lg,
     alignItems: "center",

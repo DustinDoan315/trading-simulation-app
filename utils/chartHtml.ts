@@ -23,7 +23,7 @@ body {
   touch-action: pan-y;
 }
 #container {
-  width: 100%;
+  width: 97.5%;
   height: 125vh;
 }
 .loading {
@@ -85,7 +85,7 @@ body {
 }
 .chart-overlay-controls {
   position: absolute;
-  top: 10px;
+  top: 50px;
   right: 10px;
   display: flex;
   flex-direction: column;
@@ -290,10 +290,10 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         pinchType: 'x',
         zoomType: 'x',
-        marginRight: 10
+        marginRight: 0
       },
       rangeSelector: {
-        enabled: false
+        enabled: true
       },
       navigator: {
         enabled: true,
@@ -345,19 +345,20 @@ document.addEventListener("DOMContentLoaded", () => {
       yAxis: [{
         labels: {
           align: 'right',
-          x: -3,
+          x: 12,
+          y: -10,
           style: {
-            color: '#777'
+            color: '#fff'
           },
           formatter: function() {
             // Highlight current price on y-axis
             if (currentPrice && Math.abs(this.value - currentPrice) < currentPrice * 0.0005) {
-              return '<span style="color: #F9335D; font-weight: bold;">' + this.value.toFixed(1) + '</span>';
+            return '<span style="color: #F9335D; font-weight: bold>' + this.value.toFixed(0) + '</span>';
             }
             return this.value.toFixed(1);
           }
         },
-        height: '70%',
+        height: '100%',
         lineWidth: 1,
         resize: {
           enabled: true
@@ -374,13 +375,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }, {
         labels: {
           align: 'right',
-          x: -3,
+          x: 20,
           style: {
-            color: '#777'
+            color: '#fff'
           }
         },
         top: '72%',
-        height: '28%',
+        height: '25%',
         offset: 0,
         lineWidth: 1,
         gridLineColor: 'rgba(50, 50, 50, 0.25)',
@@ -564,15 +565,16 @@ function addPriceLine(price) {
     id: priceLineId,
     value: price,
     width: 1,
-    color: '#F9335D',
+    color: '#fff',
     dashStyle: 'dash',
     label: {
-      text: price.toFixed(1),
+      text: '$ ' + price.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
       style: {
-        color: '#F9335D',
-        fontWeight: 'bold'
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: '14px',
       },
-      align: 'right'
+      align: 'left'
     },
     zIndex: 5
   });

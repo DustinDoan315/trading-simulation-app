@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     fontSize: Dimensions.fontSize.md,
     height: Dimensions.components.inputHeight,
-    padding: 0, // Remove default padding
+    padding: 0,
   },
   suffix: {
     color: Colors.text.tertiary,

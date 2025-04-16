@@ -35,7 +35,6 @@ const CryptoChartScreen = () => {
     token?.symbol ? `${token?.symbol}/USDT` : "BTC/USDT"
   );
 
-  // Use custom hooks
   const { askOrders, bidOrders } = useOrderBook();
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
@@ -148,14 +147,7 @@ const CryptoChartScreen = () => {
 
         {/* Order Book and Entry Components */}
         <View style={styles.orderSection}>
-          <OrderBook
-            askOrders={askOrders}
-            bidOrders={bidOrders}
-            currentPrice={currentPrice}
-            webViewRef={webViewRef}
-          />
-
-          <OrderEntry
+        <OrderEntry
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
             orderType={orderType}
@@ -167,6 +159,13 @@ const CryptoChartScreen = () => {
             orderAmount={orderAmount}
             setOrderAmount={setOrderAmount}
             currentPrice={currentPrice}
+          />
+
+          <OrderBook
+            askOrders={askOrders}
+            bidOrders={bidOrders}
+            currentPrice={currentPrice}
+            webViewRef={webViewRef}
           />
         </View>
       </ScrollView>
@@ -184,10 +183,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   orderSection: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
     paddingBottom: 20,
-    marginTop: 20,
+    marginTop: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 });
 
