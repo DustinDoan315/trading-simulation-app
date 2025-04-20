@@ -53,10 +53,10 @@ const OnboardingScreen = () => {
         }}
         resizeMode="contain"
       />
+     <GradientText text={item.title} />
+      <Text style={styles.content}>{item.content}</Text>
 
-      <Text style={styles.content}>{item.title}</Text>
-
-      <GradientText text={item.content} />
+ 
     </View>
   );
 
@@ -143,10 +143,10 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   content: {
-    fontSize: 28,
+    fontSize: 24,
     textAlign: "center",
-    color: "#FFFFFF",
-    marginTop: 40,
+    color: "#d3d3d3",
+    marginTop: 20,
     marginBottom: 5,
   },
   dotContainer: {

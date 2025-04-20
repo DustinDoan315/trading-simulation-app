@@ -113,7 +113,7 @@ const CryptoChartScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         {/* Symbol Header */}
         <SymbolHeader
           symbol={symbol}

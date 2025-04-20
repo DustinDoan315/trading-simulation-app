@@ -13,7 +13,7 @@ const GradientText = ({ text }: { text: string }) => {
 
   const onTextLayout = (event: any) => {
     const { width } = event.nativeEvent.layout;
-    setTextWidth(width * 0.85);
+    setTextWidth(width * 1.125);
   };
 
   return (
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   hiddenText: {
     fontSize: 30,
     fontWeight: "bold",
-    opacity: 0, // Hide the text
+    opacity: 0,
     position: "absolute",
   },
 });
