@@ -20,11 +20,14 @@ export function useHomeData() {
     try {
       setLoading(true);
       const market = await getMarketData(true, 10);
-      const sortedMarket = [...market].sort(
-        (a, b) => b.market_cap - a.market_cap
+      const sortMarket = market.sort(
+        (a, b) =>
+          Math.abs(b.price_change_percentage_24h) -
+          Math.abs(a.price_change_percentage_24h)
       );
       const balanceData = await getUserBalance();
-      setMarketData(sortedMarket);
+
+      setMarketData(sortMarket);
       setBalance(balanceData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -36,7 +39,8 @@ export function useHomeData() {
   const trendingCoins = useMemo(() => {
     return [...marketData]
       .sort(
-        (a, b) => Math.abs(b.price_change_24h) - Math.abs(a.price_change_24h)
+        (a, b) =>
+          Math.abs(b.market_cap_change_24h) - Math.abs(a.market_cap_change_24h)
       )
       .slice(0, 5);
   }, [marketData]);

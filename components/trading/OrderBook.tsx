@@ -27,7 +27,7 @@ const OrderBookItem = ({
         <Text style={styles.currentOrderValue}>
           {usdValue ??
             (price
-              ? formatCurrency(parseFloat(price.replace(",", ".")) * 83000)
+              ? formatCurrency(parseFloat(price.replace(",", ".")))
               : formatCurrency(0))}
         </Text>
       </TouchableOpacity>
@@ -39,7 +39,7 @@ const OrderBookItem = ({
     <TouchableOpacity
       style={styles.orderRow}
       onPress={onPress}
-      activeOpacity={0.7}>
+      activeOpacity={1}>
       <Text style={[styles.orderPrice, priceStyle]}>{price}</Text>
       <Text style={styles.orderAmount}>{amount}</Text>
     </TouchableOpacity>
@@ -107,37 +107,29 @@ const OrderBook = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.background.secondary,
     borderRadius: Dimensions.radius.md,
-    borderWidth: Dimensions.border.thin,
-    borderColor: Colors.border.light,
-    overflow: "hidden",
+    width: "45%",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: Dimensions.spacing.md,
     paddingVertical: Dimensions.spacing.sm,
-    borderBottomWidth: Dimensions.border.thin,
-    borderBottomColor: Colors.border.medium,
   },
   headerText: {
     ...Typography.label,
   },
   ordersSection: {
-    maxHeight: Dimensions.components.orderBookMaxHeight / 2,
   },
   orderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: Dimensions.spacing.sm,
     paddingHorizontal: Dimensions.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(34, 34, 34, 0.5)",
   },
   orderPrice: {
-    fontSize: Dimensions.fontSize.md,
-    fontWeight: "500",
+    fontSize: Dimensions.fontSize.sm,
+    fontWeight: "bold",
     flex: 1,
   },
   bidPrice: {
@@ -148,26 +140,18 @@ const styles = StyleSheet.create({
   },
   orderAmount: {
     color: Colors.text.primary,
-    fontSize: Dimensions.fontSize.md,
+    fontSize: Dimensions.fontSize.sm,
     flex: 1,
     textAlign: "right",
   },
   currentPriceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: Dimensions.spacing.md,
+    flexDirection: "column",
+    marginVertical: Dimensions.spacing.md,
     paddingHorizontal: Dimensions.spacing.md,
-    backgroundColor: Colors.action.sellLight,
-    borderLeftWidth: Dimensions.border.medium,
-    borderLeftColor: Colors.action.sell,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border.medium,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border.medium,
   },
   currentOrderPrice: {
     color: Colors.action.sell,
-    fontSize: Dimensions.fontSize.lg,
+    fontSize: Dimensions.fontSize.xl,
     fontWeight: "bold",
   },
   currentOrderValue: {

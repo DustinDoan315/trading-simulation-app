@@ -16,15 +16,15 @@ export const chartHtml = `<!DOCTYPE html>
 body {
   margin: 0;
   padding: 0;
-  background-color: #000000;
+  background-color: #131523;
   color: #FFFFFF;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden;
   touch-action: pan-y;
 }
 #container {
-  width: 100%;
-  height: 100vh;
+  width: 97.5%;
+  height: 125vh;
 }
 .loading {
   position: absolute;
@@ -85,7 +85,7 @@ body {
 }
 .chart-overlay-controls {
   position: absolute;
-  top: 10px;
+  top: 50px;
   right: 10px;
   display: flex;
   flex-direction: column;
@@ -133,16 +133,18 @@ let showIndicators = false;
 let currentPrice = null;
 let priceLineId = 'current-price-line';
 let highlightedPrice = null;
+let chartTitle = "Placeholder Chart Title";
+let seriesName = "Placeholder Series Name";
 
 // Chart theme and configuration
 Highcharts.theme = {
   colors: ['#058DC7', '#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572', '#FF9655', '#FFF263', '#6AF9C4'],
   chart: {
-    backgroundColor: '#000000',
+    backgroundColor: '#131523',
     borderColor: '#222222',
     borderWidth: 0,
     className: 'dark-container',
-    plotBackgroundColor: '#000000',
+    plotBackgroundColor: '#131523',
     plotBorderWidth: 0,
     plotShadow: false,
   },
@@ -244,7 +246,7 @@ Highcharts.theme = {
     buttonBackgroundColor: '#222222',
     buttonBorderColor: '#444444',
     rifleColor: '#777777',
-    trackBackgroundColor: '#000000',
+    trackBackgroundColor: '#131523',
     trackBorderColor: '#222222'
   }
 };
@@ -288,15 +290,15 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         pinchType: 'x',
         zoomType: 'x',
-        marginRight: 10
+        marginRight: 0
       },
       rangeSelector: {
-        enabled: false
+        enabled: true
       },
       navigator: {
-        adaptToUpdatedData: false, // For better performance
         enabled: true,
-        height: 40
+        adaptToUpdatedData: false, // For better performance
+        height: 40,
       },
       scrollbar: {
         enabled: true,
@@ -313,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
         trackBorderWidth: 0
       },
       title: { 
-        text: "BTC/USDT Chart",
+        text: "Placeholder Chart Title",
         style: {
           fontSize: '16px'
         }
@@ -343,19 +345,20 @@ document.addEventListener("DOMContentLoaded", () => {
       yAxis: [{
         labels: {
           align: 'right',
-          x: -3,
+          x: 12,
+          y: -10,
           style: {
-            color: '#777'
+            color: '#fff'
           },
           formatter: function() {
             // Highlight current price on y-axis
             if (currentPrice && Math.abs(this.value - currentPrice) < currentPrice * 0.0005) {
-              return '<span style="color: #F9335D; font-weight: bold;">' + this.value.toFixed(1) + '</span>';
+            return '<span style="color: #F9335D; font-weight: bold>' + this.value.toFixed(0) + '</span>';
             }
             return this.value.toFixed(1);
           }
         },
-        height: '70%',
+        height: '100%',
         lineWidth: 1,
         resize: {
           enabled: true
@@ -372,13 +375,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }, {
         labels: {
           align: 'right',
-          x: -3,
+          x: 20,
           style: {
-            color: '#777'
+            color: '#fff'
           }
         },
         top: '72%',
-        height: '28%',
+        height: '25%',
         offset: 0,
         lineWidth: 1,
         gridLineColor: 'rgba(50, 50, 50, 0.25)',
@@ -494,7 +497,7 @@ document.addEventListener("DOMContentLoaded", () => {
       series: [
         {
           type: 'candlestick',
-          name: 'BTC/USDT',
+          name: 'Placeholder Series Name',
           id: 'btcusdt',
           data: seriesData,
           tooltip: {
@@ -562,15 +565,16 @@ function addPriceLine(price) {
     id: priceLineId,
     value: price,
     width: 1,
-    color: '#F9335D',
+    color: '#fff',
     dashStyle: 'dash',
     label: {
-      text: price.toFixed(1),
+      text: '$ ' + price.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
       style: {
-        color: '#F9335D',
-        fontWeight: 'bold'
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: '14px',
       },
-      align: 'right'
+      align: 'left'
     },
     zIndex: 5
   });
@@ -763,6 +767,16 @@ window.addEventListener("message", (event) => {
         }
         break;
       }
+
+      case "setChartParams": {
+        chartTitle = data.title;
+        seriesName = data.seriesName;
+        if (chart) {
+          chart.setTitle({ text: chartTitle });
+          chart.series[0].update({ name: seriesName });
+        }
+        break;
+      }
       
       case "setData": {
         if (chart) {
@@ -904,12 +918,12 @@ window.addEventListener("message", (event) => {
           }
         } else {
           // Reset to dark theme
-          document.body.style.backgroundColor = '#000000';
+          document.body.style.backgroundColor = '#131523';
           if (chart) {
             chart.update({
               chart: {
-                backgroundColor: '#000000',
-                plotBackgroundColor: '#000000'
+                backgroundColor: '#131523',
+                plotBackgroundColor: '#131523'
               },
               xAxis: {
                 gridLineColor: '#222222',

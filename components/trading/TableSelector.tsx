@@ -46,7 +46,7 @@ const TabSelector = ({
         </TouchableOpacity>
       </View>
 
-      <View style={styles.marginContainer}>
+      {/* <View style={styles.marginContainer}>
         <Text style={styles.marginText}>Ký quỹ</Text>
         <Switch
           value={marginEnabled}
@@ -58,7 +58,7 @@ const TabSelector = ({
           thumbColor={marginEnabled ? Colors.text.primary : Colors.ui.toggle}
           ios_backgroundColor={Colors.ui.toggleBackground}
         />
-      </View>
+      </View> */}
     </View>
   );
 };

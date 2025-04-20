@@ -20,6 +20,10 @@ const HomeScreen = () => {
     router.navigate(`/(subs)/crypto-detail?id=${id}`);
   };
 
+  const navigateToChart = (symbol: string) => {
+    router.navigate(`/(subs)/crypto-chart?symbol=${symbol}`);
+  };
+
   const handleAddButtonPress = () => {
     console.log("Add button pressed");
   };
@@ -41,7 +45,7 @@ const HomeScreen = () => {
           cryptoList={trending}
           refreshing={false}
           onRefresh={() => {}}
-          onItemPress={navigateToDetail}
+          onItemPress={navigateToChart}
           onAddPress={handleAddButtonPress}
           scrollEnabled={false}
         />

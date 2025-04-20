@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface SymbolHeaderProps {
   priceChange: string;
+  symbol: string;
   chartType: ChartType;
   toggleChartType: () => void;
   toggleIndicators: () => void;
@@ -13,13 +14,14 @@ interface SymbolHeaderProps {
 const SymbolHeader = ({
   priceChange,
   chartType,
+  symbol,
   toggleChartType,
   toggleIndicators,
 }: SymbolHeaderProps) => {
   return (
     <View style={styles.symbolContainer}>
       <View style={styles.symbolLeft}>
-        <Text style={styles.symbolText}>BTC/USDT</Text>
+        <Text style={styles.symbolText}>{`${symbol}`}</Text>
         <TouchableOpacity>
           <Ionicons name="chevron-down" size={16} color="white" />
         </TouchableOpacity>

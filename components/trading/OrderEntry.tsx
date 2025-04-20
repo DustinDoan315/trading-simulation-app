@@ -6,9 +6,10 @@ import PriceInput from "../common/PriceInput";
 import AmountSlider from "../common/AmountSlider";
 import ActionButton from "./ActionButton";
 import { formatPrice, formatAmount } from "@/utils/formatters";
+import { width } from "@/utils/response";
+import TabSelector from "./TableSelector";
 
 const OrderEntry = ({
-  selectedTab = "buy",
   orderType = "market",
   currentPrice,
   onSubmitOrder,
@@ -19,6 +20,8 @@ const OrderEntry = ({
   const [price, setPrice] = useState(currentPrice || "0");
   const [amount, setAmount] = useState("0");
   const [sliderPosition, setSliderPosition] = useState(0);
+  const [selectedTab, setSelectedTab] = useState("buy");
+  const [marginEnabled, setMarginEnabled] = useState(false);
 
   // Update price when currentPrice changes
   useEffect(() => {
@@ -73,6 +76,12 @@ const OrderEntry = ({
 
   return (
     <View style={styles.container}>
+      <TabSelector 
+        selectedTab={selectedTab}
+        onSelectTab={setSelectedTab}
+        marginEnabled={marginEnabled}
+        onToggleMargin={setMarginEnabled}
+      />
       {/* Price Input */}
       <PriceInput
         label="Giá (USDT)"
@@ -111,11 +120,8 @@ const OrderEntry = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.background.secondary,
-    borderRadius: Dimensions.radius.md,
-    borderWidth: Dimensions.border.thin,
-    borderColor: Colors.border.light,
     padding: Dimensions.spacing.lg,
+    width: "55%",
   },
 });
 

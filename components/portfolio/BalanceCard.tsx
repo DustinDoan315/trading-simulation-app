@@ -126,10 +126,10 @@ const BalanceCard = ({
         0
       );
 
-    // Calculate angles consistently - all starting from the top (-90 degrees)
-    const startAngle = (previousSegmentsLength / circumference) * 360 - 90;
+    // Calculate angles starting from 0° (right side) and covering full 360°
+    const startAngle = (previousSegmentsLength / circumference) * 360;
     const endAngle =
-      ((previousSegmentsLength + segmentLength) / circumference) * 360 - 90;
+      ((previousSegmentsLength + segmentLength) / circumference) * 360;
 
     // Calculate the angle span of this segment
     let angleSpan = endAngle - startAngle;
@@ -148,12 +148,11 @@ const BalanceCard = ({
       )}° to ${displayEndAngle.toFixed(2)}°, span: ${angleSpan.toFixed(2)}°`
     );
 
-    // Minimum angle span for easier touch targeting (20 degrees provides better touch targets)
-    const minAngleSpan = 20;
+    // Minimum angle span for easier touch targeting (30 degrees provides better touch targets)
+    const minAngleSpan = 30;
 
-    // For VERY small segments (less than 5%), use an even larger touch area
-    const touchExpansion =
-      assetPercentage < 0.05 ? minAngleSpan * 1.5 : minAngleSpan;
+    // For all segments, use expanded touch area
+    const touchExpansion = minAngleSpan * 1.2;
 
     // Adjusted angles for touch area - expand small segments to ensure touchability
     const touchStartAngle =
@@ -366,7 +365,7 @@ const BalanceCard = ({
               }`}
               strokeDashoffset={segment.dashOffset}
               strokeLinecap="butt"
-              rotation="-90"
+              rotation="0"
               origin={`${size / 2}, ${size / 2}`}
               opacity={isSegmentActive(segment.id) ? 1 : 0.8}
             />

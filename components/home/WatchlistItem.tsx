@@ -29,7 +29,7 @@ const ChangeIndicator: React.FC<ChangeIndicatorProps> = ({
       />
       <Text
         style={[styles.change, isPositive ? styles.positive : styles.negative]}>
-        {formatPercentage(Math.abs(crypto.price_change_percentage_24h))}
+        {formatPercentage(crypto.price_change_percentage_24h)}
       </Text>
     </View>
   );
@@ -54,8 +54,8 @@ const areWatchlistItemPropsEqual = (
   return (
     prevProps.crypto.id === nextProps.crypto.id &&
     prevProps.crypto.current_price === nextProps.crypto.current_price &&
-    prevProps.crypto.price_change_percentage_24h ===
-      nextProps.crypto.price_change_percentage_24h &&
+    prevProps.crypto.market_cap_change_percentage_24h ===
+      nextProps.crypto.market_cap_change_percentage_24h &&
     prevProps.onPress === nextProps.onPress
   );
 };
@@ -71,7 +71,7 @@ export const WatchlistItem: React.FC<WatchlistItemProps> = React.memo(
     return (
       <TouchableOpacity
         style={styles.container}
-        onPress={() => onPress(crypto.id)}>
+        onPress={() => onPress(crypto.symbol.toUpperCase())}>
         <View style={styles.leftSection}>
           <Image source={{ uri: crypto.image }} style={styles.icon} />
           <View style={styles.nameContainer}>
