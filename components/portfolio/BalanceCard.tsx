@@ -136,12 +136,16 @@ const BalanceCard = ({
     // Fix for negative angleSpan (when crossing 0/360 boundary)
     if (angleSpan < 0) angleSpan += 360;
 
+    // For display purposes only - normalize angles to 0-360 range
+    const displayStartAngle = startAngle < 0 ? startAngle + 360 : startAngle;
+    const displayEndAngle = endAngle < 0 ? endAngle + 360 : endAngle;
+
     console.log(
-      `${asset.symbol} segment: ${
-        assetPercentage * 100
-      }%, angles: ${startAngle.toFixed(2)}° to ${endAngle.toFixed(
+      `${asset.symbol} segment: ${(assetPercentage * 100).toFixed(
         2
-      )}°, span: ${angleSpan.toFixed(2)}°`
+      )}%, angles: ${displayStartAngle.toFixed(
+        2
+      )}° to ${displayEndAngle.toFixed(2)}°, span: ${angleSpan.toFixed(2)}°`
     );
 
     // Minimum angle span for easier touch targeting (20 degrees provides better touch targets)

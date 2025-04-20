@@ -13,6 +13,7 @@ export interface CryptoCurrency {
   price_change_percentage_24h: number;
   image: string;
   market_cap: number;
+  market_cap_rank: number;
   total_volume: number;
   circulating_supply: number;
   total_supply: number;
@@ -23,6 +24,7 @@ export interface CryptoCurrency {
   ath_change_percentage: number;
   ath_date: string;
   last_updated: string;
+  price_change_24h: number;
 }
 
 export interface UserBalance {

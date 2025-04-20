@@ -1,16 +1,17 @@
-import React, { useState, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Dimensions,
-  Pressable,
-  Image,
-} from "react-native";
+import colors from "@/styles/colors";
 import GradientText from "@/components/GradientText";
+import React, { useCallback, useRef, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 const { width } = Dimensions.get("window");
 
@@ -20,22 +21,22 @@ const OnboardingScreen = () => {
   const screens = [
     {
       id: "1",
-      title: "Property",
-      content: "Diversity",
-      image: require("../../assets/images/candle.png"),
+      title: "Seamless trading",
+      content: "Buy, sell and exchange cryptocurrencies.",
+      image: require("../../assets/images/onboarding.png"),
     },
-    {
-      id: "2",
-      title: "Safe",
-      content: "Security",
-      image: require("../../assets/images/shield.png"),
-    },
-    {
-      id: "3",
-      title: "Convenient",
-      content: "Transaction",
-      image: require("../../assets/images/rocket.png"),
-    },
+    // {
+    //   id: "2",
+    //   title: "Safe",
+    //   content: "Security",
+    //   image: require("../../assets/images/shield.png"),
+    // },
+    // {
+    //   id: "3",
+    //   title: "Convenient",
+    //   content: "Transaction",
+    //   image: require("../../assets/images/rocket.png"),
+    // },
   ];
 
   const renderItem = ({
@@ -73,6 +74,7 @@ const OnboardingScreen = () => {
         renderItem={renderItem}
         horizontal
         pagingEnabled
+        scrollEnabled={false}
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         onScroll={(event) => {
@@ -81,7 +83,7 @@ const OnboardingScreen = () => {
         }}
         scrollEventThrottle={16}
       />
-      <View style={styles.dotContainer}>
+      {/* <View style={styles.dotContainer}>
         {screens.map((_, index) => (
           <Pressable
             key={index}
@@ -95,20 +97,22 @@ const OnboardingScreen = () => {
             }}
           />
         ))}
-      </View>
+      </View> */}
       <View
         style={{
           width: "100%",
           alignItems: "center",
-          backgroundColor: "#000000",
+          backgroundColor: colors.background.primary,
         }}>
         <LinearGradient
           style={styles.createBtnLinear}
-          colors={
-            currentIndex == 2
-              ? ["#8AD4EC", "#EF96FF", "#FF56A9", "#FFAA6C"]
-              : ["#d3d3d3", "#d3d3d3"]
-          }
+          // colors={
+          //   currentIndex == 2
+          //     ? ["#8AD4EC", "#EF96FF", "#FF56A9", "#FFAA6C"]
+          //     : ["#d3d3d3", "#d3d3d3"]
+          // }
+
+          colors={["#6F62D9", "#9462D9", "#7E62D9"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           locations={[0, 0.22, 0.54, 0.85, 1]}>
@@ -126,12 +130,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: colors.background.primary,
   },
   screen: {
     width,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#000000",
   },
   title: {
     fontSize: 24,

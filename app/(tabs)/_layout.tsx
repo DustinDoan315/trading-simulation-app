@@ -1,8 +1,8 @@
-import colors from '@/styles/colors';
-import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { router, Tabs } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import colors from "@/styles/colors";
+import React from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { router, Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Platform,
   StyleSheet,
@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 
 type RouteName = "index" | "portfolio" | "wallet" | "chart";
 
@@ -64,7 +63,8 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   });
 
   const portfolioToken = () => {
-    router.navigate("/(subs)/crypto-chart");
+    // router.navigate("/(subs)/crypto-chart");
+    router.navigate("/(onboarding)/onboarding");
   };
 
   return (

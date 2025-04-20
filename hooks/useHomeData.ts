@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CryptoCurrency,
   UserBalance,
@@ -20,9 +20,11 @@ export function useHomeData() {
     try {
       setLoading(true);
       const market = await getMarketData(true, 10);
+      const sortedMarket = [...market].sort(
+        (a, b) => b.market_cap - a.market_cap
+      );
       const balanceData = await getUserBalance();
-
-      setMarketData(market);
+      setMarketData(sortedMarket);
       setBalance(balanceData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -34,9 +36,7 @@ export function useHomeData() {
   const trendingCoins = useMemo(() => {
     return [...marketData]
       .sort(
-        (a, b) =>
-          Math.abs(b.price_change_percentage_24h) -
-          Math.abs(a.price_change_percentage_24h)
+        (a, b) => Math.abs(b.price_change_24h) - Math.abs(a.price_change_24h)
       )
       .slice(0, 5);
   }, [marketData]);
