@@ -1,23 +1,40 @@
 import { OrderBookEntry } from "../types/crypto";
 import { useEffect, useState } from "react";
 
-export default function useOrderBook() {
-  // Initial state
-  const [askOrders, setAskOrders] = useState<OrderBookEntry[]>([
-    { price: "83,051.9", amount: "7,88317" },
-    { price: "83,051.5", amount: "0,00500" },
-    { price: "83,050.0", amount: "9,30944" },
-    { price: "83,049.9", amount: "0,00060" },
-    { price: "83,049.8", amount: "7,10912" },
-  ]);
+export default function useOrderBook(symbol: string = 'BTC') {
+  // Get base price based on symbol
+  const getBasePrice = () => {
+    switch(symbol) {
+      case 'BTC': return 83000;
+      case 'ETH': return 4000;
+      case 'BNB': return 600;
+      case 'SOL': return 180;
+      default: return 100;
+    }
+  };
 
-  const [bidOrders, setBidOrders] = useState<OrderBookEntry[]>([
-    { price: "83,049.7", amount: "8,44064" },
-    { price: "83,049.2", amount: "0,02990" },
-    { price: "83,049.1", amount: "8,59518" },
-    { price: "83,049.0", amount: "0,01232" },
-    { price: "83,048.0", amount: "8,93452" },
-  ]);
+  // Generate initial orders
+  const generateInitialOrders = (basePrice: number) => {
+    const spread = basePrice * 0.0005; // 0.05% spread
+    const askOrders = Array(5).fill(0).map((_, i) => ({
+      price: (basePrice + spread * (5 - i)).toFixed(2).replace('.', ','),
+      amount: (Math.random() * 10).toFixed(5).replace('.', ',')
+    }));
+    
+    const bidOrders = Array(5).fill(0).map((_, i) => ({
+      price: (basePrice - spread * (i + 1)).toFixed(2).replace('.', ','),
+      amount: (Math.random() * 10).toFixed(5).replace('.', ',')
+    }));
+
+    return { askOrders, bidOrders };
+  };
+
+  const basePrice = getBasePrice();
+  const initialOrders = generateInitialOrders(basePrice);
+
+  // Initial state
+  const [askOrders, setAskOrders] = useState<OrderBookEntry[]>(initialOrders.askOrders);
+  const [bidOrders, setBidOrders] = useState<OrderBookEntry[]>(initialOrders.bidOrders);
 
   // Helper function to simulate price changes with preserved formatting
   const simulatePriceChange = (currentPrice: string, range: number = 0.2) => {
@@ -25,8 +42,7 @@ export default function useOrderBook() {
     const variation = (Math.random() * 2 - 1) * range;
     const newPrice = numericPrice + variation;
     const decimalPlaces = 2;
-    const randomDecimal = Math.floor(Math.random() * 100) / 100;
-    return newPrice.toFixed(decimalPlaces).replace(".", ",") + randomDecimal;
+    return newPrice.toFixed(decimalPlaces).replace(".", ",");
   };
 
   // Update orders periodically
@@ -35,20 +51,25 @@ export default function useOrderBook() {
       // Update Ask Orders
       const newAskOrders = askOrders.map((order) => ({
         price: simulatePriceChange(order.price),
-        amount: order.amount,
+        amount: (Math.random() * 10).toFixed(5).replace('.', ','),
       }));
       setAskOrders(newAskOrders);
 
       // Update Bid Orders
       const newBidOrders = bidOrders.map((order) => ({
         price: simulatePriceChange(order.price, 0.1),
-        amount: order.amount,
+        amount: (Math.random() * 10).toFixed(5).replace('.', ','),
       }));
       setBidOrders(newBidOrders);
     }, 3000);
 
     return () => clearInterval(updateInterval);
-  }, [askOrders, bidOrders]);
+  }, [askOrders, bidOrders, symbol]);
 
-  return { askOrders, bidOrders };
+  // Calculate current price as midpoint between best bid and ask
+  const currentPrice = ((parseFloat(askOrders[0]?.price.replace(',', '.')) + 
+                        parseFloat(bidOrders[0]?.price.replace(',', '.'))) / 2)
+                        .toFixed(2).replace('.', ',');
+
+  return { askOrders, bidOrders, currentPrice };
 }

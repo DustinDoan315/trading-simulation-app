@@ -50,6 +50,8 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
       route.name === "chart" ||
       route.name === "portfolio" ||
       route.name === "wallet"
+      // ||
+      // route.name === "products"
     ) {
       orderedRoutes.push(route);
     }
@@ -156,6 +158,12 @@ export default function TabLayout() {
           title: "Portfolio",
         }}
       />
+      {/* <Tabs.Screen
+        name="products"
+        options={{
+          title: "Products",
+        }}
+      /> */}
     </Tabs>
   );
 }

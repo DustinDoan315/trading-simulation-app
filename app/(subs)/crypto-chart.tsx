@@ -20,7 +20,7 @@ import {
 import { useLocalSearchParams } from "expo-router";
 
 const CryptoChartScreen = () => {
-  const token = useLocalSearchParams();
+  const token: any = useLocalSearchParams();
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");
@@ -35,7 +35,7 @@ const CryptoChartScreen = () => {
     token?.symbol ? `${token?.symbol}/USDT` : "BTC/USDT"
   );
 
-  const { askOrders, bidOrders } = useOrderBook();
+  const { askOrders, bidOrders } = useOrderBook(token?.symbol);
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
   const { currentPrice, priceChange } = useCryptoAPI(timeframe);
@@ -117,7 +117,7 @@ const CryptoChartScreen = () => {
         {/* Symbol Header */}
         <SymbolHeader
           symbol={symbol}
-          priceChange={priceChange || "0"}
+          priceChange={priceChange || ""}
           chartType={chartType}
           toggleChartType={toggleChartType}
           toggleIndicators={toggleIndicators}
@@ -162,6 +162,7 @@ const CryptoChartScreen = () => {
           />
 
           <OrderBook
+            symbol={token?.symbol}
             askOrders={askOrders}
             bidOrders={bidOrders}
             currentPrice={currentPrice}

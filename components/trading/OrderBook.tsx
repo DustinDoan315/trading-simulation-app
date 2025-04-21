@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import useOrderBook from "@/app/hooks/useOrderBook";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
 import Typography from "@/styles/typography";
@@ -47,12 +48,12 @@ const OrderBookItem = ({
 };
 
 const OrderBook = ({
-  askOrders = [],
-  bidOrders = [],
-  currentPrice,
+  symbol = 'BTC',
   onSelectPrice,
   maxVisibleOrders = 5,
 }: any) => {
+  const { askOrders, bidOrders, currentPrice } = useOrderBook(symbol);
+  const [baseCurrency, quoteCurrency] = symbol.split('/');
   // Handle price selection
   const handlePriceSelect = (price: any) => {
     if (onSelectPrice) {
@@ -64,8 +65,8 @@ const OrderBook = ({
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Giá (USDT)</Text>
-        <Text style={styles.headerText}>Số lượng (BTC)</Text>
+        <Text style={styles.headerText}>Price ({quoteCurrency})</Text>
+        <Text style={styles.headerText}>Amount ({baseCurrency})</Text>
       </View>
 
       {/* Ask Orders (Sell side) */}

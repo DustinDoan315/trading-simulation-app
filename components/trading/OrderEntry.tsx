@@ -96,7 +96,7 @@ const OrderEntry = ({
         label="Số lượng (BTC)"
         value={amount}
         onChangeText={handleAmountChange}
-        placeholder="0.0000"
+        placeholder="0.00"
       />
 
       {/* Amount Slider */}
