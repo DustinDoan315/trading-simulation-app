@@ -1,54 +1,52 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet } from "react-native";
-import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
 import PriceInput from "../common/PriceInput";
 import AmountSlider from "../common/AmountSlider";
 import ActionButton from "./ActionButton";
-import { formatPrice, formatAmount } from "@/utils/formatters";
-import { width } from "@/utils/response";
+import { formatAmount } from "@/utils/formatters";
 import TabSelector from "./TableSelector";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store";
 
 const OrderEntry = ({
+  symbol = "BTC",
   orderType = "market",
   currentPrice,
   onSubmitOrder,
   maxAmount = 0,
   availableBalance = 0,
 }: any) => {
-  // State for price and amount inputs
-  const [price, setPrice] = useState(currentPrice || "0");
+  const tokenPrice = useSelector(
+    (state: RootState) => state.cryptoPrices.prices[symbol] || 100
+  );
+
+  const [price, setPrice] = useState("0");
   const [amount, setAmount] = useState("0");
   const [sliderPosition, setSliderPosition] = useState(0);
   const [selectedTab, setSelectedTab] = useState("buy");
   const [marginEnabled, setMarginEnabled] = useState(false);
 
-  // Update price when currentPrice changes
   useEffect(() => {
-    if (currentPrice && currentPrice !== price) {
-      setPrice(currentPrice);
+    if (symbol) {
+      setPrice(tokenPrice.toString());
     }
-  }, [currentPrice]);
+  }, [symbol]);
 
-  // Handle slider position change
   const handleSliderChange = (position: any) => {
     setSliderPosition(position);
 
-    // Calculate amount based on position (percentage)
     const calculatedAmount = (position / 100) * maxAmount;
     setAmount(formatAmount(calculatedAmount));
   };
 
-  // Handle price input change
   const handlePriceChange = (value: any) => {
     setPrice(value);
   };
 
-  // Handle amount input change
   const handleAmountChange = (value: any) => {
     setAmount(value);
 
-    // Calculate and update slider position
     if (maxAmount > 0) {
       const newPosition = (parseFloat(value) / maxAmount) * 100;
       setSliderPosition(Math.min(100, Math.max(0, newPosition)));
@@ -57,7 +55,6 @@ const OrderEntry = ({
 
   // Handle order submission
   const handleSubmitOrder = () => {
-    // Parse values to ensure numbers
     const parsedPrice = parseFloat(price.replace(",", "."));
     const parsedAmount = parseFloat(amount.replace(",", "."));
 
@@ -76,7 +73,7 @@ const OrderEntry = ({
 
   return (
     <View style={styles.container}>
-      <TabSelector 
+      <TabSelector
         selectedTab={selectedTab}
         onSelectTab={setSelectedTab}
         marginEnabled={marginEnabled}
@@ -93,7 +90,7 @@ const OrderEntry = ({
 
       {/* Amount Input */}
       <PriceInput
-        label="Số lượng (BTC)"
+        label={`Số lượng (${symbol})`}
         value={amount}
         onChangeText={handleAmountChange}
         placeholder="0.00"
@@ -105,14 +102,14 @@ const OrderEntry = ({
         onChange={handleSliderChange}
         tradeType={selectedTab}
         availableAmount={availableBalance}
-        amountUnit="BTC"
+        amountUnit={symbol}
       />
 
       {/* Action Button */}
       <ActionButton
         type={selectedTab}
         onPress={handleSubmitOrder}
-        cryptoSymbol="BTC"
+        cryptoSymbol={symbol}
       />
     </View>
   );

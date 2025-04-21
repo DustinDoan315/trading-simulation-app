@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch } from "react-redux";
+import { updatePrice } from "@/app/features/cryptoPricesSlice";
 import {
   CryptoCurrency,
   UserBalance,
@@ -7,6 +9,7 @@ import {
 } from "@/services/CryptoService";
 
 export function useHomeData() {
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [balance, setBalance] = useState<UserBalance>({
@@ -29,6 +32,14 @@ export function useHomeData() {
 
       setMarketData(sortMarket);
       setBalance(balanceData);
+      
+      // Update Redux store with latest prices
+      sortMarket.forEach(coin => {
+        dispatch(updatePrice({
+          symbol: coin.symbol.toUpperCase(),
+          price: coin.current_price
+        }));
+      });
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {

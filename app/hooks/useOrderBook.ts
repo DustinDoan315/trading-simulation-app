@@ -1,17 +1,13 @@
 import { OrderBookEntry } from "../types/crypto";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "../store";
 
 export default function useOrderBook(symbol: string = 'BTC') {
-  // Get base price based on symbol
-  const getBasePrice = () => {
-    switch(symbol) {
-      case 'BTC': return 83000;
-      case 'ETH': return 4000;
-      case 'BNB': return 600;
-      case 'SOL': return 180;
-      default: return 100;
-    }
-  };
+  // Get base price from Redux store
+  const basePrice = useSelector((state: RootState) => 
+    state.cryptoPrices.prices[symbol] || 100
+  );
 
   // Generate initial orders
   const generateInitialOrders = (basePrice: number) => {
@@ -29,7 +25,6 @@ export default function useOrderBook(symbol: string = 'BTC') {
     return { askOrders, bidOrders };
   };
 
-  const basePrice = getBasePrice();
   const initialOrders = generateInitialOrders(basePrice);
 
   // Initial state

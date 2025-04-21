@@ -5,9 +5,9 @@ import Dimensions from "@/styles/dimensions";
 import Typography from "@/styles/typography";
 
 const AmountSlider = ({
-  position = 30, // Default position as percentage (0-100)
+  position = 30,
   onChange,
-  tradeType = "buy", // 'buy' or 'sell'
+  tradeType = "buy",
   availableAmount = 0,
   amountUnit = "BTC",
 }: any) => {
@@ -41,9 +41,22 @@ const AmountSlider = ({
       onPanResponderRelease: () => {
         // Add current value to offset and reset value
         panX.flattenOffset();
-        // Call onChange with the new position
+
+        // Snap to nearest 25% mark
+        const snapThreshold = 12.5;
+        const snappedValue = Math.round(panX._value / 25) * 25;
+        const shouldSnap = Math.abs(panX._value - snappedValue) < snapThreshold;
+        const finalValue = shouldSnap ? snappedValue : panX._value;
+
+        // Animate to final position
+        Animated.spring(panX, {
+          toValue: finalValue,
+          useNativeDriver: false,
+        }).start();
+
+        // Call onChange with the final position
         if (onChange) {
-          onChange(panX._value);
+          onChange(finalValue);
         }
       },
     })
@@ -62,6 +75,15 @@ const AmountSlider = ({
   return (
     <View style={styles.container}>
       <View style={styles.sliderTrack}>
+        {/* Segment markers and circle indicators */}
+        <View style={[styles.segmentMarker, { left: "25%" }]} />
+        <View style={[styles.segmentMarker, { left: "50%" }]} />
+        <View style={[styles.segmentMarker, { left: "75%" }]} />
+        <View style={[styles.segmentCircle, { left: "0%" }]} />
+        <View style={[styles.segmentCircle, { left: "25%" }]} />
+        <View style={[styles.segmentCircle, { left: "50%" }]} />
+        <View style={[styles.segmentCircle, { left: "75%" }]} />
+        <View style={[styles.segmentCircle, { left: "100%" }]} />
         <Animated.View
           style={[
             styles.sliderFill,
@@ -149,6 +171,22 @@ const styles = StyleSheet.create({
   },
   labelsContainer: {
     marginTop: Dimensions.spacing.sm,
+  },
+  segmentMarker: {
+    position: "absolute",
+    width: 1,
+    height: Dimensions.components.sliderTrackHeight + 4,
+    backgroundColor: Colors.background.primary,
+    top: -2,
+  },
+  segmentCircle: {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    borderRadius: 6,
+    backgroundColor: Colors.text.inactive,
+    top: Dimensions.components.sliderTrackHeight / 2 - 4,
+    marginLeft: -4,
   },
   labelRow: {
     flexDirection: "row",

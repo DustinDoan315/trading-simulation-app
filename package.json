@@ -20,6 +20,7 @@
     "@react-native-community/progress-view": "^1.5.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
+    "@reduxjs/toolkit": "^2.7.0",
     "@supabase/supabase-js": "^2.49.4",
     "bip39": "^3.1.0",
     "expo": "~52.0.46",
@@ -46,7 +47,8 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "15.8.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5"
+    "react-native-webview": "13.12.5",
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

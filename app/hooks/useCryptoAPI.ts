@@ -15,7 +15,7 @@ const useCryptoAPI = (timeframe: TimeframeOption) => {
       setIsLoading(true);
       setError(null);
       try {
-        const ticker = "bitcoin"; // Replace with dynamic ticker if needed
+        const ticker = "bitcoin"; 
         const coinMarketData = await getCoinMarketData(ticker);
 
         // Extract current price and price change from the response

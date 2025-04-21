@@ -37,6 +37,12 @@ export default StyleSheet.create({
     maxWidth: "45%",
     fontWeight: "500",
   },
+  longLabel: {
+    color: Colors.text.tertiary,
+    fontSize: Dimensions.fontSize.sm,
+    maxWidth: "75%",
+    fontWeight: "500",
+  },
 
   price: {
     fontSize: Dimensions.fontSize.lg,

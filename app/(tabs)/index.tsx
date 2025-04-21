@@ -16,9 +16,9 @@ const HomeScreen = () => {
   const { refreshing, trending, balance, isBalanceHidden, onRefresh } =
     useHomeData();
 
-  const navigateToDetail = (id: string) => {
-    router.navigate(`/(subs)/crypto-detail?id=${id}`);
-  };
+  // const navigateToDetail = (id: string) => {
+  //   router.navigate(`/(subs)/crypto-detail?id=${id}`);
+  // };
 
   const navigateToChart = (symbol: string) => {
     router.navigate(`/(subs)/crypto-chart?symbol=${symbol}`);

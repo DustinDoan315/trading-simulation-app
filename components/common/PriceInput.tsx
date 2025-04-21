@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     marginBottom: Dimensions.spacing.md,
   },
   label: {
-    ...Typography.label,
+    ...Typography.longLabel,
     marginBottom: Dimensions.spacing.xs,
   },
   inputWrapper: {

@@ -147,7 +147,8 @@ const CryptoChartScreen = () => {
 
         {/* Order Book and Entry Components */}
         <View style={styles.orderSection}>
-        <OrderEntry
+          <OrderEntry
+            symbol={token?.symbol}
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
             orderType={orderType}
