@@ -24,7 +24,7 @@ body {
 }
 #container {
   width: 97.5%;
-  height: 125vh;
+  height: 135vh;
 }
 .loading {
   position: absolute;

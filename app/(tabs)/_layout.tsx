@@ -34,7 +34,7 @@ const ICON_MAP: IconMapping = {
     active: "pie-chart",
   },
   chart: {
-    inactive: "repeat",
+    inactive: "repeat-outline",
     active: "repeat",
   },
 };
@@ -70,7 +70,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom || 10 }]}>
+    <View style={[styles.container, { paddingBottom: 10 }]}>
       {orderedRoutes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isActive =
@@ -103,11 +103,18 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
                 accessibilityRole="button"
                 accessibilityState={isActive ? { selected: true } : {}}
                 accessibilityLabel={label}
-                onPress={portfolioToken}
-                style={styles.centerButton}>
-                <Ionicons name={iconName} size={24} color="#000" />
+                // onPress={portfolioToken}
+                onPress={onPress}
+                style={[
+                  styles.centerButton,
+                  isActive && styles.activeCenterButton,
+                ]}>
+                <Ionicons
+                  name={iconName}
+                  size={24}
+                  color={isActive ? "#FFFFFF" : "#000"}
+                />
               </TouchableOpacity>
-              <Text style={styles.tabText}>{label}</Text>
             </View>
           );
         }
@@ -120,10 +127,11 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
             accessibilityLabel={label}
             onPress={onPress}
             style={styles.tabButton}>
-            <Ionicons name={iconName} size={24} color={"#FFFFFF"} />
-            <Text style={[styles.tabText, isActive && styles.activeTabText]}>
-              {label}
-            </Text>
+            <Ionicons
+              name={iconName}
+              size={24}
+              color={isActive ? "#7878FA" : "#FFFFFF"}
+            />
           </TouchableOpacity>
         );
       })}
@@ -193,6 +201,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
+  },
+  activeCenterButton: {
+    backgroundColor: "#7878FA",
+    width: 40,
+    height: 40,
+    borderRadius: 28,
     ...Platform.select({
       ios: {
         shadowColor: "#000",

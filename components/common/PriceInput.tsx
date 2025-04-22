@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     marginBottom: Dimensions.spacing.xs,
   },
   inputWrapper: {
-    backgroundColor: Colors.background.tertiary,
+    backgroundColor: Colors.background.primary,
     borderRadius: Dimensions.radius.md,
     borderWidth: Dimensions.border.thin,
     borderColor: Colors.border.light,

@@ -2,6 +2,7 @@ import React from "react";
 import { ChartType } from "../../app/types/crypto";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { router } from "expo-router";
 
 interface SymbolHeaderProps {
   priceChange: string;
@@ -18,9 +19,13 @@ const SymbolHeader = ({
   toggleChartType,
   toggleIndicators,
 }: SymbolHeaderProps) => {
+  const showListCrypto = () => {
+    router.push("/(subs)/crypto-list");
+  };
+
   return (
     <View style={styles.symbolContainer}>
-      <View style={styles.symbolLeft}>
+      <TouchableOpacity onPress={showListCrypto} style={styles.symbolLeft}>
         <Text style={styles.symbolText}>{`${symbol}`}</Text>
         <TouchableOpacity>
           <Ionicons name="chevron-down" size={16} color="white" />
@@ -32,7 +37,7 @@ const SymbolHeader = ({
           ]}>
           {priceChange}
         </Text>
-      </View>
+      </TouchableOpacity>
       <View style={styles.symbolRight}>
         <TouchableOpacity style={styles.iconButton} onPress={toggleChartType}>
           <Feather

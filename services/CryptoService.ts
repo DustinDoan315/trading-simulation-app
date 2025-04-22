@@ -26,6 +26,7 @@ export interface CryptoCurrency {
   last_updated: string;
   market_cap_change_percentage_24h: number;
   market_cap_change_24h: number;
+  hot: boolean;
 }
 
 export interface UserBalance {

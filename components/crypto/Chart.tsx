@@ -98,7 +98,7 @@ const Chart = ({
 
 const styles = StyleSheet.create({
   chartContainer: {
-    height: 300,
+    height: 225,
     backgroundColor: "#000",
     borderBottomWidth: 1,
     borderBottomColor: "#111",
@@ -106,7 +106,6 @@ const styles = StyleSheet.create({
   },
   webView: {
     backgroundColor: "#000",
-    height: 300,
   },
   loaderContainer: {
     position: "absolute",
