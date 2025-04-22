@@ -1,8 +1,7 @@
 import Chart from "@/components/crypto/Chart";
 import OrderBook from "@/components/trading/OrderBook";
 import OrderEntry from "@/components/trading/OrderEntry";
-import PriceIndicator from "@/components/trading/PriceIndicator";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import SymbolHeader from "../../components/crypto/SymbolHeader";
 import TimeframeSelector from "../../components/crypto/TimeframeSelector";
 import useHistoricalData from "../hooks/useHistoricalData";
@@ -18,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import colors from "@/styles/colors";
 
 const CryptoChartScreen = () => {
   const token: any = useLocalSearchParams();
@@ -113,7 +113,9 @@ const CryptoChartScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}>
         {/* Symbol Header */}
         <SymbolHeader
           symbol={symbol}
@@ -178,11 +180,10 @@ const CryptoChartScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: colors.background.primary,
   },
   scrollView: {
     flex: 1,
-    backgroundColor: "#000",
   },
   orderSection: {
     paddingBottom: 20,

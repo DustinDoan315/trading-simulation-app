@@ -64,9 +64,9 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
     );
   });
 
-  const portfolioToken = () => {
-    // router.navigate("/(subs)/crypto-chart");
-    router.navigate("/(onboarding)/onboarding");
+  const navigateToChart = () => {
+    router.navigate("/(subs)/crypto-chart");
+    // router.navigate("/(onboarding)/onboarding");
   };
 
   return (
@@ -103,8 +103,8 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
                 accessibilityRole="button"
                 accessibilityState={isActive ? { selected: true } : {}}
                 accessibilityLabel={label}
-                // onPress={portfolioToken}
-                onPress={onPress}
+                onPress={navigateToChart}
+                // onPress={onPress}
                 style={[
                   styles.centerButton,
                   isActive && styles.activeCenterButton,
@@ -166,12 +166,6 @@ export default function TabLayout() {
           title: "Portfolio",
         }}
       />
-      {/* <Tabs.Screen
-        name="products"
-        options={{
-          title: "Products",
-        }}
-      /> */}
     </Tabs>
   );
 }
