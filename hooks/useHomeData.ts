@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { updatePrice } from "@/app/features/cryptoPricesSlice";
+import { resetBalance } from "@/app/features/balanceSlice";
+import { RootState } from "@/app/store";
 import {
   CryptoCurrency,
-  UserBalance,
   getMarketData,
   getUserBalance,
 } from "@/services/CryptoService";
@@ -12,12 +13,11 @@ export function useHomeData() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [balance, setBalance] = useState<UserBalance>({
-    totalInUSD: 0,
-    holdings: {},
-  });
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [marketData, setMarketData] = useState<CryptoCurrency[]>([]);
+
+  // Get balance from Redux store
+  const balance = useSelector((state: RootState) => state.balance.balance);
 
   const fetchData = useCallback(async () => {
     try {
@@ -28,10 +28,11 @@ export function useHomeData() {
           Math.abs(b.price_change_percentage_24h) -
           Math.abs(a.price_change_percentage_24h)
       );
-      const balanceData = await getUserBalance();
+      
+      // Initialize balance in Redux
+      getUserBalance(dispatch);
 
       setMarketData(sortMarket);
-      setBalance(balanceData);
       
       // Update Redux store with latest prices
       sortMarket.forEach(coin => {
@@ -70,6 +71,10 @@ export function useHomeData() {
     setIsBalanceHidden(!isBalanceHidden);
   };
 
+  const handleResetBalance = useCallback(() => {
+    dispatch(resetBalance());
+  }, [dispatch]);
+
   return {
     loading,
     refreshing,
@@ -78,5 +83,6 @@ export function useHomeData() {
     isBalanceHidden,
     onRefresh,
     toggleBalanceVisibility,
+    onResetBalance: handleResetBalance,
   };
 }

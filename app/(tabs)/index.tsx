@@ -13,8 +13,14 @@ import {
 } from "react-native";
 
 const HomeScreen = () => {
-  const { refreshing, trending, balance, isBalanceHidden, onRefresh } =
-    useHomeData();
+  const {
+    refreshing,
+    trending,
+    balance,
+    isBalanceHidden,
+    onRefresh,
+    onResetBalance,
+  } = useHomeData();
 
   // const navigateToDetail = (id: string) => {
   //   router.navigate(`/(subs)/crypto-detail?id=${id}`);
@@ -39,7 +45,11 @@ const HomeScreen = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        <BalanceSection balance={balance} isBalanceHidden={isBalanceHidden} />
+        <BalanceSection 
+          balance={balance} 
+          isBalanceHidden={isBalanceHidden}
+          onResetBalance={onResetBalance}
+        />
 
         <WatchlistSection
           cryptoList={trending}

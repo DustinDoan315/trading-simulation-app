@@ -1,7 +1,7 @@
 import AssetList from "@/components/portfolio/AssetList";
 import BalanceCard from "@/components/portfolio/BalanceCard";
 import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
-import React from "react";
+import React, { useState } from "react";
 import { router } from "expo-router";
 import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,9 +33,13 @@ const PortfolioScreen = () => {
     router.navigate("/(subs)/crypto-chart");
   };
 
-  const totalBalance = 4500.6;
+  const [balance, setBalance] = useState(4500.6);
   const targetBalance = 4500;
-  const progress = Math.min(totalBalance / targetBalance, 1);
+  const progress = Math.min(balance / targetBalance, 1);
+
+  const handleResetBalance = () => {
+    setBalance(100000);
+  };
 
   return (
     <View style={styles.container}>
@@ -45,17 +49,18 @@ const PortfolioScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
         <PortfolioHeader
-          totalValue="$6,242.50"
+          totalValue={`$${balance.toFixed(2)}`}
           changePercentage={1.56}
           changeValue="$97.38"
         />
 
         <BalanceCard
-          balance="$4500.60"
+          balance={`$${balance.toFixed(2)}`}
           changePercentage={0.64}
           changeValue="$9.98"
           progress={progress}
           assets={mockAssets}
+          onResetBalance={handleResetBalance}
         />
 
         <AssetList assets={mockAssets} onAssetPress={handleAssetPress} />

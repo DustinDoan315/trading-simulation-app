@@ -34,6 +34,7 @@ type BalanceCardProps = {
   changeValue: string;
   progress: number;
   assets?: Asset[];
+  onResetBalance?: () => void;
 };
 
 const TOKEN_COLORS = {
@@ -43,11 +44,12 @@ const TOKEN_COLORS = {
 };
 
 const BalanceCard = ({
-  balance,
+  balance = "$100,000.00",
   changePercentage,
   changeValue,
   progress,
   assets = [],
+  onResetBalance,
 }: BalanceCardProps) => {
   console.log(
     "Rendering BalanceCard with assets:",
@@ -410,7 +412,15 @@ const BalanceCard = ({
       </Svg>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.label}>Available Balance</Text>
+        <View style={styles.balanceHeader}>
+          <Text style={styles.label}>Available Balance</Text>
+          <TouchableWithoutFeedback onPress={() => onResetBalance?.()}>
+            <View style={styles.resetButton}>
+              <Ionicons name="refresh" size={16} color="#8C9EFF" />
+              <Text style={styles.resetText}>Reset</Text>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
         <Text style={styles.balance}>{balance}</Text>
         <View style={styles.changeContainer}>
           <Ionicons
@@ -491,6 +501,26 @@ const BalanceCard = ({
 };
 
 const styles = StyleSheet.create({
+  balanceHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 8,
+  },
+  resetButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: "rgba(140, 158, 255, 0.1)",
+  },
+  resetText: {
+    color: "#8C9EFF",
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 4,
+  },
   container: {
     alignItems: "center",
     justifyContent: "center",

@@ -250,67 +250,60 @@ export const getCoinMarketData = async (id: string): Promise<any> => {
   }
 };
 
+import { AppDispatch } from "../app/store";
+import { setBalance, resetBalance } from "../app/features/balanceSlice";
+
+const defaultBalance: UserBalance = {
+  totalInUSD: 53145.76,
+  holdings: {
+    bitcoin: {
+      amount: 0.5,
+      valueInUSD: 42000,
+    },
+    ethereum: {
+      amount: 5.2,
+      valueInUSD: 9500,
+    },
+    tether: {
+      amount: 1645.76,
+      valueInUSD: 1645.76,
+    },
+  },
+};
+
 /**
  * Get user's cryptocurrency holdings and balance
  * In a real app, this would connect to a wallet or blockchain
  *
- * @returns Promise with user balance data
+ * @param dispatch - Redux dispatch function
+ * @returns User balance data
  */
-export const getUserBalance = async (): Promise<UserBalance> => {
-  try {
-    const storedBalance = await AsyncStorage.getItem(USER_BALANCE_CACHE_KEY);
-
-    if (storedBalance) {
-      return JSON.parse(storedBalance);
-    }
-
-    const defaultBalance: UserBalance = {
-      totalInUSD: 53145.76,
-      holdings: {
-        bitcoin: {
-          amount: 0.5,
-          valueInUSD: 42000,
-        },
-        ethereum: {
-          amount: 5.2,
-          valueInUSD: 9500,
-        },
-        tether: {
-          amount: 1645.76,
-          valueInUSD: 1645.76,
-        },
-      },
-    };
-
-    await AsyncStorage.setItem(
-      USER_BALANCE_CACHE_KEY,
-      JSON.stringify(defaultBalance)
-    );
-    return defaultBalance;
-  } catch (error) {
-    console.error("Error getting user balance:", error);
-    throw error;
-  }
+export const getUserBalance = (dispatch: AppDispatch): UserBalance => {
+  dispatch(setBalance(defaultBalance));
+  return defaultBalance;
 };
 
 /**
  * Update user's cryptocurrency balance
  * In a real app, this would sync with blockchain transactions
  *
+ * @param dispatch - Redux dispatch function
  * @param newBalance - Updated balance data
  */
-export const updateUserBalance = async (
+export const updateUserBalance = (
+  dispatch: AppDispatch,
   newBalance: UserBalance
-): Promise<void> => {
-  try {
-    await AsyncStorage.setItem(
-      USER_BALANCE_CACHE_KEY,
-      JSON.stringify(newBalance)
-    );
-  } catch (error) {
-    console.error("Error updating user balance:", error);
-    throw error;
-  }
+): void => {
+  dispatch(setBalance(newBalance));
+};
+
+/**
+ * Reset user's balance to default values
+ *
+ * @param dispatch - Redux dispatch function
+ */
+export const resetUserBalance = (dispatch: AppDispatch): void => {
+  dispatch(resetBalance());
 };
 
 /**
