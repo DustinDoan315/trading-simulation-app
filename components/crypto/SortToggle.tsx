@@ -50,7 +50,9 @@ const SortToggle: React.FC<SortToggleProps> = ({
   return (
     <TouchableOpacity style={styles.container} onPress={handleToggle}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.iconContainer}>{renderIcon()}</View>
+      {sortDirection !== "none" && (
+        <View style={styles.iconContainer}>{renderIcon()}</View>
+      )}
     </TouchableOpacity>
   );
 };

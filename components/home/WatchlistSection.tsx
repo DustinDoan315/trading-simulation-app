@@ -3,6 +3,7 @@ import { AddButton } from "./AddButton";
 import { CryptoCurrency } from "@/services/CryptoService";
 import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { WatchlistItem } from "./WatchlistItem";
+import { useAppSelector } from "@/app/store";
 
 // components/home/WatchlistSection.tsx
 
@@ -25,6 +26,11 @@ const WatchlistSectionComponent: React.FC<WatchlistSectionProps> = ({
   onAddPress,
   scrollEnabled,
 }) => {
+  const favoriteIds = useAppSelector((state) => state.favorites.favoriteIds);
+  const filteredList = cryptoList.filter((crypto) =>
+    favoriteIds.includes(crypto.id)
+  );
+
   const renderItem = React.useCallback(
     ({ item: crypto }: { item: CryptoCurrency }) => (
       <WatchlistItem key={crypto.id} crypto={crypto} onPress={onItemPress} />
@@ -37,7 +43,7 @@ const WatchlistSectionComponent: React.FC<WatchlistSectionProps> = ({
       <Text style={styles.watchlistTitle}>{title}</Text>
 
       <FlatList
-        data={cryptoList}
+        data={filteredList}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}

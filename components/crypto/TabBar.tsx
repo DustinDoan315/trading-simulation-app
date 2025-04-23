@@ -47,7 +47,7 @@ const TabBar: React.FC<TabBarProps> = ({ tabs, selectedTab, onTabPress }) => {
       </ScrollView>
 
       <TouchableOpacity style={styles.refreshButton}>
-        <Ionicons name="refresh" size={20} color="#FFFFFF" />
+        <Ionicons name="repeat" size={20} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );
@@ -72,16 +72,16 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: "#8E8E93",
-    fontSize: 16,
+    fontSize: 14,
   },
   selectedTabText: {
     color: "#FFFFFF",
-    fontWeight: "bold",
   },
   activeIndicator: {
     position: "absolute",
-    bottom: 0,
+    bottom: 5,
     height: 2,
+    borderRadius: 2,
     width: "100%",
     backgroundColor: "#FFFFFF",
   },

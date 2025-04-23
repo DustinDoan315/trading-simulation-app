@@ -19,6 +19,7 @@ import SortToggle from "@/components/crypto/SortToggle";
 import { getMarketData, type CryptoCurrency } from "@/services/CryptoService";
 import colors from "@/styles/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppSelector } from "@/app/store";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -26,6 +27,7 @@ const CryptoMarketScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [cryptoData, setCryptoData] = useState<CryptoCurrency[]>([]);
   const [filteredData, setFilteredData] = useState<CryptoCurrency[]>([]);
+  const favoriteIds = useAppSelector((state) => state.favorites.favoriteIds);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState("all");
@@ -34,6 +36,18 @@ const CryptoMarketScreen: React.FC = () => {
   useEffect(() => {
     loadCryptoData();
   }, []);
+
+  useEffect(() => {
+    if (selectedTab === "favorites") {
+      setFilteredData(
+        cryptoData.filter((item) => favoriteIds.includes(item.id))
+      );
+    } else if (searchQuery) {
+      handleSearch(searchQuery);
+    } else {
+      setFilteredData(cryptoData);
+    }
+  }, [selectedTab, favoriteIds, cryptoData, searchQuery]);
 
   const loadCryptoData = async () => {
     try {
@@ -83,10 +97,10 @@ const CryptoMarketScreen: React.FC = () => {
 
   const renderListHeader = () => (
     <View style={styles.listHeaderContainer}>
-      <Text style={styles.headerLabel}>Name</Text>
+      <Text style={styles.headerLabel}>Tên</Text>
       <View style={styles.priceHeaderContainer}>
         <SortToggle
-          label="Price"
+          label="Giá"
           onToggle={(direction) => console.log("Sort direction:", direction)}
         />
       </View>
