@@ -1,6 +1,17 @@
 import React, { useRef, useState } from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useAppDispatch, useAppSelector } from "../store";
+import {
+  addSearchHistory,
+  clearSearchHistory,
+  removeSearchHistoryItem,
+} from "../features/searchHistorySlice";
+import {
+  searchCryptocurrencies,
+  CryptoCurrency,
+} from "../../services/CryptoService";
+import CryptoListItem from "../../components/crypto/CryptoListItem";
 import {
   Platform,
   SafeAreaView,
@@ -12,6 +23,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import colors from "@/styles/colors";
 
 interface SearchHistoryItem {
   id: string;
@@ -20,25 +32,53 @@ interface SearchHistoryItem {
 
 export default function CryptoSearch() {
   const [searchText, setSearchText] = useState("");
-  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([
-    { id: "1", text: "KAITO/ USDT 10x" },
-    { id: "2", text: "USDC/ USDT 10x" },
-  ]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [searchResults, setSearchResults] = useState<CryptoCurrency[]>([]);
+  const [suggestions, setSuggestions] = useState<CryptoCurrency[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const dispatch = useAppDispatch();
+  const searchHistory = useAppSelector((state) => state.searchHistory.items);
   const inputRef = useRef<TextInput>(null);
 
   const handleClearHistory = () => {
-    setSearchHistory([]);
+    dispatch(clearSearchHistory());
   };
 
-  const handleSearch = () => {
-    if (searchText.trim()) {
-      const newItem = {
-        id: Date.now().toString(),
-        text: searchText,
-      };
-      setSearchHistory([newItem, ...searchHistory]);
+  const handleSearch = async () => {
+    if (!searchText.trim()) return;
+
+    setIsSearching(true);
+    setSearchError("");
+
+    try {
+      const results = await searchCryptocurrencies(searchText);
+      setSearchResults(results);
+
+      if (results.length > 0) {
+        const newItem = {
+          id: Date.now().toString(),
+          text: searchText,
+          timestamp: Date.now(),
+        };
+        dispatch(addSearchHistory(newItem));
+      } else {
+        setSearchError("No results found");
+      }
+    } catch (error) {
+      console.error("Search failed:", error);
+      setSearchError("Search failed. Please try again.");
+    } finally {
+      setIsSearching(false);
       setSearchText("");
     }
+  };
+
+  const handleHistoryItemPress = (item: SearchHistoryItem) => {
+    router.push({
+      pathname: "/(subs)/crypto-chart",
+      params: { symbol: item.text },
+    });
   };
 
   const handleCancel = () => {
@@ -73,7 +113,17 @@ export default function CryptoSearch() {
             ref={inputRef}
             style={styles.searchInput}
             value={searchText}
-            onChangeText={setSearchText}
+            onChangeText={(text) => {
+              setSearchText(text.toUpperCase());
+              if (text.length >= 3) {
+                searchCryptocurrencies(text, 10).then((results) => {
+                  setSuggestions(results);
+                  setShowSuggestions(true);
+                });
+              } else {
+                setShowSuggestions(false);
+              }
+            }}
             placeholder="Tìm kiếm tiền mã hóa, bot"
             placeholderTextColor="#777"
             autoCapitalize="none"
@@ -100,12 +150,66 @@ export default function CryptoSearch() {
           showsHorizontalScrollIndicator={false}
           style={styles.chipsContainer}>
           {searchHistory.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.historyChip}>
-              <Text style={styles.chipText}>{item.text}</Text>
-            </TouchableOpacity>
+            <View key={item.id} style={styles.historyChipContainer}>
+              <TouchableOpacity
+                style={styles.historyChip}
+                onPress={() => handleHistoryItemPress(item)}>
+                <Text style={styles.chipText}>{item.text}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteChipButton}
+                onPress={() => dispatch(removeSearchHistoryItem(item.id))}>
+                <Ionicons name="close" size={16} color="#777" />
+              </TouchableOpacity>
+            </View>
           ))}
         </ScrollView>
       </View>
+
+      {/* Suggestions Section */}
+      {showSuggestions &&
+        searchResults.length == 0 &&
+        suggestions.length > 0 && (
+          <View style={styles.suggestionsContainer}>
+            <Text style={styles.suggestionsTitle}>Gợi ý</Text>
+            <ScrollView style={styles.suggestionsList}>
+              {suggestions.map((crypto) => (
+                <CryptoListItem
+                  key={crypto.id}
+                  crypto={crypto}
+                  onPress={(symbol) => {
+                    setShowSuggestions(false);
+                    router.push({
+                      pathname: "/(subs)/crypto-chart",
+                      params: { symbol },
+                    });
+                  }}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+      {/* Search Results Section */}
+      {searchResults.length > 0 && (
+        <View style={styles.resultsContainer}>
+          <Text style={styles.resultsTitle}>Kết quả</Text>
+          <ScrollView style={styles.resultsList}>
+            {searchResults.map((crypto) => (
+              <CryptoListItem
+                key={crypto.id}
+                crypto={crypto}
+                onPress={(symbol) => {
+                  router.push({
+                    pathname: "/(subs)/crypto-chart",
+                    params: { symbol },
+                  });
+                }}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -113,11 +217,11 @@ export default function CryptoSearch() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: colors.background.primary,
   },
   headerContainer: {
     paddingHorizontal: 16,
-    backgroundColor: "#000",
+    backgroundColor: colors.background.primary,
   },
   backButton: {
     flexDirection: "row",
@@ -129,13 +233,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: "#000",
+    backgroundColor: colors.background.primary,
   },
   searchBar: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#222",
+    backgroundColor: colors.background.tertiary,
     borderRadius: 10,
     paddingVertical: Platform.OS === "ios" ? 10 : 0,
     paddingHorizontal: 10,
@@ -175,12 +279,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginBottom: 15,
   },
+  historyChipContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 10,
+  },
   historyChip: {
-    backgroundColor: "#222",
+    backgroundColor: colors.background.tertiary,
     paddingHorizontal: 15,
     paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+  },
+  deleteChipButton: {
+    backgroundColor: colors.background.tertiary,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
   },
   chipText: {
     color: "white",
@@ -188,10 +304,10 @@ const styles = StyleSheet.create({
   },
   bottomContainer: {
     position: "absolute",
-    bottom: 420, // Position above keyboard
+    bottom: 420,
     left: 0,
     right: 0,
-    backgroundColor: "#000",
+    backgroundColor: colors.background.primary,
   },
   bottomSearchBar: {
     flexDirection: "row",
@@ -200,7 +316,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderTopWidth: 0.5,
     borderTopColor: "#333",
-    backgroundColor: "#000",
+    backgroundColor: colors.background.primary,
   },
   bottomSearchText: {
     color: "#777",
@@ -254,5 +370,33 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  resultsContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 15,
+  },
+  resultsTitle: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  resultsList: {
+    flex: 1,
+  },
+  suggestionsContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  suggestionsTitle: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  suggestionsList: {
+    flex: 1,
   },
 });

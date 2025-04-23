@@ -7,17 +7,19 @@ import storage from "@react-native-async-storage/async-storage";
 import cryptoPricesReducer from "./features/cryptoPricesSlice";
 import favoritesReducer from "./features/favoritesSlice";
 import balanceReducer from "./features/balanceSlice";
+import searchHistoryReducer from "./features/searchHistorySlice";
 
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['favorites']
+  whitelist: ['favorites', 'searchHistory']
 };
 
 const rootReducer = combineReducers({
   cryptoPrices: cryptoPricesReducer,
   favorites: favoritesReducer,
   balance: balanceReducer,
+  searchHistory: searchHistoryReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
