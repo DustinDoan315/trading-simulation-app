@@ -20,7 +20,11 @@ jobs:
           cache: 'yarn'
       
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          if [ -f "package-lock.json" ]; then
+            rm package-lock.json
+          fi
+          yarn install --frozen-lockfile
       
       - name: Type checking
         run: yarn tsc --noEmit
