@@ -48,6 +48,34 @@ export interface PriceAlert {
   createdAt: number;
 }
 
+// API Response Types
+interface CoinSearchResult {
+  id: string;
+  symbol: string;
+  name: string;
+  large: string;
+}
+
+interface MarketData {
+  id: string;
+  symbol: string;
+  name: string;
+  current_price: number;
+  price_change_percentage_24h: number;
+  market_cap: number;
+  market_cap_rank: number;
+  total_volume: number;
+  circulating_supply: number;
+  total_supply: number;
+  max_supply: number | null;
+  ath: number;
+  ath_change_percentage: number;
+  ath_date: string;
+  last_updated: string;
+  market_cap_change_percentage_24h: number;
+  market_cap_change_24h: number;
+}
+
 // Constants
 const CACHE_EXPIRY_MS = 1000 * 60 * 5; // 5 minutes
 const MARKET_DATA_CACHE_KEY = "@crypto_market_data";
@@ -252,6 +280,7 @@ export const getCoinMarketData = async (id: string): Promise<any> => {
 
 import { AppDispatch } from "../app/store";
 import { setBalance, resetBalance } from "../app/features/balanceSlice";
+import { log } from "console";
 
 const defaultBalance: UserBalance = {
   totalInUSD: 53145.76,
@@ -489,8 +518,6 @@ export const searchCryptocurrencies = async (
         return filteredData.slice(0, limit);
       }
     }
-
-    // If no cached results, fetch from API
     const response = await fetch(
       `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(
         query
@@ -502,26 +529,46 @@ export const searchCryptocurrencies = async (
     }
 
     const data = await response.json();
-    const coins = data.coins || [];
+    const coins: CoinSearchResult[] = data.coins || [];
+
+    // Get market data for each coin to populate price information
+    const coinIds = coins.slice(0, limit).map((coin: CoinSearchResult) => coin.id).join(',');
+    const marketResponse = await fetch(
+      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinIds}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`
+    );
+
+    if (!marketResponse.ok) {
+      throw new Error(`Market data API request failed with status ${marketResponse.status}`);
+    }
+
+    const marketData: MarketData[] = await marketResponse.json();
+    const marketDataMap = new Map(marketData.map((item: MarketData) => [item.id, item]));
 
     // Map to the same structure as our CryptoCurrency interface
-    return coins.slice(0, limit).map((coin: any) => ({
-      id: coin.id,
-      symbol: coin.symbol,
-      name: coin.name,
-      image: coin.large,
-      current_price: 0, // Will need to be fetched separately
-      price_change_percentage_24h: 0,
-      market_cap: 0,
-      total_volume: 0,
-      circulating_supply: 0,
-      total_supply: 0,
-      max_supply: null,
-      ath: 0,
-      ath_change_percentage: 0,
-      ath_date: "",
-      last_updated: "",
-    }));
+    return coins.slice(0, limit).map((coin: CoinSearchResult) => {
+      const marketInfo = marketDataMap.get(coin.id) as MarketData | undefined;
+      return {
+        id: coin.id,
+        symbol: coin.symbol,
+        name: coin.name,
+        image: coin.large,
+        current_price: marketInfo?.current_price || 0,
+        price_change_percentage_24h: marketInfo?.price_change_percentage_24h || 0,
+        market_cap: marketInfo?.market_cap || 0,
+        total_volume: marketInfo?.total_volume || 0,
+        circulating_supply: marketInfo?.circulating_supply || 0,
+        total_supply: marketInfo?.total_supply || 0,
+        max_supply: marketInfo?.max_supply || null,
+        ath: marketInfo?.ath || 0,
+        ath_change_percentage: marketInfo?.ath_change_percentage || 0,
+        ath_date: marketInfo?.ath_date || "",
+        last_updated: marketInfo?.last_updated || "",
+        market_cap_rank: marketInfo?.market_cap_rank || 0,
+        market_cap_change_percentage_24h: marketInfo?.market_cap_change_percentage_24h || 0,
+        market_cap_change_24h: marketInfo?.market_cap_change_24h || 0,
+        hot: false,
+      };
+    });
   } catch (error) {
     console.error("Error searching cryptocurrencies:", error);
     return [];
