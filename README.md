@@ -1,4 +1,4 @@
-![ChartScreen](https://github.com/user-attachments/assets/d1aac859-c5c0-44d8-bd50-d64f5bd64598)# Trading Simulation App
+# Trading Simulation App
 
 A React Native/Expo application for simulating cryptocurrency trading with real-time market data.
 ![Preview](https://github.com/user-attachments/assets/0369dc18-4551-4005-b50c-0bdce371a0e2)
