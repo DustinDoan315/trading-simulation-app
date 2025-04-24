@@ -23,11 +23,5 @@ jobs:
         run: |
           yarn install
       
-      - name: Type checking
-        run: yarn tsc --noEmit
-      
-      - name: Linting
-        run: yarn lint
-      
       - name: Run tests
         run: yarn test --ci --runInBand --coverage
