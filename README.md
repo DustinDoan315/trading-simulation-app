@@ -1,50 +1,91 @@
-# Welcome to your Expo app 👋
+# Trading Simulation App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native/Expo application for simulating cryptocurrency trading with real-time market data.
 
-## Get started
+## Features
 
-1. Install dependencies
+- Cryptocurrency portfolio tracking
+- Real-time price charts
+- Trade simulation
+- Wallet management
+- Supabase integration for data storage
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+- React Native with Expo
+- TypeScript
+- Expo Router
+- Redux Toolkit for state management
+- Supabase backend
 
-   ```bash
-    npx expo start
-   ```
+## Development Setup
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1. Install dependencies (using Yarn):
 
 ```bash
-npm run reset-project
+yarn install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Start the development server:
 
-## Learn more
+```bash
+yarn start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. Choose your development environment:
+   - iOS Simulator (Mac only)
+   - Android Emulator
+   - Physical device via Expo Go
+   - Web browser
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Project Structure
 
-## Join the community
+```
+app/               # Main application code
+  (auth)/          # Authentication flows
+  (onboarding)/    # Onboarding screens
+  (subs)/          # Subscription/paid features
+  (tabs)/          # Main app tabs
+  features/        # Redux slices
+  hooks/           # Custom hooks
+  types/           # Type definitions
+services/          # API/service layers
+```
 
-Join our community of developers creating universal apps.
+## Testing
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Run tests with coverage:
+
+```bash
+yarn test --coverage
+```
+
+## CI/CD
+
+The project includes GitHub Actions CI that runs on every push/PR to main branch:
+- Type checking
+- Linting
+- Unit tests
+
+## Environment Variables
+
+Create `.env` file with these variables:
+```
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+```
+
+## Deployment
+
+For production builds, use Expo Application Services (EAS):
+
+```bash
+eas build --platform all
+```
+
+## Contributing
+
+1. Create a new branch
+2. Make your changes
+3. Run tests and linting
+4. Submit a pull request
