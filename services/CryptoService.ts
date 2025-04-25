@@ -35,6 +35,8 @@ export interface UserBalance {
     [key: string]: {
       amount: number;
       valueInUSD: number;
+      symbol: string;
+      icon?: string;
     };
   };
 }
@@ -283,19 +285,22 @@ import { setBalance, resetBalance } from "../app/features/balanceSlice";
 import { log } from "console";
 
 const defaultBalance: UserBalance = {
-  totalInUSD: 53145.76,
+  totalInUSD: 100000.0,
   holdings: {
     bitcoin: {
-      amount: 0.5,
-      valueInUSD: 42000,
+      amount: 0.0,
+      valueInUSD: 0.0,
+      symbol: "BTC",
     },
     ethereum: {
-      amount: 5.2,
-      valueInUSD: 9500,
+      amount: 0.0,
+      valueInUSD: 0.0,
+      symbol: "ETH",
     },
     tether: {
-      amount: 1645.76,
-      valueInUSD: 1645.76,
+      amount: 100000.0,
+      valueInUSD: 100000.0,
+      symbol: "USDT",
     },
   },
 };
@@ -532,17 +537,24 @@ export const searchCryptocurrencies = async (
     const coins: CoinSearchResult[] = data.coins || [];
 
     // Get market data for each coin to populate price information
-    const coinIds = coins.slice(0, limit).map((coin: CoinSearchResult) => coin.id).join(',');
+    const coinIds = coins
+      .slice(0, limit)
+      .map((coin: CoinSearchResult) => coin.id)
+      .join(",");
     const marketResponse = await fetch(
       `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinIds}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`
     );
 
     if (!marketResponse.ok) {
-      throw new Error(`Market data API request failed with status ${marketResponse.status}`);
+      throw new Error(
+        `Market data API request failed with status ${marketResponse.status}`
+      );
     }
 
     const marketData: MarketData[] = await marketResponse.json();
-    const marketDataMap = new Map(marketData.map((item: MarketData) => [item.id, item]));
+    const marketDataMap = new Map(
+      marketData.map((item: MarketData) => [item.id, item])
+    );
 
     // Map to the same structure as our CryptoCurrency interface
     return coins.slice(0, limit).map((coin: CoinSearchResult) => {
@@ -553,7 +565,8 @@ export const searchCryptocurrencies = async (
         name: coin.name,
         image: coin.large,
         current_price: marketInfo?.current_price || 0,
-        price_change_percentage_24h: marketInfo?.price_change_percentage_24h || 0,
+        price_change_percentage_24h:
+          marketInfo?.price_change_percentage_24h || 0,
         market_cap: marketInfo?.market_cap || 0,
         total_volume: marketInfo?.total_volume || 0,
         circulating_supply: marketInfo?.circulating_supply || 0,
@@ -564,7 +577,8 @@ export const searchCryptocurrencies = async (
         ath_date: marketInfo?.ath_date || "",
         last_updated: marketInfo?.last_updated || "",
         market_cap_rank: marketInfo?.market_cap_rank || 0,
-        market_cap_change_percentage_24h: marketInfo?.market_cap_change_percentage_24h || 0,
+        market_cap_change_percentage_24h:
+          marketInfo?.market_cap_change_percentage_24h || 0,
         market_cap_change_24h: marketInfo?.market_cap_change_24h || 0,
         hot: false,
       };

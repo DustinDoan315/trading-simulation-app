@@ -4,13 +4,25 @@ import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
 import Typography from "@/styles/typography";
 
+interface AmountSliderProps {
+  position?: number;
+  onChange: (amount: number) => void;
+  tradeType: "buy" | "sell";
+  availableAmount: number;
+  amountUnit: string;
+  currentPrice?: number; // Required for buy calculations
+  balanceType: "token" | "usdt"; // Whether availableAmount is in tokens or USDT
+}
+
 const AmountSlider = ({
   position = 30,
   onChange,
   tradeType = "buy",
   availableAmount = 0,
   amountUnit = "BTC",
-}: any) => {
+  currentPrice = 1,
+  balanceType = "token",
+}: AmountSliderProps) => {
   // Create animated value for smooth slider movement
   const panX: any = useRef(new Animated.Value(position)).current;
 
@@ -18,6 +30,12 @@ const AmountSlider = ({
   useEffect(() => {
     panX.setValue(position);
   }, [position, panX]);
+
+  // Measure actual slider width for precise dragging
+  const sliderWidth = useRef(300);
+  const handleSliderLayout = (event: any) => {
+    sliderWidth.current = event.nativeEvent.layout.width;
+  };
 
   // Create pan responder for dragging the slider handle
   const panResponder = useRef(
@@ -29,34 +47,43 @@ const AmountSlider = ({
         panX.setValue(0);
       },
       onPanResponderMove: (_, { dx }) => {
-        // Calculate allowed movement based on parent width
-        // Using 300 as an approximation - in a real app we would measure the actual width
-        const parentWidth = 300;
+        // Calculate new position based on actual slider width
         const newPosition = Math.max(
           0,
-          Math.min(100, panX._offset + (dx / parentWidth) * 100)
+          Math.min(100, panX._offset + (dx / sliderWidth.current) * 100)
         );
         panX.setValue(newPosition - panX._offset);
       },
       onPanResponderRelease: () => {
-        // Add current value to offset and reset value
         panX.flattenOffset();
 
-        // Snap to nearest 25% mark
-        const snapThreshold = 12.5;
+        // Snap to nearest 25% mark with smooth animation
         const snappedValue = Math.round(panX._value / 25) * 25;
-        const shouldSnap = Math.abs(panX._value - snappedValue) < snapThreshold;
-        const finalValue = shouldSnap ? snappedValue : panX._value;
+        const finalValue =
+          Math.abs(panX._value - snappedValue) < 12.5
+            ? snappedValue
+            : panX._value;
 
-        // Animate to final position
         Animated.spring(panX, {
           toValue: finalValue,
-          useNativeDriver: false,
+          useNativeDriver: true,
+          damping: 15,
+          stiffness: 100,
         }).start();
 
-        // Call onChange with the final position
+        // Calculate actual amount based on position percentage
+        let amount = 0;
+        if (tradeType === "buy" && balanceType === "usdt") {
+          // For buy orders with USDT balance, calculate token amount
+          amount = (availableAmount * (finalValue / 100)) / currentPrice;
+        } else {
+          // For sell orders or token balance, use percentage directly
+          amount = availableAmount * (finalValue / 100);
+        }
+
+        // Call onChange with the actual amount
         if (onChange) {
-          onChange(finalValue);
+          onChange(amount);
         }
       },
     })
@@ -74,7 +101,7 @@ const AmountSlider = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.sliderTrack}>
+      <View style={styles.sliderTrack} onLayout={handleSliderLayout}>
         {/* Segment markers and circle indicators */}
         <View style={[styles.segmentMarker, { left: "25%" }]} />
         <View style={[styles.segmentMarker, { left: "50%" }]} />
@@ -105,6 +132,15 @@ const AmountSlider = ({
                 outputRange: ["0%", "100%"],
               }),
               borderColor: getHandleBorderColor(),
+              transform: [
+                {
+                  scale: panX.interpolate({
+                    inputRange: [0, 100],
+                    outputRange: [1, 1.1],
+                    extrapolate: "clamp",
+                  }),
+                },
+              ],
             },
           ]}
           {...panResponder.panHandlers}
@@ -123,7 +159,16 @@ const AmountSlider = ({
           <Text style={Typography.label}>
             {tradeType === "buy" ? "Mua" : "Bán"} tối đa
           </Text>
-          <Text style={Typography.bodySmall}>{position.toFixed(2)}%</Text>
+          <Text style={Typography.bodySmall}>
+            {tradeType === "buy" && balanceType === "usdt"
+              ? `${(
+                  (availableAmount * (position / 100)) /
+                  currentPrice
+                ).toFixed(6)} ${amountUnit}`
+              : `${(availableAmount * (position / 100)).toFixed(
+                  6
+                )} ${amountUnit}`}
+          </Text>
         </View>
       </View>
     </View>
@@ -161,13 +206,12 @@ const styles = StyleSheet.create({
         Dimensions.components.sliderHandleSize -
         Dimensions.components.sliderTrackHeight
       ) / 2,
-    // Shadow for iOS
+    // Enhanced shadow
     shadowColor: Colors.background.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    // Shadow for Android
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 8,
   },
   labelsContainer: {
     marginTop: Dimensions.spacing.sm,

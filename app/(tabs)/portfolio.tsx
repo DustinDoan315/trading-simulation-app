@@ -24,47 +24,32 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const PortfolioScreen = () => {
   const [showAllAssetsModal, setShowAllAssetsModal] = useState(false);
   const insets = useSafeAreaInsets();
-  const { balance } = useAppSelector((state: RootState) => state.balance);
-  const { prices } = useAppSelector((state: RootState) => state.cryptoPrices);
+  const { balance, changePercentage, changeValue } = useAppSelector(
+    (state: RootState) => state.balance
+  );
 
   const handleAssetPress = (asset: any) => {
     router.navigate("/(subs)/crypto-chart");
   };
 
-  const targetBalance = 4500;
-  const progress = Math.min(balance.totalInUSD / targetBalance, 1);
+  const targetBalance = 0; // Set to 0 to disable progress or configure via props/state
+  const progress =
+    targetBalance > 0 ? Math.min(balance.totalInUSD / targetBalance, 1) : 0;
 
   const allAssets = Object.entries(balance.holdings)
     .filter(([_, holding]) => holding.amount > 0)
     .map(([cryptoId, holding]) => {
-      const symbol =
-        cryptoId === "bitcoin"
-          ? "BTC"
-          : cryptoId === "ethereum"
-          ? "ETH"
-          : cryptoId === "tether"
-          ? "USDT"
-          : "";
-
       return {
         id: cryptoId,
         name: cryptoId.charAt(0).toUpperCase() + cryptoId.slice(1),
-        symbol,
+        symbol: holding.symbol,
         amount: holding.amount.toFixed(4),
         value: `$${holding.valueInUSD.toFixed(2)}`,
         changePercentage: 0,
-        icon:
-          symbol === "BTC"
-            ? require("../../assets/icons/btc.png")
-            : symbol === "ETH"
-            ? require("../../assets/icons/eth.png")
-            : symbol === "USDT"
-            ? require("../../assets/icons/usdt.png")
-            : null,
+        icon: null,
       };
     });
 
-  // Group into main assets (BTC, ETH, USDT) and others
   const mainAssets = allAssets.filter((asset) =>
     ["BTC", "ETH", "USDT"].includes(asset.symbol)
   );
@@ -106,14 +91,14 @@ const PortfolioScreen = () => {
         contentContainerStyle={styles.scrollContent}>
         <PortfolioHeader
           totalValue={`$${balance.totalInUSD.toFixed(2)}`}
-          changePercentage={1.56}
-          changeValue="$97.38"
+          changePercentage={changePercentage}
+          changeValue={`$${Math.abs(changeValue).toFixed(2)}`}
         />
 
         <BalanceCard
           balance={`$${balance.totalInUSD.toFixed(2)}`}
-          changePercentage={0.64}
-          changeValue="$9.98"
+          changePercentage={changePercentage}
+          changeValue={`$${Math.abs(changeValue).toFixed(2)}`}
           progress={progress}
           assets={assets}
         />

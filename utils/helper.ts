@@ -1,7 +1,7 @@
-import * as bip39 from 'bip39';
-import * as Crypto from 'expo-crypto';
-import { Buffer } from 'buffer';
-
+import * as bip39 from "bip39";
+import * as Crypto from "expo-crypto";
+import { Buffer } from "buffer";
+import { Order } from "@/app/types/crypto";
 
 global.Buffer = Buffer;
 
@@ -99,3 +99,68 @@ export const generateSeedPhrase = async () => {
 //     return null;
 //   }
 // };
+
+import { store } from "@/app/store";
+import { balanceSlice } from "@/app/features/balanceSlice";
+
+export const handleOrderSubmission = async (
+  order: Order,
+  currentPrice: string | undefined,
+  token: any
+) => {
+  try {
+    if (!currentPrice) {
+      throw new Error("Current price not available");
+    }
+
+    if (!token?.symbol) {
+      throw new Error("No token selected");
+    }
+
+    const totalCost =
+      order.type === "buy"
+        ? order.amount * Number(currentPrice)
+        : order.amount * Number(currentPrice);
+
+    // In a real app, this would call an API or blockchain transaction
+    console.log(`Executing ${order.type} order:`, {
+      symbol: token.symbol,
+      amount: order.amount,
+      price: currentPrice,
+      totalCost,
+    });
+
+    // Update balances in Redux store
+    const cryptoId = token.symbol.toLowerCase();
+    const valueInUSD = order.amount * Number(currentPrice);
+
+    // Update the token holding
+    store.dispatch(
+      balanceSlice.actions.updateHolding({
+        cryptoId,
+        amount: order.type === "buy" ? order.amount : -order.amount,
+        valueInUSD: order.type === "buy" ? valueInUSD : -valueInUSD,
+        symbol: token.symbol,
+      })
+    );
+
+    // Update USDT balance for the transaction
+    store.dispatch(
+      balanceSlice.actions.updateHolding({
+        cryptoId: "tether",
+        amount: order.type === "buy" ? -totalCost : totalCost,
+        valueInUSD: order.type === "buy" ? -totalCost : totalCost,
+        symbol: "USDT",
+      })
+    );
+
+    alert(
+      `Order executed: ${order.type} ${order.amount} ${token.symbol} at ${currentPrice} USDT`
+    );
+  } catch (error: unknown) {
+    console.error("Order failed:", error);
+    const message =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    alert("Order failed: " + message);
+  }
+};

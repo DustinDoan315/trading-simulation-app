@@ -3,7 +3,7 @@ import { TimeframeOption } from "../types/crypto";
 import { getCoinMarketData, getPriceHistory } from "@/services/CryptoService";
 import { formatPercentage } from "@/utils/formatters";
 
-const useCryptoAPI = (timeframe: TimeframeOption) => {
+const useCryptoAPI = (timeframe: TimeframeOption, id: string) => {
   const [currentPrice, setCurrentPrice] = useState<string | null>(null);
   const [priceChange, setPriceChange] = useState<string | null>(null);
   const [historicalData, setHistoricalData] = useState<any[]>([]);
@@ -15,8 +15,7 @@ const useCryptoAPI = (timeframe: TimeframeOption) => {
       setIsLoading(true);
       setError(null);
       try {
-        const ticker = "bitcoin"; 
-        const coinMarketData = await getCoinMarketData(ticker);
+        const coinMarketData = await getCoinMarketData(id);
 
         // Extract current price and price change from the response
         const marketData = coinMarketData?.market_data;
@@ -39,7 +38,7 @@ const useCryptoAPI = (timeframe: TimeframeOption) => {
             ? 3
             : 30;
 
-        const history = await getPriceHistory(ticker, days);
+        const history = await getPriceHistory(id, days);
         setHistoricalData(history?.prices || []);
       } catch (err: any) {
         setError(err.message || "Failed to fetch data");

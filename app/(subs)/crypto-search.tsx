@@ -75,6 +75,9 @@ export default function CryptoSearch() {
   };
 
   const handleHistoryItemPress = (item: SearchHistoryItem) => {
+    // TODO: Need to update this to use id instead of symbol
+    // Currently we don't have the full crypto object here
+    // May need to modify search history to store ids
     router.push({
       pathname: "/(subs)/crypto-chart",
       params: { symbol: item.text },
@@ -181,7 +184,7 @@ export default function CryptoSearch() {
                     setShowSuggestions(false);
                     router.push({
                       pathname: "/(subs)/crypto-chart",
-                      params: { symbol },
+                      params: { id: crypto.id },
                     });
                   }}
                 />
@@ -202,7 +205,7 @@ export default function CryptoSearch() {
                 onPress={(symbol) => {
                   router.push({
                     pathname: "/(subs)/crypto-chart",
-                    params: { symbol },
+                    params: { id: crypto.id },
                   });
                 }}
               />

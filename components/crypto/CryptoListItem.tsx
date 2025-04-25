@@ -8,7 +8,7 @@ import { toggleFavorite } from "@/app/features/favoritesSlice";
 
 interface CryptoListItemProps {
   crypto: CryptoCurrency;
-  onPress: (symbol: string) => void;
+  onPress: (id: string) => void;
 }
 
 interface ChangeIndicatorProps {
@@ -50,7 +50,7 @@ const CryptoListItem: React.FC<CryptoListItemProps> = React.memo(
     return (
       <TouchableOpacity
         style={styles.container}
-        onPress={() => onPress(crypto.symbol.toUpperCase())}>
+        onPress={() => onPress(crypto.id)}>
         <View style={styles.leftSection}>
           <TouchableOpacity
             style={styles.favoriteButton}

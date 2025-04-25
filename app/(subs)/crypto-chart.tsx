@@ -7,7 +7,7 @@ import TimeframeSelector from "../../components/crypto/TimeframeSelector";
 import useHistoricalData from "../hooks/useHistoricalData";
 import useOrderBook from "../hooks/useOrderBook";
 import useCryptoAPI from "../hooks/useCryptoAPI";
-import { ChartType, TimeframeOption } from "../types/crypto";
+import { ChartType, TimeframeOption, Order } from "../types/crypto";
 import { WebView } from "react-native-webview";
 import {
   SafeAreaView,
@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import colors from "@/styles/colors";
+import { handleOrderSubmission } from "@/utils/helper";
 
 const CryptoChartScreen = () => {
   const token: any = useLocalSearchParams();
@@ -26,7 +27,7 @@ const CryptoChartScreen = () => {
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");
   const [selectedTab, setSelectedTab] = useState<"buy" | "sell">("sell");
   const [showOrderOptions, setShowOrderOptions] = useState(false);
-  const [orderType, setOrderType] = useState("Lệnh thị trường");
+  const [orderType, setOrderType] = useState<"market" | "limit">("market");
   const [chartType, setChartType] = useState<ChartType>("candlestick");
   const [orderAmount, setOrderAmount] = useState(30);
   const [sliderPosition, setSliderPosition] = useState(30);
@@ -38,8 +39,10 @@ const CryptoChartScreen = () => {
   const { askOrders, bidOrders } = useOrderBook(token?.symbol);
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
-  const { currentPrice, priceChange } = useCryptoAPI(timeframe);
-
+  const { currentPrice, priceChange } = useCryptoAPI(timeframe, token?.id);
+  console.log("====================================");
+  console.log("Current Price: ", token);
+  console.log("====================================");
   const onMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
@@ -105,7 +108,7 @@ const CryptoChartScreen = () => {
   };
 
   const handleOrderTypeSelection = (type: string) => {
-    setOrderType(type);
+    setOrderType(type === "Lệnh thị trường" ? "market" : "limit");
     setShowOrderOptions(false);
   };
 
@@ -148,17 +151,13 @@ const CryptoChartScreen = () => {
         <View style={styles.orderSection}>
           <OrderEntry
             symbol={token?.symbol}
-            selectedTab={selectedTab}
-            setSelectedTab={setSelectedTab}
             orderType={orderType}
-            showOrderOptions={showOrderOptions}
-            toggleOrderOptions={toggleOrderOptions}
-            handleOrderTypeSelection={handleOrderTypeSelection}
-            sliderPosition={sliderPosition}
-            setSliderPosition={setSliderPosition}
-            orderAmount={orderAmount}
-            setOrderAmount={setOrderAmount}
-            currentPrice={currentPrice}
+            currentPrice={currentPrice ? Number(currentPrice) : undefined}
+            onSubmitOrder={(order: Order) =>
+              handleOrderSubmission(order, currentPrice || undefined, token)
+            }
+            maxAmount={currentPrice ? 100000 / Number(currentPrice) : 0}
+            availableBalance={100000}
           />
 
           <OrderBook

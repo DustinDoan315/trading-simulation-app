@@ -6,6 +6,13 @@ export interface OrderBookEntry {
   amount: string;
 }
 
+export interface Order {
+  type: "buy" | "sell";
+  orderType: string;
+  price: string | number;
+  amount: number;
+}
+
 export interface Candle {
   timestamp: number;
   open: number;
