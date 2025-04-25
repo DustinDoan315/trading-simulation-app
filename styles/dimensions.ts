@@ -7,6 +7,7 @@ export default {
     lg: 16,
     xl: 20,
     xxl: 24,
+    x3l: 34,
   },
 
   // Border radius

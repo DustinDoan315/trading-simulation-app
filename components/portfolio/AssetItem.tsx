@@ -1,15 +1,9 @@
-import React from 'react';
-import {
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-    } from 'react-native';
-
+import { formatAmount, formatPrice } from "@/utils/formatters";
+import React from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type AssetItemProps = {
-  icon: any; // Image source
+  icon: any;
   name: string;
   symbol: string;
   amount: string;
@@ -36,7 +30,7 @@ const AssetItem = ({
         <View style={styles.nameContainer}>
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.amount}>
-            {amount} {symbol}
+            {formatPrice(amount)} {symbol}
           </Text>
         </View>
       </View>
@@ -86,7 +80,7 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 14,
     color: "#9DA3B4",
-    marginTop: 2,
+    marginTop: 3,
   },
   rightSection: {
     alignItems: "flex-end",

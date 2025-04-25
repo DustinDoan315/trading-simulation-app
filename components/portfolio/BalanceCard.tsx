@@ -62,13 +62,13 @@ const BalanceCard = ({
 
   const screenWidth = Dimensions.get("window").width;
 
-  // useEffect(() => {
-  //   return () => {
-  //     if (timeoutRef.current) {
-  //       clearTimeout(timeoutRef.current);
-  //     }
-  //   };
-  // }, []);
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (activeSegment) {
@@ -294,9 +294,9 @@ const BalanceCard = ({
         } segment with percentage ${segment.percentage.toFixed(2)}%`
       );
 
-      // if (timeoutRef.current) {
-      //   clearTimeout(timeoutRef.current);
-      // }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
 
       if (activeSegment === segmentId) {
         setActiveSegment(null);
@@ -414,12 +414,6 @@ const BalanceCard = ({
       <View style={styles.contentContainer}>
         <View style={styles.balanceHeader}>
           <Text style={styles.label}>Available Balance</Text>
-          <TouchableWithoutFeedback onPress={() => onResetBalance?.()}>
-            <View style={styles.resetButton}>
-              <Ionicons name="refresh" size={16} color="#8C9EFF" />
-              <Text style={styles.resetText}>Reset</Text>
-            </View>
-          </TouchableWithoutFeedback>
         </View>
         <Text style={styles.balance}>{balance}</Text>
         <View style={styles.changeContainer}>
@@ -504,7 +498,7 @@ const styles = StyleSheet.create({
   balanceHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     width: "100%",
     marginBottom: 8,
   },

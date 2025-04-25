@@ -144,9 +144,6 @@ const CryptoChartScreen = () => {
           seriesName={symbol}
         />
 
-        {/* Current Price Indicator */}
-        {/* <PriceIndicator currentPrice={currentPrice || "0"} /> */}
-
         {/* Order Book and Entry Components */}
         <View style={styles.orderSection}>
           <OrderEntry
