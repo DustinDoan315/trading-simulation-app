@@ -280,8 +280,8 @@ export const getCoinMarketData = async (id: string): Promise<any> => {
   }
 };
 
-import { AppDispatch } from "../app/store";
-import { setBalance, resetBalance } from "../app/features/balanceSlice";
+import { AppDispatch } from "../store";
+import { setBalance, resetBalance } from "../features/balanceSlice";
 import { log } from "console";
 
 const defaultBalance: UserBalance = {

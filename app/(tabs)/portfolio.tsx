@@ -15,8 +15,8 @@ type Asset = {
   assets?: Asset[];
 };
 
-import { useAppSelector, useAppDispatch } from "../store";
-import type { RootState } from "../store";
+import { useAppSelector, useAppDispatch } from "../../store";
+import type { RootState } from "../../store";
 import { router } from "expo-router";
 import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

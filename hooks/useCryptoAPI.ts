@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { TimeframeOption } from "../types/crypto";
+import { TimeframeOption } from "../app/types/crypto";
 import { getCoinMarketData, getPriceHistory } from "@/services/CryptoService";
 import { formatPercentage } from "@/utils/formatters";
 

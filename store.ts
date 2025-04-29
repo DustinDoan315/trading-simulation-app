@@ -4,15 +4,15 @@ import { useDispatch, useSelector } from "react-redux";
 import type { TypedUseSelectorHook } from "react-redux";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "@react-native-async-storage/async-storage";
-import cryptoPricesReducer from "./features/cryptoPricesSlice";
-import favoritesReducer from "./features/favoritesSlice";
-import balanceReducer from "./features/balanceSlice";
-import searchHistoryReducer from "./features/searchHistorySlice";
+import cryptoPricesReducer from "@/features/cryptoPricesSlice";
+import favoritesReducer from "@/features/favoritesSlice";
+import balanceReducer from "@/features/balanceSlice";
+import searchHistoryReducer from "@/features/searchHistorySlice";
 
 const persistConfig = {
-  key: 'root',
+  key: "root",
   storage,
-  whitelist: ['favorites', 'searchHistory']
+  whitelist: ["favorites", "searchHistory"],
 };
 
 const rootReducer = combineReducers({

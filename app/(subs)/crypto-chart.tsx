@@ -2,11 +2,11 @@ import Chart from "@/components/crypto/Chart";
 import OrderBook from "@/components/trading/OrderBook";
 import OrderEntry from "@/components/trading/OrderEntry";
 import React, { useRef, useState } from "react";
-import SymbolHeader from "../../components/crypto/SymbolHeader";
-import TimeframeSelector from "../../components/crypto/TimeframeSelector";
-import useHistoricalData from "../hooks/useHistoricalData";
-import useOrderBook from "../hooks/useOrderBook";
-import useCryptoAPI from "../hooks/useCryptoAPI";
+import SymbolHeader from "@/components/crypto/SymbolHeader";
+import TimeframeSelector from "@/components/crypto/TimeframeSelector";
+import useHistoricalData from "@/hooks/useHistoricalData";
+import useOrderBook from "@/hooks/useOrderBook";
+import useCryptoAPI from "@/hooks/useCryptoAPI";
 import { ChartType, TimeframeOption, Order } from "../types/crypto";
 import { WebView } from "react-native-webview";
 import {

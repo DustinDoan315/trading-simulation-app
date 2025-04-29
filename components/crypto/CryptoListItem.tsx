@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { CryptoCurrency } from "@/services/CryptoService";
 import { formatCurrency, formatPercentage } from "@/utils/formatters";
-import { useAppDispatch, useAppSelector } from "@/app/store";
-import { toggleFavorite } from "@/app/features/favoritesSlice";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { toggleFavorite } from "@/features/favoritesSlice";
 
 interface CryptoListItemProps {
   crypto: CryptoCurrency;

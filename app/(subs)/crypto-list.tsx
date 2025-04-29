@@ -19,7 +19,7 @@ import SortToggle from "@/components/crypto/SortToggle";
 import { getMarketData, type CryptoCurrency } from "@/services/CryptoService";
 import colors from "@/styles/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppSelector } from "@/app/store";
+import { useAppSelector } from "@/store";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 

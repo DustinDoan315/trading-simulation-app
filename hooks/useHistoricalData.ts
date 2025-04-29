@@ -1,4 +1,4 @@
-import { Candle, ChartType, TimeframeOption } from "../types/crypto";
+import { Candle, ChartType, TimeframeOption } from "../app/types/crypto";
 import { useState, useCallback } from "react";
 
 interface HistoricalDataHook {

@@ -100,8 +100,8 @@ export const generateSeedPhrase = async () => {
 //   }
 // };
 
-import { store } from "@/app/store";
-import { balanceSlice } from "@/app/features/balanceSlice";
+import { store } from "@/store";
+import { balanceSlice } from "@/features/balanceSlice";
 
 export const handleOrderSubmission = async (
   order: Order,

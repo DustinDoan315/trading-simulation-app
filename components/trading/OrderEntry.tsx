@@ -7,7 +7,7 @@ import ActionButton from "./ActionButton";
 import { formatAmount } from "@/utils/formatters";
 import TabSelector from "./TableSelector";
 import { useSelector } from "react-redux";
-import { RootState } from "@/app/store";
+import { RootState } from "@/store";
 
 interface OrderEntryProps {
   symbol?: string;

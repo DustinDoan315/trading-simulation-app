@@ -1,17 +1,17 @@
 import React, { useRef, useState } from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useAppDispatch, useAppSelector } from "../store";
+import { useAppDispatch, useAppSelector } from "../../store";
 import {
   addSearchHistory,
   clearSearchHistory,
   removeSearchHistoryItem,
-} from "../features/searchHistorySlice";
+} from "@/features/searchHistorySlice";
 import {
   searchCryptocurrencies,
   CryptoCurrency,
-} from "../../services/CryptoService";
-import CryptoListItem from "../../components/crypto/CryptoListItem";
+} from "@/services/CryptoService";
+import CryptoListItem from "@/components/crypto/CryptoListItem";
 import {
   Platform,
   SafeAreaView,
