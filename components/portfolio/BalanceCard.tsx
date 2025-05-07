@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useMemo, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Animated,
@@ -12,7 +12,6 @@ import {
 import Svg, {
   Circle,
   Defs,
-  G,
   LinearGradient,
   Path,
   Stop,
@@ -37,11 +36,197 @@ type BalanceCardProps = {
   onResetBalance?: () => void;
 };
 
+const getTokenColors = (symbol: string): [string, string] => {
+  // Simple hash function to convert symbol to consistent number
+  const hash = Array.from(symbol).reduce(
+    (hash, char) => char.charCodeAt(0) + ((hash << 5) - hash),
+    0
+  );
+
+  // Generate colors based on hash
+  const hue = Math.abs(hash) % 360;
+  const saturation = 70 + Math.abs(hash) % 30; // 70-100%
+  const lightness1 = 40 + Math.abs(hash) % 20; // 40-60%
+  const lightness2 = 60 + Math.abs(hash) % 20; // 60-80%
+
+  // Convert HSL to HEX
+  const hslToHex = (h: number, s: number, l: number) => {
+    l /= 100;
+    const a = (s * Math.min(l, 1 - l)) / 100;
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  };
+
+  return [
+    hslToHex(hue, saturation, lightness1),
+    hslToHex(hue, saturation, lightness2)
+  ];
+};
+
 const TOKEN_COLORS = {
-  BTC: ["#F7931A", "#FFC24D"],
-  ETH: ["#627EEA", "#9EAEFF"],
   DEFAULT: ["#9EAEFF", "#F7931A"],
 };
+
+// Separate utilities into their own functions outside the component
+const polarToCartesian = (
+  centerX: number,
+  centerY: number,
+  radius: number,
+  angleInDegrees: number
+) => {
+  const angleInRadians = ((angleInDegrees % 360) * Math.PI) / 180.0;
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY + radius * Math.sin(angleInRadians),
+  };
+};
+
+const createArcPath = (
+  x: number,
+  y: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  strokeWidth: number
+) => {
+  const normalizeAngle = (angle: number) => {
+    let result = angle % 360;
+    if (result < 0) result += 360;
+    return result;
+  };
+
+  let normStartAngle = normalizeAngle(startAngle);
+  let normEndAngle = normalizeAngle(endAngle);
+
+  if (normEndAngle <= normStartAngle) {
+    normEndAngle += 360;
+  }
+
+  // Handle full circle case
+  if (normEndAngle - normStartAngle >= 359.5) {
+    const outerRadius = radius + strokeWidth / 2;
+    const innerRadius = radius - strokeWidth / 2;
+    
+    return `M ${x} ${y - outerRadius} 
+            A ${outerRadius} ${outerRadius} 0 1 1 ${x - 0.1} ${y - outerRadius} 
+            A ${outerRadius} ${outerRadius} 0 1 1 ${x} ${y - outerRadius} Z
+            M ${x} ${y - innerRadius} 
+            A ${innerRadius} ${innerRadius} 0 1 0 ${x - 0.1} ${y - innerRadius} 
+            A ${innerRadius} ${innerRadius} 0 1 0 ${x} ${y - innerRadius} Z`;
+  }
+
+  const innerRadius = radius - strokeWidth / 2;
+  const outerRadius = radius + strokeWidth / 2;
+
+  const startOuter = polarToCartesian(x, y, outerRadius, normStartAngle);
+  const endOuter = polarToCartesian(x, y, outerRadius, normEndAngle);
+  const startInner = polarToCartesian(x, y, innerRadius, normStartAngle);
+  const endInner = polarToCartesian(x, y, innerRadius, normEndAngle);
+
+  const largeArcFlag = normEndAngle - normStartAngle <= 180 ? "0" : "1";
+
+  return `M ${startOuter.x} ${startOuter.y}
+          A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${endOuter.x} ${endOuter.y}
+          L ${endInner.x} ${endInner.y}
+          A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${startInner.x} ${startInner.y}
+          Z`;
+};
+
+// Memoized segment renderer 
+const SegmentRenderer = React.memo(({ 
+  segment, 
+  isActive, 
+  size, 
+  radius, 
+  circumference, 
+  strokeWidth, 
+  onPress 
+}: any) => (
+  <React.Fragment>
+    <Circle
+      cx={size / 2}
+      cy={size / 2}
+      r={radius}
+      stroke={`url(#grad-${segment.id})`}
+      strokeWidth={isActive ? strokeWidth + 3 : strokeWidth}
+      fill="transparent"
+      strokeDasharray={`${segment.segmentLength} ${
+        circumference - segment.segmentLength
+      }`}
+      strokeDashoffset={segment.dashOffset}
+      strokeLinecap="butt"
+      rotation="0"
+      origin={`${size / 2}, ${size / 2}`}
+      opacity={isActive ? 1 : 0.8}
+    />
+
+    <Path
+      d={createArcPath(
+        size / 2,
+        size / 2,
+        radius,
+        segment.touchStartAngle,
+        segment.touchEndAngle,
+        strokeWidth + 10
+      )}
+      fill="transparent"
+      onPress={() => onPress(segment.id)}
+      stroke="rgba(255,255,255,0.05)"
+      strokeWidth={1}
+    />
+
+    <Circle
+      cx={segment.tooltipX}
+      cy={segment.tooltipY}
+      r={4}
+      fill={segment.colors[0]}
+      opacity={0.7}
+      stroke="white"
+      strokeWidth={0.5}
+    />
+
+    {isActive && (
+      <Circle
+        cx={segment.tooltipX}
+        cy={segment.tooltipY}
+        r={6}
+        fill={segment.colors[0]}
+        stroke="white"
+        strokeWidth={1.5}
+      />
+    )}
+  </React.Fragment>
+));
+
+// Memoized legend item
+const LegendItem = React.memo(({ 
+  segment, 
+  isActive, 
+  onPress 
+}: any) => (
+  <TouchableWithoutFeedback onPress={() => onPress(segment.id)}>
+    <View style={styles.legendItem}>
+      <View
+        style={[
+          styles.legendColor,
+          { backgroundColor: segment.colors[0] },
+          isActive && styles.legendColorActive,
+        ]}
+      />
+      <Text
+        style={[
+          styles.legendText,
+          isActive && styles.legendTextActive,
+        ]}>
+        {segment.symbol}
+      </Text>
+    </View>
+  </TouchableWithoutFeedback>
+));
 
 const BalanceCard = ({
   balance = "$100,000.00",
@@ -51,17 +236,26 @@ const BalanceCard = ({
   assets = [],
   onResetBalance,
 }: BalanceCardProps) => {
-  console.log(
-    "Rendering BalanceCard with assets:",
-    assets.map((a) => `${a.symbol}: ${a.value}`)
-  );
-  const [activeSegment, setActiveSegment] = useState<string | null>(null);
+  const [activeSegment, setActiveSegment] = React.useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const screenWidth = Dimensions.get("window").width;
 
+  // Size and chart constants - memoized
+  const chartParams = useMemo(() => {
+    const size = 280;
+    const strokeWidth = 25;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    
+    return { size, strokeWidth, radius, circumference };
+  }, []);
+  
+  const { size, strokeWidth, radius, circumference } = chartParams;
+  
+  // Clean up timer on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -70,6 +264,7 @@ const BalanceCard = ({
     };
   }, []);
 
+  // Handle animations when active segment changes
   useEffect(() => {
     if (activeSegment) {
       Animated.sequence([
@@ -101,226 +296,103 @@ const BalanceCard = ({
     }
   }, [activeSegment, scaleAnim, fadeAnim]);
 
-  const size = 280;
-  const strokeWidth = 25;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const isPositive = changePercentage >= 0;
-
-  const assetsWithNumericValues = assets.map((asset) => ({
-    ...asset,
-    numericValue: parseFloat(asset.value.replace("$", "").replace(",", "")),
-  }));
-
-  const totalValue = assetsWithNumericValues.reduce(
-    (sum, asset) => sum + asset.numericValue,
-    0
-  );
-
-  const segments = assetsWithNumericValues.map((asset, index) => {
-    const assetPercentage = asset.numericValue / totalValue;
-
-    const segmentLength = circumference * assetPercentage; // Keep visual segment as actual value
-    const previousSegmentsLength = assetsWithNumericValues
-      .slice(0, index)
-      .reduce(
-        (sum, a) => sum + (a.numericValue / totalValue) * circumference,
-        0
-      );
-
-    // Calculate angles starting from 0° (right side) and covering full 360°
-    const startAngle = (previousSegmentsLength / circumference) * 360;
-    const endAngle =
-      ((previousSegmentsLength + segmentLength) / circumference) * 360;
-
-    // Calculate the angle span of this segment
-    let angleSpan = endAngle - startAngle;
-    // Fix for negative angleSpan (when crossing 0/360 boundary)
-    if (angleSpan < 0) angleSpan += 360;
-
-    // For display purposes only - normalize angles to 0-360 range
-    const displayStartAngle = startAngle < 0 ? startAngle + 360 : startAngle;
-    const displayEndAngle = endAngle < 0 ? endAngle + 360 : endAngle;
-
-    console.log(
-      `${asset.symbol} segment: ${(assetPercentage * 100).toFixed(
-        2
-      )}%, angles: ${displayStartAngle.toFixed(
-        2
-      )}° to ${displayEndAngle.toFixed(2)}°, span: ${angleSpan.toFixed(2)}°`
+  // Memoize asset calculations to avoid recalculating on each render
+  const { assetsWithNumericValues, totalValue } = useMemo(() => {
+    const processedAssets = assets.map((asset) => ({
+      ...asset,
+      numericValue: parseFloat(asset.value.replace("$", "").replace(",", "")),
+    }));
+    
+    const total = processedAssets.reduce(
+      (sum, asset) => sum + asset.numericValue,
+      0
     );
+    
+    return { assetsWithNumericValues: processedAssets, totalValue: total };
+  }, [assets]);
 
-    // Minimum angle span for easier touch targeting (30 degrees provides better touch targets)
-    const minAngleSpan = 30;
+  // Memoize segment calculations
+  const segments = useMemo(() => {
+    if (totalValue === 0) return [];
+    
+    return assetsWithNumericValues.map((asset, index) => {
+      const assetPercentage = asset.numericValue / totalValue;
+      const segmentLength = circumference * assetPercentage;
+      
+      const previousSegmentsLength = assetsWithNumericValues
+        .slice(0, index)
+        .reduce(
+          (sum, a) => sum + (a.numericValue / totalValue) * circumference,
+          0
+        );
 
-    // For all segments, use expanded touch area
-    const touchExpansion = minAngleSpan * 1.2;
+      // Calculate angles starting from 0° (right side)
+      const startAngle = (previousSegmentsLength / circumference) * 360;
+      const endAngle = ((previousSegmentsLength + segmentLength) / circumference) * 360;
 
-    // Adjusted angles for touch area - expand small segments to ensure touchability
-    const touchStartAngle =
-      angleSpan < touchExpansion
+      // Improve touch target for small segments
+      const minAngleSpan = 30;
+      const touchExpansion = minAngleSpan * 1.2;
+      const angleSpan = endAngle - startAngle;
+      
+      const touchStartAngle = angleSpan < touchExpansion
         ? startAngle - (touchExpansion - angleSpan) / 2
         : startAngle;
-
-    const touchEndAngle =
-      angleSpan < touchExpansion
+        
+      const touchEndAngle = angleSpan < touchExpansion
         ? endAngle + (touchExpansion - angleSpan) / 2
         : endAngle;
 
-    const centerAngle = (startAngle + endAngle) / 2;
-    const tooltipX =
-      size / 2 + Math.cos((centerAngle * Math.PI) / 180) * (radius / 1.3);
-    const tooltipY =
-      size / 2 + Math.sin((centerAngle * Math.PI) / 180) * (radius / 1.3);
+      const centerAngle = (startAngle + endAngle) / 2;
+      const tooltipX = size / 2 + Math.cos((centerAngle * Math.PI) / 180) * (radius / 1.3);
+      const tooltipY = size / 2 + Math.sin((centerAngle * Math.PI) / 180) * (radius / 1.3);
 
-    const isLargeSegment = assetPercentage > 0.36;
+      return {
+        ...asset,
+        segmentLength,
+        dashOffset: index === 0 ? 0 : circumference - previousSegmentsLength,
+        percentage: assetPercentage * 100,
+        colors: getTokenColors(asset.symbol) || TOKEN_COLORS.DEFAULT,
+        startAngle,
+        endAngle,
+        touchStartAngle,
+        touchEndAngle,
+        tooltipX,
+        tooltipY,
+        isSmallSegment: assetPercentage < 0.2,
+        assetPercentage,
+      };
+    });
+  }, [assetsWithNumericValues, totalValue, circumference, radius, size]);
 
-    const useTouchCircle = false;
-
-    return {
-      ...asset,
-      segmentLength,
-      dashOffset: index === 0 ? 0 : circumference - previousSegmentsLength,
-      percentage: assetPercentage * 100,
-      colors:
-        TOKEN_COLORS[asset.symbol.toUpperCase() as keyof typeof TOKEN_COLORS] ||
-        TOKEN_COLORS.DEFAULT,
-      startAngle,
-      endAngle,
-      touchStartAngle,
-      touchEndAngle,
-      tooltipX,
-      tooltipY,
-      isSmallSegment: assetPercentage < 0.2,
-      isLargeSegment,
-      useTouchCircle,
-      assetPercentage,
-    };
-  });
-
-  const polarToCartesian = (
-    centerX: number,
-    centerY: number,
-    radius: number,
-    angleInDegrees: number
-  ) => {
-    if (isNaN(angleInDegrees)) {
-      console.log("WARNING: Invalid angle detected:", angleInDegrees);
-      angleInDegrees = 0;
+  // Memoize segment handling logic
+  const handleSegmentPress = useCallback((segmentId: string) => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
 
-    const angleInRadians = ((angleInDegrees % 360) * Math.PI) / 180.0;
-    const result = {
-      x: centerX + radius * Math.cos(angleInRadians),
-      y: centerY + radius * Math.sin(angleInRadians),
-    };
-
-    if (isNaN(result.x) || isNaN(result.y)) {
-      console.log(
-        "WARNING: Invalid coordinate calculated:",
-        result,
-        "from angle",
-        angleInDegrees
-      );
-    }
-
-    return result;
-  };
-
-  const createArcPath = (
-    x: number,
-    y: number,
-    radius: number,
-    startAngle: number,
-    endAngle: number,
-    strokeWidth: number
-  ) => {
-    const normalizeAngle = (angle: number) => {
-      let result = angle % 360;
-      if (result < 0) result += 360;
-      return result;
-    };
-
-    let normStartAngle = normalizeAngle(startAngle);
-    let normEndAngle = normalizeAngle(endAngle);
-
-    if (normEndAngle <= normStartAngle) {
-      normEndAngle += 360;
-    }
-
-    // Special case for full circle
-    if (normEndAngle - normStartAngle >= 359.5) {
-      return `M ${x} ${y - radius - strokeWidth / 2} 
-              A ${radius + strokeWidth / 2} ${radius + strokeWidth / 2} 0 1 1 ${
-        x - 0.1
-      } ${y - radius - strokeWidth / 2} 
-              A ${radius + strokeWidth / 2} ${
-        radius + strokeWidth / 2
-      } 0 1 1 ${x} ${y - radius - strokeWidth / 2} Z
-              M ${x} ${y - radius + strokeWidth / 2} 
-              A ${radius - strokeWidth / 2} ${radius - strokeWidth / 2} 0 1 0 ${
-        x - 0.1
-      } ${y - radius + strokeWidth / 2} 
-              A ${radius - strokeWidth / 2} ${
-        radius - strokeWidth / 2
-      } 0 1 0 ${x} ${y - radius + strokeWidth / 2} Z`;
-    }
-
-    const innerRadius = radius - strokeWidth / 2;
-    const outerRadius = radius + strokeWidth / 2;
-
-    const startOuter = polarToCartesian(x, y, outerRadius, normStartAngle);
-    const endOuter = polarToCartesian(x, y, outerRadius, normEndAngle);
-    const startInner = polarToCartesian(x, y, innerRadius, normStartAngle);
-    const endInner = polarToCartesian(x, y, innerRadius, normEndAngle);
-
-    const largeArcFlag = normEndAngle - normStartAngle <= 180 ? "0" : "1";
-
-    return `M ${startOuter.x} ${startOuter.y}
-            A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${endOuter.x} ${endOuter.y}
-            L ${endInner.x} ${endInner.y}
-            A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${startInner.x} ${startInner.y}
-            Z`;
-  };
-
-  const handleSegmentPress = (segmentId: string) => {
-    console.log("Pressed segment:", segmentId);
-    const segment = segments.find((s) => s.id === segmentId);
-
-    if (segment) {
-      console.log(
-        `Successfully pressed ${
-          segment.symbol
-        } segment with percentage ${segment.percentage.toFixed(2)}%`
-      );
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      if (activeSegment === segmentId) {
+    // Toggle active segment
+    setActiveSegment((current) => current === segmentId ? null : segmentId);
+    
+    // Auto-dismiss after a timeout
+    if (segmentId !== activeSegment) {
+      timeoutRef.current = setTimeout(() => {
         setActiveSegment(null);
-        console.log("Deactivated segment:", segmentId);
-      } else {
-        setActiveSegment(segmentId);
-        console.log("Activated segment:", segmentId);
-
-        // Auto-dismiss after a longer timeout (3 seconds)
-        timeoutRef.current = setTimeout(() => {
-          setActiveSegment(null);
-          console.log("Auto-dismissed segment:", segmentId);
-        }, 3000);
-      }
-    } else {
-      console.error("Failed to find segment with ID:", segmentId);
+      }, 3000);
     }
-  };
+  }, [activeSegment]);
 
+  // Find active segment details once
   const activeSegmentDetails = activeSegment
     ? segments.find((segment) => segment.id === activeSegment)
     : null;
 
-  const isSegmentActive = (segmentId: string) => activeSegment === segmentId;
+  // Simple function to check if segment is active
+  const isSegmentActive = useCallback((segmentId: string) => 
+    activeSegment === segmentId, [activeSegment]);
+
+  const isPositive = changePercentage >= 0;
 
   return (
     <Animated.View
@@ -341,6 +413,7 @@ const BalanceCard = ({
           ))}
         </Defs>
 
+        {/* Background circle */}
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -350,64 +423,18 @@ const BalanceCard = ({
           fill="transparent"
         />
 
+        {/* Render segments with memoized component */}
         {segments.map((segment) => (
-          <React.Fragment key={`segment-group-${segment.id}`}>
-            <Circle
-              key={`segment-${segment.id}`}
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              stroke={`url(#grad-${segment.id})`}
-              strokeWidth={
-                isSegmentActive(segment.id) ? strokeWidth + 3 : strokeWidth
-              }
-              fill="transparent"
-              strokeDasharray={`${segment.segmentLength} ${
-                circumference - segment.segmentLength
-              }`}
-              strokeDashoffset={segment.dashOffset}
-              strokeLinecap="butt"
-              rotation="0"
-              origin={`${size / 2}, ${size / 2}`}
-              opacity={isSegmentActive(segment.id) ? 1 : 0.8}
-            />
-
-            <Path
-              d={createArcPath(
-                size / 2,
-                size / 2,
-                radius,
-                segment.touchStartAngle,
-                segment.touchEndAngle,
-                strokeWidth + 10
-              )}
-              fill="transparent"
-              onPress={() => handleSegmentPress(segment.id)}
-              stroke="rgba(255,255,255,0.05)"
-              strokeWidth={1}
-            />
-
-            <Circle
-              cx={segment.tooltipX}
-              cy={segment.tooltipY}
-              r={4}
-              fill={segment.colors[0]}
-              opacity={0.7}
-              stroke="white"
-              strokeWidth={0.5}
-            />
-
-            {isSegmentActive(segment.id) && (
-              <Circle
-                cx={segment.tooltipX}
-                cy={segment.tooltipY}
-                r={6}
-                fill={segment.colors[0]}
-                stroke="white"
-                strokeWidth={1.5}
-              />
-            )}
-          </React.Fragment>
+          <SegmentRenderer 
+            key={`segment-${segment.id}`}
+            segment={segment}
+            isActive={isSegmentActive(segment.id)}
+            size={size}
+            radius={radius}
+            circumference={circumference}
+            strokeWidth={strokeWidth}
+            onPress={handleSegmentPress}
+          />
         ))}
       </Svg>
 
@@ -433,31 +460,19 @@ const BalanceCard = ({
         </View>
       </View>
 
+      {/* Legend items */}
       <View style={styles.legendContainer}>
         {segments.map((segment) => (
-          <TouchableWithoutFeedback
+          <LegendItem
             key={`legend-${segment.id}`}
-            onPress={() => handleSegmentPress(segment.id)}>
-            <View style={styles.legendItem}>
-              <View
-                style={[
-                  styles.legendColor,
-                  { backgroundColor: segment.colors[0] },
-                  isSegmentActive(segment.id) && styles.legendColorActive,
-                ]}
-              />
-              <Text
-                style={[
-                  styles.legendText,
-                  isSegmentActive(segment.id) && styles.legendTextActive,
-                ]}>
-                {segment.symbol}
-              </Text>
-            </View>
-          </TouchableWithoutFeedback>
+            segment={segment}
+            isActive={isSegmentActive(segment.id)}
+            onPress={handleSegmentPress}
+          />
         ))}
       </View>
 
+      {/* Tooltip */}
       {activeSegmentDetails && (
         <Animated.View
           style={[
@@ -494,7 +509,9 @@ const BalanceCard = ({
   );
 };
 
+// Styles remain the same
 const styles = StyleSheet.create({
+  // ... keep existing styles
   balanceHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -522,22 +539,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 70,
     position: "relative",
-  },
-  hitBoxContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    zIndex: 10,
-  },
-  hitBox: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
-    zIndex: 10,
   },
   legendContainer: {
     flexDirection: "row",
@@ -669,4 +670,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BalanceCard;
+export default React.memo(BalanceCard);

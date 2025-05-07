@@ -32,7 +32,7 @@ const PortfolioScreen = () => {
     router.navigate("/(subs)/crypto-chart");
   };
 
-  const targetBalance = 0; // Set to 0 to disable progress or configure via props/state
+  const targetBalance = 0;
   const progress =
     targetBalance > 0 ? Math.min(balance.totalInUSD / targetBalance, 1) : 0;
 
@@ -50,13 +50,12 @@ const PortfolioScreen = () => {
       };
     });
 
-  const mainAssets = allAssets.filter((asset) =>
-    ["BTC", "ETH", "USDT"].includes(asset.symbol)
+  const sortedAssets = [...allAssets].sort((a, b) => 
+    parseFloat(b.value.replace('$', '')) - parseFloat(a.value.replace('$', ''))
   );
-
-  const otherAssets = allAssets.filter(
-    (asset) => !["BTC", "ETH", "USDT"].includes(asset.symbol)
-  );
+  
+  const mainAssets = sortedAssets.slice(0, 3);
+  const otherAssets = sortedAssets.slice(3);
 
   const othersTotal = otherAssets.reduce(
     (sum, asset) => sum + parseFloat(asset.value.replace("$", "")),
