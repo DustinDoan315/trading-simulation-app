@@ -19,9 +19,13 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import colors from "@/styles/colors";
 import { handleOrderSubmission } from "@/utils/helper";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 const CryptoChartScreen = () => {
   const token: any = useLocalSearchParams();
+  const {balance} = useSelector(
+    (state: RootState) => state.balance);
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");
@@ -40,9 +44,6 @@ const CryptoChartScreen = () => {
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
   const { currentPrice, priceChange } = useCryptoAPI(timeframe, token?.id);
-  console.log("====================================");
-  console.log("Current Price: ", token);
-  console.log("====================================");
   const onMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
@@ -157,7 +158,7 @@ const CryptoChartScreen = () => {
               handleOrderSubmission(order, currentPrice || undefined, token)
             }
             maxAmount={currentPrice ? 100000 / Number(currentPrice) : 0}
-            availableBalance={100000}
+            availableBalance={balance.holdings.tether.amount}
           />
 
           <OrderBook

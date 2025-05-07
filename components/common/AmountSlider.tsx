@@ -12,6 +12,7 @@ interface AmountSliderProps {
   amountUnit: string;
   currentPrice?: number; // Required for buy calculations
   balanceType: "token" | "usdt"; // Whether availableAmount is in tokens or USDT
+  symbol?: string; // Symbol for the balance currency (e.g. "USDT")
 }
 
 const AmountSlider = ({
@@ -22,6 +23,7 @@ const AmountSlider = ({
   amountUnit = "BTC",
   currentPrice = 1,
   balanceType = "token",
+  symbol,
 }: AmountSliderProps) => {
   // Create animated value for smooth slider movement
   const panX: any = useRef(new Animated.Value(position)).current;
@@ -99,18 +101,26 @@ const AmountSlider = ({
     return tradeType === "buy" ? Colors.action.buy : Colors.action.sell;
   };
 
+  const getMaxAmountText = () => {
+    if (tradeType === "buy" && balanceType === "usdt") {
+      return `${(
+        (availableAmount * (position / 100)) /
+        currentPrice
+      ).toFixed(6)} ${amountUnit}`;
+    }
+    return `${(availableAmount * (position / 100)).toFixed(6)} ${amountUnit}`;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.sliderTrack} onLayout={handleSliderLayout}>
         {/* Segment markers and circle indicators */}
-        <View style={[styles.segmentMarker, { left: "25%" }]} />
-        <View style={[styles.segmentMarker, { left: "50%" }]} />
-        <View style={[styles.segmentMarker, { left: "75%" }]} />
-        <View style={[styles.segmentCircle, { left: "0%" }]} />
-        <View style={[styles.segmentCircle, { left: "25%" }]} />
-        <View style={[styles.segmentCircle, { left: "50%" }]} />
-        <View style={[styles.segmentCircle, { left: "75%" }]} />
-        <View style={[styles.segmentCircle, { left: "100%" }]} />
+        {[25, 50, 75].map((pos) => (
+          <View key={`marker-${pos}`} style={[styles.segmentMarker, { left: `${pos}%` }]} />
+        ))}
+        {[0, 25, 50, 75, 100].map((pos) => (
+          <View key={`circle-${pos}`} style={[styles.segmentCircle, { left: `${pos}%` }]} />
+        ))}
         <Animated.View
           style={[
             styles.sliderFill,
@@ -151,7 +161,7 @@ const AmountSlider = ({
         <View style={styles.labelRow}>
           <Text style={Typography.label}>Khả dụng</Text>
           <Text style={Typography.bodySmall}>
-            {availableAmount} {amountUnit}
+            {availableAmount} {'USDT'}
           </Text>
         </View>
 
@@ -160,14 +170,7 @@ const AmountSlider = ({
             {tradeType === "buy" ? "Mua" : "Bán"} tối đa
           </Text>
           <Text style={Typography.bodySmall}>
-            {tradeType === "buy" && balanceType === "usdt"
-              ? `${(
-                  (availableAmount * (position / 100)) /
-                  currentPrice
-                ).toFixed(6)} ${amountUnit}`
-              : `${(availableAmount * (position / 100)).toFixed(
-                  6
-                )} ${amountUnit}`}
+            {getMaxAmountText()}
           </Text>
         </View>
       </View>
