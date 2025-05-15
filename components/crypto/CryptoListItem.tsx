@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { CryptoCurrency } from "@/services/CryptoService";
 import { formatCurrency, formatPercentage } from "@/utils/formatters";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { toggleFavorite } from "@/features/favoritesSlice";
+import { useFavoritesStore } from "@/stores/favoritesStore";
 
 interface CryptoListItemProps {
   crypto: CryptoCurrency;
@@ -43,8 +42,7 @@ const arePropsEqual = (
 
 const CryptoListItem: React.FC<CryptoListItemProps> = React.memo(
   ({ crypto, onPress }) => {
-    const dispatch = useAppDispatch();
-    const favoriteIds = useAppSelector((state) => state.favorites.favoriteIds);
+    const favoriteIds = useFavoritesStore((state) => state.favorites);
     const isFavorite = favoriteIds.includes(crypto.id);
 
     return (
@@ -54,7 +52,9 @@ const CryptoListItem: React.FC<CryptoListItemProps> = React.memo(
         <View style={styles.leftSection}>
           <TouchableOpacity
             style={styles.favoriteButton}
-            onPress={() => dispatch(toggleFavorite(crypto.id))}>
+            onPress={() =>
+              useFavoritesStore.getState().toggleFavorite(crypto.id)
+            }>
             <Ionicons
               name={isFavorite ? "star" : "star-outline"}
               size={20}

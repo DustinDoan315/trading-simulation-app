@@ -19,13 +19,11 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import colors from "@/styles/colors";
 import { handleOrderSubmission } from "@/utils/helper";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store";
+import { useBalanceStore } from "@/stores/balanceStore";
 
 const CryptoChartScreen = () => {
   const token: any = useLocalSearchParams();
-  const {balance} = useSelector(
-    (state: RootState) => state.balance);
+  const { balance } = useBalanceStore();
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");

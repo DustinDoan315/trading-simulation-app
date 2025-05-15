@@ -1,6 +1,6 @@
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { TimeframeOption } from "../../app/types/crypto";
+import { TimeframeOption } from "@/app/types/crypto";
 import {
   ScrollView,
   StyleSheet,

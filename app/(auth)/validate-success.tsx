@@ -32,13 +32,11 @@ const WalletSecuritySuccess = () => {
 
   return (
     <View style={styles.mainContainer}>
-      <HeaderProgressBar
-        icon={require("../../assets/icons/progressBarFull.png")}
-      />
+      <HeaderProgressBar icon={require("@/assets/icons/progressBarFull.png")} />
 
       <View style={styles.contentWrapper}>
         <Image
-          source={require("../../assets/images/success.png")}
+          source={require("@/assets/images/success.png")}
           style={styles.successIcon}
           resizeMode="contain"
         />

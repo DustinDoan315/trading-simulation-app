@@ -6,8 +6,7 @@ import AmountSlider from "../common/AmountSlider";
 import ActionButton from "./ActionButton";
 import { formatAmount } from "@/utils/formatters";
 import TabSelector from "./TableSelector";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store";
+import { useCryptoPricesStore } from "@/stores/cryptoPricesStore";
 
 interface OrderEntryProps {
   symbol?: string;
@@ -31,9 +30,8 @@ const OrderEntry = ({
   maxAmount = 0,
   availableBalance = 0,
 }: OrderEntryProps) => {
-  const tokenPrice = useSelector(
-    (state: RootState) => state.cryptoPrices.prices[symbol] || 100
-  );
+  const { prices } = useCryptoPricesStore();
+  const tokenPrice = prices[symbol] || 100;
 
   const [price, setPrice] = useState("0");
   const [amount, setAmount] = useState(

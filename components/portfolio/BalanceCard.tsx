@@ -45,9 +45,9 @@ const getTokenColors = (symbol: string): [string, string] => {
 
   // Generate colors based on hash
   const hue = Math.abs(hash) % 360;
-  const saturation = 70 + Math.abs(hash) % 30; // 70-100%
-  const lightness1 = 40 + Math.abs(hash) % 20; // 40-60%
-  const lightness2 = 60 + Math.abs(hash) % 20; // 60-80%
+  const saturation = 70 + (Math.abs(hash) % 30); // 70-100%
+  const lightness1 = 40 + (Math.abs(hash) % 20); // 40-60%
+  const lightness2 = 60 + (Math.abs(hash) % 20); // 60-80%
 
   // Convert HSL to HEX
   const hslToHex = (h: number, s: number, l: number) => {
@@ -56,14 +56,16 @@ const getTokenColors = (symbol: string): [string, string] => {
     const f = (n: number) => {
       const k = (n + h / 30) % 12;
       const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-      return Math.round(255 * color).toString(16).padStart(2, '0');
+      return Math.round(255 * color)
+        .toString(16)
+        .padStart(2, "0");
     };
     return `#${f(0)}${f(8)}${f(4)}`;
   };
 
   return [
     hslToHex(hue, saturation, lightness1),
-    hslToHex(hue, saturation, lightness2)
+    hslToHex(hue, saturation, lightness2),
   ];
 };
 
@@ -110,7 +112,7 @@ const createArcPath = (
   if (normEndAngle - normStartAngle >= 359.5) {
     const outerRadius = radius + strokeWidth / 2;
     const innerRadius = radius - strokeWidth / 2;
-    
+
     return `M ${x} ${y - outerRadius} 
             A ${outerRadius} ${outerRadius} 0 1 1 ${x - 0.1} ${y - outerRadius} 
             A ${outerRadius} ${outerRadius} 0 1 1 ${x} ${y - outerRadius} Z
@@ -136,78 +138,76 @@ const createArcPath = (
           Z`;
 };
 
-// Memoized segment renderer 
-const SegmentRenderer = React.memo(({ 
-  segment, 
-  isActive, 
-  size, 
-  radius, 
-  circumference, 
-  strokeWidth, 
-  onPress 
-}: any) => (
-  <React.Fragment>
-    <Circle
-      cx={size / 2}
-      cy={size / 2}
-      r={radius}
-      stroke={`url(#grad-${segment.id})`}
-      strokeWidth={isActive ? strokeWidth + 3 : strokeWidth}
-      fill="transparent"
-      strokeDasharray={`${segment.segmentLength} ${
-        circumference - segment.segmentLength
-      }`}
-      strokeDashoffset={segment.dashOffset}
-      strokeLinecap="butt"
-      rotation="0"
-      origin={`${size / 2}, ${size / 2}`}
-      opacity={isActive ? 1 : 0.8}
-    />
+// Memoized segment renderer
+const SegmentRenderer = React.memo(
+  ({
+    segment,
+    isActive,
+    size,
+    radius,
+    circumference,
+    strokeWidth,
+    onPress,
+  }: any) => (
+    <React.Fragment>
+      <Circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        stroke={`url(#grad-${segment.id})`}
+        strokeWidth={isActive ? strokeWidth + 3 : strokeWidth}
+        fill="transparent"
+        strokeDasharray={`${segment.segmentLength} ${
+          circumference - segment.segmentLength
+        }`}
+        strokeDashoffset={segment.dashOffset}
+        strokeLinecap="butt"
+        rotation="0"
+        origin={`${size / 2}, ${size / 2}`}
+        opacity={isActive ? 1 : 0.8}
+      />
 
-    <Path
-      d={createArcPath(
-        size / 2,
-        size / 2,
-        radius,
-        segment.touchStartAngle,
-        segment.touchEndAngle,
-        strokeWidth + 10
-      )}
-      fill="transparent"
-      onPress={() => onPress(segment.id)}
-      stroke="rgba(255,255,255,0.05)"
-      strokeWidth={1}
-    />
+      <Path
+        d={createArcPath(
+          size / 2,
+          size / 2,
+          radius,
+          segment.touchStartAngle,
+          segment.touchEndAngle,
+          strokeWidth + 10
+        )}
+        fill="transparent"
+        onPress={() => onPress(segment.id)}
+        stroke="rgba(255,255,255,0.05)"
+        strokeWidth={1}
+      />
 
-    <Circle
-      cx={segment.tooltipX}
-      cy={segment.tooltipY}
-      r={4}
-      fill={segment.colors[0]}
-      opacity={0.7}
-      stroke="white"
-      strokeWidth={0.5}
-    />
-
-    {isActive && (
       <Circle
         cx={segment.tooltipX}
         cy={segment.tooltipY}
-        r={6}
+        r={4}
         fill={segment.colors[0]}
+        opacity={0.7}
         stroke="white"
-        strokeWidth={1.5}
+        strokeWidth={0.5}
       />
-    )}
-  </React.Fragment>
-));
+
+      {isActive && (
+        <Circle
+          cx={segment.tooltipX}
+          cy={segment.tooltipY}
+          r={6}
+          fill={segment.colors[0]}
+          stroke="white"
+          strokeWidth={1.5}
+        />
+      )}
+    </React.Fragment>
+  )
+);
 
 // Memoized legend item
-const LegendItem = React.memo(({ 
-  segment, 
-  isActive, 
-  onPress 
-}: any) => (
+const LegendItem = React.memo(({ segment, isActive, onPress }: any) => (
   <TouchableWithoutFeedback onPress={() => onPress(segment.id)}>
     <View style={styles.legendItem}>
       <View
@@ -217,11 +217,7 @@ const LegendItem = React.memo(({
           isActive && styles.legendColorActive,
         ]}
       />
-      <Text
-        style={[
-          styles.legendText,
-          isActive && styles.legendTextActive,
-        ]}>
+      <Text style={[styles.legendText, isActive && styles.legendTextActive]}>
         {segment.symbol}
       </Text>
     </View>
@@ -237,7 +233,7 @@ const BalanceCard = ({
   onResetBalance,
 }: BalanceCardProps) => {
   const [activeSegment, setActiveSegment] = React.useState<string | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | any>(null);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -249,12 +245,12 @@ const BalanceCard = ({
     const strokeWidth = 25;
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
-    
+
     return { size, strokeWidth, radius, circumference };
   }, []);
-  
+
   const { size, strokeWidth, radius, circumference } = chartParams;
-  
+
   // Clean up timer on unmount
   useEffect(() => {
     return () => {
@@ -302,23 +298,23 @@ const BalanceCard = ({
       ...asset,
       numericValue: parseFloat(asset.value.replace("$", "").replace(",", "")),
     }));
-    
+
     const total = processedAssets.reduce(
       (sum, asset) => sum + asset.numericValue,
       0
     );
-    
+
     return { assetsWithNumericValues: processedAssets, totalValue: total };
   }, [assets]);
 
   // Memoize segment calculations
   const segments = useMemo(() => {
     if (totalValue === 0) return [];
-    
+
     return assetsWithNumericValues.map((asset, index) => {
       const assetPercentage = asset.numericValue / totalValue;
       const segmentLength = circumference * assetPercentage;
-      
+
       const previousSegmentsLength = assetsWithNumericValues
         .slice(0, index)
         .reduce(
@@ -328,24 +324,29 @@ const BalanceCard = ({
 
       // Calculate angles starting from 0° (right side)
       const startAngle = (previousSegmentsLength / circumference) * 360;
-      const endAngle = ((previousSegmentsLength + segmentLength) / circumference) * 360;
+      const endAngle =
+        ((previousSegmentsLength + segmentLength) / circumference) * 360;
 
       // Improve touch target for small segments
       const minAngleSpan = 30;
       const touchExpansion = minAngleSpan * 1.2;
       const angleSpan = endAngle - startAngle;
-      
-      const touchStartAngle = angleSpan < touchExpansion
-        ? startAngle - (touchExpansion - angleSpan) / 2
-        : startAngle;
-        
-      const touchEndAngle = angleSpan < touchExpansion
-        ? endAngle + (touchExpansion - angleSpan) / 2
-        : endAngle;
+
+      const touchStartAngle =
+        angleSpan < touchExpansion
+          ? startAngle - (touchExpansion - angleSpan) / 2
+          : startAngle;
+
+      const touchEndAngle =
+        angleSpan < touchExpansion
+          ? endAngle + (touchExpansion - angleSpan) / 2
+          : endAngle;
 
       const centerAngle = (startAngle + endAngle) / 2;
-      const tooltipX = size / 2 + Math.cos((centerAngle * Math.PI) / 180) * (radius / 1.3);
-      const tooltipY = size / 2 + Math.sin((centerAngle * Math.PI) / 180) * (radius / 1.3);
+      const tooltipX =
+        size / 2 + Math.cos((centerAngle * Math.PI) / 180) * (radius / 1.3);
+      const tooltipY =
+        size / 2 + Math.sin((centerAngle * Math.PI) / 180) * (radius / 1.3);
 
       return {
         ...asset,
@@ -366,22 +367,25 @@ const BalanceCard = ({
   }, [assetsWithNumericValues, totalValue, circumference, radius, size]);
 
   // Memoize segment handling logic
-  const handleSegmentPress = useCallback((segmentId: string) => {
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+  const handleSegmentPress = useCallback(
+    (segmentId: string) => {
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
 
-    // Toggle active segment
-    setActiveSegment((current) => current === segmentId ? null : segmentId);
-    
-    // Auto-dismiss after a timeout
-    if (segmentId !== activeSegment) {
-      timeoutRef.current = setTimeout(() => {
-        setActiveSegment(null);
-      }, 3000);
-    }
-  }, [activeSegment]);
+      // Toggle active segment
+      setActiveSegment((current) => (current === segmentId ? null : segmentId));
+
+      // Auto-dismiss after a timeout
+      if (segmentId !== activeSegment) {
+        timeoutRef.current = setTimeout(() => {
+          setActiveSegment(null);
+        }, 3000);
+      }
+    },
+    [activeSegment]
+  );
 
   // Find active segment details once
   const activeSegmentDetails = activeSegment
@@ -389,8 +393,10 @@ const BalanceCard = ({
     : null;
 
   // Simple function to check if segment is active
-  const isSegmentActive = useCallback((segmentId: string) => 
-    activeSegment === segmentId, [activeSegment]);
+  const isSegmentActive = useCallback(
+    (segmentId: string) => activeSegment === segmentId,
+    [activeSegment]
+  );
 
   const isPositive = changePercentage >= 0;
 
@@ -425,7 +431,7 @@ const BalanceCard = ({
 
         {/* Render segments with memoized component */}
         {segments.map((segment) => (
-          <SegmentRenderer 
+          <SegmentRenderer
             key={`segment-${segment.id}`}
             segment={segment}
             isActive={isSegmentActive(segment.id)}

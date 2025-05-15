@@ -40,9 +40,7 @@ const SecureWalletInfoScreen = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <HeaderProgressBar
-        icon={require("../../assets/icons/progressSecond.png")}
-      />
+      <HeaderProgressBar icon={require("@/assets/icons/progressSecond.png")} />
 
       {/* Title Section */}
       <View style={styles.titleSection}>
@@ -59,7 +57,7 @@ const SecureWalletInfoScreen = () => {
               position: "absolute",
               right: 0,
             }}
-            source={require("../../assets/icons/information.png")}
+            source={require("@/assets/icons/information.png")}
           />
         </View>
         <View style={styles.subTitleRow}>
@@ -77,7 +75,7 @@ const SecureWalletInfoScreen = () => {
         </Text>
         <Text style={styles.description}>Security level: Very strong</Text>
         <Image
-          source={require("../../assets/icons/progressLength.png")}
+          source={require("@/assets/icons/progressLength.png")}
           style={styles.progressImage}
         />
         <Text style={styles.description}>

@@ -1,12 +1,8 @@
 import React, { useRef, useState } from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useAppDispatch, useAppSelector } from "../../store";
-import {
-  addSearchHistory,
-  clearSearchHistory,
-  removeSearchHistoryItem,
-} from "@/features/searchHistorySlice";
+import { useSearchHistoryStore } from "@/stores/searchHistoryStore";
+
 import {
   searchCryptocurrencies,
   CryptoCurrency,
@@ -37,13 +33,11 @@ export default function CryptoSearch() {
   const [searchResults, setSearchResults] = useState<CryptoCurrency[]>([]);
   const [suggestions, setSuggestions] = useState<CryptoCurrency[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const dispatch = useAppDispatch();
-  const searchHistory = useAppSelector((state) => state.searchHistory.items);
+
+  const searchHistory: any = useSearchHistoryStore((state) => state.history);
   const inputRef = useRef<TextInput>(null);
 
-  const handleClearHistory = () => {
-    dispatch(clearSearchHistory());
-  };
+  const handleClearHistory = () => {};
 
   const handleSearch = async () => {
     if (!searchText.trim()) return;
@@ -61,7 +55,6 @@ export default function CryptoSearch() {
           text: searchText,
           timestamp: Date.now(),
         };
-        dispatch(addSearchHistory(newItem));
       } else {
         setSearchError("No results found");
       }
@@ -75,9 +68,6 @@ export default function CryptoSearch() {
   };
 
   const handleHistoryItemPress = (item: SearchHistoryItem) => {
-    // TODO: Need to update this to use id instead of symbol
-    // Currently we don't have the full crypto object here
-    // May need to modify search history to store ids
     router.push({
       pathname: "/(subs)/crypto-chart",
       params: { symbol: item.text },
@@ -152,7 +142,7 @@ export default function CryptoSearch() {
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.chipsContainer}>
-          {searchHistory.map((item) => (
+          {searchHistory.map((item: any) => (
             <View key={item.id} style={styles.historyChipContainer}>
               <TouchableOpacity
                 style={styles.historyChip}
@@ -161,7 +151,9 @@ export default function CryptoSearch() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.deleteChipButton}
-                onPress={() => dispatch(removeSearchHistoryItem(item.id))}>
+                onPress={() =>
+                  useSearchHistoryStore.getState().removeFromHistory(item.id)
+                }>
                 <Ionicons name="close" size={16} color="#777" />
               </TouchableOpacity>
             </View>

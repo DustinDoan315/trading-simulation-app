@@ -2,6 +2,7 @@ import * as bip39 from "bip39";
 import * as Crypto from "expo-crypto";
 import { Buffer } from "buffer";
 import { Order } from "@/app/types/crypto";
+import { useBalanceStore } from "@/stores/balanceStore";
 
 global.Buffer = Buffer;
 
@@ -100,67 +101,92 @@ export const generateSeedPhrase = async () => {
 //   }
 // };
 
-import { store } from "@/store";
-import { balanceSlice } from "@/features/balanceSlice";
+interface Token {
+  symbol: string;
+  name?: string;
+  decimals?: number;
+}
 
 export const handleOrderSubmission = async (
   order: Order,
   currentPrice: string | undefined,
-  token: any
-) => {
+  token: Token
+): Promise<{ success: boolean; message: string }> => {
   try {
+    // Input validation
     if (!currentPrice) {
       throw new Error("Current price not available");
     }
-
     if (!token?.symbol) {
       throw new Error("No token selected");
     }
+    if (order.amount <= 0) {
+      throw new Error("Order amount must be positive");
+    }
 
-    const totalCost =
-      order.type === "buy"
-        ? order.amount * Number(currentPrice)
-        : order.amount * Number(currentPrice);
+    const price = Number(currentPrice);
+    if (isNaN(price) || price <= 0) {
+      throw new Error("Invalid price");
+    }
+
+    const totalCost = order.amount * price;
+    const cryptoId = token.symbol.toLowerCase();
+    const valueInUSD = order.amount * price;
 
     // In a real app, this would call an API or blockchain transaction
-    console.log(`Executing ${order.type} order:`, {
+    // Consider using CryptoService here for actual transactions
+    const transactionDetails = {
+      type: order.type,
       symbol: token.symbol,
       amount: order.amount,
       price: currentPrice,
       totalCost,
-    });
+      timestamp: Date.now(),
+    };
 
-    // Update balances in Redux store
-    const cryptoId = token.symbol.toLowerCase();
-    const valueInUSD = order.amount * Number(currentPrice);
+    // Update balances using Zustand store
+    try {
+      useBalanceStore.getState().setBalance({
+        ...useBalanceStore.getState().balance,
+        holdings: {
+          ...useBalanceStore.getState().balance.holdings,
+          [cryptoId]: {
+            amount:
+              (useBalanceStore.getState().balance.holdings[cryptoId]?.amount ||
+                0) + (order.type === "buy" ? order.amount : -order.amount),
+            valueInUSD:
+              (useBalanceStore.getState().balance.holdings[cryptoId]
+                ?.valueInUSD || 0) +
+              (order.type === "buy" ? valueInUSD : -valueInUSD),
+            symbol: token.symbol,
+          },
+          tether: {
+            amount:
+              (useBalanceStore.getState().balance.holdings.tether?.amount ||
+                0) + (order.type === "buy" ? -totalCost : totalCost),
+            valueInUSD:
+              (useBalanceStore.getState().balance.holdings.tether?.valueInUSD ||
+                0) + (order.type === "buy" ? -totalCost : totalCost),
+            symbol: "USDT",
+          },
+        },
+      });
+    } catch (dispatchError) {
+      console.error("Failed to update balances:", dispatchError);
+      throw new Error("Failed to update account balances");
+    }
 
-    // Update the token holding
-    store.dispatch(
-      balanceSlice.actions.updateHolding({
-        cryptoId,
-        amount: order.type === "buy" ? order.amount : -order.amount,
-        valueInUSD: order.type === "buy" ? valueInUSD : -valueInUSD,
-        symbol: token.symbol,
-      })
-    );
-
-    // Update USDT balance for the transaction
-    store.dispatch(
-      balanceSlice.actions.updateHolding({
-        cryptoId: "tether",
-        amount: order.type === "buy" ? -totalCost : totalCost,
-        valueInUSD: order.type === "buy" ? -totalCost : totalCost,
-        symbol: "USDT",
-      })
-    );
-
-    alert(
-      `Order executed: ${order.type} ${order.amount} ${token.symbol} at ${currentPrice} USDT`
-    );
+    return {
+      success: true,
+      message: `Order executed: ${order.type} ${order.amount} ${token.symbol} at ${currentPrice} USDT`,
+    };
   } catch (error: unknown) {
-    console.error("Order failed:", error);
     const message =
       error instanceof Error ? error.message : "Unknown error occurred";
-    alert("Order failed: " + message);
+    console.error("Order failed:", error);
+    return {
+      success: false,
+      message: `Order failed: ${message}`,
+    };
   }
 };

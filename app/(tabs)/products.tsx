@@ -1,33 +1,33 @@
-import { useEffect, useState } from 'react'
-import { View, Text, FlatList, StyleSheet } from 'react-native'
-import { ProductService } from '../../services/SupabaseService'
-import { Tables } from '../../app/types/supabase'
+import { useEffect, useState } from "react";
+import { View, Text, FlatList, StyleSheet } from "react-native";
+import { ProductService } from "@/services/SupabaseService";
+import { Tables } from "@/app/types/supabase";
 
 export default function ProductsScreen() {
-  const [products, setProducts] = useState<Tables<'products'>[]>([])
-  const [loading, setLoading] = useState(true)
+  const [products, setProducts] = useState<Tables<"products">[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const data = await ProductService.getProducts()
-        setProducts(data)
+        const data = await ProductService.getProducts();
+        setProducts(data);
       } catch (error) {
-        console.error('Error fetching products:', error)
+        console.error("Error fetching products:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchProducts()
-  }, [])
+    fetchProducts();
+  }, []);
 
   if (loading) {
     return (
       <View style={styles.container}>
         <Text>Loading products...</Text>
       </View>
-    )
+    );
   }
 
   return (
@@ -46,7 +46,7 @@ export default function ProductsScreen() {
         )}
       />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -57,9 +57,9 @@ const styles = StyleSheet.create({
   productItem: {
     padding: 16,
     marginBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -67,16 +67,16 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
   },
   productPrice: {
     fontSize: 16,
-    color: '#007AFF',
+    color: "#007AFF",
     marginBottom: 4,
   },
   productDescription: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
-})
+});

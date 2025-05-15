@@ -18,7 +18,7 @@ const HeaderProgressBar: React.FC<HeaderProgressBarComponent> = ({ icon }) => {
       <Pressable onPress={handleGoBack} style={styles.backButton}>
         <Image
           style={styles.backButtonImage}
-          source={require("../../assets/icons/arrow_back.png")}
+          source={require("@/assets/icons/arrow_back.png")}
         />
       </Pressable>
 
@@ -30,7 +30,7 @@ const HeaderProgressBar: React.FC<HeaderProgressBarComponent> = ({ icon }) => {
         }}>
         <Image
           resizeMode="stretch"
-          source={icon ? icon : require("../../assets/icons/arrow_back.png")}
+          source={icon ? icon : require("@/assets/icons/arrow_back.png")}
         />
       </View>
     </View>

@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StorageService } from "./StorageService";
 /**
  * Functional service for interacting with cryptocurrency APIs and blockchain data
  * Designed for React Native + Web3 integration
@@ -31,6 +31,8 @@ export interface CryptoCurrency {
 
 export interface UserBalance {
   totalInUSD: number;
+  changePercentage: number;
+  changeValue: number;
   holdings: {
     [key: string]: {
       amount: number;
@@ -94,7 +96,7 @@ const getCachedMarketData = async (
   ignoreExpiry = false
 ): Promise<CryptoCurrency[] | null> => {
   try {
-    const cachedDataJson = await AsyncStorage.getItem(MARKET_DATA_CACHE_KEY);
+    const cachedDataJson = StorageService.getItem(MARKET_DATA_CACHE_KEY);
 
     if (!cachedDataJson) {
       return null;
@@ -127,10 +129,7 @@ const cacheMarketData = async (data: CryptoCurrency[]): Promise<void> => {
       data,
     };
 
-    await AsyncStorage.setItem(
-      MARKET_DATA_CACHE_KEY,
-      JSON.stringify(cacheData)
-    );
+    StorageService.setItem(MARKET_DATA_CACHE_KEY, JSON.stringify(cacheData));
   } catch (error) {
     console.error("Error caching market data:", error);
   }
@@ -280,12 +279,12 @@ export const getCoinMarketData = async (id: string): Promise<any> => {
   }
 };
 
-import { AppDispatch } from "../store";
-import { setBalance, resetBalance } from "../features/balanceSlice";
-import { log } from "console";
+import { useBalanceStore } from "../stores/balanceStore";
 
 const defaultBalance: UserBalance = {
   totalInUSD: 100000.0,
+  changePercentage: 0,
+  changeValue: 0,
   holdings: {
     bitcoin: {
       amount: 0.0,
@@ -308,36 +307,30 @@ const defaultBalance: UserBalance = {
 /**
  * Get user's cryptocurrency holdings and balance
  * In a real app, this would connect to a wallet or blockchain
- *
- * @param dispatch - Redux dispatch function
  * @returns User balance data
  */
-export const getUserBalance = (dispatch: AppDispatch): UserBalance => {
-  dispatch(setBalance(defaultBalance));
+export const getUserBalance = (): UserBalance => {
+  const { setBalance } = useBalanceStore.getState();
+  setBalance(defaultBalance);
   return defaultBalance;
 };
 
 /**
  * Update user's cryptocurrency balance
  * In a real app, this would sync with blockchain transactions
- *
- * @param dispatch - Redux dispatch function
  * @param newBalance - Updated balance data
  */
-export const updateUserBalance = (
-  dispatch: AppDispatch,
-  newBalance: UserBalance
-): void => {
-  dispatch(setBalance(newBalance));
+export const updateUserBalance = (newBalance: UserBalance): void => {
+  const { setBalance } = useBalanceStore.getState();
+  setBalance(newBalance);
 };
 
 /**
  * Reset user's balance to default values
- *
- * @param dispatch - Redux dispatch function
  */
-export const resetUserBalance = (dispatch: AppDispatch): void => {
-  dispatch(resetBalance());
+export const resetUserBalance = (): void => {
+  const { resetBalance } = useBalanceStore.getState();
+  resetBalance();
 };
 
 /**
@@ -382,9 +375,7 @@ export const setPriceAlert = async (
 ): Promise<PriceAlert> => {
   try {
     // Get existing alerts
-    const existingAlertsJson = await AsyncStorage.getItem(
-      PRICE_ALERTS_CACHE_KEY
-    );
+    const existingAlertsJson = StorageService.getItem(PRICE_ALERTS_CACHE_KEY);
     const existingAlerts: PriceAlert[] = existingAlertsJson
       ? JSON.parse(existingAlertsJson)
       : [];
@@ -401,7 +392,7 @@ export const setPriceAlert = async (
 
     // Save updated alerts
     const updatedAlerts = [...existingAlerts, newAlert];
-    await AsyncStorage.setItem(
+    StorageService.setItem(
       PRICE_ALERTS_CACHE_KEY,
       JSON.stringify(updatedAlerts)
     );
@@ -420,7 +411,7 @@ export const setPriceAlert = async (
  */
 export const getPriceAlerts = async (): Promise<PriceAlert[]> => {
   try {
-    const alertsJson = await AsyncStorage.getItem(PRICE_ALERTS_CACHE_KEY);
+    const alertsJson = StorageService.getItem(PRICE_ALERTS_CACHE_KEY);
     return alertsJson ? JSON.parse(alertsJson) : [];
   } catch (error) {
     console.error("Error getting price alerts:", error);
@@ -462,7 +453,7 @@ export const checkPriceAlerts = async (
     });
 
     // Save updated alerts
-    await AsyncStorage.setItem(
+    StorageService.setItem(
       PRICE_ALERTS_CACHE_KEY,
       JSON.stringify(updatedAlerts)
     );
