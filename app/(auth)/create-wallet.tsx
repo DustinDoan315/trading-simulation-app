@@ -60,7 +60,7 @@ const CreateNewWalletScreen = () => {
         <Pressable onPress={handleGoBack} style={styles.backButton}>
           <Image
             style={styles.backButtonImage}
-            source={require("../../assets/icons/arrow_back.png")}
+            source={require("@/assets/icons/arrow_back.png")}
           />
         </Pressable>
       </View>

@@ -77,7 +77,7 @@ const SecureWalletValidScreen = () => {
       ) : (
         <View style={styles.container}>
           <HeaderProgressBar
-            icon={require("../../assets/icons/progressBarFull.png")}
+            icon={require("@/assets/icons/progressBarFull.png")}
           />
           <View style={styles.textContent}>
             <Text style={styles.title}>Confirm Seed Phrase</Text>
@@ -104,10 +104,10 @@ const SecureWalletValidScreen = () => {
               resizeMode="stretch"
               source={
                 step == 1
-                  ? require("../../assets/icons/progress_1.png")
+                  ? require("@/assets/icons/progress_1.png")
                   : step == 2
-                  ? require("../../assets/icons/progress_2.png")
-                  : require("../../assets/icons/progress_3.png")
+                  ? require("@/assets/icons/progress_2.png")
+                  : require("@/assets/icons/progress_3.png")
               }
             />
           </View>

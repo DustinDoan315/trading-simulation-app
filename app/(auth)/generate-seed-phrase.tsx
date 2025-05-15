@@ -59,7 +59,7 @@ const SecureWalletGenSeedPhraseScreen = () => {
       ) : (
         <View style={styles.container}>
           <HeaderProgressBar
-            icon={require("../../assets/icons/progressSecond.png")}
+            icon={require("@/assets/icons/progressSecond.png")}
           />
 
           <View style={styles.textContent}>
@@ -91,7 +91,7 @@ const SecureWalletGenSeedPhraseScreen = () => {
               <BlurView intensity={20} style={styles.blurView} />
               <View style={styles.blurContent}>
                 <Image
-                  source={require("../../assets/icons/eyeVisible.png")}
+                  source={require("@/assets/icons/eyeVisible.png")}
                   style={styles.blurIcon}
                 />
                 <Text style={styles.blurText}>Tap to reveal</Text>

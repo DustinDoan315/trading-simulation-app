@@ -3,7 +3,7 @@ import { AddButton } from "./AddButton";
 import { CryptoCurrency } from "@/services/CryptoService";
 import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { WatchlistItem } from "./WatchlistItem";
-import { useAppSelector } from "@/store";
+import { useFavoritesStore } from "@/stores/favoritesStore";
 
 // components/home/WatchlistSection.tsx
 
@@ -26,7 +26,7 @@ const WatchlistSectionComponent: React.FC<WatchlistSectionProps> = ({
   onAddPress,
   scrollEnabled,
 }) => {
-  const favoriteIds = useAppSelector((state) => state.favorites.favoriteIds);
+  const favoriteIds = useFavoritesStore((state) => state.favorites);
   const filteredList = cryptoList.filter((crypto) =>
     favoriteIds.includes(crypto.id)
   );

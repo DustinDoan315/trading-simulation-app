@@ -70,14 +70,12 @@ const SecureWalletScreen = () => {
       ) : (
         <View style={styles.container}>
           {/* Header Section */}
-          <HeaderProgressBar
-            icon={require("../../assets/icons/progressBar.png")}
-          />
+          <HeaderProgressBar icon={require("@/assets/icons/progressBar.png")} />
 
           {/* Content Section */}
           <View style={styles.content}>
             <Image
-              source={require("../../assets/images/shield.png")}
+              source={require("@/assets/images/shield.png")}
               style={styles.shieldImage}
               resizeMode="contain"
             />

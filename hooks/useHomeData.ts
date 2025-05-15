@@ -1,23 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { updatePrice } from "@/features/cryptoPricesSlice";
-import { resetBalance } from "@/features/balanceSlice";
-import { RootState } from "@/store";
+import { useCryptoPricesStore } from "@/stores/cryptoPricesStore";
+import { useBalanceStore } from "@/stores/balanceStore";
 import {
   CryptoCurrency,
   getMarketData,
   getUserBalance,
+  resetUserBalance,
 } from "@/services/CryptoService";
 
 export function useHomeData() {
-  const dispatch = useDispatch();
+  const { updatePrices } = useCryptoPricesStore();
+  const { balance, setBalance } = useBalanceStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [marketData, setMarketData] = useState<CryptoCurrency[]>([]);
-
-  // Get balance from Redux store
-  const balance = useSelector((state: RootState) => state.balance.balance);
 
   const fetchData = useCallback(async () => {
     try {
@@ -29,20 +26,17 @@ export function useHomeData() {
           Math.abs(a.price_change_percentage_24h)
       );
 
-      // Initialize balance in Redux
-      getUserBalance(dispatch);
+      // Initialize balance
+      getUserBalance();
 
       setMarketData(sortMarket);
 
-      // Update Redux store with latest prices
-      sortMarket.forEach((coin) => {
-        dispatch(
-          updatePrice({
-            symbol: coin.symbol.toUpperCase(),
-            price: coin.current_price,
-          })
-        );
-      });
+      // Update prices in Zustand store
+      const prices = sortMarket.reduce((acc, coin) => {
+        acc[coin.symbol.toUpperCase()] = coin.current_price;
+        return acc;
+      }, {} as Record<string, number>);
+      updatePrices(prices);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -74,8 +68,8 @@ export function useHomeData() {
   };
 
   const handleResetBalance = useCallback(() => {
-    dispatch(resetBalance());
-  }, [dispatch]);
+    resetUserBalance();
+  }, []);
 
   return {
     loading,

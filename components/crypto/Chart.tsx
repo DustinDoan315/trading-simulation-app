@@ -1,6 +1,6 @@
 import React from "react";
 import { chartHtml } from "@/utils/chartHtml";
-import { ChartType } from "../../app/types/crypto";
+import { ChartType } from "@/app/types/crypto";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import {
@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 interface ChartProps {
-  webViewRef: React.RefObject<WebView>;
+  webViewRef: any;
   loading: boolean;
   error: string | null;
   onMessage: (event: any) => void;

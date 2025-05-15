@@ -11,7 +11,7 @@ const ImportWalletScreen = () => {
   return (
     <View style={styles.container}>
       <Image
-        source={require("../../assets/images/wallet.png")}
+        source={require("@/assets/images/wallet.png")}
         style={styles.image}
       />
       <Text style={styles.title}>Wallet Setup</Text>

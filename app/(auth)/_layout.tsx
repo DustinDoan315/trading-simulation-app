@@ -1,6 +1,6 @@
 import React from "react";
 import { Stack } from "expo-router";
-import { Colors } from "../../constants/Colors";
+import { Colors } from "@/constants/Colors";
 
 /**
  *  Auth Navigation Layout

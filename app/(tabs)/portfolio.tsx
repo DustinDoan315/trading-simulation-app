@@ -2,7 +2,7 @@ import AssetList from "@/components/portfolio/AssetList";
 import BalanceCard from "@/components/portfolio/BalanceCard";
 import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
 import React, { useState } from "react";
-
+import { useBalanceStore } from "@/stores/balanceStore";
 type Asset = {
   id: string;
   name: string;
@@ -15,8 +15,6 @@ type Asset = {
   assets?: Asset[];
 };
 
-import { useAppSelector, useAppDispatch } from "../../store";
-import type { RootState } from "../../store";
 import { router } from "expo-router";
 import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,10 +22,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const PortfolioScreen = () => {
   const [showAllAssetsModal, setShowAllAssetsModal] = useState(false);
   const insets = useSafeAreaInsets();
-  const { balance, changePercentage, changeValue } = useAppSelector(
-    (state: RootState) => state.balance
+  const { balance, changePercentage, changeValue } = useBalanceStore(
+    (state) => ({
+      balance: state.balance,
+      changePercentage: state.changePercentage,
+      changeValue: state.changeValue,
+    })
   );
-
   const handleAssetPress = (asset: any) => {
     router.navigate("/(subs)/crypto-chart");
   };
@@ -50,10 +51,12 @@ const PortfolioScreen = () => {
       };
     });
 
-  const sortedAssets = [...allAssets].sort((a, b) => 
-    parseFloat(b.value.replace('$', '')) - parseFloat(a.value.replace('$', ''))
+  const sortedAssets = [...allAssets].sort(
+    (a, b) =>
+      parseFloat(b.value.replace("$", "")) -
+      parseFloat(a.value.replace("$", ""))
   );
-  
+
   const mainAssets = sortedAssets.slice(0, 3);
   const otherAssets = sortedAssets.slice(3);
 

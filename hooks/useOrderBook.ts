@@ -1,13 +1,11 @@
 import { OrderBookEntry } from "../app/types/crypto";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "../store";
+import { useCryptoPricesStore } from "../stores/cryptoPricesStore";
 
 export default function useOrderBook(symbol: string = "BTC") {
   // Get base price from Redux store
-  const basePrice = useSelector(
-    (state: RootState) => state.cryptoPrices.prices[symbol] || 100
-  );
+  const { prices } = useCryptoPricesStore();
+  const basePrice = prices[symbol] || 100;
 
   // Generate initial orders
   const generateInitialOrders = (basePrice: number) => {

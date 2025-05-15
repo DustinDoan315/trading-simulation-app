@@ -23,19 +23,19 @@ const OnboardingScreen = () => {
       id: "1",
       title: "Seamless trading",
       content: "Buy, sell and exchange cryptocurrencies.",
-      image: require("../../assets/images/onboarding.png"),
+      image: require("@/assets/images/onboarding.png"),
     },
     // {
     //   id: "2",
     //   title: "Safe",
     //   content: "Security",
-    //   image: require("../../assets/images/shield.png"),
+    //   image: require("@/assets/images/shield.png"),
     // },
     // {
     //   id: "3",
     //   title: "Convenient",
     //   content: "Transaction",
-    //   image: require("../../assets/images/rocket.png"),
+    //   image: require("@/assets/images/rocket.png"),
     // },
   ];
 
@@ -53,10 +53,8 @@ const OnboardingScreen = () => {
         }}
         resizeMode="contain"
       />
-     <GradientText text={item.title} />
+      <GradientText text={item.title} />
       <Text style={styles.content}>{item.content}</Text>
-
- 
     </View>
   );
 

@@ -19,7 +19,7 @@ import SortToggle from "@/components/crypto/SortToggle";
 import { getMarketData, type CryptoCurrency } from "@/services/CryptoService";
 import colors from "@/styles/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppSelector } from "@/store";
+import { useFavoritesStore } from "@/stores/favoritesStore";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -27,7 +27,7 @@ const CryptoMarketScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [cryptoData, setCryptoData] = useState<CryptoCurrency[]>([]);
   const [filteredData, setFilteredData] = useState<CryptoCurrency[]>([]);
-  const favoriteIds = useAppSelector((state) => state.favorites.favoriteIds);
+  const favoriteIds = useFavoritesStore((state) => state.favorites);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState("all");

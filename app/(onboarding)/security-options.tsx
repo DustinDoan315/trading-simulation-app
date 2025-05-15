@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from "react-native";
 import { useRouter } from "expo-router";
-import { Colors } from "../../constants/Colors";
+import { Colors } from "@/constants/Colors";
 
 export default function SecurityOptionsScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
