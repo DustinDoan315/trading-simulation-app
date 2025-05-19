@@ -4,18 +4,20 @@
     "slug": "trading-simulation-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/rocket.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dustindoan.trading-simulation-app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.dustindoan.tradingsimulationapp"
     },
     "web": {
       "bundler": "metro",
@@ -42,7 +44,12 @@
     "extra": {
       "SECURE_STORE_PREFIX": "trading_sim_",
       "SUPABASE_URL": "https://bnlyyaprilekdcyfzybx.supabase.co",
-      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJubHl5YXByaWxla2RjeWZ6eWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMDM0NzUsImV4cCI6MjA2MDc3OTQ3NX0.EcRI0raZbGU3DtAoAzv3fZGwCu05jLADKEbMCHyCeRE"
-    }
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJubHl5YXByaWxla2RjeWZ6eWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMDM0NzUsImV4cCI6MjA2MDc3OTQ3NX0.EcRI0raZbGU3DtAoAzv3fZGwCu05jLADKEbMCHyCeRE",
+      "router": {},
+      "eas": {
+        "projectId": "ff964db9-1fa1-4563-98c5-478459b0c294"
+      }
+    },
+    "owner": "dustindoan"
   }
 }

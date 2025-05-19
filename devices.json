@@ -1,0 +1,10 @@
+{
+  "devices": [
+    {
+      "name": "Dustin's iPhone 11 Pro Max",
+      "identifier": "00008030-000635920251802E",
+      "type": "ios"
+    }
+  ]
+}
+eas device:create --name "Dustin's iPhone 11 Pro Max" --type ios --identifier 00008030-000635920251802E
