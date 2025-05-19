@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 interface ChartProps {
-  webViewRef: React.RefObject<WebView>;
+  webViewRef: any;
   loading: boolean;
   error: string | null;
   onMessage: (event: any) => void;

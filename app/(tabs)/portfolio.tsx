@@ -29,7 +29,7 @@ const PortfolioScreen = () => {
   );
 
   const handleAssetPress = (asset: any) => {
-    router.navigate("/(subs)/crypto-chart");
+    router.navigate(`/(subs)/crypto-chart?symbol=${asset.symbol}`);
   };
 
   const targetBalance = 0;
@@ -50,10 +50,12 @@ const PortfolioScreen = () => {
       };
     });
 
-  const sortedAssets = [...allAssets].sort((a, b) => 
-    parseFloat(b.value.replace('$', '')) - parseFloat(a.value.replace('$', ''))
+  const sortedAssets = [...allAssets].sort(
+    (a, b) =>
+      parseFloat(b.value.replace("$", "")) -
+      parseFloat(a.value.replace("$", ""))
   );
-  
+
   const mainAssets = sortedAssets.slice(0, 3);
   const otherAssets = sortedAssets.slice(3);
 

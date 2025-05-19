@@ -75,13 +75,7 @@ export default function CryptoSearch() {
   };
 
   const handleHistoryItemPress = (item: SearchHistoryItem) => {
-    // TODO: Need to update this to use id instead of symbol
-    // Currently we don't have the full crypto object here
-    // May need to modify search history to store ids
-    router.push({
-      pathname: "/(subs)/crypto-chart",
-      params: { symbol: item.text },
-    });
+    router.navigate(`/(subs)/crypto-chart?symbol=${item.text}`);
   };
 
   const handleCancel = () => {
@@ -91,6 +85,12 @@ export default function CryptoSearch() {
 
   const handleGoBack = () => {
     router.back();
+  };
+
+  const goToChart = (symbol: string) => {
+    router.navigate(
+      `/(subs)/crypto-chart?symbol=${symbol.toLocaleUpperCase()}`
+    );
   };
 
   return (
@@ -180,12 +180,9 @@ export default function CryptoSearch() {
                 <CryptoListItem
                   key={crypto.id}
                   crypto={crypto}
-                  onPress={(symbol) => {
+                  onPress={() => {
                     setShowSuggestions(false);
-                    router.push({
-                      pathname: "/(subs)/crypto-chart",
-                      params: { id: crypto.id },
-                    });
+                    goToChart(crypto.symbol);
                   }}
                 />
               ))}
@@ -202,11 +199,8 @@ export default function CryptoSearch() {
               <CryptoListItem
                 key={crypto.id}
                 crypto={crypto}
-                onPress={(symbol) => {
-                  router.push({
-                    pathname: "/(subs)/crypto-chart",
-                    params: { id: crypto.id },
-                  });
+                onPress={() => {
+                  goToChart(crypto.symbol);
                 }}
               />
             ))}

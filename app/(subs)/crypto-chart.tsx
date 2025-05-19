@@ -24,8 +24,7 @@ import { RootState } from "@/store";
 
 const CryptoChartScreen = () => {
   const token: any = useLocalSearchParams();
-  const {balance} = useSelector(
-    (state: RootState) => state.balance);
+  const { balance } = useSelector((state: RootState) => state.balance);
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");
