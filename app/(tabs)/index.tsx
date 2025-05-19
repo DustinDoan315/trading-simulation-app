@@ -3,7 +3,7 @@ import { AddButton } from "@/components/home/AddButton";
 import { BalanceSection } from "@/components/home/BalanceSection";
 import { router } from "expo-router";
 import { useHomeData } from "@/hooks/useHomeData";
-import { WatchlistSection } from "@/components/home/WatchlistSection";
+import { WatchListSection } from "@/components/home/WatchListSection";
 import {
   RefreshControl,
   SafeAreaView,
@@ -45,13 +45,13 @@ const HomeScreen = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        <BalanceSection 
-          balance={balance} 
+        <BalanceSection
+          balance={balance}
           isBalanceHidden={isBalanceHidden}
           onResetBalance={onResetBalance}
         />
 
-        <WatchlistSection
+        <WatchListSection
           cryptoList={trending}
           refreshing={false}
           onRefresh={() => {}}

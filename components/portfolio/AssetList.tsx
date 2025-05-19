@@ -1,7 +1,6 @@
-import AssetItem from './AssetItem';
-import React from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-
+import AssetItem from "./AssetItem";
+import React from "react";
+import { FlatList, StyleSheet, View } from "react-native";
 
 type Asset = {
   id: string;
@@ -19,6 +18,8 @@ type AssetListProps = {
 };
 
 const AssetList = ({ assets, onAssetPress }: AssetListProps) => {
+  console.log("Assets in AssetList:", assets);
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -29,7 +30,7 @@ const AssetList = ({ assets, onAssetPress }: AssetListProps) => {
           <AssetItem
             icon={item.icon}
             name={item.name}
-            symbol={item.symbol}
+            symbol={item.symbol.toUpperCase()}
             amount={item.amount}
             value={item.value}
             changePercentage={item.changePercentage}

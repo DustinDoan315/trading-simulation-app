@@ -1,7 +1,17 @@
 import AssetList from "@/components/portfolio/AssetList";
 import BalanceCard from "@/components/portfolio/BalanceCard";
 import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { PortfolioService } from "@/services/SupabaseService";
+
+const ASSET_GROUP_CONFIG = {
+  OTHERS: {
+    name: "Others",
+    symbol: "OTH",
+    icon: null,
+    changePercentage: 0,
+  },
+};
 
 type Asset = {
   id: string;
@@ -14,19 +24,74 @@ type Asset = {
   isOthers?: boolean;
   assets?: Asset[];
 };
-
-import { useAppSelector, useAppDispatch } from "../../store";
-import type { RootState } from "../../store";
 import { router } from "expo-router";
-import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const PortfolioScreen = () => {
   const [showAllAssetsModal, setShowAllAssetsModal] = useState(false);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [totalValue, setTotalValue] = useState(0);
+  const [changePercentage, setChangePercentage] = useState(0);
+  const [changeValue, setChangeValue] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
-  const { balance, changePercentage, changeValue } = useAppSelector(
-    (state: RootState) => state.balance
-  );
+
+  const fetchPortfolio = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const portfolioItems = await PortfolioService.getPortfolioList();
+      console.log("Portfolio data from Supabase:", portfolioItems);
+
+      if (!portfolioItems || portfolioItems.length === 0) {
+        setError("No portfolio data found");
+        return;
+      }
+
+      const mappedAssets = portfolioItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        symbol: item.symbol,
+        amount: item.amount,
+        value: item.value,
+        changePercentage: item.change_percentage,
+        icon: item.icon_url ? { uri: item.icon_url } : null,
+      }));
+
+      const total = mappedAssets.reduce(
+        (sum, asset) => sum + parseFloat(asset?.value.replace("$", "")),
+        0
+      );
+
+      setAssets(mappedAssets);
+      setTotalValue(total);
+      // Default change values - can be updated with real data
+      setChangePercentage(0);
+      setChangeValue(0);
+    } catch (error) {
+      console.error("Error fetching portfolio:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to fetch portfolio"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPortfolio();
+  }, []);
 
   const handleAssetPress = (asset: any) => {
     router.navigate(`/(subs)/crypto-chart?symbol=${asset.symbol}`);
@@ -34,23 +99,9 @@ const PortfolioScreen = () => {
 
   const targetBalance = 0;
   const progress =
-    targetBalance > 0 ? Math.min(balance.totalInUSD / targetBalance, 1) : 0;
+    targetBalance > 0 ? Math.min(totalValue / targetBalance, 1) : 0;
 
-  const allAssets = Object.entries(balance.holdings)
-    .filter(([_, holding]) => holding.amount > 0)
-    .map(([cryptoId, holding]) => {
-      return {
-        id: cryptoId,
-        name: cryptoId.charAt(0).toUpperCase() + cryptoId.slice(1),
-        symbol: holding.symbol,
-        amount: holding.amount.toFixed(4),
-        value: `$${holding.valueInUSD.toFixed(2)}`,
-        changePercentage: 0,
-        icon: null,
-      };
-    });
-
-  const sortedAssets = [...allAssets].sort(
+  const sortedAssets = [...assets].sort(
     (a, b) =>
       parseFloat(b.value.replace("$", "")) -
       parseFloat(a.value.replace("$", ""))
@@ -64,18 +115,18 @@ const PortfolioScreen = () => {
     0
   );
 
-  const assets = [
+  const displayAssets = [
     ...mainAssets,
     ...(otherAssets.length > 0
       ? [
           {
             id: "others",
-            name: "Others",
-            symbol: "OTH",
+            name: ASSET_GROUP_CONFIG.OTHERS.name,
+            symbol: ASSET_GROUP_CONFIG.OTHERS.symbol,
             amount: otherAssets.length.toString(),
             value: `$${othersTotal.toFixed(2)}`,
-            changePercentage: 0,
-            icon: null,
+            changePercentage: ASSET_GROUP_CONFIG.OTHERS.changePercentage,
+            icon: ASSET_GROUP_CONFIG.OTHERS.icon,
             isOthers: true,
             assets: otherAssets,
           },
@@ -86,35 +137,58 @@ const PortfolioScreen = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView
+      <FlatList
+        data={displayAssets}
         style={[styles.scrollView, { paddingTop: insets.top }]}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
-        <PortfolioHeader
-          totalValue={`$${balance.totalInUSD.toFixed(2)}`}
-          changePercentage={changePercentage}
-          changeValue={`$${Math.abs(changeValue).toFixed(2)}`}
-        />
-
-        <BalanceCard
-          balance={`$${balance.totalInUSD.toFixed(2)}`}
-          changePercentage={changePercentage}
-          changeValue={`$${Math.abs(changeValue).toFixed(2)}`}
-          progress={progress}
-          assets={assets}
-        />
-
-        <AssetList
-          assets={assets}
-          onAssetPress={(asset) => {
-            if ((asset as Asset).isOthers) {
-              setShowAllAssetsModal(true);
-            } else {
-              handleAssetPress(asset);
-            }
-          }}
-        />
-      </ScrollView>
+        contentContainerStyle={styles.scrollContent}
+        ListHeaderComponent={
+          <>
+            <PortfolioHeader
+              totalValue={`$${totalValue.toFixed(2)}`}
+              changePercentage={changePercentage}
+              changeValue={`$${Math.abs(changeValue).toFixed(2)}`}
+            />
+            <BalanceCard
+              balance={`$${totalValue.toFixed(2)}`}
+              changePercentage={changePercentage}
+              changeValue={`$${Math.abs(changeValue).toFixed(2)}`}
+              progress={progress}
+              assets={displayAssets}
+            />
+          </>
+        }
+        renderItem={({ item }) => (
+          <AssetList
+            assets={[item]}
+            onAssetPress={(asset) => {
+              if ((asset as Asset).isOthers) {
+                setShowAllAssetsModal(true);
+              } else {
+                handleAssetPress(asset);
+              }
+            }}
+          />
+        )}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => {
+              setLoading(true);
+              fetchPortfolio();
+            }}
+            tintColor="#FFFFFF"
+          />
+        }
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator size="large" color="#FFFFFF" />
+          ) : error ? (
+            <Text style={{ color: "white", textAlign: "center" }}>{error}</Text>
+          ) : null
+        }
+      />
     </View>
   );
 };

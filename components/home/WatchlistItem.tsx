@@ -4,7 +4,7 @@ import { formatCurrency, formatPercentage } from "@/utils/formatters";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-interface WatchlistItemProps {
+interface WatchListItemProps {
   crypto: CryptoCurrency;
   onPress: (id: string) => void;
 }
@@ -47,9 +47,9 @@ const areEqual = (
 
 const MemoizedChangeIndicator = React.memo(ChangeIndicator, areEqual);
 
-const areWatchlistItemPropsEqual = (
-  prevProps: WatchlistItemProps,
-  nextProps: WatchlistItemProps
+const areWatchListItemPropsEqual = (
+  prevProps: WatchListItemProps,
+  nextProps: WatchListItemProps
 ) => {
   return (
     prevProps.crypto.id === nextProps.crypto.id &&
@@ -60,7 +60,7 @@ const areWatchlistItemPropsEqual = (
   );
 };
 
-export const WatchlistItem: React.FC<WatchlistItemProps> = React.memo(
+export const WatchListChild: React.FC<WatchListItemProps> = React.memo(
   ({ crypto, onPress }) => {
     const isPositive = useMemo(
       () => crypto.price_change_percentage_24h >= 0,
@@ -89,7 +89,7 @@ export const WatchlistItem: React.FC<WatchlistItemProps> = React.memo(
       </TouchableOpacity>
     );
   },
-  areWatchlistItemPropsEqual
+  areWatchListItemPropsEqual
 );
 
 const styles = StyleSheet.create({

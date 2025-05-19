@@ -2,12 +2,12 @@ import React from "react";
 import { AddButton } from "./AddButton";
 import { CryptoCurrency } from "@/services/CryptoService";
 import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
-import { WatchlistItem } from "./WatchlistItem";
 import { useAppSelector } from "@/store";
+import { WatchListChild } from "./WatchListItem";
 
-// components/home/WatchlistSection.tsx
+// components/home/WatchListSection.tsx
 
-interface WatchlistSectionProps {
+interface WatchListSectionProps {
   title?: string;
   cryptoList: CryptoCurrency[];
   refreshing: boolean;
@@ -17,7 +17,7 @@ interface WatchlistSectionProps {
   scrollEnabled?: boolean;
 }
 
-const WatchlistSectionComponent: React.FC<WatchlistSectionProps> = ({
+const WatchListSectionComponent: React.FC<WatchListSectionProps> = ({
   title = "Watchlist",
   cryptoList,
   refreshing,
@@ -33,7 +33,7 @@ const WatchlistSectionComponent: React.FC<WatchlistSectionProps> = ({
 
   const renderItem = React.useCallback(
     ({ item: crypto }: { item: CryptoCurrency }) => (
-      <WatchlistItem key={crypto.id} crypto={crypto} onPress={onItemPress} />
+      <WatchListChild key={crypto.id} crypto={crypto} onPress={onItemPress} />
     ),
     [onItemPress]
   );
@@ -57,7 +57,7 @@ const WatchlistSectionComponent: React.FC<WatchlistSectionProps> = ({
   );
 };
 
-export const WatchlistSection = React.memo(WatchlistSectionComponent);
+export const WatchListSection = React.memo(WatchListSectionComponent);
 
 const styles = StyleSheet.create({
   watchlistContainer: {

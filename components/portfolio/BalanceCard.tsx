@@ -296,7 +296,7 @@ const BalanceCard = ({
   const { assetsWithNumericValues, totalValue } = useMemo(() => {
     const processedAssets = assets.map((asset) => ({
       ...asset,
-      numericValue: parseFloat(asset.value.replace("$", "").replace(",", "")),
+      numericValue: parseFloat(asset.value?.replace("$", "").replace(",", "")),
     }));
 
     const total = processedAssets.reduce(
