@@ -1,9 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
+import Constants from "expo-constants";
 import type { Database } from "@/app/types/supabase";
 
-const supabaseUrl = "https://bnlyyaprilekdcyfzybx.supabase.co";
-const supabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJubHl5YXByaWxla2RjeWZ6eWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMDM0NzUsImV4cCI6MjA2MDc3OTQ3NX0.EcRI0raZbGU3DtAoAzv3fZGwCu05jLADKEbMCHyCeRE";
+const supabaseUrl = Constants.expoConfig?.extra?.SUPABASE_URL;
+const supabaseAnonKey = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    "Supabase configuration missing. Please check your app.json extra config."
+  );
+}
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 

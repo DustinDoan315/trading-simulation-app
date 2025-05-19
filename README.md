@@ -64,17 +64,27 @@ yarn test --coverage
 ## CI/CD
 
 The project includes GitHub Actions CI that runs on every push/PR to main branch:
+
 - Type checking
 - Linting
 - Unit tests
 
 ## Environment Variables
 
-Create `.env` file with these variables:
+1. Create a new Supabase project at https://app.supabase.com
+2. Go to Project Settings → API
+3. Copy:
+   - `URL` under Project URL
+   - `anon` public key under Project API keys
+4. Create `.env` file in project root with:
+
 ```
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
+SUPABASE_URL=https://bnlyyaprilekdcyfzybx.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJubHl5YXByaWxla2RjeWZ6eWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMDM0NzUsImV4cCI6MjA2MDc3OTQ3NX0.EcRI0raZbGU3DtAoAzv3fZGwCu05jLADKEbMCHyCeRE
+
 ```
+
+⚠️ Important: Never commit your `.env` file! It's already in `.gitignore` for security.
 
 ## Deployment
 
