@@ -27,17 +27,19 @@ export const formatPrice = (price: any, decimals = 2) => {
  * @param {number} decimals - Number of decimal places (default: 4)
  * @returns {string} Formatted amount
  */
-export const formatAmount = (amount: any, decimals = 4) => {
+export const formatAmount = (amount: any, decimals = 2) => {
   if (typeof amount !== "number") {
-    // Try to parse number if string is provided
     try {
       amount = parseFloat(amount.replace(",", "."));
     } catch (e) {
-      return "0.0000";
+      return "0.00";
     }
   }
 
-  return amount.toFixed(decimals);
+  return amount.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
 };
 
 /**

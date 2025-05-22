@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import Dimensions from "@/styles/dimensions";
 import PriceInput from "../common/PriceInput";
-import AmountSlider from "../common/AmountSlider";
+import AmountPercentButton from "../common/AmountPercentButton";
 import ActionButton from "./ActionButton";
 import { formatAmount } from "@/utils/formatters";
 import TabSelector from "./TableSelector";
@@ -16,11 +16,17 @@ interface OrderEntryProps {
   onSubmitOrder?: (order: {
     type: "buy" | "sell";
     orderType: "market" | "limit";
-    price: number | "market";
+    symbol: string;
+    price: number;
     amount: number;
+    total: number;
+    fees: number;
+    status: "pending" | "completed" | "failed";
+    timestamp: number;
   }) => void;
   maxAmount?: number;
   availableBalance?: number;
+  image_url?: string;
 }
 
 const OrderEntry = ({
@@ -28,7 +34,6 @@ const OrderEntry = ({
   orderType = "market",
   currentPrice = 0,
   onSubmitOrder,
-  maxAmount = 0,
   availableBalance = 0,
 }: OrderEntryProps) => {
   const tokenPrice = useSelector(
@@ -36,9 +41,7 @@ const OrderEntry = ({
   );
 
   const [price, setPrice] = useState("0");
-  const [amount, setAmount] = useState(
-    availableBalance > 0 ? formatAmount(availableBalance) : "0"
-  );
+  const [amount, setAmount] = useState("0");
   const [sliderPosition, setSliderPosition] = useState(
     availableBalance > 0 ? 100 : 0
   );
@@ -53,9 +56,7 @@ const OrderEntry = ({
 
   const handleSliderChange = (position: any) => {
     setSliderPosition(position);
-
-    const calculatedAmount = (position / 100) * availableBalance;
-    setAmount(formatAmount(calculatedAmount));
+    setAmount(formatAmount(position));
   };
 
   const handlePriceChange = (value: any) => {
@@ -64,6 +65,7 @@ const OrderEntry = ({
 
   const handleAmountChange = (value: any) => {
     setAmount(value);
+    console.log("textttt: ", value);
 
     if (availableBalance > 0) {
       const newPosition = (parseFloat(value) / availableBalance) * 100;
@@ -75,13 +77,22 @@ const OrderEntry = ({
   const handleSubmitOrder = () => {
     const parsedPrice = parseFloat(price.replace(",", "."));
     const parsedAmount = parseFloat(amount.replace(",", "."));
+    const effectivePrice =
+      orderType === "market" ? currentPrice || tokenPrice : parsedPrice;
+    const total = effectivePrice * parsedAmount;
+    const fees = total * 0.001; // 0.1% fee
 
-    if (onSubmitOrder) {
+    if (onSubmitOrder && symbol) {
       onSubmitOrder({
         type: selectedTab,
         orderType: orderType,
-        price: orderType === "market" ? "market" : parsedPrice,
+        symbol: symbol,
+        price: effectivePrice,
         amount: parsedAmount,
+        total: total,
+        fees: fees,
+        status: "pending",
+        timestamp: Date.now(),
       });
     }
   };
@@ -115,7 +126,7 @@ const OrderEntry = ({
       />
 
       {/* Amount Slider */}
-      <AmountSlider
+      <AmountPercentButton
         position={sliderPosition}
         onChange={handleSliderChange}
         tradeType={selectedTab}

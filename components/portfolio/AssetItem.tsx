@@ -3,7 +3,7 @@ import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type AssetItemProps = {
-  icon: any;
+  image_url: any;
   name: string;
   symbol: string;
   amount: string;
@@ -13,7 +13,7 @@ type AssetItemProps = {
 };
 
 const AssetItem = ({
-  icon,
+  image_url,
   name,
   symbol,
   amount,
@@ -21,21 +21,23 @@ const AssetItem = ({
   changePercentage,
   onPress,
 }: AssetItemProps) => {
+  console.log("====================================");
+  console.log(value);
+  console.log("====================================");
   const isPositive = changePercentage >= 0;
-
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.leftSection}>
-        <Image source={icon} style={styles.icon} />
+        <Image source={{ uri: image_url }} style={styles.image_url} />
         <View style={styles.nameContainer}>
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.amount}>
-            {formatPrice(amount)} {symbol}
+            {formatAmount(amount, 2)} {symbol}
           </Text>
         </View>
       </View>
       <View style={styles.rightSection}>
-        <Text style={styles.value}>{value}</Text>
+        <Text style={styles.value}>{formatAmount(Number(value))}</Text>
         <Text
           style={[
             styles.change,
@@ -64,7 +66,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  icon: {
+  image_url: {
     width: 40,
     height: 40,
     borderRadius: 20,

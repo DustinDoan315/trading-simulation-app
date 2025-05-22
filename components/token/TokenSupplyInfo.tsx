@@ -1,17 +1,9 @@
-import * as Progress from 'react-native-progress';
-import Colors from '@/styles/colors';
-import React from 'react';
-import {
-    Platform,
-    StyleSheet,
-    Text,
-    View
-    } from 'react-native';
-import { ProgressView } from '@react-native-community/progress-view';
-import { ThemedText } from '../ThemedText';
-import { ThemedView } from '../ThemedView';
-
-
+import * as Progress from "react-native-progress";
+import Colors from "@/styles/colors";
+import React from "react";
+import { Platform, StyleSheet, Text, View } from "react-native";
+import { ThemedText } from "../ThemedText";
+import { ThemedView } from "../ThemedView";
 
 interface TokenSupplyInfoProps {
   circulatingSupply: number;
@@ -66,22 +58,14 @@ export const TokenSupplyInfo: React.FC<TokenSupplyInfoProps> = ({
       </View>
 
       <View style={styles.progressContainer}>
-        {Platform.OS === "ios" ? (
-          <ProgressView
-            progressTintColor="#007bff"
-            trackTintColor={Colors.border.light}
-            progress={circulatingPercentage / 100}
-          />
-        ) : (
-          <Progress.Bar
-            progress={circulatingPercentage / 100}
-            width={null}
-            height={8}
-            color="#007bff"
-            unfilledColor={Colors.border.light}
-            borderWidth={0}
-          />
-        )}
+        <Progress.Bar
+          progress={circulatingPercentage / 100}
+          width={null}
+          height={8}
+          color="#007bff"
+          unfilledColor={Colors.border.light}
+          borderWidth={0}
+        />
         <Text style={styles.percentText}>
           {circulatingPercentage.toFixed(2)}%
         </Text>
@@ -97,22 +81,14 @@ export const TokenSupplyInfo: React.FC<TokenSupplyInfoProps> = ({
       {maxSupply !== null && (
         <>
           <View style={styles.progressContainer}>
-            {Platform.OS === "ios" ? (
-              <ProgressView
-                progressTintColor="#6610f2"
-                trackTintColor={Colors.border.light}
-                progress={maxPercentage / 100}
-              />
-            ) : (
-              <Progress.Bar
-                progress={maxPercentage / 100}
-                width={null}
-                height={8}
-                color="#6610f2"
-                unfilledColor={Colors.border.light}
-                borderWidth={0}
-              />
-            )}
+            <Progress.Bar
+              progress={maxPercentage / 100}
+              width={null}
+              height={8}
+              color="#6610f2"
+              unfilledColor={Colors.border.light}
+              borderWidth={0}
+            />
             <Text style={styles.percentText}>{maxPercentage.toFixed(2)}%</Text>
           </View>
 

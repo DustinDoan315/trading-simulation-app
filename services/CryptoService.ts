@@ -36,7 +36,7 @@ export interface UserBalance {
       amount: number;
       valueInUSD: number;
       symbol: string;
-      icon?: string;
+      image_url?: string;
     };
   };
 }
@@ -291,16 +291,19 @@ const defaultBalance: UserBalance = {
       amount: 0.0,
       valueInUSD: 0.0,
       symbol: "BTC",
+      image_url: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
     },
     ethereum: {
       amount: 0.0,
       valueInUSD: 0.0,
       symbol: "ETH",
+      image_url: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
     },
     tether: {
       amount: 100000.0,
       valueInUSD: 100000.0,
       symbol: "USDT",
+      image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
     },
   },
 };

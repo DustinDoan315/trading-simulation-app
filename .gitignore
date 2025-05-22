@@ -9,3 +9,4 @@ package-lock.json
 .expo/types
 expo-env.d.ts
 # @end expo-cli
+.expo/devices.json

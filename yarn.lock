@@ -1893,16 +1893,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-native-community/progress-view@npm:^1.5.0":
-  version: 1.5.0
-  resolution: "@react-native-community/progress-view@npm:1.5.0"
-  peerDependencies:
-    react: ">16.8.3"
-    react-native: ">=0.59.5"
-  checksum: d1f4ac43db304846ca69a9aaca1b13aa3f4a5cdeb6d3992f30d66f2f6e1cdb02a56e558dfe1335d605dfeac8ee9206e9bae1ba1024c61f2652c9fbe352b21297
-  languageName: node
-  linkType: hard
-
 "@react-native/assets-registry@npm:0.79.2":
   version: 0.79.2
   resolution: "@react-native/assets-registry@npm:0.79.2"
@@ -8836,7 +8826,6 @@ __metadata:
     "@babel/core": ^7.25.2
     "@expo/vector-icons": ^14.0.2
     "@react-native-async-storage/async-storage": ^2.1.2
-    "@react-native-community/progress-view": ^1.5.0
     "@react-navigation/bottom-tabs": ^7.2.0
     "@react-navigation/native": ^7.0.14
     "@reduxjs/toolkit": ^2.7.0

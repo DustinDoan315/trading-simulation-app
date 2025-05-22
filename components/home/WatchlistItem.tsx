@@ -66,7 +66,6 @@ export const WatchListChild: React.FC<WatchListItemProps> = React.memo(
       () => crypto.price_change_percentage_24h >= 0,
       [crypto.price_change_percentage_24h]
     );
-    console.log("crypto: ", crypto);
 
     return (
       <TouchableOpacity

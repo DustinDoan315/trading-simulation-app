@@ -22,7 +22,7 @@ type Asset = {
   changePercentage: number;
   icon: any;
   isOthers?: boolean;
-  assets?: Asset[];
+  assets?: CryptoCurrency[];
 };
 import { router } from "expo-router";
 import {
@@ -36,10 +36,17 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CryptoCurrency } from "@/services/CryptoService";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { formatAmount } from "@/utils/formatters";
 
 const PortfolioScreen = () => {
+  const balance = useSelector((state: RootState) => state.balance.balance);
+  const holdings = Object.entries(balance.holdings);
+
   const [showAllAssetsModal, setShowAllAssetsModal] = useState(false);
-  const [assets, setAssets] = useState<Asset[]>([]);
+  const [assets, setAssets] = useState<any[]>([]);
   const [totalValue, setTotalValue] = useState(0);
   const [changePercentage, setChangePercentage] = useState(0);
   const [changeValue, setChangeValue] = useState(0);
@@ -51,28 +58,24 @@ const PortfolioScreen = () => {
     try {
       setLoading(true);
       setError(null);
-      const portfolioItems = await PortfolioService.getPortfolioList();
-      console.log("Portfolio data from Supabase:", portfolioItems);
 
-      if (!portfolioItems || portfolioItems.length === 0) {
+      console.log("Portfolio data from balanceSlice:", holdings);
+
+      if (!holdings || holdings.length === 0) {
         setError("No portfolio data found");
         return;
       }
 
-      const mappedAssets = portfolioItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        symbol: item.symbol,
-        amount: item.amount,
-        value: item.value,
-        changePercentage: item.change_percentage,
-        icon: item.icon_url ? { uri: item.icon_url } : null,
+      const mappedAssets = holdings.map(([id, holding]) => ({
+        id,
+        name: id.charAt(0).toUpperCase() + id.slice(1),
+        symbol: holding.symbol,
+        amount: holding.amount.toString(),
+        value: holding.valueInUSD.toFixed(2),
+        image_url: holding.image_url || null,
       }));
 
-      const total = mappedAssets.reduce(
-        (sum, asset) => sum + parseFloat(asset?.value.replace("$", "")),
-        0
-      );
+      const total = balance.totalInUSD;
 
       setAssets(mappedAssets);
       setTotalValue(total);
@@ -93,8 +96,18 @@ const PortfolioScreen = () => {
     fetchPortfolio();
   }, []);
 
-  const handleAssetPress = (asset: any) => {
-    router.navigate(`/(subs)/crypto-chart?symbol=${asset.symbol}`);
+  const handleAssetPress = (crypto: any) => {
+    router.push({
+      pathname: "/(subs)/crypto-chart",
+      params: {
+        id: crypto.id,
+        symbol: crypto.symbol
+          ? `${crypto.symbol.toLocaleUpperCase()}/USDT`
+          : "BTC/USDT",
+        name: crypto.name,
+        image_url: crypto.image,
+      },
+    });
   };
 
   const targetBalance = 0;
@@ -102,16 +115,14 @@ const PortfolioScreen = () => {
     targetBalance > 0 ? Math.min(totalValue / targetBalance, 1) : 0;
 
   const sortedAssets = [...assets].sort(
-    (a, b) =>
-      parseFloat(b.value.replace("$", "")) -
-      parseFloat(a.value.replace("$", ""))
+    (a, b) => parseFloat(b.value) - parseFloat(a.value)
   );
 
   const mainAssets = sortedAssets.slice(0, 3);
   const otherAssets = sortedAssets.slice(3);
 
   const othersTotal = otherAssets.reduce(
-    (sum, asset) => sum + parseFloat(asset.value.replace("$", "")),
+    (sum, asset) => sum + parseFloat(asset.value),
     0
   );
 
@@ -124,9 +135,9 @@ const PortfolioScreen = () => {
             name: ASSET_GROUP_CONFIG.OTHERS.name,
             symbol: ASSET_GROUP_CONFIG.OTHERS.symbol,
             amount: otherAssets.length.toString(),
-            value: `$${othersTotal.toFixed(2)}`,
+            value: othersTotal.toFixed(2),
             changePercentage: ASSET_GROUP_CONFIG.OTHERS.changePercentage,
-            icon: ASSET_GROUP_CONFIG.OTHERS.icon,
+            image_url: ASSET_GROUP_CONFIG.OTHERS.icon,
             isOthers: true,
             assets: otherAssets,
           },
@@ -145,12 +156,12 @@ const PortfolioScreen = () => {
         ListHeaderComponent={
           <>
             <PortfolioHeader
-              totalValue={`$${totalValue.toFixed(2)}`}
+              totalValue={`$${formatAmount(totalValue)}`}
               changePercentage={changePercentage}
               changeValue={`$${Math.abs(changeValue).toFixed(2)}`}
             />
             <BalanceCard
-              balance={`$${totalValue.toFixed(2)}`}
+              balance={`$${formatAmount(totalValue, 0)}`}
               changePercentage={changePercentage}
               changeValue={`$${Math.abs(changeValue).toFixed(2)}`}
               progress={progress}
@@ -162,7 +173,7 @@ const PortfolioScreen = () => {
           <AssetList
             assets={[item]}
             onAssetPress={(asset) => {
-              if ((asset as Asset).isOthers) {
+              if ((asset as any).isOthers) {
                 setShowAllAssetsModal(true);
               } else {
                 handleAssetPress(asset);

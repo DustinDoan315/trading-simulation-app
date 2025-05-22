@@ -65,8 +65,15 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   });
 
   const navigateToChart = () => {
-    router.navigate("/(subs)/crypto-chart");
-    // router.navigate("/(onboarding)/onboarding");
+    router.push({
+      pathname: "/(subs)/crypto-chart",
+      params: {
+        id: "bitcoin",
+        symbol: "BTC/USDT",
+        name: "Bitcoin",
+        image_url: "https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=022",
+      },
+    });
   };
 
   return (

@@ -21,28 +21,24 @@ import colors from "@/styles/colors";
 import { handleOrderSubmission } from "@/utils/helper";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+import { formatAmount } from "@/utils/formatters";
 
 const CryptoChartScreen = () => {
-  const token: any = useLocalSearchParams();
+  const { id, symbol, name, image_url }: any = useLocalSearchParams();
   const { balance } = useSelector((state: RootState) => state.balance);
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");
-  const [selectedTab, setSelectedTab] = useState<"buy" | "sell">("sell");
-  const [showOrderOptions, setShowOrderOptions] = useState(false);
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
   const [chartType, setChartType] = useState<ChartType>("candlestick");
-  const [orderAmount, setOrderAmount] = useState(30);
-  const [sliderPosition, setSliderPosition] = useState(30);
   const [showIndicators, setShowIndicators] = useState(false);
-  const [symbol, setSymbol] = useState(
-    token?.symbol ? `${token?.symbol}/USDT` : "BTC/USDT"
-  );
 
-  const { askOrders, bidOrders } = useOrderBook(token?.symbol);
+  console.log("token:", id, symbol, name, image_url);
+
+  const { askOrders, bidOrders } = useOrderBook(id);
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
-  const { currentPrice, priceChange } = useCryptoAPI(timeframe, token?.id);
+  const { currentPrice, priceChange } = useCryptoAPI(timeframe, id);
   const onMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
@@ -103,14 +99,9 @@ const CryptoChartScreen = () => {
     }
   };
 
-  const toggleOrderOptions = () => {
-    setShowOrderOptions(!showOrderOptions);
-  };
-
-  const handleOrderTypeSelection = (type: string) => {
-    setOrderType(type === "Lệnh thị trường" ? "market" : "limit");
-    setShowOrderOptions(false);
-  };
+  console.log("Current Price:", currentPrice);
+  console.log("Price Change:", priceChange);
+  console.log("Symbol:", id);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -150,18 +141,27 @@ const CryptoChartScreen = () => {
         {/* Order Book and Entry Components */}
         <View style={styles.orderSection}>
           <OrderEntry
-            symbol={token?.symbol}
+            symbol={symbol?.slice(0, 3)}
+            // image_url={image_url}
             orderType={orderType}
             currentPrice={currentPrice ? Number(currentPrice) : undefined}
-            onSubmitOrder={(order: Order) =>
-              handleOrderSubmission(order, currentPrice || undefined, token)
-            }
+            onSubmitOrder={async (order) => {
+              try {
+                await handleOrderSubmission(
+                  order,
+                  symbol?.slice(0, 3),
+                  image_url
+                );
+              } catch (error) {
+                console.error("Order submission failed:", error);
+              }
+            }}
             maxAmount={currentPrice ? 100000 / Number(currentPrice) : 0}
             availableBalance={balance.holdings.tether.amount}
           />
 
           <OrderBook
-            symbol={token?.symbol}
+            symbol={symbol}
             askOrders={askOrders}
             bidOrders={bidOrders}
             currentPrice={currentPrice}

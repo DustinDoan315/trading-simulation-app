@@ -12,7 +12,7 @@ interface WatchListSectionProps {
   cryptoList: CryptoCurrency[];
   refreshing: boolean;
   onRefresh: () => void;
-  onItemPress: (id: string) => void;
+  onItemPress: (crypto: CryptoCurrency) => void;
   onAddPress?: () => void;
   scrollEnabled?: boolean;
 }
@@ -33,7 +33,11 @@ const WatchListSectionComponent: React.FC<WatchListSectionProps> = ({
 
   const renderItem = React.useCallback(
     ({ item: crypto }: { item: CryptoCurrency }) => (
-      <WatchListChild key={crypto.id} crypto={crypto} onPress={onItemPress} />
+      <WatchListChild
+        key={crypto.id}
+        crypto={crypto}
+        onPress={() => onItemPress(crypto)}
+      />
     ),
     [onItemPress]
   );

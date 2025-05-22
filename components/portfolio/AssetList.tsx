@@ -9,7 +9,7 @@ type Asset = {
   amount: string;
   value: string;
   changePercentage: number;
-  icon: any;
+  image_url: string;
 };
 
 type AssetListProps = {
@@ -28,7 +28,7 @@ const AssetList = ({ assets, onAssetPress }: AssetListProps) => {
         scrollEnabled={false}
         renderItem={({ item }) => (
           <AssetItem
-            icon={item.icon}
+            image_url={item.image_url}
             name={item.name}
             symbol={item.symbol.toUpperCase()}
             amount={item.amount}

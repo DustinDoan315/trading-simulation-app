@@ -11,6 +11,7 @@ import {
   StatusBar,
   StyleSheet,
 } from "react-native";
+import { CryptoCurrency } from "@/services/CryptoService";
 
 const HomeScreen = () => {
   const {
@@ -26,8 +27,18 @@ const HomeScreen = () => {
   //   router.navigate(`/(subs)/crypto-detail?id=${id}`);
   // };
 
-  const navigateToChart = (symbol: string) => {
-    router.navigate(`/(subs)/crypto-chart?symbol=${symbol}`);
+  const navigateToChart = (crypto: CryptoCurrency) => {
+    router.push({
+      pathname: "/(subs)/crypto-chart",
+      params: {
+        id: crypto.id,
+        symbol: crypto.symbol
+          ? `${crypto.symbol.toLocaleUpperCase()}/USDT`
+          : "BTC/USDT",
+        name: crypto.name,
+        image_url: crypto.image,
+      },
+    });
   };
 
   const handleAddButtonPress = () => {

@@ -75,7 +75,7 @@ export default function CryptoSearch() {
   };
 
   const handleHistoryItemPress = (item: SearchHistoryItem) => {
-    router.navigate(`/(subs)/crypto-chart?symbol=${item.text}`);
+    // router.navigate(`/(subs)/crypto-chart?symbol=${item.text}`);
   };
 
   const handleCancel = () => {
@@ -87,10 +87,18 @@ export default function CryptoSearch() {
     router.back();
   };
 
-  const goToChart = (symbol: string) => {
-    router.navigate(
-      `/(subs)/crypto-chart?symbol=${symbol.toLocaleUpperCase()}`
-    );
+  const goToChart = (crypto: CryptoCurrency) => {
+    router.push({
+      pathname: "/(subs)/crypto-chart",
+      params: {
+        id: crypto.id,
+        symbol: crypto.symbol
+          ? `${crypto.symbol.toLocaleUpperCase()}/USDT`
+          : "BTC/USDT",
+        name: crypto.name,
+        image_url: crypto.image,
+      },
+    });
   };
 
   return (
@@ -182,7 +190,7 @@ export default function CryptoSearch() {
                   crypto={crypto}
                   onPress={() => {
                     setShowSuggestions(false);
-                    goToChart(crypto.symbol);
+                    goToChart(crypto);
                   }}
                 />
               ))}
@@ -200,7 +208,7 @@ export default function CryptoSearch() {
                 key={crypto.id}
                 crypto={crypto}
                 onPress={() => {
-                  goToChart(crypto.symbol);
+                  goToChart(crypto);
                 }}
               />
             ))}

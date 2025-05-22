@@ -7,10 +7,27 @@ export interface OrderBookEntry {
 }
 
 export interface Order {
+  id?: string;
   type: "buy" | "sell";
-  orderType: string;
-  price: string | number;
+  orderType: "market" | "limit";
+  symbol: string;
+  price: number;
   amount: number;
+  total: number;
+  fees: number;
+  status: "pending" | "completed" | "failed";
+  timestamp: number;
+  executedPrice?: number;
+  executedAt?: number;
+  image_url?: string;
+}
+
+export interface TradeHistory {
+  id: string;
+  userId: string;
+  order: Order;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Candle {

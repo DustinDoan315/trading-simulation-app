@@ -30,7 +30,7 @@ export function useHomeData() {
       );
 
       // Initialize balance in Redux
-      getUserBalance(dispatch);
+      // getUserBalance(dispatch);
 
       setMarketData(sortMarket);
 

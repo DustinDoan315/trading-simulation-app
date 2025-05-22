@@ -11,6 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { UserBalance } from "@/services/CryptoService";
+import { formatAmount } from "@/utils/formatters";
 
 // components/home/BalanceSection.tsx
 
@@ -60,7 +61,9 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
         </View>
         <Text style={styles.balanceTitle}>Your balance</Text>
         <Text style={styles.balanceAmount}>
-          {isBalanceHidden ? "********" : `$${balance.totalInUSD.toFixed(2)}`}
+          {isBalanceHidden
+            ? "********"
+            : `$${formatAmount(balance.totalInUSD)}`}
         </Text>
       </TouchableOpacity>
 

@@ -105,42 +105,37 @@ import { balanceSlice } from "@/features/balanceSlice";
 
 export const handleOrderSubmission = async (
   order: Order,
-  currentPrice: string | undefined,
-  token: any
+  symbol: any,
+  image_url: string
 ) => {
   try {
-    if (!currentPrice) {
-      throw new Error("Current price not available");
-    }
-
-    if (!token?.symbol) {
+    if (!symbol) {
       throw new Error("No token selected");
     }
 
-    const totalCost =
-      order.type === "buy"
-        ? order.amount * Number(currentPrice)
-        : order.amount * Number(currentPrice);
+    // Update order status to completed
+    const completedOrder: Order = {
+      ...order,
+      status: "completed",
+      executedPrice: order.price,
+      executedAt: Date.now(),
+      image_url: image_url,
+    };
 
-    // In a real app, this would call an API or blockchain transaction
-    console.log(`Executing ${order.type} order:`, {
-      symbol: token.symbol,
-      amount: order.amount,
-      price: currentPrice,
-      totalCost,
-    });
+    // Save trade to Redux store
+    store.dispatch(balanceSlice.actions.addTradeHistory(completedOrder));
 
     // Update balances in Redux store
-    const cryptoId = token.symbol.toLowerCase();
-    const valueInUSD = order.amount * Number(currentPrice);
+    const cryptoId = symbol.toLowerCase();
 
     // Update the token holding
     store.dispatch(
       balanceSlice.actions.updateHolding({
         cryptoId,
         amount: order.type === "buy" ? order.amount : -order.amount,
-        valueInUSD: order.type === "buy" ? valueInUSD : -valueInUSD,
-        symbol: token.symbol,
+        valueInUSD: order.type === "buy" ? order.total : -order.total,
+        symbol: symbol,
+        image_url: image_url,
       })
     );
 
@@ -148,19 +143,19 @@ export const handleOrderSubmission = async (
     store.dispatch(
       balanceSlice.actions.updateHolding({
         cryptoId: "tether",
-        amount: order.type === "buy" ? -totalCost : totalCost,
-        valueInUSD: order.type === "buy" ? -totalCost : totalCost,
+        amount: order.type === "buy" ? -order.total : order.total,
+        valueInUSD: order.type === "buy" ? -order.total : order.total,
         symbol: "USDT",
       })
     );
-
-    alert(
-      `Order executed: ${order.type} ${order.amount} ${token.symbol} at ${currentPrice} USDT`
-    );
+    console.log("====================================");
+    console.log("Order submitted:", completedOrder);
+    console.log("====================================");
+    return completedOrder;
   } catch (error: unknown) {
     console.error("Order failed:", error);
     const message =
       error instanceof Error ? error.message : "Unknown error occurred";
-    alert("Order failed: " + message);
+    throw new Error(message);
   }
 };
