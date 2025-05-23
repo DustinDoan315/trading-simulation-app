@@ -23,10 +23,6 @@ const HomeScreen = () => {
     onResetBalance,
   } = useHomeData();
 
-  // const navigateToDetail = (id: string) => {
-  //   router.navigate(`/(subs)/crypto-detail?id=${id}`);
-  // };
-
   const navigateToChart = (crypto: CryptoCurrency) => {
     router.push({
       pathname: "/(subs)/crypto-chart",

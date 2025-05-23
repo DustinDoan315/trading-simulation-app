@@ -39,7 +39,6 @@ const OrderEntry = ({
   const tokenPrice = useSelector(
     (state: RootState) => state.cryptoPrices.prices[symbol] || 100
   );
-
   const [price, setPrice] = useState("0");
   const [amount, setAmount] = useState("0");
   const [sliderPosition, setSliderPosition] = useState(
@@ -73,7 +72,6 @@ const OrderEntry = ({
     }
   };
 
-  // Handle order submission
   const handleSubmitOrder = () => {
     const parsedPrice = parseFloat(price.replace(",", "."));
     const parsedAmount = parseFloat(amount.replace(",", "."));
@@ -97,7 +95,6 @@ const OrderEntry = ({
     }
   };
 
-  // Determine if price input should be editable based on order type
   const isPriceEditable = orderType !== "market";
 
   return (
@@ -136,7 +133,6 @@ const OrderEntry = ({
         balanceType={selectedTab === "buy" ? "usdt" : "token"}
       />
 
-      {/* Action Button */}
       <ActionButton
         type={selectedTab}
         onPress={handleSubmitOrder}

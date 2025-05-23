@@ -4,7 +4,7 @@ import useOrderBook from "@/hooks/useOrderBook";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
 import Typography from "@/styles/typography";
-import { formatCurrency } from "@/utils/formatters";
+import { formatAmount, formatCurrency } from "@/utils/formatters";
 
 const OrderBookItem = ({
   price,
@@ -14,35 +14,28 @@ const OrderBookItem = ({
   isCurrentPrice = false,
   usdValue = null,
 }: any) => {
-  // Determine styles based on order type (bid/ask)
   const priceStyle = type === "bid" ? styles.bidPrice : styles.askPrice;
 
-  // For current price row (highlighted)
   if (isCurrentPrice) {
     return (
       <TouchableOpacity
         style={styles.currentPriceRow}
         onPress={onPress}
         activeOpacity={0.7}>
-        <Text style={styles.currentOrderPrice}>{price}</Text>
-        <Text style={styles.currentOrderValue}>
-          {usdValue ??
-            (price
-              ? formatCurrency(parseFloat(price.replace(",", ".")))
-              : formatCurrency(0))}
-        </Text>
+        <Text style={styles.currentOrderPrice}>{formatAmount(price, 2)}</Text>
       </TouchableOpacity>
     );
   }
 
-  // Regular order book row
   return (
     <TouchableOpacity
       style={styles.orderRow}
       onPress={onPress}
       activeOpacity={1}>
-      <Text style={[styles.orderPrice, priceStyle]}>{price}</Text>
-      <Text style={styles.orderAmount}>{amount}</Text>
+      <Text style={[styles.orderPrice, priceStyle]}>
+        {formatAmount(price, 2)}
+      </Text>
+      <Text style={styles.orderAmount}>{formatAmount(amount, 2)}</Text>
     </TouchableOpacity>
   );
 };
@@ -54,7 +47,7 @@ const OrderBook = ({
 }: any) => {
   const { askOrders, bidOrders, currentPrice } = useOrderBook(symbol);
   const [baseCurrency, quoteCurrency] = symbol.split("/");
-  // Handle price selection
+
   const handlePriceSelect = (price: any) => {
     if (onSelectPrice) {
       onSelectPrice(price);
@@ -63,13 +56,11 @@ const OrderBook = ({
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Price ({"USDT"})</Text>
-        <Text style={styles.headerText}>Amount ({baseCurrency})</Text>
+        <Text style={styles.priceHeaderText}>Price ({"USDT"})</Text>
+        <Text style={styles.amountHeaderText}>Amount ({baseCurrency})</Text>
       </View>
 
-      {/* Ask Orders (Sell side) */}
       <View style={styles.ordersSection}>
         {askOrders.slice(0, maxVisibleOrders).map((order: any, index: any) => (
           <OrderBookItem
@@ -82,7 +73,6 @@ const OrderBook = ({
         ))}
       </View>
 
-      {/* Current Price */}
       <OrderBookItem
         price={currentPrice}
         amount=""
@@ -90,7 +80,6 @@ const OrderBook = ({
         onPress={() => handlePriceSelect(currentPrice)}
       />
 
-      {/* Bid Orders (Buy side) */}
       <View style={styles.ordersSection}>
         {bidOrders.slice(0, maxVisibleOrders).map((order: any, index: any) => (
           <OrderBookItem
@@ -117,8 +106,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Dimensions.spacing.md,
     paddingVertical: Dimensions.spacing.sm,
   },
-  headerText: {
+  priceHeaderText: {
     ...Typography.label,
+    textAlign: "left",
+    flex: 1,
+  },
+  amountHeaderText: {
+    ...Typography.label,
+    textAlign: "right",
+    flex: 1,
   },
   ordersSection: {},
   orderRow: {

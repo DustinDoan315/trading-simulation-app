@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet } from "react-native";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
 import Typography from "@/styles/typography";
+import { formatAmount } from "@/utils/formatters";
 
 const PriceInput = ({
   label,
@@ -19,7 +20,7 @@ const PriceInput = ({
       <View style={[styles.inputWrapper, !editable && styles.inputDisabled]}>
         <TextInput
           style={styles.input}
-          value={value}
+          value={formatAmount(value, 2)}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
           placeholder={placeholder}

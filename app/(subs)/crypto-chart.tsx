@@ -142,7 +142,6 @@ const CryptoChartScreen = () => {
         <View style={styles.orderSection}>
           <OrderEntry
             symbol={symbol?.slice(0, 3)}
-            // image_url={image_url}
             orderType={orderType}
             currentPrice={currentPrice ? Number(currentPrice) : undefined}
             onSubmitOrder={async (order) => {
@@ -161,7 +160,7 @@ const CryptoChartScreen = () => {
           />
 
           <OrderBook
-            symbol={symbol}
+            symbol={symbol?.slice(0, 3)}
             askOrders={askOrders}
             bidOrders={bidOrders}
             currentPrice={currentPrice}

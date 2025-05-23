@@ -16,14 +16,12 @@ const ActionButton = ({
   loading = false,
   cryptoSymbol = "BTC",
 }: any) => {
-  // Determine button styles based on type
   const buttonStyle = [
     styles.button,
     type === "buy" ? styles.buyButton : styles.sellButton,
     disabled && styles.disabledButton,
   ];
 
-  // Get appropriate label based on type
   const getButtonLabel = () => {
     return type === "buy" ? `Mua ${cryptoSymbol}` : `Bán ${cryptoSymbol}`;
   };
@@ -51,12 +49,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
 
-    // Shadow for iOS
     shadowColor: Colors.background.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
-    // Shadow for Android
+
     elevation: 5,
   },
   buyButton: {

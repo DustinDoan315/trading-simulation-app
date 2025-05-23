@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
 import Typography from "@/styles/typography";
+import { formatAmount } from "@/utils/formatters";
 
 interface AmountPercentButtonProps {
   position?: number;
@@ -28,42 +29,28 @@ const AmountPercentButton = ({
 
   const handleCirclePress = (pos: number) => {
     setCurrentPosition(pos);
-
-    // Calculate actual amount based on position percentage
     let amount = 0;
-
     if (tradeType === "buy" && balanceType === "usdt") {
       amount = (availableAmount * (pos / 100)) / currentPrice;
-      console.log("====================================");
-      console.log("availableAmount", availableAmount);
-      console.log("currentPrice", currentPrice);
-      console.log("pos", pos);
-      console.log("amount", amount);
-      console.log("====================================");
     } else {
       amount = availableAmount * (pos / 100);
     }
-
     if (onChange) {
       onChange(amount);
     }
   };
 
-  // Get slider fill color based on trade type
   const getFillColor = () => {
     return tradeType === "buy" ? Colors.action.buy : Colors.action.sell;
   };
 
   const getMaxAmountText = () => {
     if (tradeType === "buy" && balanceType === "usdt") {
-      return `${(
-        (availableAmount * (currentPosition / 100)) /
-        currentPrice
-      ).toFixed(6)} ${amountUnit}`;
+      return `${formatAmount(
+        (availableAmount / currentPrice).toFixed(6),
+        3
+      )}  ${amountUnit}`;
     }
-    return `${(availableAmount * (currentPosition / 100)).toFixed(
-      6
-    )} ${amountUnit}`;
   };
 
   return (
@@ -103,7 +90,7 @@ const AmountPercentButton = ({
         <View style={styles.labelRow}>
           <Text style={Typography.label}>Khả dụng</Text>
           <Text style={Typography.bodySmall}>
-            {availableAmount} {"USDT"}
+            {formatAmount(availableAmount, 1)} {"USDT"}
           </Text>
         </View>
 

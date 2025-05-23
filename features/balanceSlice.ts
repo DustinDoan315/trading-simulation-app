@@ -12,13 +12,12 @@ interface BalanceState {
 
 const initialState: BalanceState = {
   balance: {
-    totalInUSD: 100000.0,
+    totalInUSD: 100000,
     holdings: {
       tether: {
-        amount: 100000.0,
-        valueInUSD: 100000.0,
+        amount: 100000,
+        valueInUSD: 100000,
         symbol: "USDT",
-        image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
       },
     },
   },

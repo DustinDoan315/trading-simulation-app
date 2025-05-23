@@ -21,14 +21,14 @@ const AssetItem = ({
   changePercentage,
   onPress,
 }: AssetItemProps) => {
-  console.log("====================================");
-  console.log(value);
-  console.log("====================================");
   const isPositive = changePercentage >= 0;
+  const imageSource = image_url
+    ? { uri: image_url }
+    : require("@/assets/icons/usdt.png");
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.leftSection}>
-        <Image source={{ uri: image_url }} style={styles.image_url} />
+        <Image source={imageSource} style={styles.image_url} />
         <View style={styles.nameContainer}>
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.amount}>
