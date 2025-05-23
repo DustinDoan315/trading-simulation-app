@@ -22,7 +22,7 @@ const OrderBookItem = ({
         style={styles.currentPriceRow}
         onPress={onPress}
         activeOpacity={0.7}>
-        <Text style={styles.currentOrderPrice}>{formatAmount(price, 2)}</Text>
+        <Text style={styles.currentOrderPrice}>{formatAmount(price, 1)}</Text>
       </TouchableOpacity>
     );
   }
@@ -33,7 +33,7 @@ const OrderBookItem = ({
       onPress={onPress}
       activeOpacity={1}>
       <Text style={[styles.orderPrice, priceStyle]}>
-        {formatAmount(price, 2)}
+        {formatAmount(price, 1)}
       </Text>
       <Text style={styles.orderAmount}>{formatAmount(amount, 2)}</Text>
     </TouchableOpacity>
