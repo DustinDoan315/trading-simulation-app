@@ -17,6 +17,7 @@ type AssetListProps = {
   onAssetPress?: (asset: Asset) => void;
 };
 
+
 const AssetList = ({ assets, onAssetPress }: AssetListProps) => {
   console.log("Assets in AssetList:", assets);
 

@@ -3,7 +3,7 @@ import { AddButton } from "@/components/home/AddButton";
 import { BalanceSection } from "@/components/home/BalanceSection";
 import { router } from "expo-router";
 import { useHomeData } from "@/hooks/useHomeData";
-import { WatchListSection } from "@/components/home/WatchListSection";
+import { WatchListSection } from "@/components/home/WatchlistSection";
 import {
   RefreshControl,
   SafeAreaView,

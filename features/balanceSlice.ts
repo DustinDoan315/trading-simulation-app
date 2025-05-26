@@ -18,6 +18,7 @@ const initialState: BalanceState = {
         amount: 100000,
         valueInUSD: 100000,
         symbol: "USDT",
+        name: "Tether",
       },
     },
   },
@@ -59,10 +60,11 @@ export const balanceSlice = createSlice({
         amount: number;
         valueInUSD: number;
         symbol: string;
+        name: string;
         image_url?: string;
       }>
     ) => {
-      const { cryptoId, amount, valueInUSD, symbol, image_url } =
+      const { cryptoId, amount, valueInUSD, symbol, image_url, name } =
         action.payload;
       const currentHolding = state.balance.holdings[cryptoId];
 
@@ -74,6 +76,7 @@ export const balanceSlice = createSlice({
           amount,
           valueInUSD,
           symbol,
+          name,
           image_url,
         };
       }

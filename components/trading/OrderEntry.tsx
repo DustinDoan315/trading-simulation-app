@@ -10,6 +10,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 
 interface OrderEntryProps {
+  name?: string;
   symbol?: string;
   orderType?: "market" | "limit";
   currentPrice?: number;
@@ -17,6 +18,7 @@ interface OrderEntryProps {
     type: "buy" | "sell";
     orderType: "market" | "limit";
     symbol: string;
+    name: string;
     price: number;
     amount: number;
     total: number;
@@ -31,6 +33,7 @@ interface OrderEntryProps {
 
 const OrderEntry = ({
   symbol = "BTC",
+  name = "Bitcoin",
   orderType = "market",
   currentPrice = 0,
   onSubmitOrder,
@@ -85,6 +88,7 @@ const OrderEntry = ({
         type: selectedTab,
         orderType: orderType,
         symbol: symbol,
+        name: name,
         price: effectivePrice,
         amount: parsedAmount,
         total: total,

@@ -136,6 +136,7 @@ export const handleOrderSubmission = async (
         valueInUSD: order.type === "buy" ? order.total : -order.total,
         symbol: symbol,
         image_url: image_url,
+        name: order.name || "Unknown",
       })
     );
 
@@ -146,6 +147,7 @@ export const handleOrderSubmission = async (
         amount: order.type === "buy" ? -order.total : order.total,
         valueInUSD: order.type === "buy" ? -order.total : order.total,
         symbol: "USDT",
+        name: "Tether",
       })
     );
     console.log("====================================");

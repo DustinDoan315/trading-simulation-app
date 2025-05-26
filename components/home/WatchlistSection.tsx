@@ -3,7 +3,7 @@ import { AddButton } from "./AddButton";
 import { CryptoCurrency } from "@/services/CryptoService";
 import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useAppSelector } from "@/store";
-import { WatchListChild } from "./WatchListItem";
+import { WatchListChild } from "./WatchlistItem";
 
 // components/home/WatchListSection.tsx
 

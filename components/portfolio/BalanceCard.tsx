@@ -16,6 +16,7 @@ import Svg, {
   Path,
   Stop,
 } from "react-native-svg";
+import { formatAmount } from "@/utils/formatters";
 
 type Asset = {
   id: string;
@@ -478,21 +479,20 @@ const BalanceCard = ({
         ))}
       </View>
 
-      {/* Tooltip */}
       {activeSegmentDetails && (
         <Animated.View
           style={[
             styles.tokenInfoContainer,
             {
               opacity: fadeAnim,
-              left:
-                activeSegmentDetails.tooltipX > size / 2
-                  ? Math.min(activeSegmentDetails.tooltipX, screenWidth - 150)
-                  : Math.max(10, activeSegmentDetails.tooltipX - 130),
-              top:
-                activeSegmentDetails.tooltipY > size / 2
-                  ? activeSegmentDetails.tooltipY + 10
-                  : activeSegmentDetails.tooltipY - 90,
+              // left:
+              //   activeSegmentDetails.tooltipX > size / 2
+              //     ? Math.min(activeSegmentDetails.tooltipX, screenWidth - 150)
+              //     : Math.max(10, activeSegmentDetails.tooltipX - 130),
+              // top:
+              //   activeSegmentDetails.tooltipY > size / 2
+              //     ? activeSegmentDetails.tooltipY + 10
+              //     : activeSegmentDetails.tooltipY - 90,
             },
           ]}>
           <View
@@ -501,13 +501,13 @@ const BalanceCard = ({
               { backgroundColor: activeSegmentDetails.colors[0] },
             ]}
           />
-          <Text style={styles.tokenName}>{activeSegmentDetails.name}</Text>
-          <Text style={styles.tokenValue}>{activeSegmentDetails.value}</Text>
           <Text style={styles.tokenPercentage}>
             {Math.round(activeSegmentDetails.percentage)}% of portfolio
           </Text>
+          <Text style={styles.tokenName}>{activeSegmentDetails.name}</Text>
+          <Text style={styles.tokenValue}>{`$${formatAmount(activeSegmentDetails.value, 2)}`}</Text>
           <Text style={styles.tokenAmount}>
-            {activeSegmentDetails.amount} {activeSegmentDetails.symbol}
+            {formatAmount(activeSegmentDetails.amount, 2)} {activeSegmentDetails.symbol}
           </Text>
         </Animated.View>
       )}
@@ -515,9 +515,7 @@ const BalanceCard = ({
   );
 };
 
-// Styles remain the same
 const styles = StyleSheet.create({
-  // ... keep existing styles
   balanceHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -638,7 +636,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "flex-start",
     width: 130,
-    zIndex: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.4,

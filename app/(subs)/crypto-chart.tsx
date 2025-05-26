@@ -21,7 +21,6 @@ import colors from "@/styles/colors";
 import { handleOrderSubmission } from "@/utils/helper";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { formatAmount } from "@/utils/formatters";
 
 const CryptoChartScreen = () => {
   const { id, symbol, name, image_url }: any = useLocalSearchParams();
@@ -142,6 +141,7 @@ const CryptoChartScreen = () => {
         <View style={styles.orderSection}>
           <OrderEntry
             symbol={symbol?.slice(0, 3)}
+            name={name}
             orderType={orderType}
             currentPrice={currentPrice ? Number(currentPrice) : undefined}
             onSubmitOrder={async (order) => {
@@ -149,7 +149,7 @@ const CryptoChartScreen = () => {
                 await handleOrderSubmission(
                   order,
                   symbol?.slice(0, 3),
-                  image_url
+                  image_url,
                 );
               } catch (error) {
                 console.error("Order submission failed:", error);

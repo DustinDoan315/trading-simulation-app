@@ -11,6 +11,7 @@ export interface Order {
   type: "buy" | "sell";
   orderType: "market" | "limit";
   symbol: string;
+  name: string;
   price: number;
   amount: number;
   total: number;

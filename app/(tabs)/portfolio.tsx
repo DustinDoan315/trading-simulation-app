@@ -2,7 +2,6 @@ import AssetList from "@/components/portfolio/AssetList";
 import BalanceCard from "@/components/portfolio/BalanceCard";
 import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
 import React, { useState, useEffect } from "react";
-import { PortfolioService } from "@/services/SupabaseService";
 
 const ASSET_GROUP_CONFIG = {
   OTHERS: {
@@ -29,7 +28,6 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -68,7 +66,7 @@ const PortfolioScreen = () => {
 
       const mappedAssets = holdings.map(([id, holding]) => ({
         id,
-        name: id.charAt(0).toUpperCase() + id.slice(1),
+        name: holding.name || "Unknown",
         symbol: holding.symbol,
         amount: holding.amount.toString(),
         value: holding.valueInUSD.toFixed(2),

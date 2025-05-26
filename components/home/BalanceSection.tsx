@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useAppDispatch } from "@/store";
+import { resetBalance } from "@/features/balanceSlice";
+import { resetFavorites } from "@/features/favoritesSlice";
+import { clearSearchHistory } from "@/features/searchHistorySlice";
+import { persistor } from "@/store";
 import {
   StyleSheet,
   Text,
@@ -34,10 +39,21 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
     setShowResetModal(true);
   };
 
-  const confirmReset = () => {
-    onResetBalance?.();
-    setShowResetModal(false);
-    Alert.alert("Success", "Balance has been reset to $100,000");
+  const dispatch = useAppDispatch();
+
+  const confirmReset = async () => {
+    try {
+      dispatch(resetBalance());
+      dispatch(resetFavorites());
+      dispatch(clearSearchHistory());
+      await persistor.purge();
+      
+      onResetBalance?.();
+      setShowResetModal(false);
+      Alert.alert("Success", "All data has been reset to default values");
+    } catch (error) {
+      Alert.alert("Error", "Failed to reset data. Please try again.");
+    }
   };
   const moveToPortfolio = () => {
     router.navigate("/portfolio");
