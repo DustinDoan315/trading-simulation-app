@@ -238,8 +238,6 @@ const BalanceCard = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const screenWidth = Dimensions.get("window").width;
-
   // Size and chart constants - memoized
   const chartParams = useMemo(() => {
     const size = 280;
@@ -505,9 +503,13 @@ const BalanceCard = ({
             {Math.round(activeSegmentDetails.percentage)}% of portfolio
           </Text>
           <Text style={styles.tokenName}>{activeSegmentDetails.name}</Text>
-          <Text style={styles.tokenValue}>{`$${formatAmount(activeSegmentDetails.value, 2)}`}</Text>
+          <Text style={styles.tokenValue}>{`$${formatAmount(
+            activeSegmentDetails.value,
+            2
+          )}`}</Text>
           <Text style={styles.tokenAmount}>
-            {formatAmount(activeSegmentDetails.amount, 2)} {activeSegmentDetails.symbol}
+            {formatAmount(activeSegmentDetails.amount, 2)}{" "}
+            {activeSegmentDetails.symbol}
           </Text>
         </Animated.View>
       )}

@@ -17,7 +17,6 @@ type AssetListProps = {
   onAssetPress?: (asset: Asset) => void;
 };
 
-
 const AssetList = ({ assets, onAssetPress }: AssetListProps) => {
   console.log("Assets in AssetList:", assets);
 
@@ -34,7 +33,6 @@ const AssetList = ({ assets, onAssetPress }: AssetListProps) => {
             symbol={item.symbol.toUpperCase()}
             amount={item.amount}
             value={item.value}
-            changePercentage={item.changePercentage}
             onPress={() => onAssetPress && onAssetPress(item)}
           />
         )}

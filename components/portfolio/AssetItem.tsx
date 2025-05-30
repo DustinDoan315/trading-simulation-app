@@ -1,6 +1,8 @@
 import { formatAmount, formatPrice } from "@/utils/formatters";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 type AssetItemProps = {
   image_url: any;
@@ -8,7 +10,6 @@ type AssetItemProps = {
   symbol: string;
   amount: string;
   value: string;
-  changePercentage: number;
   onPress?: () => void;
 };
 
@@ -18,10 +19,12 @@ const AssetItem = ({
   symbol,
   amount,
   value,
-  changePercentage,
   onPress,
 }: AssetItemProps) => {
-  const isPositive = changePercentage >= 0;
+  const totalBalance = useSelector(
+    (state: RootState) => state.balance.balance.totalInUSD
+  );
+  const percentage = (Number(value) / Number(totalBalance)) * 100;
   const imageSource = image_url
     ? { uri: image_url }
     : require("@/assets/icons/usdt.png");
@@ -38,14 +41,7 @@ const AssetItem = ({
       </View>
       <View style={styles.rightSection}>
         <Text style={styles.value}>{formatAmount(Number(value))}</Text>
-        <Text
-          style={[
-            styles.change,
-            isPositive ? styles.positive : styles.negative,
-          ]}>
-          {isPositive ? "+" : ""}
-          {changePercentage}%
-        </Text>
+        <Text style={styles.change}>{percentage.toFixed(2)}%</Text>
       </View>
     </TouchableOpacity>
   );

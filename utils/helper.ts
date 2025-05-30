@@ -102,11 +102,16 @@ export const generateSeedPhrase = async () => {
 
 import { store } from "@/store";
 import { balanceSlice } from "@/features/balanceSlice";
+import { useNotification } from "@/components/ui/Notification";
 
 export const handleOrderSubmission = async (
   order: Order,
   symbol: any,
-  image_url: string
+  image_url: string,
+  showNotification?: (notification: {
+    message: string;
+    type: "success" | "error" | "info";
+  }) => void
 ) => {
   try {
     if (!symbol) {
@@ -150,14 +155,30 @@ export const handleOrderSubmission = async (
         name: "Tether",
       })
     );
-    console.log("====================================");
     console.log("Order submitted:", completedOrder);
-    console.log("====================================");
+
+    if (showNotification) {
+      showNotification({
+        message: `${order.type === "buy" ? "Bought" : "Sold"} ${
+          order.amount
+        } ${symbol} for ${formatPrice(order.total)}`,
+        type: "success",
+      });
+    }
+
     return completedOrder;
   } catch (error: unknown) {
     console.error("Order failed:", error);
     const message =
       error instanceof Error ? error.message : "Unknown error occurred";
+
+    if (showNotification) {
+      showNotification({
+        message: `Failed to ${order.type} ${symbol}: ${message}`,
+        type: "error",
+      });
+    }
+
     throw new Error(message);
   }
 };

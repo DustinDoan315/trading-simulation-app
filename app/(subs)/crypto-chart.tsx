@@ -21,10 +21,12 @@ import colors from "@/styles/colors";
 import { handleOrderSubmission } from "@/utils/helper";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+import { useNotification } from "@/components/ui/Notification";
 
 const CryptoChartScreen = () => {
   const { id, symbol, name, image_url }: any = useLocalSearchParams();
   const { balance } = useSelector((state: RootState) => state.balance);
+  const { showNotification } = useNotification();
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");
@@ -144,17 +146,14 @@ const CryptoChartScreen = () => {
             name={name}
             orderType={orderType}
             currentPrice={currentPrice ? Number(currentPrice) : undefined}
-            onSubmitOrder={async (order) => {
-              try {
-                await handleOrderSubmission(
-                  order,
-                  symbol?.slice(0, 3),
-                  image_url,
-                );
-              } catch (error) {
-                console.error("Order submission failed:", error);
-              }
-            }}
+            onSubmitOrder={(order) =>
+              handleOrderSubmission(
+                order,
+                symbol?.slice(0, 3),
+                image_url,
+                showNotification
+              )
+            }
             maxAmount={currentPrice ? 100000 / Number(currentPrice) : 0}
             availableBalance={balance.holdings.tether.amount}
           />

@@ -81,7 +81,7 @@ const OrderEntry = ({
     const effectivePrice =
       orderType === "market" ? currentPrice || tokenPrice : parsedPrice;
     const total = effectivePrice * parsedAmount;
-    const fees = total * 0.001; // 0.1% fee
+    const fees = total * 0.001;
 
     if (onSubmitOrder && symbol) {
       onSubmitOrder({
@@ -109,7 +109,7 @@ const OrderEntry = ({
         marginEnabled={marginEnabled}
         onToggleMargin={setMarginEnabled}
       />
-      {/* Price Input */}
+
       <PriceInput
         label="Giá (USDT)"
         value={price}
@@ -118,7 +118,6 @@ const OrderEntry = ({
         editable={isPriceEditable}
       />
 
-      {/* Amount Input */}
       <PriceInput
         label={`Số lượng (${symbol})`}
         value={amount}
@@ -126,7 +125,6 @@ const OrderEntry = ({
         placeholder="0.00"
       />
 
-      {/* Amount Slider */}
       <AmountPercentButton
         position={sliderPosition}
         onChange={handleSliderChange}

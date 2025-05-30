@@ -12,17 +12,6 @@ const ASSET_GROUP_CONFIG = {
   },
 };
 
-type Asset = {
-  id: string;
-  name: string;
-  symbol: string;
-  amount: string;
-  value: string;
-  changePercentage: number;
-  icon: any;
-  isOthers?: boolean;
-  assets?: CryptoCurrency[];
-};
 import { router } from "expo-router";
 import {
   ActivityIndicator,
@@ -40,14 +29,18 @@ import { RootState } from "@/store";
 import { formatAmount } from "@/utils/formatters";
 
 const PortfolioScreen = () => {
-  const balance = useSelector((state: RootState) => state.balance.balance);
+  const { balance, changeValue, changePercentage } = useSelector(
+    (state: RootState) => ({
+      balance: state.balance.balance,
+      changeValue: state.balance.changeValue,
+      changePercentage: state.balance.changePercentage,
+    })
+  );
   const holdings = Object.entries(balance.holdings);
 
   const [showAllAssetsModal, setShowAllAssetsModal] = useState(false);
   const [assets, setAssets] = useState<any[]>([]);
   const [totalValue, setTotalValue] = useState(0);
-  const [changePercentage, setChangePercentage] = useState(0);
-  const [changeValue, setChangeValue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
@@ -77,9 +70,7 @@ const PortfolioScreen = () => {
 
       setAssets(mappedAssets);
       setTotalValue(total);
-      // Default change values - can be updated with real data
-      setChangePercentage(0);
-      setChangeValue(0);
+      // Total value is the only local state we need to track
     } catch (error) {
       console.error("Error fetching portfolio:", error);
       setError(
@@ -92,6 +83,12 @@ const PortfolioScreen = () => {
 
   useEffect(() => {
     fetchPortfolio();
+    return () => {
+      setAssets([]);
+      setTotalValue(0);
+      setLoading(false);
+      setError(null);
+    };
   }, []);
 
   const handleAssetPress = (crypto: any) => {
@@ -156,7 +153,9 @@ const PortfolioScreen = () => {
             <PortfolioHeader
               totalValue={`$${formatAmount(totalValue)}`}
               changePercentage={changePercentage}
-              changeValue={`$${Math.abs(changeValue).toFixed(2)}`}
+              changeValue={`${changeValue >= 0 ? "+" : "-"}$${Math.abs(
+                changeValue
+              ).toFixed(2)}`}
             />
             <BalanceCard
               balance={`$${formatAmount(totalValue, 0)}`}
