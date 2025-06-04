@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: Dimensions.radius.round,
     paddingVertical: Dimensions.spacing.md,
-    marginTop: Dimensions.spacing.x3l,
+    marginTop: Dimensions.spacing.sm,
     alignItems: "center",
     justifyContent: "center",
 

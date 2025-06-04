@@ -1,6 +1,9 @@
 import * as bip39 from "bip39";
 import * as Crypto from "expo-crypto";
 import { Buffer } from "buffer";
+import { store } from "@/store";
+import { balanceSlice } from "@/features/balanceSlice";
+import Toast from "react-native-toast-message";
 import { Order } from "@/app/types/crypto";
 
 global.Buffer = Buffer;
@@ -45,14 +48,8 @@ export const generateSeedPhrase = async () => {
     // Generate random bytes using expo-crypto
     const randomBytes = await Crypto.getRandomBytesAsync(16);
 
-    console.log("====================================");
-    console.log("Random Bytes:", randomBytes);
-
     // Convert to a Buffer that bip39 can use
     const buffer = Buffer.from(randomBytes);
-
-    console.log("====================================");
-    console.log("buffer:", buffer);
 
     // Generate mnemonic directly from the buffer
     const mnemonic = bip39.entropyToMnemonic(buffer);
@@ -100,10 +97,6 @@ export const generateSeedPhrase = async () => {
 //   }
 // };
 
-import { store } from "@/store";
-import { balanceSlice } from "@/features/balanceSlice";
-import { useNotification } from "@/components/ui/Notification";
-
 export const handleOrderSubmission = async (
   order: Order,
   symbol: any,
@@ -113,9 +106,47 @@ export const handleOrderSubmission = async (
     type: "success" | "error" | "info";
   }) => void
 ) => {
+  console.log("Submitting order:", {
+    ...order,
+    symbol,
+    image_url,
+  });
+
   try {
     if (!symbol) {
       throw new Error("No token selected");
+    }
+
+    // Validate minimum token amount
+    if (order.amount < 0.1) {
+      const errorMessage = `Minimum order amount is 0.1 ${symbol}`;
+      Toast.show({
+        type: "warning",
+        text1: "Minimum amount not met",
+        text2: errorMessage,
+        visibilityTime: 3000,
+        autoHide: true,
+        position: "top",
+      });
+      throw new Error(errorMessage);
+    }
+
+    // For sell orders, check balance before processing
+    if (order.type === "sell") {
+      const state = store.getState();
+      const cryptoId = symbol.toLowerCase();
+      const assetHolding = state.balance.balance.holdings[cryptoId];
+
+      if (!assetHolding || assetHolding.amount < order.amount) {
+        const errorMessage = `Insufficient ${symbol} balance`;
+        if (showNotification) {
+          showNotification({
+            message: errorMessage,
+            type: "error",
+          });
+        }
+        throw new Error(errorMessage);
+      }
     }
 
     // Update order status to completed
@@ -133,38 +164,63 @@ export const handleOrderSubmission = async (
     // Update balances in Redux store
     const cryptoId = symbol.toLowerCase();
 
-    // Update the token holding
-    store.dispatch(
-      balanceSlice.actions.updateHolding({
-        cryptoId,
-        amount: order.type === "buy" ? order.amount : -order.amount,
-        valueInUSD: order.type === "buy" ? order.total : -order.total,
-        symbol: symbol,
-        image_url: image_url,
-        name: order.name || "Unknown",
-      })
-    );
+    if (order.type === "buy") {
+      // For buy orders, update token holding and subtract from USDT
+      store.dispatch(
+        balanceSlice.actions.updateHolding({
+          cryptoId,
+          amount: order.amount,
+          valueInUSD: order.total,
+          symbol: symbol,
+          image_url: image_url,
+          name: order.name || "Unknown",
+        })
+      );
 
-    // Update USDT balance for the transaction
-    store.dispatch(
-      balanceSlice.actions.updateHolding({
-        cryptoId: "tether",
-        amount: order.type === "buy" ? -order.total : order.total,
-        valueInUSD: order.type === "buy" ? -order.total : order.total,
-        symbol: "USDT",
-        name: "Tether",
-      })
-    );
+      store.dispatch(
+        balanceSlice.actions.updateHolding({
+          cryptoId: "tether",
+          amount: -order.total,
+          valueInUSD: -order.total,
+          symbol: "USDT",
+          name: "Tether",
+        })
+      );
+    } else {
+      // For sell orders, update token holding and add to USDT
+      store.dispatch(
+        balanceSlice.actions.updateHolding({
+          cryptoId,
+          amount: -order.amount,
+          valueInUSD: -order.total,
+          symbol: symbol,
+          image_url: image_url,
+          name: order.name || "Unknown",
+        })
+      );
+
+      store.dispatch(
+        balanceSlice.actions.updateHolding({
+          cryptoId: "tether",
+          amount: order.total,
+          valueInUSD: order.total,
+          symbol: "USDT",
+          name: "Tether",
+        })
+      );
+    }
     console.log("Order submitted:", completedOrder);
 
-    if (showNotification) {
-      showNotification({
-        message: `${order.type === "buy" ? "Bought" : "Sold"} ${
-          order.amount
-        } ${symbol} for ${formatPrice(order.total)}`,
-        type: "success",
-      });
-    }
+    Toast.show({
+      type: "success",
+      text1: "Order executed",
+      text2: `${order.type === "buy" ? "Bought" : "Sold"} ${
+        order.amount
+      } ${symbol} for ${formatPrice(order.total)}`,
+      visibilityTime: 3000,
+      autoHide: true,
+      position: "top",
+    });
 
     return completedOrder;
   } catch (error: unknown) {
@@ -172,12 +228,14 @@ export const handleOrderSubmission = async (
     const message =
       error instanceof Error ? error.message : "Unknown error occurred";
 
-    if (showNotification) {
-      showNotification({
-        message: `Failed to ${order.type} ${symbol}: ${message}`,
-        type: "error",
-      });
-    }
+    Toast.show({
+      type: "error",
+      text1: "Order failed",
+      text2: `Failed to ${order.type} ${symbol}: ${message}`,
+      visibilityTime: 4000,
+      autoHide: true,
+      position: "top",
+    });
 
     throw new Error(message);
   }

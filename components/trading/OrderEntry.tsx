@@ -42,13 +42,28 @@ const OrderEntry = ({
   const tokenPrice = useSelector(
     (state: RootState) => state.cryptoPrices.prices[symbol] || 100
   );
+
+  // Get token balance from store
+  const tokenBalance = useSelector((state: RootState) => {
+    const holdings = state.balance.balance.holdings;
+    const holding = Object.values(holdings).find(
+      (h: any) => h.symbol === symbol
+    );
+    return holding ? holding.amount : 0;
+  });
+
   const [price, setPrice] = useState("0");
   const [amount, setAmount] = useState("0");
-  const [sliderPosition, setSliderPosition] = useState(
-    availableBalance > 0 ? 100 : 0
-  );
   const [selectedTab, setSelectedTab] = useState<"buy" | "sell">("buy");
   const [marginEnabled, setMarginEnabled] = useState(false);
+
+  // Determine which balance to use based on trade type
+  const currentBalance =
+    selectedTab === "buy" ? availableBalance : tokenBalance;
+
+  const [sliderPosition, setSliderPosition] = useState(
+    currentBalance > 0 ? 100 : 0
+  );
 
   useEffect(() => {
     if (symbol) {
@@ -69,8 +84,8 @@ const OrderEntry = ({
     setAmount(value);
     console.log("textttt: ", value);
 
-    if (availableBalance > 0) {
-      const newPosition = (parseFloat(value) / availableBalance) * 100;
+    if (currentBalance > 0) {
+      const newPosition = (parseFloat(value) / currentBalance) * 100;
       setSliderPosition(Math.min(100, Math.max(0, newPosition)));
     }
   };
@@ -129,7 +144,7 @@ const OrderEntry = ({
         position={sliderPosition}
         onChange={handleSliderChange}
         tradeType={selectedTab}
-        availableAmount={availableBalance}
+        availableAmount={currentBalance}
         amountUnit={symbol}
         currentPrice={currentPrice || tokenPrice}
         balanceType={selectedTab === "buy" ? "usdt" : "token"}

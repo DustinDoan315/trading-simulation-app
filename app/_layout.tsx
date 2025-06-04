@@ -12,6 +12,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
+import Toast from "react-native-toast-message";
 import scheduler from "@/utils/scheduler";
 import { updateDailyBalance } from "@/utils/balanceUpdater";
 
@@ -67,6 +68,7 @@ export default function RootLayout() {
             </Stack>
             <StatusBar style="auto" />
           </SafeAreaView>
+          <Toast />
         </NotificationProvider>
       </ThemeProvider>
     </Provider>

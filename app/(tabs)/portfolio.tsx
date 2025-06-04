@@ -100,7 +100,7 @@ const PortfolioScreen = () => {
           ? `${crypto.symbol.toLocaleUpperCase()}/USDT`
           : "BTC/USDT",
         name: crypto.name,
-        image_url: crypto.image,
+        image_url: crypto.image || "",
       },
     });
   };

@@ -90,16 +90,19 @@ const AmountPercentButton = ({
         <View style={styles.labelRow}>
           <Text style={Typography.label}>Khả dụng</Text>
           <Text style={Typography.bodySmall}>
-            {formatAmount(availableAmount, 1)} {"USDT"}
+            {formatAmount(availableAmount, 1)}{" "}
+            {tradeType === "buy" ? "USDT" : amountUnit}
           </Text>
         </View>
 
-        <View style={styles.labelRow}>
-          <Text style={Typography.label}>
-            {tradeType === "buy" ? "Mua" : "Bán"} tối đa
-          </Text>
-          <Text style={Typography.bodySmall}>{getMaxAmountText()}</Text>
-        </View>
+        {tradeType === "buy" && (
+          <View style={styles.labelRow}>
+            <Text style={Typography.label}>
+              {tradeType === "buy" ? "Mua" : "Bán"} tối đa
+            </Text>
+            <Text style={Typography.bodySmall}>{getMaxAmountText()}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
