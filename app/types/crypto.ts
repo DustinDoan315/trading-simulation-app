@@ -39,3 +39,22 @@ export interface Candle {
   close: number;
   volume: number;
 }
+
+export interface Asset {
+  id: string;
+  name: string;
+  symbol: string;
+  amount: string;
+  value: string;
+  changePercentage?: number;
+  image_url: string | null;
+  isButton?: boolean;
+  isOthers?: boolean;
+  assets?: Asset[];
+}
+
+export interface PortfolioData {
+  assets: Asset[];
+  totalValue: number;
+  displayAssets: Asset[];
+}

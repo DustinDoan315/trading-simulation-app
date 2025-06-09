@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet } from "react-native";
 import Dimensions from "@/styles/dimensions";
 import PriceInput from "../common/PriceInput";
@@ -56,6 +56,7 @@ const OrderEntry = ({
   const [amount, setAmount] = useState("0");
   const [selectedTab, setSelectedTab] = useState<"buy" | "sell">("buy");
   const [marginEnabled, setMarginEnabled] = useState(false);
+  const firstRender = useRef(true);
 
   // Determine which balance to use based on trade type
   const currentBalance =
@@ -71,6 +72,16 @@ const OrderEntry = ({
     }
   }, [symbol]);
 
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+
+    setAmount("0");
+    setSliderPosition(0);
+  }, [selectedTab]);
+
   const handleSliderChange = (position: any) => {
     setSliderPosition(position);
     setAmount(formatAmount(position));
@@ -82,7 +93,6 @@ const OrderEntry = ({
 
   const handleAmountChange = (value: any) => {
     setAmount(value);
-    console.log("textttt: ", value);
 
     if (currentBalance > 0) {
       const newPosition = (parseFloat(value) / currentBalance) * 100;

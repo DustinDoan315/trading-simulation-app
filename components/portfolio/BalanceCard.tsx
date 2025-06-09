@@ -17,16 +17,7 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import { formatAmount } from "@/utils/formatters";
-
-type Asset = {
-  id: string;
-  name: string;
-  symbol: string;
-  amount: string;
-  value: string;
-  changePercentage: number;
-  icon: any;
-};
+import { Asset } from "@/app/types/crypto";
 
 type BalanceCardProps = {
   balance: string;

@@ -97,146 +97,135 @@ export const generateSeedPhrase = async () => {
 //   }
 // };
 
+// Custom error class for order processing
+class OrderError extends Error {
+  constructor(message: string, public userFriendlyMessage: string) {
+    super(message);
+    this.name = "OrderError";
+  }
+}
+
+// Helper to show consistent notifications
+const showToast = (
+  type: "success" | "error" | "warning" | "info",
+  text1: string,
+  text2: string,
+  position: "top" | "bottom" = "top"
+) => {
+  Toast.show({
+    type,
+    text1,
+    text2,
+    visibilityTime: type === "error" ? 4000 : 3000,
+    autoHide: true,
+    position,
+  });
+};
+
 export const handleOrderSubmission = async (
   order: Order,
-  symbol: any,
+  symbol: string, // Changed from 'any' to string for type safety
   image_url: string,
   showNotification?: (notification: {
     message: string;
     type: "success" | "error" | "info";
   }) => void
-) => {
-  console.log("Submitting order:", {
-    ...order,
-    symbol,
-    image_url,
-  });
+): Promise<Order> => {
+  console.debug("[Order] Submitting:", { ...order, symbol, image_url });
 
   try {
-    if (!symbol) {
-      throw new Error("No token selected");
+    // Input validation
+    if (!symbol) throw new OrderError("No token selected", "No token selected");
+
+    const MIN_AMOUNT = 0.1;
+    if (order.amount < MIN_AMOUNT) {
+      const msg = `Minimum order amount is ${MIN_AMOUNT} ${symbol}`;
+      throw new OrderError(msg, msg);
     }
 
-    // Validate minimum token amount
-    if (order.amount < 0.1) {
-      const errorMessage = `Minimum order amount is 0.1 ${symbol}`;
-      Toast.show({
-        type: "warning",
-        text1: "Minimum amount not met",
-        text2: errorMessage,
-        visibilityTime: 3000,
-        autoHide: true,
-        position: "top",
-      });
-      throw new Error(errorMessage);
-    }
-
-    // For sell orders, check balance before processing
+    // Balance check for sell orders
     if (order.type === "sell") {
       const state = store.getState();
-      const cryptoId = symbol.toLowerCase();
-      const assetHolding = state.balance.balance.holdings[cryptoId];
+      const holding = state.balance.balance.holdings[symbol.toLowerCase()];
 
-      if (!assetHolding || assetHolding.amount < order.amount) {
-        const errorMessage = `Insufficient ${symbol} balance`;
-        if (showNotification) {
-          showNotification({
-            message: errorMessage,
-            type: "error",
-          });
-        }
-        throw new Error(errorMessage);
+      if (!holding || holding.amount < order.amount) {
+        const msg = `Insufficient ${symbol} balance`;
+        if (showNotification) showNotification({ message: msg, type: "error" });
+        throw new OrderError(msg, msg);
       }
     }
 
-    // Update order status to completed
+    // Create completed order object
     const completedOrder: Order = {
       ...order,
       status: "completed",
       executedPrice: order.price,
       executedAt: Date.now(),
-      image_url: image_url,
+      image_url,
     };
 
-    // Save trade to Redux store
+    // Prepare dispatch parameters
+    const cryptoId = symbol.toLowerCase();
+    const assetName = order.name || "Unknown";
+    const isBuyOrder = order.type === "buy";
+    const sign = isBuyOrder ? 1 : -1;
+
+    // Dispatch trade history
     store.dispatch(balanceSlice.actions.addTradeHistory(completedOrder));
 
-    // Update balances in Redux store
-    const cryptoId = symbol.toLowerCase();
+    // Update crypto holding
+    store.dispatch(
+      balanceSlice.actions.updateHolding({
+        cryptoId,
+        amount: sign * order.amount,
+        valueInUSD: sign * order.total,
+        symbol,
+        image_url,
+        name: assetName,
+      })
+    );
 
-    if (order.type === "buy") {
-      // For buy orders, update token holding and subtract from USDT
-      store.dispatch(
-        balanceSlice.actions.updateHolding({
-          cryptoId,
-          amount: order.amount,
-          valueInUSD: order.total,
-          symbol: symbol,
-          image_url: image_url,
-          name: order.name || "Unknown",
-        })
-      );
+    // Update USDT holding
+    store.dispatch(
+      balanceSlice.actions.updateHolding({
+        cryptoId: "USDT",
+        amount: -sign * order.total,
+        valueInUSD: -sign * order.total,
+        symbol: "USDT",
+        name: "Tether",
+      })
+    );
 
-      store.dispatch(
-        balanceSlice.actions.updateHolding({
-          cryptoId: "tether",
-          amount: -order.total,
-          valueInUSD: -order.total,
-          symbol: "USDT",
-          name: "Tether",
-        })
-      );
-    } else {
-      // For sell orders, update token holding and add to USDT
-      store.dispatch(
-        balanceSlice.actions.updateHolding({
-          cryptoId,
-          amount: -order.amount,
-          valueInUSD: -order.total,
-          symbol: symbol,
-          image_url: image_url,
-          name: order.name || "Unknown",
-        })
-      );
+    // Success notification
+    const actionText = isBuyOrder ? "Bought" : "Sold";
+    showToast(
+      "success",
+      "Order executed",
+      `${actionText} ${order.amount} ${symbol} for ${formatPrice(order.total)}`
+    );
 
-      store.dispatch(
-        balanceSlice.actions.updateHolding({
-          cryptoId: "tether",
-          amount: order.total,
-          valueInUSD: order.total,
-          symbol: "USDT",
-          name: "Tether",
-        })
-      );
-    }
-    console.log("Order submitted:", completedOrder);
-
-    Toast.show({
-      type: "success",
-      text1: "Order executed",
-      text2: `${order.type === "buy" ? "Bought" : "Sold"} ${
-        order.amount
-      } ${symbol} for ${formatPrice(order.total)}`,
-      visibilityTime: 3000,
-      autoHide: true,
-      position: "top",
-    });
-
+    console.debug("[Order] Submitted successfully:", completedOrder);
     return completedOrder;
   } catch (error: unknown) {
-    console.error("Order failed:", error);
-    const message =
-      error instanceof Error ? error.message : "Unknown error occurred";
+    console.error("[Order] Failed:", error);
 
-    Toast.show({
-      type: "error",
-      text1: "Order failed",
-      text2: `Failed to ${order.type} ${symbol}: ${message}`,
-      visibilityTime: 4000,
-      autoHide: true,
-      position: "top",
-    });
+    const defaultError = "Order processing failed";
+    const { message, userFriendlyMessage } =
+      error instanceof OrderError
+        ? {
+            message: error.message,
+            userFriendlyMessage: error.userFriendlyMessage,
+          }
+        : { message: defaultError, userFriendlyMessage: defaultError };
 
-    throw new Error(message);
+    // Show error notification
+    showToast(
+      "error",
+      "Order failed",
+      `Failed to ${order.type} ${symbol}: ${userFriendlyMessage}`
+    );
+
+    // Propagate error for further handling
+    throw new OrderError(message, userFriendlyMessage);
   }
 };

@@ -155,7 +155,7 @@ const CryptoChartScreen = () => {
               )
             }
             maxAmount={currentPrice ? 100000 / Number(currentPrice) : 0}
-            availableBalance={balance.holdings.tether.amount}
+            availableBalance={balance.holdings.USDT.amount}
           />
 
           <OrderBook

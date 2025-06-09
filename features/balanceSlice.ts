@@ -10,15 +10,60 @@ interface BalanceState {
   tradeHistory: Order[];
 }
 
+// Define Holding type based on the structure in CryptoService
+type Holding = {
+  amount: number;
+  valueInUSD: number;
+  symbol: string;
+  name: string;
+  image_url?: string;
+  averageBuyPrice: number;
+  currentPrice: number;
+  profitLoss: number;
+  profitLossPercentage: number;
+};
+
+// More specific interface for holding updates
+interface HoldingUpdatePayload {
+  cryptoId: string;
+  amount: number;
+  valueInUSD: number;
+  symbol: string;
+  name: string;
+  image_url?: string;
+}
+
+// Helper function to calculate profit/loss
+const calculateProfitLoss = (holding: Holding) => {
+  const marketValue = holding.amount * holding.currentPrice;
+  const costBasis = holding.amount * holding.averageBuyPrice;
+  holding.profitLoss = marketValue - costBasis;
+  holding.profitLossPercentage =
+    costBasis > 0 ? (holding.profitLoss / costBasis) * 100 : 0;
+  return holding;
+};
+
+// Helper to recalculate total portfolio value
+const recalculatePortfolioValue = (holdings: Record<string, Holding>) => {
+  return Object.values(holdings).reduce(
+    (sum, holding) => sum + holding.amount * holding.currentPrice,
+    0
+  );
+};
+
 const initialState: BalanceState = {
   balance: {
     totalInUSD: 100000,
     holdings: {
-      tether: {
+      USDT: {
         amount: 100000,
         valueInUSD: 100000,
         symbol: "USDT",
         name: "Tether",
+        averageBuyPrice: 1,
+        currentPrice: 1,
+        profitLoss: 0,
+        profitLossPercentage: 0,
       },
     },
   },
@@ -33,11 +78,7 @@ export const balanceSlice = createSlice({
   initialState,
   reducers: {
     addTradeHistory: (state, action: PayloadAction<Order>) => {
-      const order = action.payload;
-      if (order.image_url) {
-        order.image_url = order.image_url;
-      }
-      state.tradeHistory.push(order);
+      state.tradeHistory.push(action.payload);
     },
     setBalance: (state, action: PayloadAction<UserBalance>) => {
       state.previousBalance = state.balance;
@@ -47,48 +88,74 @@ export const balanceSlice = createSlice({
         state.changeValue =
           state.balance.totalInUSD - state.previousBalance.totalInUSD;
         state.changePercentage =
-          (state.changeValue / state.previousBalance.totalInUSD) * 100;
+          state.previousBalance.totalInUSD !== 0
+            ? (state.changeValue / state.previousBalance.totalInUSD) * 100
+            : 0;
       }
     },
     resetBalance: (state) => {
-      state.balance = initialState.balance;
+      return { ...initialState };
     },
-    updateHolding: (
-      state,
-      action: PayloadAction<{
-        cryptoId: string;
-        amount: number;
-        valueInUSD: number;
-        symbol: string;
-        name: string;
-        image_url?: string;
-      }>
-    ) => {
-      const { cryptoId, amount, valueInUSD, symbol, image_url, name } =
+    updateHolding: (state, action: PayloadAction<HoldingUpdatePayload>) => {
+      const { cryptoId, amount, valueInUSD, symbol, name, image_url } =
         action.payload;
-      const currentHolding = state.balance.holdings[cryptoId];
+      const holdings = state.balance.holdings;
+      const currentHolding = holdings[cryptoId];
+      const pricePerToken = valueInUSD / amount;
 
       if (currentHolding) {
-        currentHolding.amount += amount;
-        currentHolding.valueInUSD += valueInUSD;
+        const totalCost =
+          currentHolding.amount * currentHolding.averageBuyPrice + valueInUSD;
+        const totalAmount = currentHolding.amount + amount;
+
+        holdings[cryptoId] = {
+          ...currentHolding,
+          amount: totalAmount,
+          valueInUSD: currentHolding.valueInUSD + valueInUSD,
+          averageBuyPrice: totalCost / totalAmount,
+        };
+
+        // Recalculate profit/loss with updated values
+        calculateProfitLoss(holdings[cryptoId]);
       } else {
-        state.balance.holdings[cryptoId] = {
+        holdings[cryptoId] = {
           amount,
           valueInUSD,
           symbol,
           name,
           image_url,
+          averageBuyPrice: pricePerToken,
+          currentPrice: pricePerToken,
+          profitLoss: 0,
+          profitLossPercentage: 0,
         };
       }
 
-      state.balance.totalInUSD = Object.values(state.balance.holdings).reduce(
-        (sum, holding: { valueInUSD: number }) => sum + holding.valueInUSD,
-        0
-      );
+      state.balance.totalInUSD = recalculatePortfolioValue(holdings);
+    },
+    updateCurrentPrice: (
+      state,
+      action: PayloadAction<{ cryptoId: string; currentPrice: number }>
+    ) => {
+      const { cryptoId, currentPrice } = action.payload;
+      const holding = state.balance.holdings[cryptoId];
+
+      if (holding) {
+        holding.currentPrice = currentPrice;
+        calculateProfitLoss(holding);
+        state.balance.totalInUSD = recalculatePortfolioValue(
+          state.balance.holdings
+        );
+      }
     },
   },
 });
 
-export const { setBalance, resetBalance, updateHolding, addTradeHistory } =
-  balanceSlice.actions;
+export const {
+  setBalance,
+  resetBalance,
+  updateHolding,
+  addTradeHistory,
+  updateCurrentPrice,
+} = balanceSlice.actions;
 export default balanceSlice.reducer;

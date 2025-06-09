@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
@@ -27,6 +27,10 @@ const AmountPercentButton = ({
 }: AmountPercentButtonProps) => {
   const [currentPosition, setCurrentPosition] = useState(0);
 
+  useEffect(() => {
+    setCurrentPosition(0);
+  }, [tradeType]);
+
   const handleCirclePress = (pos: number) => {
     setCurrentPosition(pos);
     let amount = 0;
@@ -48,7 +52,7 @@ const AmountPercentButton = ({
     if (tradeType === "buy" && balanceType === "usdt") {
       return `${formatAmount(
         (availableAmount / currentPrice).toFixed(6),
-        3
+        2
       )}  ${amountUnit}`;
     }
   };
@@ -90,7 +94,7 @@ const AmountPercentButton = ({
         <View style={styles.labelRow}>
           <Text style={Typography.label}>Khả dụng</Text>
           <Text style={Typography.bodySmall}>
-            {formatAmount(availableAmount, 1)}{" "}
+            {formatAmount(availableAmount, 2)}{" "}
             {tradeType === "buy" ? "USDT" : amountUnit}
           </Text>
         </View>
@@ -110,7 +114,7 @@ const AmountPercentButton = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: Dimensions.spacing.md,
+    marginTop: Dimensions.spacing.xs,
     marginBottom: Dimensions.spacing.lg,
   },
   buttonsContainer: {
@@ -118,13 +122,13 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: Dimensions.spacing.sm,
     marginBottom: Dimensions.spacing.md,
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
   },
   amountButton: {
     paddingHorizontal: Dimensions.spacing.md,
     paddingVertical: Dimensions.spacing.sm,
-    borderRadius: Dimensions.radius.xs,
+    borderRadius: Dimensions.radius.sm,
     borderWidth: 1,
     minWidth: 80,
     alignItems: "center",

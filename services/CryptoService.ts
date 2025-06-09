@@ -38,6 +38,10 @@ export interface UserBalance {
       symbol: string;
       name: string;
       image_url?: string;
+      averageBuyPrice: number; // Average purchase price per token
+      currentPrice: number; // Current market price
+      profitLoss: number; // Unrealized profit/loss in USD
+      profitLossPercentage: number; // Percentage gain/loss
     };
   };
 }
@@ -294,6 +298,10 @@ const defaultBalance: UserBalance = {
       symbol: "BTC",
       name: "Bitcoin",
       image_url: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+      averageBuyPrice: 0,
+      currentPrice: 0,
+      profitLoss: 0,
+      profitLossPercentage: 0,
     },
     ethereum: {
       amount: 0.0,
@@ -301,13 +309,21 @@ const defaultBalance: UserBalance = {
       symbol: "ETH",
       name: "Ethereum",
       image_url: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+      averageBuyPrice: 0,
+      currentPrice: 0,
+      profitLoss: 0,
+      profitLossPercentage: 0,
     },
-    tether: {
+    USDT: {
       amount: 100000.0,
       valueInUSD: 100000.0,
       symbol: "USDT",
       name: "Tether",
       image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+      averageBuyPrice: 1,
+      currentPrice: 1,
+      profitLoss: 0,
+      profitLossPercentage: 0,
     },
   },
 };

@@ -1,52 +1,55 @@
-import AssetItem from "./AssetItem";
-import React from "react";
+// components/portfolio/AssetList.tsx
+import React, { memo, useCallback } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
+import { Asset } from "@/app/types/crypto";
+import AssetItem from "./AssetItem";
+import { OthersButton } from "./OthersButton";
+import { styles } from "./styles";
 
-type Asset = {
-  id: string;
-  name: string;
-  symbol: string;
-  amount: string;
-  value: string;
-  changePercentage: number;
-  image_url: string;
-};
-
-type AssetListProps = {
+interface AssetListProps {
   assets: Asset[];
-  onAssetPress?: (asset: Asset) => void;
-};
+  totalBalance: number;
+  onAssetPress: (asset: Asset) => void;
+}
 
-const AssetList = ({ assets, onAssetPress }: AssetListProps) => {
-  console.log("Assets in AssetList:", assets);
+const AssetList = memo<AssetListProps>(
+  ({ assets, totalBalance, onAssetPress }) => {
+    const renderAsset = useCallback(
+      ({ item }: { item: Asset }) => {
+        if (item.isOthers) {
+          return <OthersButton asset={item} onPress={onAssetPress} />;
+        }
 
-  return (
-    <View style={styles.container}>
-      <FlatList
-        data={assets}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        renderItem={({ item }) => (
+        return (
           <AssetItem
-            image_url={item.image_url}
-            name={item.name}
-            symbol={item.symbol.toUpperCase()}
-            amount={item.amount}
-            value={item.value}
-            onPress={() => onAssetPress && onAssetPress(item)}
+            asset={item}
+            totalBalance={totalBalance}
+            onPress={onAssetPress}
           />
-        )}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
-  );
-};
+        );
+      },
+      [totalBalance, onAssetPress]
+    );
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 15,
-  },
-});
+    const keyExtractor = useCallback((item: Asset) => item.id, []);
+
+    return (
+      <View style={styles.container}>
+        <FlatList
+          data={assets}
+          renderItem={renderAsset}
+          keyExtractor={keyExtractor}
+          scrollEnabled={false}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+        />
+      </View>
+    );
+  }
+);
+
+AssetList.displayName = "AssetList";
 
 export default AssetList;
