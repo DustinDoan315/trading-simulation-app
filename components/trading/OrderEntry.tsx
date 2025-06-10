@@ -39,10 +39,6 @@ const OrderEntry = ({
   onSubmitOrder,
   availableBalance = 0,
 }: OrderEntryProps) => {
-  const tokenPrice = useSelector(
-    (state: RootState) => state.cryptoPrices.prices[symbol] || 100
-  );
-
   // Get token balance from store
   const tokenBalance = useSelector((state: RootState) => {
     const holdings = state.balance.balance.holdings;
@@ -58,6 +54,9 @@ const OrderEntry = ({
   const [marginEnabled, setMarginEnabled] = useState(false);
   const firstRender = useRef(true);
 
+  // Use currentPrice from props or fallback to 100 if not available
+  const fallbackPrice = currentPrice || 100;
+
   // Determine which balance to use based on trade type
   const currentBalance =
     selectedTab === "buy" ? availableBalance : tokenBalance;
@@ -68,9 +67,9 @@ const OrderEntry = ({
 
   useEffect(() => {
     if (symbol) {
-      setPrice(tokenPrice.toString());
+      setPrice(fallbackPrice.toString());
     }
-  }, [symbol]);
+  }, [symbol, currentPrice]);
 
   useEffect(() => {
     if (firstRender.current) {
@@ -103,8 +102,7 @@ const OrderEntry = ({
   const handleSubmitOrder = () => {
     const parsedPrice = parseFloat(price.replace(",", "."));
     const parsedAmount = parseFloat(amount.replace(",", "."));
-    const effectivePrice =
-      orderType === "market" ? currentPrice || tokenPrice : parsedPrice;
+    const effectivePrice = orderType === "market" ? fallbackPrice : parsedPrice;
     const total = effectivePrice * parsedAmount;
     const fees = total * 0.001;
 
@@ -156,7 +154,7 @@ const OrderEntry = ({
         tradeType={selectedTab}
         availableAmount={currentBalance}
         amountUnit={symbol}
-        currentPrice={currentPrice || tokenPrice}
+        currentPrice={fallbackPrice}
         balanceType={selectedTab === "buy" ? "usdt" : "token"}
       />
 

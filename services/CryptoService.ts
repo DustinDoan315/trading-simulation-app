@@ -269,6 +269,8 @@ export const getCoinData = async (id: string): Promise<any> => {
  * @returns Promise with detailed cryptocurrency data
  */
 export const getCoinMarketData = async (id: string): Promise<any> => {
+  console.log(`Fetching market data for ${id}`);
+
   try {
     const response = await fetch(
       `https://api.coingecko.com/api/v3/coins/${id}`
@@ -289,78 +291,59 @@ import { AppDispatch } from "../store";
 import { setBalance, resetBalance } from "../features/balanceSlice";
 import { log } from "console";
 
-const defaultBalance: UserBalance = {
-  totalInUSD: 100000.0,
-  holdings: {
-    bitcoin: {
-      amount: 0.0,
-      valueInUSD: 0.0,
-      symbol: "BTC",
-      name: "Bitcoin",
-      image_url: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
-      averageBuyPrice: 0,
-      currentPrice: 0,
-      profitLoss: 0,
-      profitLossPercentage: 0,
-    },
-    ethereum: {
-      amount: 0.0,
-      valueInUSD: 0.0,
-      symbol: "ETH",
-      name: "Ethereum",
-      image_url: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-      averageBuyPrice: 0,
-      currentPrice: 0,
-      profitLoss: 0,
-      profitLossPercentage: 0,
-    },
-    USDT: {
-      amount: 100000.0,
-      valueInUSD: 100000.0,
-      symbol: "USDT",
-      name: "Tether",
-      image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
-      averageBuyPrice: 1,
-      currentPrice: 1,
-      profitLoss: 0,
-      profitLossPercentage: 0,
-    },
-  },
-};
+import UserRepository from "./UserRepository";
+import UUIDService from "./UUIDService";
 
 /**
  * Get user's cryptocurrency holdings and balance
- * In a real app, this would connect to a wallet or blockchain
  *
  * @param dispatch - Redux dispatch function
- * @returns User balance data
+ * @returns Promise with user balance data
  */
-export const getUserBalance = (dispatch: AppDispatch): UserBalance => {
-  dispatch(setBalance(defaultBalance));
-  return defaultBalance;
+export const getUserBalance = async (): Promise<UserBalance> => {
+  try {
+    const uuid = await UUIDService.getOrCreateUser();
+    const user = await UserRepository.getUser(uuid);
+
+    return {
+      totalInUSD: user ? parseFloat(user.balance) : 100000,
+      holdings: {}, // Holdings will be loaded separately
+    };
+  } catch (error) {
+    console.error("Error getting user balance:", error);
+    return {
+      totalInUSD: 100000,
+      holdings: {},
+    };
+  }
 };
 
 /**
  * Update user's cryptocurrency balance
- * In a real app, this would sync with blockchain transactions
  *
- * @param dispatch - Redux dispatch function
  * @param newBalance - Updated balance data
  */
-export const updateUserBalance = (
-  dispatch: AppDispatch,
+export const updateUserBalance = async (
   newBalance: UserBalance
-): void => {
-  dispatch(setBalance(newBalance));
+): Promise<void> => {
+  try {
+    const uuid = await UUIDService.getOrCreateUser();
+    await UserRepository.updateUserBalance(uuid, newBalance.totalInUSD);
+  } catch (error) {
+    console.error("Error updating user balance:", error);
+  }
 };
 
 /**
  * Reset user's balance to default values
- *
- * @param dispatch - Redux dispatch function
  */
-export const resetUserBalance = (dispatch: AppDispatch): void => {
-  dispatch(resetBalance());
+export const resetUserBalance = async (): Promise<void> => {
+  try {
+    const uuid = await UUIDService.getOrCreateUser();
+    await UserRepository.updateUserBalance(uuid, 100000);
+  } catch (error) {
+    console.error("Error resetting user balance:", error);
+  }
 };
 
 /**

@@ -1,6 +1,12 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { UserBalance } from "@/services/CryptoService";
-import { Order } from "@/app/types/crypto";
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import UserRepository from "../services/UserRepository";
+import UUIDService from "../services/UUIDService";
+import { Holding, HoldingUpdatePayload, Order } from "../app/types/crypto";
+
+interface UserBalance {
+  totalInUSD: number;
+  holdings: Record<string, Holding>;
+}
 
 interface BalanceState {
   balance: UserBalance;
@@ -8,29 +14,8 @@ interface BalanceState {
   changePercentage: number;
   changeValue: number;
   tradeHistory: Order[];
-}
-
-// Define Holding type based on the structure in CryptoService
-type Holding = {
-  amount: number;
-  valueInUSD: number;
-  symbol: string;
-  name: string;
-  image_url?: string;
-  averageBuyPrice: number;
-  currentPrice: number;
-  profitLoss: number;
-  profitLossPercentage: number;
-};
-
-// More specific interface for holding updates
-interface HoldingUpdatePayload {
-  cryptoId: string;
-  amount: number;
-  valueInUSD: number;
-  symbol: string;
-  name: string;
-  image_url?: string;
+  loading: boolean;
+  error: string | null;
 }
 
 // Helper function to calculate profit/loss
@@ -60,6 +45,7 @@ const initialState: BalanceState = {
         valueInUSD: 100000,
         symbol: "USDT",
         name: "Tether",
+        image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
         averageBuyPrice: 1,
         currentPrice: 1,
         profitLoss: 0,
@@ -71,7 +57,21 @@ const initialState: BalanceState = {
   changePercentage: 0,
   changeValue: 0,
   tradeHistory: [],
+  loading: false,
+  error: null,
 };
+
+// Async thunk to load balance from database
+export const loadBalance = createAsyncThunk("balance/load", async () => {
+  const uuid = await UUIDService.getOrCreateUser();
+  const user = await UserRepository.getUser(uuid);
+  const balance = user ? parseFloat(user.balance) : 100000;
+
+  return {
+    totalInUSD: balance,
+    holdings: {},
+  };
+});
 
 export const balanceSlice = createSlice({
   name: "balance",
@@ -92,6 +92,11 @@ export const balanceSlice = createSlice({
             ? (state.changeValue / state.previousBalance.totalInUSD) * 100
             : 0;
       }
+
+      // Persist balance to database
+      UUIDService.getOrCreateUser().then((uuid) => {
+        UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
+      });
     },
     resetBalance: (state) => {
       return { ...initialState };
@@ -103,35 +108,73 @@ export const balanceSlice = createSlice({
       const currentHolding = holdings[cryptoId];
       const pricePerToken = valueInUSD / amount;
 
-      if (currentHolding) {
-        const totalCost =
-          currentHolding.amount * currentHolding.averageBuyPrice + valueInUSD;
-        const totalAmount = currentHolding.amount + amount;
+      // Special handling for USDT
+      if (cryptoId === "USDT") {
+        if (!currentHolding) {
+          // Initialize USDT if not exists
+          holdings[cryptoId] = {
+            amount: 100000,
+            valueInUSD: 100000,
+            symbol: "USDT",
+            name: "Tether",
+            image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+            averageBuyPrice: 1,
+            currentPrice: 1,
+            profitLoss: 0,
+            profitLossPercentage: 0,
+          };
+        } else {
+          // For USDT, we only subtract (spend) never add new holdings
+          const newAmount = currentHolding.amount + amount;
 
-        holdings[cryptoId] = {
-          ...currentHolding,
-          amount: totalAmount,
-          valueInUSD: currentHolding.valueInUSD + valueInUSD,
-          averageBuyPrice: totalCost / totalAmount,
-        };
+          // Prevent negative balance
+          if (newAmount < 0) {
+            throw new Error("Insufficient USDT balance");
+          }
 
-        // Recalculate profit/loss with updated values
-        calculateProfitLoss(holdings[cryptoId]);
+          holdings[cryptoId] = {
+            ...currentHolding,
+            amount: newAmount,
+            valueInUSD: newAmount,
+          };
+        }
       } else {
-        holdings[cryptoId] = {
-          amount,
-          valueInUSD,
-          symbol,
-          name,
-          image_url,
-          averageBuyPrice: pricePerToken,
-          currentPrice: pricePerToken,
-          profitLoss: 0,
-          profitLossPercentage: 0,
-        };
+        // Non-USDT cryptocurrencies
+        if (currentHolding) {
+          const totalCost =
+            currentHolding.amount * currentHolding.averageBuyPrice + valueInUSD;
+          const totalAmount = currentHolding.amount + amount;
+
+          holdings[cryptoId] = {
+            ...currentHolding,
+            amount: totalAmount,
+            valueInUSD: currentHolding.valueInUSD + valueInUSD,
+            averageBuyPrice: totalCost / totalAmount,
+          };
+
+          // Recalculate profit/loss with updated values
+          calculateProfitLoss(holdings[cryptoId]);
+        } else {
+          holdings[cryptoId] = {
+            amount,
+            valueInUSD,
+            symbol,
+            name,
+            image_url,
+            averageBuyPrice: pricePerToken,
+            currentPrice: pricePerToken,
+            profitLoss: 0,
+            profitLossPercentage: 0,
+          };
+        }
       }
 
       state.balance.totalInUSD = recalculatePortfolioValue(holdings);
+
+      // Persist balance to database
+      UUIDService.getOrCreateUser().then((uuid) => {
+        UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
+      });
     },
     updateCurrentPrice: (
       state,
@@ -146,8 +189,28 @@ export const balanceSlice = createSlice({
         state.balance.totalInUSD = recalculatePortfolioValue(
           state.balance.holdings
         );
+
+        // Persist balance to database
+        UUIDService.getOrCreateUser().then((uuid) => {
+          UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
+        });
       }
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(loadBalance.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loadBalance.fulfilled, (state, action) => {
+        state.loading = false;
+        state.balance = action.payload;
+      })
+      .addCase(loadBalance.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to load balance";
+      });
   },
 });
 

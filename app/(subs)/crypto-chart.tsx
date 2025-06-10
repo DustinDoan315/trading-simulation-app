@@ -35,6 +35,7 @@ const CryptoChartScreen = () => {
   const [showIndicators, setShowIndicators] = useState(false);
 
   console.log("token:", id, symbol, name, image_url);
+  console.log("balance:", balance);
 
   const { askOrders, bidOrders } = useOrderBook(id);
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
@@ -155,7 +156,7 @@ const CryptoChartScreen = () => {
               )
             }
             maxAmount={currentPrice ? 100000 / Number(currentPrice) : 0}
-            availableBalance={balance.holdings.USDT.amount}
+            availableBalance={balance.holdings.USDT.amount || 0}
           />
 
           <OrderBook

@@ -1,4 +1,3 @@
-// components/portfolio/OthersButton.tsx
 import React, { memo } from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { Asset } from "@/app/types/crypto";

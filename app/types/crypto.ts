@@ -58,3 +58,24 @@ export interface PortfolioData {
   totalValue: number;
   displayAssets: Asset[];
 }
+
+export interface Holding {
+  amount: number;
+  valueInUSD: number;
+  symbol: string;
+  name: string;
+  image_url?: string;
+  averageBuyPrice: number;
+  currentPrice: number;
+  profitLoss: number;
+  profitLossPercentage: number;
+}
+
+export interface HoldingUpdatePayload {
+  cryptoId: string;
+  amount: number;
+  valueInUSD: number;
+  symbol: string;
+  name: string;
+  image_url?: string;
+}

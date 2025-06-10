@@ -1,18 +1,19 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import useOrderBook from "@/hooks/useOrderBook";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
 import Typography from "@/styles/typography";
-import { formatAmount, formatCurrency } from "@/utils/formatters";
+import { formatAmount } from "@/utils/formatters";
+import { useUser } from "@/context/UserContext";
 
 const OrderBookItem = ({
   price,
   amount,
   type,
   onPress,
+  onLongPress,
   isCurrentPrice = false,
-  usdValue = null,
 }: any) => {
   const priceStyle = type === "bid" ? styles.bidPrice : styles.askPrice;
 
@@ -31,6 +32,7 @@ const OrderBookItem = ({
     <TouchableOpacity
       style={styles.orderRow}
       onPress={onPress}
+      onLongPress={onLongPress}
       activeOpacity={1}>
       <Text style={[styles.orderPrice, priceStyle]}>
         {formatAmount(price, 1)}
@@ -44,13 +46,33 @@ const OrderBook = ({
   symbol = "BTC",
   onSelectPrice,
   maxVisibleOrders = 5,
+  onTradeExecuted,
 }: any) => {
   const { askOrders, bidOrders, currentPrice } = useOrderBook(symbol);
-  const [baseCurrency, quoteCurrency] = symbol.split("/");
+  const [baseCurrency] = symbol.split("/");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { user } = useUser();
 
   const handlePriceSelect = (price: any) => {
     if (onSelectPrice) {
       onSelectPrice(price);
+    }
+  };
+
+  const handleTrade = async (type: "BUY" | "SELL", price: number) => {
+    if (!user || !user.uuid) {
+      Alert.alert("Error", "User not authenticated");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      Alert.alert("Success", `${type} order executed`);
+      if (onTradeExecuted) onTradeExecuted();
+    } catch (error: any) {
+      Alert.alert("Error", error.message || `Failed to execute ${type} order`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -69,6 +91,7 @@ const OrderBook = ({
             amount={order.amount}
             type="ask"
             onPress={() => handlePriceSelect(order.price)}
+            onLongPress={() => handleTrade("SELL", order.price)}
           />
         ))}
       </View>
@@ -88,9 +111,13 @@ const OrderBook = ({
             amount={order.amount}
             type="bid"
             onPress={() => handlePriceSelect(order.price)}
+            onLongPress={() => handleTrade("BUY", order.price)}
           />
         ))}
       </View>
+      {isProcessing && (
+        <Text style={styles.processingText}>Processing trade...</Text>
+      )}
     </View>
   );
 };
@@ -122,6 +149,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: Dimensions.spacing.sm,
     paddingHorizontal: Dimensions.spacing.md,
+  },
+  processingText: {
+    color: Colors.text.tertiary,
+    textAlign: "center",
+    padding: Dimensions.spacing.sm,
   },
   orderPrice: {
     fontSize: Dimensions.fontSize.sm,

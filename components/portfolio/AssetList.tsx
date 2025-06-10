@@ -1,4 +1,3 @@
-// components/portfolio/AssetList.tsx
 import React, { memo, useCallback } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { Asset } from "@/app/types/crypto";
