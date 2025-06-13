@@ -57,13 +57,13 @@ const OrderEntry = ({
   // Use currentPrice from props or fallback to 100 if not available
   const fallbackPrice = currentPrice || 100;
 
-  // Determine which balance to use based on trade type
   const currentBalance =
     selectedTab === "buy" ? availableBalance : tokenBalance;
 
   const [sliderPosition, setSliderPosition] = useState(
     currentBalance > 0 ? 100 : 0
   );
+  const [currentPosition, setCurrentPosition] = useState(0);
 
   useEffect(() => {
     if (symbol) {
@@ -77,8 +77,7 @@ const OrderEntry = ({
       return;
     }
 
-    setAmount("0");
-    setSliderPosition(0);
+    handleSliderChange(0);
   }, [selectedTab]);
 
   const handleSliderChange = (position: any) => {
@@ -120,6 +119,7 @@ const OrderEntry = ({
         timestamp: Date.now(),
       });
     }
+    handleSliderChange(0);
   };
 
   const isPriceEditable = orderType !== "market";
@@ -149,7 +149,8 @@ const OrderEntry = ({
       />
 
       <AmountPercentButton
-        position={sliderPosition}
+        currentPosition={currentPosition}
+        setCurrentPosition={setCurrentPosition}
         onChange={handleSliderChange}
         tradeType={selectedTab}
         availableAmount={currentBalance}

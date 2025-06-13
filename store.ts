@@ -12,7 +12,7 @@ import searchHistoryReducer from "@/features/searchHistorySlice";
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["favorites", "searchHistory", "balance"],
+  whitelist: ["favorites", "searchHistory", "balance", "cryptoPrices"],
 };
 
 const rootReducer = combineReducers({

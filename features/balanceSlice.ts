@@ -69,7 +69,19 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
 
   return {
     totalInUSD: balance,
-    holdings: {},
+    holdings: {
+      USDT: {
+        amount: 100000,
+        valueInUSD: 100000,
+        symbol: "USDT",
+        name: "Tether",
+        image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+        averageBuyPrice: 1,
+        currentPrice: 1,
+        profitLoss: 0,
+        profitLossPercentage: 0,
+      },
+    },
   };
 });
 

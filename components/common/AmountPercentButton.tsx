@@ -6,7 +6,8 @@ import Typography from "@/styles/typography";
 import { formatAmount } from "@/utils/formatters";
 
 interface AmountPercentButtonProps {
-  position?: number;
+  currentPosition: number;
+  setCurrentPosition: (pos: number) => any;
   onChange: (amount: number) => void;
   tradeType: "buy" | "sell";
   availableAmount: number;
@@ -17,7 +18,8 @@ interface AmountPercentButtonProps {
 }
 
 const AmountPercentButton = ({
-  position = 0,
+  currentPosition = 0,
+  setCurrentPosition,
   onChange,
   tradeType = "buy",
   availableAmount = 0,
@@ -25,8 +27,6 @@ const AmountPercentButton = ({
   currentPrice = 1,
   balanceType = "token",
 }: AmountPercentButtonProps) => {
-  const [currentPosition, setCurrentPosition] = useState(0);
-
   useEffect(() => {
     setCurrentPosition(0);
   }, [tradeType]);

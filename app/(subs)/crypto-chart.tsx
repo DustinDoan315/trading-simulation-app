@@ -100,10 +100,12 @@ const CryptoChartScreen = () => {
       );
     }
   };
-
+  console.log("====================================");
   console.log("Current Price:", currentPrice);
   console.log("Price Change:", priceChange);
   console.log("Symbol:", id);
+  console.log("balance:", balance);
+  console.log("====================================");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -156,7 +158,7 @@ const CryptoChartScreen = () => {
               )
             }
             maxAmount={currentPrice ? 100000 / Number(currentPrice) : 0}
-            availableBalance={balance.holdings.USDT.amount || 0}
+            availableBalance={balance.holdings.USDT?.amount || 0}
           />
 
           <OrderBook
