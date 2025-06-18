@@ -37,7 +37,7 @@ export interface UserBalance {
       valueInUSD: number;
       symbol: string;
       name: string;
-      image_url?: string;
+      image?: string;
       averageBuyPrice: number; // Average purchase price per token
       currentPrice: number; // Current market price
       profitLoss: number; // Unrealized profit/loss in USD

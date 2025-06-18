@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { router } from "expo-router";
+import { navigateToCryptoChart } from "@/utils/navigation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatAmount } from "@/utils/formatters";
 import { usePortfolioData } from "@/hooks/usePortfolioData";
@@ -37,17 +37,7 @@ const PortfolioScreen = () => {
       return;
     }
 
-    router.push({
-      pathname: "/(subs)/crypto-chart",
-      params: {
-        id: asset.id,
-        symbol: asset.symbol
-          ? `${asset.symbol.toUpperCase()}/USDT`
-          : "BTC/USDT",
-        name: asset.name,
-        image_url: asset.image_url || "",
-      },
-    });
+    navigateToCryptoChart(asset);
   }, []);
 
   // Memoized render function

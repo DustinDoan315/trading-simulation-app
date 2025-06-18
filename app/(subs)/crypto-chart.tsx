@@ -24,7 +24,7 @@ import { RootState } from "@/store";
 import { useNotification } from "@/components/ui/Notification";
 
 const CryptoChartScreen = () => {
-  const { id, symbol, name, image_url }: any = useLocalSearchParams();
+  const { id, symbol, name, image }: any = useLocalSearchParams();
   const { balance } = useSelector((state: RootState) => state.balance);
   const { showNotification } = useNotification();
   const webViewRef = useRef<WebView>(null);
@@ -34,7 +34,7 @@ const CryptoChartScreen = () => {
   const [chartType, setChartType] = useState<ChartType>("candlestick");
   const [showIndicators, setShowIndicators] = useState(false);
 
-  console.log("token:", id, symbol, name, image_url);
+  console.log("token:", id, symbol, name, image);
   console.log("balance:", balance);
 
   const { askOrders, bidOrders } = useOrderBook(id);
@@ -153,7 +153,7 @@ const CryptoChartScreen = () => {
               handleOrderSubmission(
                 order,
                 symbol?.slice(0, 3),
-                image_url,
+                image,
                 showNotification
               )
             }

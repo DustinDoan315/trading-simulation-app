@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { navigateToCryptoChart } from "@/utils/navigation";
 
 type RouteName = "index" | "portfolio" | "wallet" | "chart";
 
@@ -65,15 +66,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   });
 
   const navigateToChart = () => {
-    router.push({
-      pathname: "/(subs)/crypto-chart",
-      params: {
-        id: "bitcoin",
-        symbol: "BTC/USDT",
-        name: "Bitcoin",
-        image_url: "https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=022",
-      },
-    });
+    navigateToCryptoChart();
   };
 
   return (

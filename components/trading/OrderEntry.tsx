@@ -28,7 +28,7 @@ interface OrderEntryProps {
   }) => void;
   maxAmount?: number;
   availableBalance?: number;
-  image_url?: string;
+  image?: string;
 }
 
 const OrderEntry = ({

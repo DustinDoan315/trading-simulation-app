@@ -14,8 +14,8 @@ const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
   const percentage =
     totalBalance > 0 ? (Number(asset.value) / totalBalance) * 100 : 0;
 
-  const imageSource = asset.image_url
-    ? { uri: asset.image_url }
+  const imageSource = asset.image
+    ? { uri: asset.image }
     : require("@/assets/icons/usdt.png");
 
   const handlePress = () => onPress(asset);

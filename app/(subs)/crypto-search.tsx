@@ -24,6 +24,7 @@ import {
   View,
 } from "react-native";
 import colors from "@/styles/colors";
+import { navigateToCryptoChart } from "@/utils/navigation";
 
 interface SearchHistoryItem {
   id: string;
@@ -75,7 +76,7 @@ export default function CryptoSearch() {
   };
 
   const handleHistoryItemPress = (item: SearchHistoryItem) => {
-    // router.navigate(`/(subs)/crypto-chart?symbol=${item.text}`);
+    // navigateToCryptoChart(item);
   };
 
   const handleCancel = () => {
@@ -87,18 +88,8 @@ export default function CryptoSearch() {
     router.back();
   };
 
-  const goToChart = (crypto: CryptoCurrency) => {
-    router.push({
-      pathname: "/(subs)/crypto-chart",
-      params: {
-        id: crypto.id,
-        symbol: crypto.symbol
-          ? `${crypto.symbol.toLocaleUpperCase()}/USDT`
-          : "BTC/USDT",
-        name: crypto.name,
-        image_url: crypto.image || "",
-      },
-    });
+  const goToChart = (crypto: any) => {
+    navigateToCryptoChart(crypto);
   };
 
   return (

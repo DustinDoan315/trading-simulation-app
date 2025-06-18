@@ -1,7 +1,8 @@
 import { db } from "../db/client";
-import { users } from "../db/schema";
+import { users, portfolios } from "../db/schema";
 import { eq } from "drizzle-orm";
 import UUIDService from "./UUIDService";
+import { Holding } from "../app/types/crypto";
 
 class UserRepository {
   static async createUser(uuid: string) {
@@ -30,6 +31,35 @@ class UserRepository {
       .set({ balance: newBalance.toString() })
       .where(eq(users.uuid, uuid))
       .run();
+  }
+
+  static async getPortfolio(uuid: string) {
+    return db
+      .select()
+      .from(portfolios)
+      .where(eq(portfolios.userId, uuid))
+      .all();
+  }
+
+  static async updatePortfolio(
+    uuid: string,
+    holdings: Record<string, Holding>
+  ) {
+    // First delete all existing holdings
+    await db.delete(portfolios).where(eq(portfolios.userId, uuid)).run();
+
+    // Then insert updated holdings
+    for (const [symbol, holding] of Object.entries(holdings)) {
+      await db
+        .insert(portfolios)
+        .values({
+          userId: uuid,
+          symbol,
+          quantity: holding.amount.toString(),
+          avgCost: holding.averageBuyPrice.toString(),
+        })
+        .run();
+    }
   }
 
   async getCurrentUser() {

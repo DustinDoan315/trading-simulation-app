@@ -20,7 +20,7 @@ export interface Order {
   timestamp: number;
   executedPrice?: number;
   executedAt?: number;
-  image_url?: string;
+  image?: string;
 }
 
 export interface TradeHistory {
@@ -47,7 +47,7 @@ export interface Asset {
   amount: string;
   value: string;
   changePercentage?: number;
-  image_url: string | null;
+  image: string | null;
   isButton?: boolean;
   isOthers?: boolean;
   assets?: Asset[];
@@ -64,7 +64,7 @@ export interface Holding {
   valueInUSD: number;
   symbol: string;
   name: string;
-  image_url?: string;
+  image?: string;
   averageBuyPrice: number;
   currentPrice: number;
   profitLoss: number;
@@ -77,5 +77,5 @@ export interface HoldingUpdatePayload {
   valueInUSD: number;
   symbol: string;
   name: string;
-  image_url?: string;
+  image?: string;
 }

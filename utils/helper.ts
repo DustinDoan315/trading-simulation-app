@@ -125,13 +125,13 @@ const showToast = (
 export const handleOrderSubmission = async (
   order: Order,
   symbol: string, // Changed from 'any' to string for type safety
-  image_url: string,
+  image: string,
   showNotification?: (notification: {
     message: string;
     type: "success" | "error" | "info";
   }) => void
 ): Promise<Order> => {
-  console.debug("[Order] Submitting:", { ...order, symbol, image_url });
+  console.debug("[Order] Submitting:", { ...order, symbol, image });
 
   try {
     // Input validation
@@ -161,7 +161,7 @@ export const handleOrderSubmission = async (
       status: "completed",
       executedPrice: order.price,
       executedAt: Date.now(),
-      image_url,
+      image,
     };
 
     // Prepare dispatch parameters
@@ -180,7 +180,7 @@ export const handleOrderSubmission = async (
         amount: sign * order.amount,
         valueInUSD: sign * order.total,
         symbol,
-        image_url,
+        image,
         name: assetName,
       })
     );

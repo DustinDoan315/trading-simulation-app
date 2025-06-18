@@ -41,12 +41,12 @@ export const usePortfolioData = () => {
     }
 
     const mappedAssets: Asset[] = holdings.map(([id, holding]) => ({
-      id,
+      id: holding.name.toLowerCase(),
       name: holding.name || "Unknown",
       symbol: holding.symbol || "UNKNOWN",
       amount: holding.amount?.toString() || "0",
       value: holding.valueInUSD?.toFixed(2) || "0.00",
-      image_url: holding.image_url || null,
+      image: holding.image || null,
     }));
 
     // Efficient filtering and sorting
@@ -81,7 +81,7 @@ export const usePortfolioData = () => {
               amount: belowOne.length.toString(),
               value: belowOneTotal.toFixed(2),
               changePercentage: ASSET_GROUP_CONFIG.OTHERS.changePercentage,
-              image_url: ASSET_GROUP_CONFIG.OTHERS.icon,
+              image: ASSET_GROUP_CONFIG.OTHERS.icon,
               isOthers: true,
               assets: belowOne,
             },

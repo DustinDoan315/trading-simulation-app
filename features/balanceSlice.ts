@@ -45,7 +45,8 @@ const initialState: BalanceState = {
         valueInUSD: 100000,
         symbol: "USDT",
         name: "Tether",
-        image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+        image:
+          "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
         averageBuyPrice: 1,
         currentPrice: 1,
         profitLoss: 0,
@@ -66,22 +67,48 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   const uuid = await UUIDService.getOrCreateUser();
   const user = await UserRepository.getUser(uuid);
   const balance = user ? parseFloat(user.balance) : 100000;
+  const portfolio = await UserRepository.getPortfolio(uuid);
+
+  console.log("====================================");
+  console.log(`Loaded balance for user ${uuid}: $${balance}`);
+  console.log("user: ", user);
+  console.log("portfolio: ", portfolio);
+  console.log("====================================");
+
+  // Initialize holdings with USDT
+  const holdings: Record<string, Holding> = {
+    USDT: {
+      amount: 100000,
+      valueInUSD: 100000,
+      symbol: "USDT",
+      name: "Tether",
+      image:
+        "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
+      averageBuyPrice: 1,
+      currentPrice: 1,
+      profitLoss: 0,
+      profitLossPercentage: 0,
+    },
+  };
+
+  // Add portfolio holdings
+  portfolio.forEach((item) => {
+    holdings[item.symbol] = {
+      amount: parseFloat(item.quantity),
+      valueInUSD: parseFloat(item.quantity) * parseFloat(item.avgCost),
+      symbol: item.symbol,
+      name: item.symbol, // Will be updated with real name later
+      image: `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
+      averageBuyPrice: parseFloat(item.avgCost),
+      currentPrice: parseFloat(item.avgCost), // Will be updated with real price later
+      profitLoss: 0,
+      profitLossPercentage: 0,
+    };
+  });
 
   return {
     totalInUSD: balance,
-    holdings: {
-      USDT: {
-        amount: 100000,
-        valueInUSD: 100000,
-        symbol: "USDT",
-        name: "Tether",
-        image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
-        averageBuyPrice: 1,
-        currentPrice: 1,
-        profitLoss: 0,
-        profitLossPercentage: 0,
-      },
-    },
+    holdings,
   };
 });
 
@@ -114,7 +141,7 @@ export const balanceSlice = createSlice({
       return { ...initialState };
     },
     updateHolding: (state, action: PayloadAction<HoldingUpdatePayload>) => {
-      const { cryptoId, amount, valueInUSD, symbol, name, image_url } =
+      const { cryptoId, amount, valueInUSD, symbol, name, image } =
         action.payload;
       const holdings = state.balance.holdings;
       const currentHolding = holdings[cryptoId];
@@ -129,7 +156,8 @@ export const balanceSlice = createSlice({
             valueInUSD: 100000,
             symbol: "USDT",
             name: "Tether",
-            image_url: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+            image:
+              "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
             averageBuyPrice: 1,
             currentPrice: 1,
             profitLoss: 0,
@@ -172,7 +200,7 @@ export const balanceSlice = createSlice({
             valueInUSD,
             symbol,
             name,
-            image_url,
+            image,
             averageBuyPrice: pricePerToken,
             currentPrice: pricePerToken,
             profitLoss: 0,
@@ -183,9 +211,10 @@ export const balanceSlice = createSlice({
 
       state.balance.totalInUSD = recalculatePortfolioValue(holdings);
 
-      // Persist balance to database
+      // Persist balance and holdings to database
       UUIDService.getOrCreateUser().then((uuid) => {
         UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
+        UserRepository.updatePortfolio(uuid, holdings);
       });
     },
     updateCurrentPrice: (

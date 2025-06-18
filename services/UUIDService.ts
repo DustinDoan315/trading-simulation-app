@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const USER_UUID_KEY = "user_uuid";
 const USER_BALANCE_KEY = "user_balance";
-const INITIAL_BALANCE = "100000"; // $100k in cents to avoid floating point issues
+const INITIAL_BALANCE = "100000";
 
 class UUIDService {
   static async getOrCreateUser() {

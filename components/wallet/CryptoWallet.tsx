@@ -14,6 +14,7 @@ import {
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Currencies } from "@/utils/fake";
+import { navigateToCryptoChart } from "@/utils/navigation";
 
 export default function CryptoWalletScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -158,7 +159,7 @@ export default function CryptoWalletScreen() {
   };
 
   const exchangeToken = () => {
-    router.navigate("/(subs)/crypto-chart");
+    navigateToCryptoChart();
   };
 
   return (
