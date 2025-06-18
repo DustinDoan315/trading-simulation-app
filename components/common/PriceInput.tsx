@@ -14,14 +14,39 @@ const PriceInput = ({
   suffix,
   editable = true,
 }: any) => {
+  const [rawValue, setRawValue] = React.useState(value?.toString() || "");
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  const cleanInput = (text: string) => {
+    // Remove all non-numeric characters except decimal point
+    const cleaned = text.replace(/[^0-9.]/g, "");
+    // Ensure only one decimal point
+    const parts = cleaned.split(".");
+    if (parts.length > 2) {
+      return `${parts[0]}.${parts.slice(1).join("")}`;
+    }
+    return cleaned;
+  };
+
+  const handleChange = (text: string) => {
+    const cleaned = cleanInput(text);
+    setRawValue(cleaned);
+    onChangeText?.(cleaned);
+  };
+
+  React.useEffect(() => {
+    setRawValue(value?.toString() || "");
+  }, [value]);
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.inputWrapper, !editable && styles.inputDisabled]}>
         <TextInput
           style={styles.input}
-          value={formatAmount(value, 2)}
-          onChangeText={onChangeText}
+          value={isFocused ? rawValue : formatAmount(rawValue, 2)}
+          onChangeText={handleChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           keyboardType={keyboardType}
           placeholder={placeholder}
           placeholderTextColor={Colors.text.tertiary}

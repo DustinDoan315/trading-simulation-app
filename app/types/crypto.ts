@@ -56,7 +56,11 @@ export interface Asset {
 export interface PortfolioData {
   assets: Asset[];
   totalValue: number;
-  displayAssets: Asset[];
+  highValueAssets: Asset[];
+  lowValueAssets: Asset[];
+  visibleLowValueTokens: Asset[];
+  hasMoreLowValueTokens: boolean;
+  displayAssets?: Asset[]; // Kept for backward compatibility
 }
 
 export interface Holding {

@@ -64,6 +64,7 @@ const OrderEntry = ({
     currentBalance > 0 ? 100 : 0
   );
   const [currentPosition, setCurrentPosition] = useState(0);
+  const [resetCounter, setResetCounter] = useState(0);
 
   useEffect(() => {
     if (symbol) {
@@ -78,6 +79,7 @@ const OrderEntry = ({
     }
 
     handleSliderChange(0);
+    setResetCounter((prev) => prev + 1);
   }, [selectedTab]);
 
   const handleSliderChange = (position: any) => {
@@ -89,11 +91,19 @@ const OrderEntry = ({
     setPrice(value);
   };
 
-  const handleAmountChange = (value: any) => {
-    setAmount(value);
+  const handleAmountChange = (value: string) => {
+    // Only allow numbers and single decimal point
+    const cleanedValue = value.replace(/[^0-9.]/g, "");
+    // Ensure only one decimal point
+    const parts = cleanedValue.split(".");
+    const formattedValue =
+      parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 8)}` : parts[0];
 
-    if (currentBalance > 0) {
-      const newPosition = (parseFloat(value) / currentBalance) * 100;
+    setAmount(formattedValue);
+
+    if (currentBalance > 0 && formattedValue) {
+      const numericValue = parseFloat(formattedValue) || 0;
+      const newPosition = (numericValue / currentBalance) * 100;
       setSliderPosition(Math.min(100, Math.max(0, newPosition)));
     }
   };
@@ -120,6 +130,7 @@ const OrderEntry = ({
       });
     }
     handleSliderChange(0);
+    setResetCounter((prev) => prev + 1);
   };
 
   const isPriceEditable = orderType !== "market";
@@ -146,6 +157,7 @@ const OrderEntry = ({
         value={amount}
         onChangeText={handleAmountChange}
         placeholder="0.00"
+        keyboardType="numeric"
       />
 
       <AmountPercentButton
@@ -157,6 +169,7 @@ const OrderEntry = ({
         amountUnit={symbol}
         currentPrice={fallbackPrice}
         balanceType={selectedTab === "buy" ? "usdt" : "token"}
+        resetTrigger={resetCounter}
       />
 
       <ActionButton

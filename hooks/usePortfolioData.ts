@@ -4,15 +4,6 @@ import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "@/store";
 import { Asset, PortfolioData } from "@/app/types/crypto";
 
-const ASSET_GROUP_CONFIG = {
-  OTHERS: {
-    name: "Others",
-    symbol: "OTH",
-    icon: null,
-    changePercentage: 0,
-  },
-} as const;
-
 // Optimized selector with better memoization
 const selectPortfolioData = createSelector(
   (state: RootState) => state.balance.balance,
@@ -31,13 +22,25 @@ export const usePortfolioData = () => {
   const portfolioState = useSelector(selectPortfolioData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visibleLowValueCount, setVisibleLowValueCount] = useState(5);
+
+  const loadMoreLowValueTokens = useCallback(() => {
+    setVisibleLowValueCount((prev) => prev + 5);
+  }, []);
 
   // Memoized asset processing
   const processedData = useMemo((): PortfolioData => {
     const { holdings, totalInUSD } = portfolioState;
 
     if (!holdings.length) {
-      return { assets: [], totalValue: 0, displayAssets: [] };
+      return {
+        assets: [],
+        totalValue: 0,
+        highValueAssets: [],
+        lowValueAssets: [],
+        visibleLowValueTokens: [],
+        hasMoreLowValueTokens: false,
+      };
     }
 
     const mappedAssets: Asset[] = holdings.map(([id, holding]) => ({
@@ -65,36 +68,22 @@ export const usePortfolioData = () => {
 
     aboveOne.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
 
-    const belowOneTotal = belowOne.reduce(
-      (sum, asset) => sum + parseFloat(asset.value),
-      0
-    );
-
-    const displayAssets: Asset[] = [
-      ...aboveOne,
-      ...(belowOne.length > 0
-        ? [
-            {
-              id: "others",
-              name: ASSET_GROUP_CONFIG.OTHERS.name,
-              symbol: ASSET_GROUP_CONFIG.OTHERS.symbol,
-              amount: belowOne.length.toString(),
-              value: belowOneTotal.toFixed(2),
-              changePercentage: ASSET_GROUP_CONFIG.OTHERS.changePercentage,
-              image: ASSET_GROUP_CONFIG.OTHERS.icon,
-              isOthers: true,
-              assets: belowOne,
-            },
-          ]
-        : []),
-    ];
+    const visibleLowValueTokens = belowOne.slice(0, visibleLowValueCount);
 
     return {
       assets: mappedAssets,
       totalValue: totalInUSD,
-      displayAssets,
+      highValueAssets: aboveOne,
+      lowValueAssets: belowOne,
+      visibleLowValueTokens,
+      hasMoreLowValueTokens: belowOne.length > visibleLowValueCount,
+      displayAssets: [...aboveOne, ...visibleLowValueTokens], // For backward compatibility
     };
-  }, [portfolioState.holdings, portfolioState.totalInUSD]);
+  }, [
+    portfolioState.holdings,
+    portfolioState.totalInUSD,
+    visibleLowValueCount,
+  ]);
 
   const refreshPortfolio = useCallback(async () => {
     try {
@@ -125,5 +114,6 @@ export const usePortfolioData = () => {
     loading,
     error,
     refreshPortfolio,
+    loadMoreLowValueTokens,
   };
 };

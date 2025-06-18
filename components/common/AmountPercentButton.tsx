@@ -15,6 +15,7 @@ interface AmountPercentButtonProps {
   currentPrice?: number;
   balanceType: "token" | "usdt";
   symbol?: string;
+  resetTrigger?: any; // New prop to trigger reset from parent
 }
 
 const AmountPercentButton = ({
@@ -26,12 +27,18 @@ const AmountPercentButton = ({
   amountUnit = "BTC",
   currentPrice = 1,
   balanceType = "token",
+  resetTrigger,
 }: AmountPercentButtonProps) => {
   useEffect(() => {
-    setCurrentPosition(0);
-  }, [tradeType]);
+    if (resetTrigger !== undefined) {
+      console.log("Resetting position due to external trigger");
+      setCurrentPosition(0);
+      onChange(0);
+    }
+  }, [resetTrigger]);
 
   const handleCirclePress = (pos: number) => {
+    console.log(`Setting position to ${pos}%`);
     setCurrentPosition(pos);
     let amount = 0;
     if (tradeType === "buy" && balanceType === "usdt") {
@@ -40,6 +47,7 @@ const AmountPercentButton = ({
       amount = availableAmount * (pos / 100);
     }
     if (onChange) {
+      console.log(`Calling onChange with amount: ${amount}`);
       onChange(amount);
     }
   };
