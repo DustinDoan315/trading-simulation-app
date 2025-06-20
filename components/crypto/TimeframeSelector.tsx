@@ -1,6 +1,7 @@
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { TimeframeOption } from "../../app/types/crypto";
+import { useLanguage } from "../../context/LanguageContext";
 import {
   ScrollView,
   StyleSheet,
@@ -22,6 +23,7 @@ const TimeframeSelector = ({
   showIndicators,
   toggleIndicators,
 }: TimeframeSelectorProps) => {
+  const { t } = useLanguage();
   const getTimeframeButtonStyle = (tf: TimeframeOption) => {
     return [
       styles.timeframeButton,
@@ -42,27 +44,37 @@ const TimeframeSelector = ({
         <TouchableOpacity
           style={getTimeframeButtonStyle("15m")}
           onPress={() => switchTimeframe("15m")}>
-          <Text style={getTimeframeTextStyle("15m")}>15m</Text>
+          <Text style={getTimeframeTextStyle("15m")}>
+            {t("chart.timeframes.15m")}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={getTimeframeButtonStyle("1h")}
           onPress={() => switchTimeframe("1h")}>
-          <Text style={getTimeframeTextStyle("1h")}>1h</Text>
+          <Text style={getTimeframeTextStyle("1h")}>
+            {t("chart.timeframes.1h")}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={getTimeframeButtonStyle("4h")}
           onPress={() => switchTimeframe("4h")}>
-          <Text style={getTimeframeTextStyle("4h")}>4h</Text>
+          <Text style={getTimeframeTextStyle("4h")}>
+            {t("chart.timeframes.4h")}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={getTimeframeButtonStyle("1d")}
           onPress={() => switchTimeframe("1d")}>
-          <Text style={getTimeframeTextStyle("1d")}>1d</Text>
+          <Text style={getTimeframeTextStyle("1d")}>
+            {t("chart.timeframes.1d")}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={getTimeframeButtonStyle("3m")}
           onPress={() => switchTimeframe("3m")}>
-          <Text style={getTimeframeTextStyle("3m")}>3m</Text>
+          <Text style={getTimeframeTextStyle("3m")}>
+            {t("chart.timeframes.3m")}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -70,7 +82,7 @@ const TimeframeSelector = ({
         style={styles.indicatorButton}
         onPress={toggleIndicators}>
         <Text style={styles.indicatorText}>
-          {showIndicators ? "Ẩn" : "Hiện"}
+          {showIndicators ? t("common.hide") : t("common.show")}
         </Text>
         <Ionicons
           name={showIndicators ? "chevron-down" : "chevron-up"}

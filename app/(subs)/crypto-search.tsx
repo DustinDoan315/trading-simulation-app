@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useAppDispatch, useAppSelector } from "../../store";
+import { useLanguage } from "../../context/LanguageContext";
 import {
   addSearchHistory,
   clearSearchHistory,
@@ -46,6 +47,8 @@ export default function CryptoSearch() {
     dispatch(clearSearchHistory());
   };
 
+  const { t } = useLanguage();
+
   const handleSearch = async () => {
     if (!searchText.trim()) return;
 
@@ -64,11 +67,11 @@ export default function CryptoSearch() {
         };
         dispatch(addSearchHistory(newItem));
       } else {
-        setSearchError("No results found");
+        setSearchError(t("cryptoSearch.noResults"));
       }
     } catch (error) {
       console.error("Search failed:", error);
-      setSearchError("Search failed. Please try again.");
+      setSearchError(t("cryptoSearch.searchFailed"));
     } finally {
       setIsSearching(false);
       setSearchText("");
@@ -126,7 +129,7 @@ export default function CryptoSearch() {
                 setShowSuggestions(false);
               }
             }}
-            placeholder="Tìm kiếm tiền mã hóa, bot"
+            placeholder={t("cryptoSearch.searchPlaceholder")}
             placeholderTextColor="#777"
             autoCapitalize="none"
             returnKeyType="search"
@@ -134,14 +137,16 @@ export default function CryptoSearch() {
           />
         </View>
         <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
-          <Text style={styles.cancelText}>Huỷ</Text>
+          <Text style={styles.cancelText}>{t("cryptoSearch.cancel")}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Search History Section */}
       <View style={styles.historyContainer}>
         <View style={styles.historyHeader}>
-          <Text style={styles.historyTitle}>Lịch sử tìm kiếm</Text>
+          <Text style={styles.historyTitle}>
+            {t("cryptoSearch.searchHistory")}
+          </Text>
           <TouchableOpacity onPress={handleClearHistory}>
             <Feather name="trash-2" size={22} color="#777" />
           </TouchableOpacity>
@@ -173,7 +178,9 @@ export default function CryptoSearch() {
         searchResults.length == 0 &&
         suggestions.length > 0 && (
           <View style={styles.suggestionsContainer}>
-            <Text style={styles.suggestionsTitle}>Gợi ý</Text>
+            <Text style={styles.suggestionsTitle}>
+              {t("cryptoSearch.suggestions")}
+            </Text>
             <ScrollView style={styles.suggestionsList}>
               {suggestions.map((crypto) => (
                 <CryptoListItem
@@ -192,7 +199,7 @@ export default function CryptoSearch() {
       {/* Search Results Section */}
       {searchResults.length > 0 && (
         <View style={styles.resultsContainer}>
-          <Text style={styles.resultsTitle}>Kết quả</Text>
+          <Text style={styles.resultsTitle}>{t("cryptoSearch.results")}</Text>
           <ScrollView style={styles.resultsList}>
             {searchResults.map((crypto) => (
               <CryptoListItem

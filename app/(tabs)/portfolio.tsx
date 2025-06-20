@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   ActivityIndicator,
   FlatList,
@@ -40,7 +41,6 @@ const PortfolioScreen = () => {
     navigateToCryptoChart(asset);
   }, []);
 
-  // Memoized render function
   const renderAsset = useCallback(
     ({ item }: { item: Asset }) => {
       if (item.isOthers) {
@@ -58,7 +58,6 @@ const PortfolioScreen = () => {
     [totalValue, handleAssetPress]
   );
 
-  // Memoized header component
   const ListHeaderComponent = useMemo(
     () => (
       <>
@@ -86,20 +85,25 @@ const PortfolioScreen = () => {
       return <ActivityIndicator size="large" color="#FFFFFF" />;
     }
     if (error) {
-      return <Text style={styles.errorText}>{error}</Text>;
+      return (
+        <Text style={styles.errorText}>{t("portfolio.errorLoading")}</Text>
+      );
     }
     return null;
   }, [loading, error]);
 
+  const { t } = useLanguage();
   const refreshControl = useMemo(
     () => (
       <RefreshControl
         refreshing={loading}
         onRefresh={refreshPortfolio}
         tintColor="#FFFFFF"
+        title={t("portfolio.pullToRefresh")}
+        titleColor="#FFFFFF"
       />
     ),
-    [loading, refreshPortfolio]
+    [loading, refreshPortfolio, t]
   );
 
   const keyExtractor = useCallback((item: Asset) => item.id, []);

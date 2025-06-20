@@ -69,12 +69,6 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   const balance = user ? parseFloat(user.balance) : 100000;
   const portfolio = await UserRepository.getPortfolio(uuid);
 
-  console.log("====================================");
-  console.log(`Loaded balance for user ${uuid}: $${balance}`);
-  console.log("user: ", user);
-  console.log("portfolio: ", portfolio);
-  console.log("====================================");
-
   // Initialize holdings with USDT
   const holdings: Record<string, Holding> = {
     USDT: {
@@ -91,13 +85,16 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
     },
   };
 
+  console.log("====================================");
+  console.log("Portfolio loaded:", portfolio);
+  console.log("====================================");
   // Add portfolio holdings
   portfolio.forEach((item) => {
     holdings[item.symbol] = {
       amount: parseFloat(item.quantity),
       valueInUSD: parseFloat(item.quantity) * parseFloat(item.avgCost),
       symbol: item.symbol,
-      name: item.symbol, // Will be updated with real name later
+      name: item.symbol,
       image: `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
       averageBuyPrice: parseFloat(item.avgCost),
       currentPrice: parseFloat(item.avgCost), // Will be updated with real price later

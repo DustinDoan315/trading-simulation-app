@@ -5,6 +5,7 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { UserProvider } from "@/context/UserContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { store } from "../store";
 import { loadBalance } from "@/features/balanceSlice";
 import { NotificationProvider } from "@/components/ui/Notification";
@@ -54,26 +55,37 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <NotificationProvider>
           <UserProvider>
-            <SafeAreaView
-              style={{
-                flex: 1,
-                backgroundColor:
-                  colorScheme === "dark"
-                    ? DarkTheme.colors.background
-                    : DefaultTheme.colors.background,
-              }}>
-              <Stack>
-                <Stack.Screen name="(subs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="(onboarding)"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-              <StatusBar style="auto" />
-            </SafeAreaView>
+            <LanguageProvider>
+              <SafeAreaView
+                style={{
+                  flex: 1,
+                  backgroundColor:
+                    colorScheme === "dark"
+                      ? DarkTheme.colors.background
+                      : DefaultTheme.colors.background,
+                }}>
+                <Stack>
+                  <Stack.Screen
+                    name="(subs)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="(onboarding)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="(auth)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
+                <StatusBar style="auto" />
+              </SafeAreaView>
+            </LanguageProvider>
           </UserProvider>
           <Toast />
         </NotificationProvider>

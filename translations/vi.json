@@ -1,0 +1,113 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Có lỗi xảy ra",
+    "retry": "Thử lại",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "moreOptions": "Thêm tùy chọn",
+    "show": "Hiện",
+    "hide": "Ẩn"
+  },
+  "wallet": {
+    "connect": "Kết nối ví",
+    "disconnect": "Ngắt kết nối",
+    "balance": "Số dư",
+    "title": "Ví",
+    "totalEstimatedValue": "Tổng giá trị ước tính",
+    "reset": "Đặt lại",
+    "resetConfirmTitle": "Đặt lại danh mục",
+    "resetConfirmMessage": "Bạn có chắc muốn đặt lại danh mục về giá trị mặc định?",
+    "resetSuccessTitle": "Thành công",
+    "resetSuccessMessage": "Danh mục đã được đặt lại về giá trị mặc định",
+    "selectCurrencyTitle": "Chọn tiền tệ",
+    "selectCurrencyMessage": "Chọn loại tiền tệ hiển thị",
+    "history": "Lịch sử",
+    "viewTransactionHistory": "Xem lịch sử giao dịch",
+    "filter": "Bộ lọc",
+    "openAssetFilter": "Mở tùy chọn bộ lọc tài sản",
+    "addAsset": "Thêm tài sản",
+    "addNewAssetToPortfolio": "Thêm tài sản mới vào danh mục",
+    "addNewAsset": "Thêm tài sản mới",
+    "equity": "Tổng tài sản",
+    "frozen": "Đóng băng",
+    "available": "Khả dụng"
+  },
+  "portfolio": {
+    "title": "Danh mục đầu tư",
+    "assets": "Tài sản",
+    "value": "Giá trị danh mục",
+    "totalValue": "Tổng giá trị",
+    "change": "Thay đổi",
+    "others": "Khác",
+    "errorLoading": "Lỗi khi tải danh mục",
+    "pullToRefresh": "Kéo để làm mới",
+    "emptyPortfolio": "Danh mục của bạn đang trống",
+    "overall": "Tổng thể",
+    "availableBalance": "Số dư khả dụng",
+    "ofPortfolio": "của danh mục",
+    "assets": "tài sản"
+  },
+  "trading": {
+    "buy": "Mua",
+    "sell": "Bán",
+    "amount": "Số lượng",
+    "price": "Giá"
+  },
+  "order": {
+    "price": "Giá",
+    "amount": "Số lượng",
+    "buyExecuted": "Lệnh mua đã thực hiện",
+    "sellExecuted": "Lệnh bán đã thực hiện",
+    "buyFailed": "Không thể thực hiện lệnh mua",
+    "sellFailed": "Không thể thực hiện lệnh bán",
+    "processing": "Đang xử lý giao dịch..."
+  },
+  "balance": {
+    "yourBalance": "Số dư của bạn",
+    "reset": "Đặt lại",
+    "resetBalance": "Đặt lại số dư",
+    "resetConfirmation": "Bạn có chắc muốn đặt lại số dư về $100,000?"
+  },
+  "cryptoSearch": {
+    "searchPlaceholder": "Tìm kiếm tiền mã hóa, bot",
+    "cancel": "Huỷ",
+    "searchHistory": "Lịch sử tìm kiếm",
+    "suggestions": "Gợi ý",
+    "results": "Kết quả",
+    "noResults": "Không tìm thấy kết quả",
+    "searchFailed": "Tìm kiếm thất bại. Vui lòng thử lại."
+  },
+  "error": {
+    "title": "Lỗi",
+    "notAuthenticated": "Người dùng chưa xác thực"
+  },
+  "success": {
+    "title": "Thành công"
+  },
+  "chart": {
+    "title": "Biểu đồ {symbol}",
+    "types": {
+      "candlestick": "Nến",
+      "line": "Đường"
+    },
+    "timeframes": {
+      "1m": "1 phút",
+      "5m": "5 phút",
+      "15m": "15 phút",
+      "30m": "30 phút",
+      "1h": "1 giờ",
+      "4h": "4 giờ",
+      "1d": "1 ngày",
+      "1w": "1 tuần"
+    },
+    "indicators": "Chỉ báo",
+    "orderBook": {
+      "bids": "Giá mua",
+      "asks": "Giá bán",
+      "price": "Giá",
+      "amount": "Số lượng",
+      "total": "Tổng"
+    }
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error occurred",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "moreOptions": "More options",
+    "show": "Show",
+    "hide": "Hide"
+  },
+  "wallet": {
+    "connect": "Connect Wallet",
+    "disconnect": "Disconnect",
+    "balance": "Balance",
+    "title": "Wallet",
+    "totalEstimatedValue": "Total Estimated Value",
+    "reset": "Reset",
+    "resetConfirmTitle": "Reset Portfolio",
+    "resetConfirmMessage": "Are you sure you want to reset your portfolio to default values?",
+    "resetSuccessTitle": "Success",
+    "resetSuccessMessage": "Portfolio has been reset to default values",
+    "selectCurrencyTitle": "Select Currency",
+    "selectCurrencyMessage": "Choose your preferred display currency",
+    "history": "History",
+    "viewTransactionHistory": "View your transaction history",
+    "filter": "Filter",
+    "openAssetFilter": "Open asset filter options",
+    "addAsset": "Add Asset",
+    "addNewAssetToPortfolio": "Add a new asset to your portfolio",
+    "addNewAsset": "Add New Asset",
+    "equity": "Equity",
+    "frozen": "Frozen",
+    "available": "Available"
+  },
+  "portfolio": {
+    "title": "My Portfolio",
+    "assets": "Assets",
+    "value": "Portfolio Value",
+    "totalValue": "Total Value",
+    "change": "Change",
+    "others": "Others",
+    "errorLoading": "Error loading portfolio",
+    "pullToRefresh": "Pull to refresh",
+    "emptyPortfolio": "Your portfolio is empty",
+    "overall": "Overall",
+    "availableBalance": "Available Balance",
+    "ofPortfolio": "of portfolio",
+    "assets": "assets"
+  },
+  "trading": {
+    "buy": "Buy",
+    "sell": "Sell",
+    "amount": "Amount",
+    "price": "Price"
+  },
+  "order": {
+    "price": "Price",
+    "amount": "Amount",
+    "buyExecuted": "Buy order executed",
+    "sellExecuted": "Sell order executed",
+    "buyFailed": "Failed to execute buy order",
+    "sellFailed": "Failed to execute sell order",
+    "processing": "Processing trade..."
+  },
+  "balance": {
+    "yourBalance": "Your balance",
+    "reset": "Reset",
+    "resetBalance": "Reset Balance",
+    "resetConfirmation": "Are you sure you want to reset your balance to $100,000?"
+  },
+  "cryptoSearch": {
+    "searchPlaceholder": "Search cryptocurrencies, bots",
+    "cancel": "Cancel",
+    "searchHistory": "Search History",
+    "suggestions": "Suggestions",
+    "results": "Results",
+    "noResults": "No results found",
+    "searchFailed": "Search failed. Please try again."
+  },
+  "error": {
+    "title": "Error",
+    "notAuthenticated": "User not authenticated"
+  },
+  "success": {
+    "title": "Success"
+  },
+  "chart": {
+    "title": "{symbol} Chart",
+    "types": {
+      "candlestick": "Candlestick",
+      "line": "Line"
+    },
+    "timeframes": {
+      "1m": "1m",
+      "5m": "5m",
+      "15m": "15m",
+      "30m": "30m",
+      "1h": "1h",
+      "4h": "4h",
+      "1d": "1d",
+      "1w": "1w"
+    },
+    "indicators": "Indicators",
+    "orderBook": {
+      "bids": "Bids",
+      "asks": "Asks",
+      "price": "Price",
+      "amount": "Amount",
+      "total": "Total"
+    }
+  }
+}

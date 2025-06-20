@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet } from "react-native";
+import { useLanguage } from "@/context/LanguageContext";
 import Dimensions from "@/styles/dimensions";
 import PriceInput from "../common/PriceInput";
 import AmountPercentButton from "../common/AmountPercentButton";
@@ -8,6 +9,7 @@ import { formatAmount } from "@/utils/formatters";
 import TabSelector from "./TableSelector";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+import { DEFAULT_CURRENCY, DEFAULT_CRYPTO } from "@/utils/constant";
 
 interface OrderEntryProps {
   name?: string;
@@ -32,13 +34,14 @@ interface OrderEntryProps {
 }
 
 const OrderEntry = ({
-  symbol = "BTC",
+  symbol = DEFAULT_CRYPTO,
   name = "Bitcoin",
   orderType = "market",
   currentPrice = 0,
   onSubmitOrder,
   availableBalance = 0,
 }: OrderEntryProps) => {
+  const { t } = useLanguage();
   // Get token balance from store
   const tokenBalance = useSelector((state: RootState) => {
     const holdings = state.balance.balance.holdings;
@@ -145,7 +148,7 @@ const OrderEntry = ({
       />
 
       <PriceInput
-        label="Giá (USDT)"
+        label={`${t("order.price")} (${DEFAULT_CURRENCY})`}
         value={price}
         onChangeText={handlePriceChange}
         placeholder="0.00"
@@ -153,7 +156,7 @@ const OrderEntry = ({
       />
 
       <PriceInput
-        label={`Số lượng (${symbol})`}
+        label={`${t("order.amount")} (${symbol})`}
         value={amount}
         onChangeText={handleAmountChange}
         placeholder="0.00"

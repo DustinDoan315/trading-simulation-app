@@ -1,6 +1,6 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { useLanguage } from "@/context/LanguageContext";
 
 type PortfolioHeaderProps = {
   totalValue: string;
@@ -13,6 +13,7 @@ const PortfolioHeader = ({
   changePercentage,
   changeValue,
 }: PortfolioHeaderProps) => {
+  const { t } = useLanguage();
   const isPositive = changePercentage >= 0;
 
   return (
@@ -27,7 +28,7 @@ const PortfolioHeader = ({
           {isPositive ? "+" : ""}
           {changePercentage}% ({changeValue})
         </Text>
-        <Text style={styles.overallText}>Overall</Text>
+        <Text style={styles.overallText}>{t("portfolio.overall")}</Text>
       </View>
     </View>
   );

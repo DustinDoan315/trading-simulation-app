@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   StyleSheet,
   Text,
@@ -15,6 +16,7 @@ import { Ionicons, Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Currencies } from "@/utils/fake";
 import { navigateToCryptoChart } from "@/utils/navigation";
+import { DEFAULT_BALANCE, DEFAULT_CRYPTO_ID } from "@/utils/constant";
 
 export default function CryptoWalletScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -24,6 +26,7 @@ export default function CryptoWalletScreen() {
 
   const [convertedAssets, setConvertedAssets] = useState<any[]>([]);
   const [totalBalance, setTotalBalance] = useState(0);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const convertAssetsToSelectedCurrency = () => {
@@ -104,27 +107,28 @@ export default function CryptoWalletScreen() {
 
   const handleReset = () => {
     Alert.alert(
-      "Xác nhận đặt lại",
-      "Bạn có chắc chắn muốn đặt lại danh mục đầu tư của mình không?",
+      t("wallet.resetConfirmTitle"),
+      t("wallet.resetConfirmMessage"),
       [
         {
-          text: "Hủy",
+          text: t("common.cancel"),
           style: "cancel",
         },
         {
-          text: "Đặt lại",
+          text: t("wallet.reset"),
           onPress: () => {
-            // Reset the portfolio
+            // Reset the portfolio using default values
             setAssets(
               assets.map((asset) => ({
                 ...asset,
-                balance: asset.id === "eur" ? 100000 : 0,
+                balance:
+                  asset.id === DEFAULT_CRYPTO_ID.tether ? DEFAULT_BALANCE : 0,
                 frozen: 0,
               }))
             );
             Alert.alert(
-              "Thành công",
-              "Danh mục đầu tư của bạn đã được đặt lại"
+              t("wallet.resetSuccessTitle"),
+              t("wallet.resetSuccessMessage")
             );
           },
         },
@@ -137,17 +141,21 @@ export default function CryptoWalletScreen() {
   };
 
   const handleCurrencySelect = () => {
-    Alert.alert("Chọn đơn vị tiền tệ", "Chọn đơn vị tiền tệ hiển thị", [
-      ...Currencies.map((currency) => ({
-        text: currency.name,
-        onPress: () => setSelectedCurrency(currency),
-        style: "default" as const,
-      })),
-      {
-        text: "Hủy",
-        style: "cancel" as const,
-      },
-    ]);
+    Alert.alert(
+      t("wallet.selectCurrencyTitle"),
+      t("wallet.selectCurrencyMessage"),
+      [
+        ...Currencies.map((currency) => ({
+          text: currency.name,
+          onPress: () => setSelectedCurrency(currency),
+          style: "default" as const,
+        })),
+        {
+          text: t("common.cancel"),
+          style: "cancel" as const,
+        },
+      ]
+    );
   };
 
   const formatNumber = (num: number) => {
@@ -170,11 +178,11 @@ export default function CryptoWalletScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity
-            onPress={() => Alert.alert("Menu")}
+            onPress={() => Alert.alert(t("common.menu"))}
             style={styles.iconButton}>
             <Ionicons name="grid" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Giao dịch mô phỏng</Text>
+          <Text style={styles.headerTitle}>{t("wallet.title")}</Text>
         </View>
       </View>
 
@@ -188,7 +196,9 @@ export default function CryptoWalletScreen() {
         {/* Balance Section */}
         <View style={styles.balanceSection}>
           <View style={styles.balanceRow}>
-            <Text style={styles.balanceLabel}>Tổng giá trị ước tính</Text>
+            <Text style={styles.balanceLabel}>
+              {t("wallet.totalEstimatedValue")}
+            </Text>
             <TouchableOpacity onPress={toggleBalanceVisibility}>
               <Ionicons
                 name={isBalanceHidden ? "eye-off-outline" : "eye-outline"}
@@ -216,22 +226,27 @@ export default function CryptoWalletScreen() {
             style={styles.actionButton}
             onPress={handleReset}
             activeOpacity={0.7}>
-            <Text style={styles.actionButtonText}>Đặt lại</Text>
+            <Text style={styles.actionButtonText}>{t("wallet.reset")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() =>
-              Alert.alert("Lịch sử", "Xem lịch sử giao dịch của bạn")
+              Alert.alert(
+                t("wallet.history"),
+                t("wallet.viewTransactionHistory")
+              )
             }
             activeOpacity={0.7}>
-            <Text style={styles.actionButtonText}>Lịch sử</Text>
+            <Text style={styles.actionButtonText}>{t("wallet.history")}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Tools */}
         <View style={styles.toolsRow}>
           <TouchableOpacity
-            onPress={() => Alert.alert("Bộ lọc", "Mở bộ lọc danh sách tài sản")}
+            onPress={() =>
+              Alert.alert(t("wallet.filter"), t("wallet.openAssetFilter"))
+            }
             style={styles.iconButton}>
             <Feather name="sliders" size={20} color="white" />
           </TouchableOpacity>
@@ -286,7 +301,7 @@ export default function CryptoWalletScreen() {
                   <View style={styles.assetDetailsContainer}>
                     <View style={styles.assetDetails}>
                       <Text style={styles.assetDetailLabel}>
-                        Vốn chủ sở hữu
+                        {t("wallet.equity")}
                       </Text>
                       <Text style={styles.assetDetailValue}>
                         {`${selectedCurrency.symbol}${formatNumber(
@@ -295,7 +310,9 @@ export default function CryptoWalletScreen() {
                       </Text>
                     </View>
                     <View style={styles.assetDetails}>
-                      <Text style={styles.assetDetailLabel}>Bị đóng băng</Text>
+                      <Text style={styles.assetDetailLabel}>
+                        {t("wallet.frozen")}
+                      </Text>
                       <Text style={styles.assetDetailValue}>
                         {`${selectedCurrency.symbol}${formatNumber(
                           convertedFrozen
@@ -303,7 +320,9 @@ export default function CryptoWalletScreen() {
                       </Text>
                     </View>
                     <View style={styles.assetDetails}>
-                      <Text style={styles.assetDetailLabel}>Khả dụng</Text>
+                      <Text style={styles.assetDetailLabel}>
+                        {t("wallet.available")}
+                      </Text>
                       <Text style={styles.assetDetailValue}>
                         {`${selectedCurrency.symbol}${formatNumber(
                           convertedBalance - convertedFrozen
@@ -321,12 +340,12 @@ export default function CryptoWalletScreen() {
             style={styles.addAssetButton}
             onPress={() =>
               Alert.alert(
-                "Thêm tài sản",
-                "Thêm tài sản mới vào danh mục của bạn"
+                t("wallet.addAsset"),
+                t("wallet.addNewAssetToPortfolio")
               )
             }>
             <Ionicons name="add-circle-outline" size={24} color="#666" />
-            <Text style={styles.addAssetText}>Thêm tài sản mới</Text>
+            <Text style={styles.addAssetText}>{t("wallet.addNewAsset")}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

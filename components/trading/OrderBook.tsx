@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { useLanguage } from "@/context/LanguageContext";
 import useOrderBook from "@/hooks/useOrderBook";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
@@ -48,6 +49,7 @@ const OrderBook = ({
   maxVisibleOrders = 5,
   onTradeExecuted,
 }: any) => {
+  const { t } = useLanguage();
   const { askOrders, bidOrders, currentPrice } = useOrderBook(symbol);
   const [baseCurrency] = symbol.split("/");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -61,16 +63,23 @@ const OrderBook = ({
 
   const handleTrade = async (type: "BUY" | "SELL", price: number) => {
     if (!user || !user.uuid) {
-      Alert.alert("Error", "User not authenticated");
+      Alert.alert(t("error.title"), t("error.notAuthenticated"));
       return;
     }
 
     setIsProcessing(true);
     try {
-      Alert.alert("Success", `${type} order executed`);
+      Alert.alert(
+        t("success.title"),
+        type === "BUY" ? t("order.buyExecuted") : t("order.sellExecuted")
+      );
       if (onTradeExecuted) onTradeExecuted();
     } catch (error: any) {
-      Alert.alert("Error", error.message || `Failed to execute ${type} order`);
+      Alert.alert(
+        t("error.title"),
+        error.message ||
+          (type === "BUY" ? t("order.buyFailed") : t("order.sellFailed"))
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -79,8 +88,12 @@ const OrderBook = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.priceHeaderText}>Price ({"USDT"})</Text>
-        <Text style={styles.amountHeaderText}>Amount ({baseCurrency})</Text>
+        <Text style={styles.priceHeaderText}>
+          {t("order.price")} ({"USDT"})
+        </Text>
+        <Text style={styles.amountHeaderText}>
+          {t("order.amount")} ({baseCurrency})
+        </Text>
       </View>
 
       <View style={styles.ordersSection}>
@@ -116,7 +129,7 @@ const OrderBook = ({
         ))}
       </View>
       {isProcessing && (
-        <Text style={styles.processingText}>Processing trade...</Text>
+        <Text style={styles.processingText}>{t("order.processing")}</Text>
       )}
     </View>
   );

@@ -3,6 +3,11 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { formatAmount } from "@/utils/formatters";
 import { Asset } from "@/app/types/crypto";
 import { styles } from "./styles";
+import {
+  DEFAULT_CRYPTO_IMAGE,
+  DEFAULT_CRYPTO_NAME,
+  DEFAULT_CRYPTO_SYMBOL,
+} from "@/utils/constant";
 
 interface AssetItemProps {
   asset: Asset;
@@ -16,7 +21,7 @@ const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
 
   const imageSource = asset.image
     ? { uri: asset.image }
-    : require("@/assets/icons/usdt.png");
+    : { uri: DEFAULT_CRYPTO_IMAGE.tether };
 
   const handlePress = () => onPress(asset);
 

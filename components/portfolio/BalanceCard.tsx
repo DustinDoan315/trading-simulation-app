@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useMemo, useCallback } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Animated,
@@ -224,6 +225,7 @@ const BalanceCard = ({
   assets = [],
   onResetBalance,
 }: BalanceCardProps) => {
+  const { t } = useLanguage();
   const [activeSegment, setActiveSegment] = React.useState<string | null>(null);
   const timeoutRef = useRef<any>(null);
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -436,7 +438,7 @@ const BalanceCard = ({
 
       <View style={styles.contentContainer}>
         <View style={styles.balanceHeader}>
-          <Text style={styles.label}>Available Balance</Text>
+          <Text style={styles.label}>{t("portfolio.availableBalance")}</Text>
         </View>
         <Text style={styles.balance}>{balance}</Text>
         <View style={styles.changeContainer}>
@@ -474,14 +476,6 @@ const BalanceCard = ({
             styles.tokenInfoContainer,
             {
               opacity: fadeAnim,
-              // left:
-              //   activeSegmentDetails.tooltipX > size / 2
-              //     ? Math.min(activeSegmentDetails.tooltipX, screenWidth - 150)
-              //     : Math.max(10, activeSegmentDetails.tooltipX - 130),
-              // top:
-              //   activeSegmentDetails.tooltipY > size / 2
-              //     ? activeSegmentDetails.tooltipY + 10
-              //     : activeSegmentDetails.tooltipY - 90,
             },
           ]}>
           <View
@@ -491,7 +485,8 @@ const BalanceCard = ({
             ]}
           />
           <Text style={styles.tokenPercentage}>
-            {Math.round(activeSegmentDetails.percentage)}% of portfolio
+            {Math.round(activeSegmentDetails.percentage)}%{" "}
+            {t("portfolio.ofPortfolio")}
           </Text>
           <Text style={styles.tokenName}>{activeSegmentDetails.name}</Text>
           <Text style={styles.tokenValue}>{`$${formatAmount(

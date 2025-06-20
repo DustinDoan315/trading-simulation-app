@@ -1,3 +1,4 @@
+import { useLanguage } from "@/context/LanguageContext";
 import Chart from "@/components/crypto/Chart";
 import OrderBook from "@/components/trading/OrderBook";
 import OrderEntry from "@/components/trading/OrderEntry";
@@ -24,6 +25,7 @@ import { RootState } from "@/store";
 import { useNotification } from "@/components/ui/Notification";
 
 const CryptoChartScreen = () => {
+  const { t } = useLanguage();
   const { id, symbol, name, image }: any = useLocalSearchParams();
   const { balance } = useSelector((state: RootState) => state.balance);
   const { showNotification } = useNotification();
@@ -138,7 +140,7 @@ const CryptoChartScreen = () => {
           error={error}
           onMessage={onMessage}
           chartType={chartType}
-          title={`${symbol} Chart`}
+          title={`${symbol} ${t("chart.title")}`}
           seriesName={symbol}
         />
 

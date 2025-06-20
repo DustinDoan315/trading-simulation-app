@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
+import { useLanguage } from "@/context/LanguageContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useAppDispatch } from "@/store";
@@ -33,6 +35,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
   onMenuPress,
   onResetBalance,
 }) => {
+  const { t } = useLanguage();
   const [showResetModal, setShowResetModal] = useState(false);
 
   const handleResetPress = () => {
@@ -47,7 +50,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
       dispatch(resetFavorites());
       dispatch(clearSearchHistory());
       await persistor.purge();
-      
+
       onResetBalance?.();
       setShowResetModal(false);
       Alert.alert("Success", "All data has been reset to default values");
@@ -68,14 +71,21 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
           <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
             <Ionicons name="menu-outline" size={24} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={handleResetPress}>
-            <Ionicons name="refresh" size={18} color="white" />
-            <Text style={styles.resetText}>Reset</Text>
-          </TouchableOpacity>
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+            <TouchableOpacity
+              style={styles.resetButton}
+              onPress={handleResetPress}>
+              <Ionicons name="refresh" size={18} color="white" />
+              <Text style={styles.resetText}>{t("balance.reset")}</Text>
+            </TouchableOpacity>
+            <LanguageSwitcher />
+          </View>
         </View>
-        <Text style={styles.balanceTitle}>Your balance</Text>
+        <Text style={styles.balanceTitle}>{t("balance.yourBalance")}</Text>
         <Text style={styles.balanceAmount}>
           {isBalanceHidden
             ? "********"
@@ -90,20 +100,20 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
         onRequestClose={() => setShowResetModal(false)}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Reset Balance</Text>
+            <Text style={styles.modalTitle}>{t("balance.resetBalance")}</Text>
             <Text style={styles.modalText}>
-              Are you sure you want to reset your balance to $100,000?
+              {t("balance.resetConfirmation")}
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setShowResetModal(false)}>
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={styles.buttonText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={confirmReset}>
-                <Text style={styles.buttonText}>Confirm</Text>
+                <Text style={styles.buttonText}>{t("common.confirm")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -118,13 +128,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
   },
   resetButton: {
     flexDirection: "row",
     alignItems: "center",
     padding: 6,
     borderRadius: 8,
+    marginBottom: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   resetText: {

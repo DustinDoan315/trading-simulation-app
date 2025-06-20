@@ -3,6 +3,7 @@ import { ChartType } from "../../app/types/crypto";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface SymbolHeaderProps {
   priceChange: string;
@@ -19,6 +20,7 @@ const SymbolHeader = ({
   toggleChartType,
   toggleIndicators,
 }: SymbolHeaderProps) => {
+  const { t } = useLanguage();
   const showListCrypto = () => {
     router.push("/(subs)/crypto-list");
   };
@@ -39,17 +41,25 @@ const SymbolHeader = ({
         </Text>
       </TouchableOpacity>
       <View style={styles.symbolRight}>
-        <TouchableOpacity style={styles.iconButton} onPress={toggleChartType}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={toggleChartType}
+          accessibilityLabel={t("chart.types." + chartType)}>
           <Feather
             name={chartType === "candlestick" ? "bar-chart-2" : "trending-up"}
             size={22}
             color="white"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={toggleIndicators}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={toggleIndicators}
+          accessibilityLabel={t("chart.indicators")}>
           <Feather name="layers" size={22} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          accessibilityLabel={t("common.moreOptions")}>
           <Feather name="more-vertical" size={22} color="white" />
         </TouchableOpacity>
       </View>
