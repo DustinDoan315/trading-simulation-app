@@ -4,6 +4,7 @@ import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
 import Typography from "@/styles/typography";
 import { formatAmount } from "@/utils/formatters";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface AmountPercentButtonProps {
   currentPosition: number;
@@ -18,7 +19,7 @@ interface AmountPercentButtonProps {
   resetTrigger?: any; // New prop to trigger reset from parent
 }
 
-const AmountPercentButton = ({
+  const AmountPercentButton = ({
   currentPosition = 0,
   setCurrentPosition,
   onChange,
@@ -29,6 +30,7 @@ const AmountPercentButton = ({
   balanceType = "token",
   resetTrigger,
 }: AmountPercentButtonProps) => {
+  const { t } = useLanguage();
   useEffect(() => {
     if (resetTrigger !== undefined) {
       console.log("Resetting position due to external trigger");
@@ -100,7 +102,7 @@ const AmountPercentButton = ({
 
       <View style={styles.labelsContainer}>
         <View style={styles.labelRow}>
-          <Text style={Typography.label}>Khả dụng</Text>
+          <Text style={Typography.label}>{t("trading.available")}</Text>
           <Text style={Typography.bodySmall}>
             {formatAmount(availableAmount, 2)}{" "}
             {tradeType === "buy" ? "USDT" : amountUnit}
@@ -110,7 +112,7 @@ const AmountPercentButton = ({
         {tradeType === "buy" && (
           <View style={styles.labelRow}>
             <Text style={Typography.label}>
-              {tradeType === "buy" ? "Mua" : "Bán"} tối đa
+              {t(tradeType === "buy" ? "trading.maxBuy" : "trading.maxSell")}
             </Text>
             <Text style={Typography.bodySmall}>{getMaxAmountText()}</Text>
           </View>

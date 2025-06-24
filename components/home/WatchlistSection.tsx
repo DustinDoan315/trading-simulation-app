@@ -4,6 +4,7 @@ import { CryptoCurrency } from "@/services/CryptoService";
 import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useAppSelector } from "@/store";
 import { WatchListChild } from "./WatchlistItem";
+import { useLanguage } from "@/context/LanguageContext";
 
 // components/home/WatchListSection.tsx
 
@@ -26,6 +27,7 @@ const WatchListSectionComponent: React.FC<WatchListSectionProps> = ({
   onAddPress,
   scrollEnabled,
 }) => {
+  const { t } = useLanguage();
   const favoriteIds = useAppSelector((state) => state.favorites.favoriteIds);
   const filteredList = cryptoList.filter((crypto) =>
     favoriteIds.includes(crypto.id)
@@ -44,7 +46,7 @@ const WatchListSectionComponent: React.FC<WatchListSectionProps> = ({
 
   return (
     <View style={styles.watchlistContainer}>
-      <Text style={styles.watchlistTitle}>{title}</Text>
+      <Text style={styles.watchlistTitle}>{`${t("watchList.title")}`}</Text>
 
       <FlatList
         data={filteredList}

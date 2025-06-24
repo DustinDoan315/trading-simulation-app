@@ -1,4 +1,4 @@
-export type TimeframeOption = "15m" | "1h" | "4h" | "1d" | "3m";
+export type TimeframeOption = "15m" | "1h" | "4h" | "1d" | "3m" | "1m";
 export type ChartType = "candlestick" | "line";
 
 export interface OrderBookEntry {

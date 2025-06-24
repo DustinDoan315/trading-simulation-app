@@ -13,15 +13,15 @@ export const LanguageSwitcher = () => {
     <Pressable
       style={{
         padding: 10,
-        backgroundColor: "#f0f0f0",
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
         borderRadius: 8,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#000",
+
       }}
       onPress={toggleLanguage}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Text style={{ marginRight: 8 }}>
+        <Text style={{ marginRight: 8, color: "white" }}>
           {language === "en" ? "English" : "Tiếng Việt"}
         </Text>
         <Text>{language === "en" ? "🇺🇸" : "🇻🇳"}</Text>

@@ -41,41 +41,16 @@ const TimeframeSelector = ({
   return (
     <View style={styles.timeframeContainer}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <TouchableOpacity
-          style={getTimeframeButtonStyle("15m")}
-          onPress={() => switchTimeframe("15m")}>
-          <Text style={getTimeframeTextStyle("15m")}>
-            {t("chart.timeframes.15m")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={getTimeframeButtonStyle("1h")}
-          onPress={() => switchTimeframe("1h")}>
-          <Text style={getTimeframeTextStyle("1h")}>
-            {t("chart.timeframes.1h")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={getTimeframeButtonStyle("4h")}
-          onPress={() => switchTimeframe("4h")}>
-          <Text style={getTimeframeTextStyle("4h")}>
-            {t("chart.timeframes.4h")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={getTimeframeButtonStyle("1d")}
-          onPress={() => switchTimeframe("1d")}>
-          <Text style={getTimeframeTextStyle("1d")}>
-            {t("chart.timeframes.1d")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={getTimeframeButtonStyle("3m")}
-          onPress={() => switchTimeframe("3m")}>
-          <Text style={getTimeframeTextStyle("3m")}>
-            {t("chart.timeframes.3m")}
-          </Text>
-        </TouchableOpacity>
+        {["1m", "3m", "15m", "1h", "4h", "1d"].map((tf: any) => (
+          <TouchableOpacity
+            key={tf}
+            style={getTimeframeButtonStyle(tf)}
+            onPress={() => switchTimeframe(tf)}>
+            <Text style={getTimeframeTextStyle(tf)}>
+              {t(`chart.timeframes.${tf}`)}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
 
       <TouchableOpacity

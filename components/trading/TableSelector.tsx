@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Switch } from "react-native";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
 import Typography from "@/styles/typography";
+import { useLanguage } from "@/context/LanguageContext";
 
 const TabSelector = ({
   selectedTab,
@@ -10,6 +11,7 @@ const TabSelector = ({
   marginEnabled = false,
   onToggleMargin,
 }: any) => {
+  const { t } = useLanguage();
   return (
     <View style={styles.container}>
       <View style={styles.tabButtonsContainer}>
@@ -25,7 +27,7 @@ const TabSelector = ({
               styles.tabText,
               selectedTab === "buy" ? styles.buyTabTextActive : null,
             ]}>
-            Mua
+            {t("trading.buy")}
           </Text>
         </TouchableOpacity>
 
@@ -41,24 +43,10 @@ const TabSelector = ({
               styles.tabText,
               selectedTab === "sell" ? styles.sellTabTextActive : null,
             ]}>
-            Bán
+            {t("trading.sell")}
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* <View style={styles.marginContainer}>
-        <Text style={styles.marginText}>Ký quỹ</Text>
-        <Switch
-          value={marginEnabled}
-          onValueChange={onToggleMargin}
-          trackColor={{
-            false: Colors.ui.toggleBackground,
-            true: Colors.action.primary,
-          }}
-          thumbColor={marginEnabled ? Colors.text.primary : Colors.ui.toggle}
-          ios_backgroundColor={Colors.ui.toggleBackground}
-        />
-      </View> */}
     </View>
   );
 };

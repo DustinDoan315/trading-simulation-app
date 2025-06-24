@@ -43,7 +43,7 @@
     "errorLoading": "Lỗi khi tải danh mục",
     "pullToRefresh": "Kéo để làm mới",
     "emptyPortfolio": "Danh mục của bạn đang trống",
-    "overall": "Tổng thể",
+    "overall": "Tổng quan",
     "availableBalance": "Số dư khả dụng",
     "ofPortfolio": "của danh mục",
     "assets": "tài sản"
@@ -52,7 +52,10 @@
     "buy": "Mua",
     "sell": "Bán",
     "amount": "Số lượng",
-    "price": "Giá"
+    "price": "Giá",
+    "available": "Khả dụng",
+    "maxBuy": "Mua tối đa",
+    "maxSell": "Bán tối đa"
   },
   "order": {
     "price": "Giá",
@@ -61,13 +64,29 @@
     "sellExecuted": "Lệnh bán đã thực hiện",
     "buyFailed": "Không thể thực hiện lệnh mua",
     "sellFailed": "Không thể thực hiện lệnh bán",
-    "processing": "Đang xử lý giao dịch..."
+    "processing": "Đang xử lý giao dịch...",
+    "successTitle": "Lệnh đã thực hiện",
+    "successMessage": "{action} {amount} {symbol} với giá {price}",
+    "errorTitle": "Lỗi thực hiện lệnh",
+    "errorMessage": "Không thể {action} {symbol}: {message}",
+    "actionBought": "Đã mua",
+    "actionSold": "Đã bán"
   },
   "balance": {
     "yourBalance": "Số dư của bạn",
     "reset": "Đặt lại",
     "resetBalance": "Đặt lại số dư",
-    "resetConfirmation": "Bạn có chắc muốn đặt lại số dư về $100,000?"
+    "resetConfirmation": "Bạn có chắc muốn đặt lại số dư về $100,000?",
+    "resetSuccess": "Đặt lại thành công",
+    "resetMessage": "Số dư đã được đặt lại về giá trị mặc định",
+    "resetError": "Lỗi đặt lại",
+    "resetErrorMessage": "Không thể đặt lại số dư. Vui lòng thử lại.",
+    "resetSuccessTitle": "Thành công",
+    "resetSuccessMessage": "Số dư đã được đặt lại về $100,000",
+    "resetErrorTitle": "Lỗi",
+    "resetButton": "Đặt lại số dư",
+    "resetConfirmTitle": "Xác nhận đặt lại",
+    "resetConfirmMessage": "Bạn có chắc muốn đặt lại số dư về $100,000?"
   },
   "cryptoSearch": {
     "searchPlaceholder": "Tìm kiếm tiền mã hóa, bot",
@@ -93,6 +112,7 @@
     },
     "timeframes": {
       "1m": "1 phút",
+      "3m": "3 phút",
       "5m": "5 phút",
       "15m": "15 phút",
       "30m": "30 phút",
@@ -108,6 +128,15 @@
       "price": "Giá",
       "amount": "Số lượng",
       "total": "Tổng"
-    }
+    },
+    "errorParsingMessage": "Lỗi khi phân tích WebView"
+  },
+  "watchList": {
+    "title": "Theo dõi",
+    "add": "Thêm vào danh sách theo dõi",
+    "remove": "Xoá khỏi danh sách theo dõi",
+    "noItems": "Không có mục nào trong danh sách theo dõi",
+    "errorLoading": "Lỗi khi tải danh sách theo dõi",
+    "pullToRefresh": "Kéo để làm mới"
   }
 }

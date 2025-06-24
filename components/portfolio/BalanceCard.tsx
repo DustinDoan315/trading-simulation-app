@@ -19,6 +19,7 @@ import Svg, {
 } from "react-native-svg";
 import { formatAmount } from "@/utils/formatters";
 import { Asset } from "@/app/types/crypto";
+import { height, width } from "@/utils/response";
 
 type BalanceCardProps = {
   balance: string;
@@ -441,8 +442,8 @@ const BalanceCard = ({
           <Text style={styles.label}>{t("portfolio.availableBalance")}</Text>
         </View>
         <Text style={styles.balance}>{balance}</Text>
-        <View style={styles.changeContainer}>
-          <Ionicons
+        {/* <View style={styles.changeContainer}> */}
+          {/* <Ionicons
             name={isPositive ? "caret-up" : "caret-down"}
             size={18}
             color={isPositive ? "#8C9EFF" : "#FF6B6B"}
@@ -455,7 +456,7 @@ const BalanceCard = ({
             {isPositive ? "+" : ""}
             {changePercentage}% ({changeValue})
           </Text>
-        </View>
+        </View> */}
       </View>
 
       {/* Legend items */}
@@ -478,17 +479,24 @@ const BalanceCard = ({
               opacity: fadeAnim,
             },
           ]}>
-          <View
+          <View style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+             <View
             style={[
               styles.colorIndicator,
               { backgroundColor: activeSegmentDetails.colors[0] },
             ]}
           />
+          <Text style={styles.tokenName}>{activeSegmentDetails.name}</Text>
+         </View>
           <Text style={styles.tokenPercentage}>
             {Math.round(activeSegmentDetails.percentage)}%{" "}
             {t("portfolio.ofPortfolio")}
           </Text>
-          <Text style={styles.tokenName}>{activeSegmentDetails.name}</Text>
+
           <Text style={styles.tokenValue}>{`$${formatAmount(
             activeSegmentDetails.value,
             2
@@ -510,6 +518,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: "100%",
     marginBottom: 8,
+    marginTop: 20,
+
   },
   resetButton: {
     flexDirection: "row",
@@ -587,10 +597,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#9DA3B4",
     fontWeight: "bold",
-    marginTop: 25,
+    marginTop: -height * 0.03,
   },
   balance: {
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: "bold",
     color: "white",
     textShadowColor: "rgba(255, 255, 255, 0.1)",
@@ -620,10 +630,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     backgroundColor: "rgba(26, 29, 47, 0.9)",
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderRadius: 12,
     alignItems: "flex-start",
-    width: 130,
+    width: 180,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.4,
@@ -636,7 +646,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    marginBottom: 6,
+    marginRight: 6,
   },
   tokenName: {
     color: "white",

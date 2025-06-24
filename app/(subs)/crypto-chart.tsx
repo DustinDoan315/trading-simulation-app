@@ -36,9 +36,6 @@ const CryptoChartScreen = () => {
   const [chartType, setChartType] = useState<ChartType>("candlestick");
   const [showIndicators, setShowIndicators] = useState(false);
 
-  console.log("token:", id, symbol, name, image);
-  console.log("balance:", balance);
-
   const { askOrders, bidOrders } = useOrderBook(id);
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
@@ -58,7 +55,8 @@ const CryptoChartScreen = () => {
         console.log("Chart Interaction", data.action);
       }
     } catch (e: any) {
-      setError("Message parsing error: " + e.message);
+      console.error("Error parsing WebView message:", e);
+      setError(t("chart.errorParsingMessage"));
     }
   };
 

@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import { UserBalance } from "@/services/CryptoService";
 import { formatAmount } from "@/utils/formatters";
+import { height } from "@/utils/response";
 
 // components/home/BalanceSection.tsx
 
@@ -53,23 +54,27 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
 
       onResetBalance?.();
       setShowResetModal(false);
-      Alert.alert("Success", "All data has been reset to default values");
+      Alert.alert(`${t("balance.resetSuccess")}`, t("balance.resetMessage"));
     } catch (error) {
-      Alert.alert("Error", "Failed to reset data. Please try again.");
+      console.error("Error resetting balance:", error);
+      Alert.alert(
+        `${t("balance.resetError")}`,
+        t("balance.resetErrorMessage")
+      );
     }
   };
   const moveToPortfolio = () => {
-    router.navigate("/portfolio");
+    // router.navigate("/portfolio");
   };
 
   return (
     <LinearGradient
       colors={["#6262D9", "#9D62D9"]}
-      style={styles.balanceSection}>
+      style={styles.container}>
       <TouchableOpacity onPress={moveToPortfolio}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
-            <Ionicons name="menu-outline" size={24} color="white" />
+            <LanguageSwitcher />
           </TouchableOpacity>
           <View
             style={{
@@ -82,7 +87,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
               <Ionicons name="refresh" size={18} color="white" />
               <Text style={styles.resetText}>{t("balance.reset")}</Text>
             </TouchableOpacity>
-            <LanguageSwitcher />
+            
           </View>
         </View>
         <Text style={styles.balanceTitle}>{t("balance.yourBalance")}</Text>
@@ -124,6 +129,15 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
 };
 
 const styles = StyleSheet.create({
+  container: {
+    marginTop: height * 0.025,
+    width: "94%",
+    marginVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 20,
+    alignSelf: "center",
+  },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -186,13 +200,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "600",
   },
-  balanceSection: {
-    marginVertical: 12,
-    paddingHorizontal: 16,
-    paddingTop: 40,
-    paddingBottom: 30,
-    borderRadius: 20,
-  },
+
   menuButton: {
     marginBottom: 20,
   },

@@ -8,11 +8,12 @@ import cryptoPricesReducer from "@/features/cryptoPricesSlice";
 import favoritesReducer from "@/features/favoritesSlice";
 import balanceReducer from "@/features/balanceSlice";
 import searchHistoryReducer from "@/features/searchHistorySlice";
+import languageReducer from "@/features/languageSlice";
 
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["favorites", "searchHistory", "balance", "cryptoPrices"],
+  whitelist: ["favorites", "searchHistory", "balance", "cryptoPrices", "language"],
 };
 
 const rootReducer = combineReducers({
@@ -20,6 +21,7 @@ const rootReducer = combineReducers({
   favorites: favoritesReducer,
   balance: balanceReducer,
   searchHistory: searchHistoryReducer,
+  language: languageReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

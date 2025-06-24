@@ -45,14 +45,16 @@
     "emptyPortfolio": "Your portfolio is empty",
     "overall": "Overall",
     "availableBalance": "Available Balance",
-    "ofPortfolio": "of portfolio",
-    "assets": "assets"
+    "ofPortfolio": "of portfolio"
   },
   "trading": {
     "buy": "Buy",
     "sell": "Sell",
     "amount": "Amount",
-    "price": "Price"
+    "price": "Price",
+    "available": "Available",
+    "maxBuy": "Max buy",
+    "maxSell": "Max sell"
   },
   "order": {
     "price": "Price",
@@ -61,13 +63,29 @@
     "sellExecuted": "Sell order executed",
     "buyFailed": "Failed to execute buy order",
     "sellFailed": "Failed to execute sell order",
-    "processing": "Processing trade..."
+    "processing": "Processing trade...",
+    "successTitle": "Order executed",
+    "successMessage": "{action} {amount} {symbol} for {price}",
+    "errorTitle": "Order failed",
+    "errorMessage": "Failed to {action} {symbol}: {message}",
+    "actionBought": "Bought",
+    "actionSold": "Sold"
   },
   "balance": {
     "yourBalance": "Your balance",
     "reset": "Reset",
     "resetBalance": "Reset Balance",
-    "resetConfirmation": "Are you sure you want to reset your balance to $100,000?"
+    "resetConfirmation": "Are you sure you want to reset your balance to $100,000?",
+    "resetSuccess": "Reset Successful",
+    "resetMessage": "Your balance has been reset to $100,000",
+    "resetError": "Reset Failed",
+    "resetErrorMessage": "Failed to reset balance. Please try again.",
+    "resetButton": "Reset Balance",
+    "resetConfirmTitle": "Reset Balance",
+    "resetConfirmMessage": "Are you sure you want to reset your balance to $100,000?",
+    "resetSuccessTitle": "Reset Successful",
+    "resetSuccessMessage": "Your balance has been reset to $100,000",
+    "resetErrorTitle": "Reset Failed"
   },
   "cryptoSearch": {
     "searchPlaceholder": "Search cryptocurrencies, bots",
@@ -93,6 +111,7 @@
     },
     "timeframes": {
       "1m": "1m",
+      "3m": "3m",
       "5m": "5m",
       "15m": "15m",
       "30m": "30m",
@@ -108,6 +127,15 @@
       "price": "Price",
       "amount": "Amount",
       "total": "Total"
-    }
+    },
+    "errorParsingMessage": "Error parsing WebView message"
+  },
+  "watchList": {
+    "title": "Watchlist",
+    "add": "Add to Watchlist",
+    "remove": "Remove from Watchlist",
+    "noItems": "No items in watchlist",
+    "errorLoading": "Error loading watchlist",
+    "pullToRefresh": "Pull to refresh"
   }
 }
