@@ -28,6 +28,7 @@ export const portfolios = sqliteTable(
     symbol: text("symbol").notNull(),
     quantity: text("quantity").notNull(),
     avgCost: text("avgCost").notNull(),
+    image: text("image"),
   },
   (table) => ({
     userAssetIdx: uniqueIndex("user_asset_idx").on(table.userId, table.symbol),

@@ -3,7 +3,7 @@ import UserRepository from "../services/UserRepository";
 import UUIDService from "../services/UUIDService";
 import { Holding, HoldingUpdatePayload, Order } from "../app/types/crypto";
 
-interface UserBalance {
+export interface UserBalance {
   totalInUSD: number;
   holdings: Record<string, Holding>;
 }
@@ -214,6 +214,18 @@ export const balanceSlice = createSlice({
         UserRepository.updatePortfolio(uuid, holdings);
       });
     },
+    updatePortfolio: (state, action: PayloadAction<UserBalance>) => {
+      state.balance = action.payload;
+      state.balance.totalInUSD = recalculatePortfolioValue(
+        action.payload.holdings
+      );
+
+      // Persist to database
+      UUIDService.getOrCreateUser().then((uuid) => {
+        UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
+        UserRepository.updatePortfolio(uuid, action.payload.holdings);
+      });
+    },
     updateCurrentPrice: (
       state,
       action: PayloadAction<{ cryptoId: string; currentPrice: number }>
@@ -258,5 +270,6 @@ export const {
   updateHolding,
   addTradeHistory,
   updateCurrentPrice,
+  updatePortfolio,
 } = balanceSlice.actions;
 export default balanceSlice.reducer;

@@ -1,8 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "@/store";
-import { Asset, PortfolioData } from "@/app/types/crypto";
+import { updatePortfolio } from "@/features/balanceSlice";
+import { Asset, PortfolioData, Holding } from "@/app/types/crypto";
+import { UserBalance } from "@/features/balanceSlice";
+import { DatabaseService } from "@/services/DatabaseService";
+import { SyncService } from "@/services/SupabaseService";
+import UUIDService from "@/services/UUIDService";
 
 // Optimized selector with better memoization
 const selectPortfolioData = createSelector(
@@ -89,6 +94,47 @@ export const usePortfolioData = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Get user UUID
+      const uuid = await UUIDService.getOrCreateUser();
+
+      // First get local portfolio
+      const localPortfolio = await DatabaseService.getUserPortfolio(uuid);
+
+      // Then sync with cloud if online
+      await SyncService.syncFromCloud(uuid);
+
+      // Get updated local data after sync
+      const portfolioItems = await DatabaseService.getUserPortfolio(uuid);
+
+      // Transform to UserBalance format
+      const holdings: Record<string, Holding> = {};
+      portfolioItems.forEach((item) => {
+        holdings[item.symbol] = {
+          amount: parseFloat(item.quantity),
+          valueInUSD: parseFloat(item.quantity) * parseFloat(item.avgCost),
+          symbol: item.symbol,
+          name: item.symbol,
+          image:
+            item.image ||
+            `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
+          averageBuyPrice: parseFloat(item.avgCost),
+          currentPrice: parseFloat(item.avgCost),
+          profitLoss: 0,
+          profitLossPercentage: 0,
+        };
+      });
+
+      const updatedPortfolio: UserBalance = {
+        totalInUSD: Object.values(holdings).reduce(
+          (sum, holding) => sum + holding.valueInUSD,
+          0
+        ),
+        holdings,
+      };
+
+      const dispatch = useDispatch();
+      dispatch(updatePortfolio(updatedPortfolio));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to refresh portfolio"

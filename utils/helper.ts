@@ -200,7 +200,9 @@ export const handleOrderSubmission = async (
     showToast(
       "success",
       "Order executed",
-      `${isBuyOrder ? "Bought" : "Sold"} ${order.amount} ${symbol} for ${formatPrice(order.total)}`
+      `${isBuyOrder ? "Bought" : "Sold"} ${
+        order.amount
+      } ${symbol} for ${formatPrice(order.total)}`
     );
 
     console.debug("[Order] Submitted successfully:", completedOrder);
