@@ -54,10 +54,10 @@ const HomeScreen = () => {
           refreshing={false}
           onRefresh={() => {}}
           onItemPress={navigateToChart}
-          onAddPress={handleAddButtonPress}
           scrollEnabled={false}
         />
       </ScrollView>
+      <AddButton onPress={handleAddButtonPress} />
     </SafeAreaView>
   );
 };

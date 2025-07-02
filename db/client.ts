@@ -1,3 +1,4 @@
+// db/client.ts
 import { drizzle } from "drizzle-orm/expo-sqlite";
 import * as SQLite from "expo-sqlite";
 import * as schema from "./schema";
@@ -5,7 +6,15 @@ import * as schema from "./schema";
 // Create database instance with synchronous API
 const expoDb = SQLite.openDatabaseSync("trading.db");
 
-// Initialize database tables
+// Drop existing tables to ensure clean state
+expoDb.execSync(`
+  DROP TABLE IF EXISTS collections;
+  DROP TABLE IF EXISTS transactions;
+  DROP TABLE IF EXISTS portfolios;
+  DROP TABLE IF EXISTS users;
+`);
+
+// Initialize database tables with column names EXACTLY matching your schema
 expoDb.execSync(`
   CREATE TABLE IF NOT EXISTS users (
     uuid TEXT PRIMARY KEY,

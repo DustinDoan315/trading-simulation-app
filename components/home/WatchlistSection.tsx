@@ -24,7 +24,6 @@ const WatchListSectionComponent: React.FC<WatchListSectionProps> = ({
   refreshing,
   onRefresh,
   onItemPress,
-  onAddPress,
   scrollEnabled,
 }) => {
   const { t } = useLanguage();
@@ -57,7 +56,6 @@ const WatchListSectionComponent: React.FC<WatchListSectionProps> = ({
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        ListFooterComponent={<AddButton onPress={onAddPress} />}
       />
     </View>
   );
