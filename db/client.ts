@@ -4,7 +4,7 @@ import * as SQLite from "expo-sqlite";
 import * as schema from "./schema";
 
 // Create database instance with synchronous API
-const expoDb = SQLite.openDatabaseSync("trading.db");
+const expoDb = SQLite.openDatabaseSync("learn_trading_app.db");
 
 // Drop existing tables to ensure clean state
 expoDb.execSync(`

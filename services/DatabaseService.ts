@@ -4,7 +4,7 @@ import { openDatabaseSync } from "expo-sqlite";
 import { users, portfolios, transactions } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
-const expo = openDatabaseSync("trading_app.db");
+const expo = openDatabaseSync("learn_trading_app.db");
 const db = drizzle(expo);
 
 export class DatabaseService {
