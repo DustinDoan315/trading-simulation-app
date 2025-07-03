@@ -18,7 +18,6 @@ import "react-native-reanimated";
 import Toast from "react-native-toast-message";
 import scheduler from "@/utils/scheduler";
 import { updateDailyBalance } from "@/utils/balanceUpdater";
-import { SupabaseInitializer } from "@/services/SupabaseService";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { SafeAreaView } from "react-native";
@@ -35,9 +34,6 @@ export default function RootLayout() {
     const initializeApp = async () => {
       if (loaded) {
         SplashScreen.hideAsync();
-
-        // Initialize Supabase tables
-        await SupabaseInitializer.initializeTables();
 
         // Initialize daily balance update at midnight UTC
         scheduler.addDailyTask("daily-balance-update", updateDailyBalance, 0);
