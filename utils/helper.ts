@@ -1,13 +1,13 @@
-import * as bip39 from "bip39";
-import * as Crypto from "expo-crypto";
-import { Buffer } from "buffer";
-import { store } from "@/store";
-import { balanceSlice } from "@/features/balanceSlice";
-import Toast from "react-native-toast-message";
-import { Order } from "@/types/crypto";
-import { Platform } from "react-native";
 import * as Application from 'expo-application';
-import { ToastPos, ToastType } from "@/types/common";
+import * as bip39 from 'bip39';
+import * as Crypto from 'expo-crypto';
+import Toast from 'react-native-toast-message';
+import { Buffer } from 'buffer';
+import { Order } from '@/types/crypto';
+import { Platform } from 'react-native';
+import { ToastPos, ToastType } from '@/types/common';
+
+
 
 global.Buffer = Buffer;
 
@@ -127,19 +127,23 @@ const showToast = (
   });
 };
 
-export const getDeviceUUID = async (): Promise<string> => {
-  if (Platform.OS === 'ios') {
-    return await Application.getIosIdForVendorAsync() || 'fallback-ios-uuid';
-  } else {
-    return Application.getAndroidId() || 'fallback-android-uuid';
-  }
-};
+
 
 // --- Core Logic ---
 const MIN_AMOUNT = 0.1;
 
+// Define types for the functions we need
+export interface OrderValidationContext {
+  getHoldings: () => Record<string, any>;
+}
+
+export interface OrderDispatchContext {
+  addTradeHistory: (order: Order) => void;
+  updateHolding: (payload: any) => void;
+}
+
 /** Throws OrderError on validation failure */
-function validateOrder(order: Order): void {
+function validateOrder(order: Order, context: OrderValidationContext): void {
   if (!order.symbol) {
     throw new OrderError("symbol.missing", "No token selected");
   }
@@ -148,7 +152,7 @@ function validateOrder(order: Order): void {
     throw new OrderError("amount.tooSmall", msg);
   }
   if (order.type === "sell") {
-    const holdings = store.getState().balance.balance.holdings;
+    const holdings = context.getHoldings();
     const h = holdings[order.symbol.toLowerCase()];
     if (!h || h.amount < order.amount) {
       const msg = `Insufficient ${order.symbol} balance`;
@@ -158,33 +162,34 @@ function validateOrder(order: Order): void {
 }
 
 /** Dispatch both crypto and USDT adjustments */
-function dispatchUpdates(order: Order, isBuy: boolean, imageUrl: string) {
+function dispatchUpdates(
+  order: Order, 
+  isBuy: boolean, 
+  imageUrl: string, 
+  context: OrderDispatchContext
+) {
   const sign = isBuy ? 1 : -1;
   const symbolId = order.symbol.toLowerCase();
 
-  store.dispatch(balanceSlice.actions.addTradeHistory(order));
+  context.addTradeHistory(order);
 
-  store.dispatch(
-    balanceSlice.actions.updateHolding({
-      cryptoId: symbolId,
-      amount: sign * order.amount,
-      valueInUSD: sign * order.total,
-      symbol: order.symbol,
-      name: order.name || order.symbol,
-      image: imageUrl,
-    })
-  );
+  context.updateHolding({
+    cryptoId: symbolId,
+    amount: sign * order.amount,
+    valueInUSD: sign * order.total,
+    symbol: order.symbol,
+    name: order.name || order.symbol,
+    image: imageUrl,
+  });
 
   if (symbolId !== "usdt") {
-    store.dispatch(
-      balanceSlice.actions.updateHolding({
-        cryptoId: "usdt",
-        amount: -sign * order.total,
-        valueInUSD: -sign * order.total,
-        symbol: "USDT",
-        name: "Tether",
-      })
-    );
+    context.updateHolding({
+      cryptoId: "usdt",
+      amount: -sign * order.total,
+      valueInUSD: -sign * order.total,
+      symbol: "USDT",
+      name: "Tether",
+    });
   }
 }
 
@@ -193,16 +198,20 @@ function dispatchUpdates(order: Order, isBuy: boolean, imageUrl: string) {
  * Submits an order, updates state, and shows notifications.
  * @param order Order details
  * @param imageUrl URL for the asset image
+ * @param validationContext Context for validation
+ * @param dispatchContext Context for dispatching actions
  * @param notify Optional callback({ message, type })
  */
 export const handleOrderSubmission = async (
   order: Order,
   imageUrl: string,
+  validationContext: OrderValidationContext,
+  dispatchContext: OrderDispatchContext,
 ): Promise<Order> => {
   console.debug("[Order] Submitting:", order);
 
   try {
-    validateOrder(order);
+    validateOrder(order, validationContext);
 
     const isBuy = order.type === "buy";
 
@@ -214,7 +223,7 @@ export const handleOrderSubmission = async (
       image: imageUrl,
     };
 
-    dispatchUpdates(completed, isBuy, imageUrl);
+    dispatchUpdates(completed, isBuy, imageUrl, dispatchContext);
 
     const successMsg = `${isBuy ? "Bought" : "Sold"} ${order.amount} ${
       order.symbol

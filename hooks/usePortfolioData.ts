@@ -1,8 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useSelector } from "react-redux";
-import { createSelector } from "@reduxjs/toolkit";
-import { RootState } from "@/store";
-import { Asset, PortfolioData } from "@/types/crypto";
+import { Asset, Holding, PortfolioData } from '@/types/crypto';
+import { createSelector } from '@reduxjs/toolkit';
+import { RootState } from '@/store';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+  } from 'react';
+import { useSelector } from 'react-redux';
+
 
 // Optimized selector with better memoization
 const selectPortfolioData = createSelector(
@@ -43,10 +49,35 @@ export const usePortfolioData = () => {
       };
     }
 
-    const mappedAssets: Asset[] = holdings.map(([id, holding]) => ({
-      id: holding.name.toLowerCase(),
+    // Group holdings by symbol (case-insensitive) to merge duplicates
+    const groupedHoldings = new Map<string, Holding>();
+    
+    holdings.forEach(([id, holding]: [string, Holding]) => {
+      const symbolKey = holding.symbol?.toUpperCase() || holding.name?.toUpperCase() || 'UNKNOWN';
+      
+      if (groupedHoldings.has(symbolKey)) {
+        // Merge with existing holding
+        const existing = groupedHoldings.get(symbolKey)!;
+        const totalAmount = existing.amount + holding.amount;
+        const totalValue = existing.valueInUSD + holding.valueInUSD;
+        
+        groupedHoldings.set(symbolKey, {
+          ...existing,
+          amount: totalAmount,
+          valueInUSD: totalValue,
+          // Use the first non-zero averageBuyPrice, or calculate weighted average
+          averageBuyPrice: existing.averageBuyPrice || holding.averageBuyPrice,
+        });
+      } else {
+        // Add new holding
+        groupedHoldings.set(symbolKey, holding);
+      }
+    });
+
+    const mappedAssets: Asset[] = Array.from(groupedHoldings.values()).map((holding) => ({
+      id: holding.symbol?.toUpperCase() || holding.name?.toUpperCase() || 'UNKNOWN',
       name: holding.name || "Unknown",
-      symbol: holding.symbol || "UNKNOWN",
+      symbol: holding.symbol?.toUpperCase() || "UNKNOWN",
       amount: holding.amount?.toString() || "0",
       value: holding.valueInUSD?.toFixed(2) || "0.00",
       image: holding.image || null,

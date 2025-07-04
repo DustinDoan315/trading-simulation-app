@@ -64,7 +64,7 @@ export interface WalletState {
   id: string;
 
   /** Associated user identifier */
-  userId: string;
+  user_id: string;
 
   /** Wallet's blockchain address */
   address: string;

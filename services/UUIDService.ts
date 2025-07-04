@@ -1,10 +1,10 @@
+import * as Crypto from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getDeviceUUID } from '@/utils/deviceUtils';
+import { LocalDatabaseService } from './LocalDatabase';
+import { supabase } from './SupabaseService';
 // Enhanced UUIDService.ts
-import * as Crypto from "expo-crypto";
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { supabase } from "./SupabaseService";
-import { LocalDatabaseService } from "./LocalDatabase";
-import { getDeviceUUID } from "@/utils/helper";
 
 const USER_UUID_KEY = "user_uuid_12";
 const USER_PROFILE_KEY = "user_profile";
@@ -117,6 +117,53 @@ class UUIDService {
     };
     
     await AsyncStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(syncStatus));
+  }
+}
+
+/**
+ * Ensures user exists in both local DB and Supabase. Call this on app start.
+ */
+export async function initializeUserProfile() {
+  try {
+    // Step 1: Ensure local user exists and get uuid
+    const uuid = await UUIDService.getOrCreateUser();
+
+    // Step 2: Try to get user profile from AsyncStorage (cache)
+    let userProfileStr = await AsyncStorage.getItem(USER_PROFILE_KEY);
+    let userProfile = userProfileStr ? JSON.parse(userProfileStr) : null;
+
+    // If not in cache, try to get from local DB
+    if (!userProfile) {
+      const localUser = await LocalDatabaseService.getUserPortfolio(uuid);
+      userProfile = localUser && localUser[0]
+        ? {
+            uuid: localUser[0].uuid,
+            balance: localUser[0].balance,
+            createdAt: localUser[0].createdAt,
+            lastSyncAt: null,
+          }
+        : null;
+    }
+
+    // Fallback: If still not found, create a default profile
+    if (!userProfile) {
+      userProfile = {
+        uuid,
+        balance: "100000",
+        createdAt: Math.floor(new Date().getTime() / 1000),
+        lastSyncAt: null,
+      };
+    }
+
+    // Step 3: Ensure user exists in Supabase
+    const result = await UUIDService.syncUserToCloud(userProfile);
+    if (result.success) {
+      console.log("User profile initialized in Supabase.");
+    } else {
+      console.warn("User profile could not be synced to Supabase:", result.error);
+    }
+  } catch (err) {
+    console.error("Failed to initialize user profile:", err);
   }
 }
 

@@ -1,18 +1,12 @@
+import * as schema from './schema';
+import * as SQLite from 'expo-sqlite';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
+
+
 // db/client.ts
-import { drizzle } from "drizzle-orm/expo-sqlite";
-import * as SQLite from "expo-sqlite";
-import * as schema from "./schema";
 
 // Create database instance with synchronous API
 const expoDb = SQLite.openDatabaseSync("learn_trading_app.db");
-
-// Drop existing tables to ensure clean state
-expoDb.execSync(`
-  DROP TABLE IF EXISTS collections;
-  DROP TABLE IF EXISTS transactions;
-  DROP TABLE IF EXISTS portfolios;
-  DROP TABLE IF EXISTS users;
-`);
 
 // Initialize database tables with column names EXACTLY matching your schema
 expoDb.execSync(`
@@ -24,16 +18,17 @@ expoDb.execSync(`
 
   CREATE TABLE IF NOT EXISTS portfolios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    userId TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     symbol TEXT NOT NULL,
     quantity TEXT NOT NULL,
-    avgCost TEXT NOT NULL,
-    UNIQUE(userId, symbol)
+    avg_cost TEXT NOT NULL,
+    image TEXT,
+    UNIQUE(user_id, symbol)
   );
 
   CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    userId TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     type TEXT NOT NULL,
     symbol TEXT NOT NULL,
     quantity TEXT NOT NULL,

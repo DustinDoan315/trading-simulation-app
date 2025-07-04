@@ -1,8 +1,10 @@
+import { and, eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
+import { openDatabaseSync } from 'expo-sqlite';
+import { portfolios, transactions, users } from '../database/schema';
+
+
 // services/DatabaseService.ts
-import { drizzle } from "drizzle-orm/expo-sqlite";
-import { openDatabaseSync } from "expo-sqlite";
-import { users, portfolios, transactions } from "../database/schema";
-import { eq, and } from "drizzle-orm";
 
 const expo = openDatabaseSync("learn_trading_app.db");
 const db = drizzle(expo);
@@ -33,28 +35,33 @@ export class LocalDatabaseService {
     }
   }
 
-  static async getUserPortfolio(userId: string) {
+  static async getUserPortfolio(user_id: string) {
     return await db
       .select()
       .from(portfolios)
-      .where(eq(portfolios.userId, userId));
+      .where(eq(portfolios.user_id, user_id));
   }
 
   static async updatePortfolioAsset(asset: any) {
+    // Map Supabase 'user_id' to local 'user_id' if needed
+    const assetForDb = {
+      ...asset,
+      user_id: asset.user_id || asset.user_id, // prefer user_id, fallback to user_id
+    };
     await db
       .insert(portfolios)
-      .values(asset)
+      .values(assetForDb)
       .onConflictDoUpdate({
-        target: [portfolios.userId, portfolios.symbol],
+        target: [portfolios.user_id, portfolios.symbol],
         set: {
           quantity: asset.quantity,
-          avgCost: asset.avg_cost,
+          avg_cost: asset.avg_cost,
         },
       });
   }
 
     static async addTransaction(transaction: {
-    userId: string;
+    user_id: string;
     type: "BUY" | "SELL";
     symbol: string;
     quantity: string;

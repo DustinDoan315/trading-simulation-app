@@ -1,9 +1,12 @@
-//SupabaseService.ts
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import NetInfo from '@react-native-community/netinfo';
-import { LocalDatabaseService } from "./LocalDatabase";
-import Constants from "expo-constants";
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { LocalDatabaseService } from './LocalDatabase';
+
+
+//SupabaseService.ts
+
 
 // Types for better type safety
 interface SyncResult<T = any> {
@@ -410,34 +413,110 @@ export class SyncService {
 
   // Enhanced portfolio sync with batch operations
   private static async syncPortfolioToCloud(uuid: string, portfolio: any[]): Promise<void> {
+    console.log('====================================');
+    console.log("syncPortfolioToCloud called");
+    console.log("UUID:", uuid);
+    console.log("Portfolio:", JSON.stringify(portfolio, null, 2));
+    console.log('====================================');
+    
     if (!portfolio || portfolio.length === 0) {
-      console.log('No portfolio data to sync');
+      console.log('⚠️ No portfolio data to sync - portfolio is empty');
       return;
     }
 
-    console.log(`Syncing ${portfolio.length} portfolio items to cloud`);
+    console.log(`🔄 Syncing ${portfolio.length} portfolio items to cloud`);
 
     // Prepare batch data
     const portfolioData = portfolio.map(asset => ({
       user_id: uuid,
       symbol: asset.symbol,
       quantity: asset.quantity,
-      avg_cost: asset.avgCost,
+      avg_cost: asset.avg_cost,
       image: asset.image,
       last_updated: new Date().toISOString()
     }));
 
+    console.log("📤 Prepared portfolio data for Supabase:", JSON.stringify(portfolioData, null, 2));
+
     // Batch upsert for better performance
+    console.log("🔄 Executing Supabase upsert...");
     const { data, error } = await supabase
       .from("portfolios")
       .upsert(portfolioData)
       .select();
 
     if (error) {
+      console.error("❌ Supabase upsert error:", error);
+      console.error("❌ Error details:", JSON.stringify(error, null, 2));
       throw new Error(`Portfolio sync failed: ${error.message}`);
     }
 
-    console.log(`Successfully synced ${data?.length || 0} portfolio items`);
+    console.log(`✅ Successfully synced ${data?.length || 0} portfolio items`);
+    console.log("✅ Supabase response data:", JSON.stringify(data, null, 2));
+    console.log('====================================');
+  }
+
+  // Public method for portfolio sync
+  static async syncPortfolio(uuid: string, portfolio: any[]): Promise<SyncResult> {
+    console.log('====================================');
+    console.log("SyncService.syncPortfolio called");
+    console.log("UUID:", uuid);
+    console.log("Portfolio data:", JSON.stringify(portfolio, null, 2));
+    console.log("Portfolio length:", portfolio.length);
+    console.log('====================================');
+    
+    try {
+      await this.updateSyncStatus('portfolioSync', 'pending');
+      console.log("✅ Sync status set to pending");
+
+      const result = await this.executeWithRetry(async () => {
+        console.log("🔄 Executing syncPortfolioToCloud...");
+        await this.syncPortfolioToCloud(uuid, portfolio);
+        console.log("✅ syncPortfolioToCloud completed successfully");
+        return portfolio;
+      }, 'Portfolio Sync');
+
+      await this.updateSyncStatus('portfolioSync', 'synced');
+      console.log("✅ Sync status set to synced");
+      
+      const successResult = {
+        success: true,
+        data: result,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log("✅ syncPortfolio returning success:", JSON.stringify(successResult, null, 2));
+      return successResult;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error("❌ Portfolio sync failed:", errorMessage);
+      console.error("❌ Error details:", error);
+      console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+      
+      // Add to offline queue if network related
+      if (errorMessage.includes('Network') || errorMessage.includes('network')) {
+        console.log("📱 Adding to offline queue due to network error");
+        await OfflineQueue.addToQueue({
+          type: 'portfolio_sync',
+          payload: { uuid, portfolio },
+          timestamp: new Date().toISOString(),
+          maxRetries: 5
+        });
+      }
+
+      await this.updateSyncStatus('portfolioSync', 'failed', errorMessage);
+      console.log("❌ Sync status set to failed");
+      
+      const errorResult = {
+        success: false,
+        error: errorMessage,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log("❌ syncPortfolio returning error:", JSON.stringify(errorResult, null, 2));
+      return errorResult;
+    }
   }
 
   // Enhanced collections sync
@@ -624,6 +703,53 @@ export class SyncService {
     } catch (error) {
       console.error("Error updating user balance in Supabase:", error);
       throw error;
+    }
+  }
+
+  // Utility function to handle sync status notifications
+  static async notifySyncStatus(operation: string, success: boolean, error?: string): Promise<void> {
+    try {
+      const status = success ? 'synced' : 'failed';
+      await this.updateSyncStatus(operation, status, error);
+      
+      // Log sync status for debugging
+      console.log(`Sync ${operation}: ${status}${error ? ` - ${error}` : ''}`);
+      
+      // TODO: Add user notification here if needed
+      // You can integrate with your notification system to show sync status to users
+      // Example: showToast(success ? 'success' : 'error', 'Sync Status', message);
+    } catch (notificationError) {
+      console.error('Failed to notify sync status:', notificationError);
+    }
+  }
+
+  // Enhanced sync status monitoring
+  static async getDetailedSyncStatus(): Promise<{
+    lastSyncAt: string | null;
+    syncStatus: Record<string, { status: string; lastError?: string; lastSyncAt: string }>;
+    hasPendingOperations: boolean;
+  }> {
+    try {
+      const [statusData, queue] = await Promise.all([
+        AsyncStorage.getItem(this.SYNC_STATUS_KEY),
+        OfflineQueue.getQueue()
+      ]);
+      
+      const syncStatus = statusData ? JSON.parse(statusData) : {};
+      const lastSyncAt = await AsyncStorage.getItem("last_sync");
+      
+      return {
+        lastSyncAt,
+        syncStatus,
+        hasPendingOperations: queue.length > 0
+      };
+    } catch (error) {
+      console.error('Failed to get detailed sync status:', error);
+      return {
+        lastSyncAt: null,
+        syncStatus: {},
+        hasPendingOperations: false
+      };
     }
   }
 }

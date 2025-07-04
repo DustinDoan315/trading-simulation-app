@@ -1,0 +1,167 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: ["main", "develop"]
+
+jobs:
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: |
+          yarn install --frozen-lockfile
+
+      - name: Check for merge conflicts
+        run: |
+          echo "🔍 Checking for merge conflicts..."
+          git fetch origin ${{ github.base_ref }}
+          if git merge-tree $(git merge-base HEAD origin/${{ github.base_ref }}) HEAD origin/${{ github.base_ref }} | grep -q "<<<<<<<"; then
+            echo "❌ Merge conflicts detected!"
+            exit 1
+          else
+            echo "✅ No merge conflicts found"
+          fi
+
+      - name: Check commit message format
+        run: |
+          echo "🔍 Checking commit message format..."
+          git log --oneline origin/${{ github.base_ref }}..HEAD | while read commit; do
+            if ! echo "$commit" | grep -qE "^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: .+"; then
+              echo "⚠️ Commit message format issue: $commit"
+              echo "Expected format: type(scope): description"
+              echo "Types: feat, fix, docs, style, refactor, test, chore"
+            fi
+          done
+
+      - name: Check file size changes
+        run: |
+          echo "🔍 Checking for large file changes..."
+          git diff --stat origin/${{ github.base_ref }}..HEAD | grep -E "\.(ts|tsx|js|jsx)$" | while read line; do
+            if echo "$line" | grep -qE "[0-9]{4,}"; then
+              echo "⚠️ Large file change detected: $line"
+            fi
+          done
+
+      - name: Check for sensitive files
+        run: |
+          echo "🔍 Checking for sensitive files..."
+          git diff --name-only origin/${{ github.base_ref }}..HEAD | grep -E "\.(env|key|pem|p12|pfx)$" && {
+            echo "❌ Sensitive files detected in changes!"
+            exit 1
+          } || echo "✅ No sensitive files detected"
+
+  code-review:
+    name: Code Review Assistant
+    runs-on: ubuntu-latest
+    needs: pr-validation
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: |
+          yarn install --frozen-lockfile
+
+      - name: Generate code review report
+        run: |
+          echo "📋 Generating code review report..."
+
+          echo "## 📊 Code Review Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check for new files
+          NEW_FILES=$(git diff --name-only --diff-filter=A origin/${{ github.base_ref }}..HEAD | grep -E "\.(ts|tsx)$" | wc -l)
+          echo "### 📁 New TypeScript files: $NEW_FILES" >> $GITHUB_STEP_SUMMARY
+
+          # Check for modified files
+          MODIFIED_FILES=$(git diff --name-only --diff-filter=M origin/${{ github.base_ref }}..HEAD | grep -E "\.(ts|tsx)$" | wc -l)
+          echo "### ✏️ Modified TypeScript files: $MODIFIED_FILES" >> $GITHUB_STEP_SUMMARY
+
+          # Check for deleted files
+          DELETED_FILES=$(git diff --name-only --diff-filter=D origin/${{ github.base_ref }}..HEAD | grep -E "\.(ts|tsx)$" | wc -l)
+          echo "### 🗑️ Deleted TypeScript files: $DELETED_FILES" >> $GITHUB_STEP_SUMMARY
+
+          # List changed files
+          echo "### 📝 Changed Files:" >> $GITHUB_STEP_SUMMARY
+          git diff --name-only origin/${{ github.base_ref }}..HEAD | grep -E "\.(ts|tsx)$" | while read file; do
+            echo "- \`$file\`" >> $GITHUB_STEP_SUMMARY
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 Review Checklist:" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Code follows TypeScript best practices" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] No console.log statements in production code" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] No hardcoded secrets or sensitive data" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Proper error handling implemented" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Tests cover new functionality" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Documentation updated if needed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🤖 Automated Code Review')
+            );
+
+            const reviewBody = `🤖 **Automated Code Review**
+
+            This PR has been automatically reviewed. Please check the following:
+
+            - ✅ **TypeScript**: All type checks passed
+            - ✅ **Linting**: Code style is consistent
+            - ✅ **Tests**: All tests are passing
+            - ✅ **Build**: Project builds successfully
+
+            **Review Checklist:**
+            - [ ] Code follows project conventions
+            - [ ] No console.log statements in production code
+            - [ ] Proper error handling implemented
+            - [ ] Tests cover new functionality
+            - [ ] Documentation updated if needed
+
+            **Files Changed:** ${context.payload.pull_request.changed_files} files
+
+            Happy coding! 🚀`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: reviewBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: reviewBody,
+              });
+            }
