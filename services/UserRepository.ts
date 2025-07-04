@@ -1,6 +1,6 @@
 // repositories/UserRepository.ts
-import { db } from "../db/client";
-import { users, portfolios } from "../db/schema";
+import { db } from "../database/client";
+import { users, portfolios } from "../database/schema";
 import { eq } from "drizzle-orm";
 import UUIDService from "./UUIDService";
 import { Holding } from "../app/types/crypto";
@@ -34,10 +34,10 @@ class UserRepository {
     const uuid = await UUIDService.getOrCreateUser();
     let user = await this.getUser(uuid);
 
-    if (!user) {
-      await this.createUser(uuid);
-      user = await this.getUser(uuid);
-    }
+    // if (!user) {
+    //   await this.createUser(uuid);
+    //   user = await this.getUser(uuid);
+    // }
 
     return user;
   }
@@ -82,7 +82,7 @@ class UserRepository {
   ) {
     try {
       // Use Drizzle transaction for consistency
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: any) => {
         // Delete existing holdings
         await tx.delete(portfolios).where(eq(portfolios.userId, uuid));
 

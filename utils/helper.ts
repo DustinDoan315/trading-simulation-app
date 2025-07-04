@@ -5,6 +5,8 @@ import { store } from "@/store";
 import { balanceSlice } from "@/features/balanceSlice";
 import Toast from "react-native-toast-message";
 import { Order } from "@/app/types/crypto";
+import { Platform } from "react-native";
+import * as Application from 'expo-application';
 
 global.Buffer = Buffer;
 
@@ -228,5 +230,13 @@ export const handleOrderSubmission = async (
 
     // Propagate error for further handling
     throw new OrderError(message, userFriendlyMessage);
+  }
+};
+
+export const getDeviceUUID = async (): Promise<string> => {
+  if (Platform.OS === 'ios') {
+    return await Application.getIosIdForVendorAsync() || 'fallback-ios-uuid';
+  } else {
+    return Application.getAndroidId() || 'fallback-android-uuid';
   }
 };

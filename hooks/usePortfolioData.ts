@@ -5,7 +5,7 @@ import { RootState } from "@/store";
 import { updatePortfolio } from "@/features/balanceSlice";
 import { Asset, PortfolioData, Holding } from "@/app/types/crypto";
 import { UserBalance } from "@/features/balanceSlice";
-import { DatabaseService } from "@/services/DatabaseService";
+import { LocalDatabaseService } from "@/services/LocalDatabase";
 import { SyncService } from "@/services/SupabaseService";
 import UUIDService from "@/services/UUIDService";
 
@@ -99,13 +99,13 @@ export const usePortfolioData = () => {
       const uuid = await UUIDService.getOrCreateUser();
 
       // First get local portfolio
-      const localPortfolio = await DatabaseService.getUserPortfolio(uuid);
+      const localPortfolio = await LocalDatabaseService.getUserPortfolio(uuid);
 
       // Then sync with cloud if online
       await SyncService.syncFromCloud(uuid);
 
       // Get updated local data after sync
-      const portfolioItems = await DatabaseService.getUserPortfolio(uuid);
+      const portfolioItems = await LocalDatabaseService.getUserPortfolio(uuid);
 
       // Transform to UserBalance format
       const holdings: Record<string, Holding> = {};

@@ -1,17 +1,13 @@
 // services/DatabaseService.ts
 import { drizzle } from "drizzle-orm/expo-sqlite";
 import { openDatabaseSync } from "expo-sqlite";
-import { users, portfolios, transactions } from "../db/schema";
+import { users, portfolios, transactions } from "../database/schema";
 import { eq, and } from "drizzle-orm";
 
 const expo = openDatabaseSync("learn_trading_app.db");
 const db = drizzle(expo);
 
-export class DatabaseService {
-  static async initializeDatabase() {
-    // Create tables if they don't exist
-    // This should be handled by your migration system
-  }
+export class LocalDatabaseService {
 
   static async createOrUpdateUser(userData: {
     uuid: string;
@@ -44,7 +40,20 @@ export class DatabaseService {
       .where(eq(portfolios.userId, userId));
   }
 
-  static async addTransaction(transaction: {
+  static async updatePortfolioAsset(asset: any) {
+    await db
+      .insert(portfolios)
+      .values(asset)
+      .onConflictDoUpdate({
+        target: [portfolios.userId, portfolios.symbol],
+        set: {
+          quantity: asset.quantity,
+          avgCost: asset.avg_cost,
+        },
+      });
+  }
+
+    static async addTransaction(transaction: {
     userId: string;
     type: "BUY" | "SELL";
     symbol: string;
@@ -62,18 +71,6 @@ export class DatabaseService {
     return newTransaction;
   }
 
-  static async updatePortfolioAsset(asset: any) {
-    await db
-      .insert(portfolios)
-      .values(asset)
-      .onConflictDoUpdate({
-        target: [portfolios.userId, portfolios.symbol],
-        set: {
-          quantity: asset.quantity,
-          avgCost: asset.avg_cost,
-        },
-      });
-  }
 
   static async updateFromCloud(data: any) {
     if (data.type === "transaction") {
