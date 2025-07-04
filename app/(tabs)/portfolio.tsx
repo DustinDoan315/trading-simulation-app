@@ -12,7 +12,7 @@ import { navigateToCryptoChart } from "@/utils/navigation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatAmount } from "@/utils/formatters";
 import { usePortfolioData } from "@/hooks/usePortfolioData";
-import { Asset } from "@/app/types/crypto";
+import { Asset } from "@/types/crypto";
 import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
 import BalanceCard from "@/components/portfolio/BalanceCard";
 import AssetItem from "@/components/portfolio/AssetItem";

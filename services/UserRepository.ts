@@ -3,7 +3,8 @@ import { db } from "../database/client";
 import { users, portfolios } from "../database/schema";
 import { eq } from "drizzle-orm";
 import UUIDService from "./UUIDService";
-import { Holding } from "../app/types/crypto";
+import { SyncService } from "./SupabaseService";
+import { Holding } from "../types/crypto";
 
 class UserRepository {
   static async createUser(uuid: string) {
@@ -23,7 +24,7 @@ class UserRepository {
   static async getUser(uuid: string) {
     try {
       const result = await db.select().from(users).where(eq(users.uuid, uuid));
-      return result[0] || null; // Return first result or null
+      return result[0] || null;
     } catch (error) {
       console.error("Failed to get user:", error);
       return null;
@@ -34,15 +35,13 @@ class UserRepository {
     const uuid = await UUIDService.getOrCreateUser();
     let user = await this.getUser(uuid);
 
-    // if (!user) {
-    //   await this.createUser(uuid);
-    //   user = await this.getUser(uuid);
-    // }
-
     return user;
   }
 
   static async updateUserBalance(uuid: string, newBalance: number) {
+    console.log('====================================');
+    console.log("Updating user balance for UUID:", uuid);
+    console.log('====================================');
     try {
       const result = await db
         .update(users)
@@ -55,6 +54,11 @@ class UserRepository {
         "New balance:",
         newBalance
       );
+      
+      // Sync to Supabase
+      await SyncService.updateUserBalance(uuid, newBalance);
+      console.log("Balance synced to Supabase for user:", uuid);
+      
       return result;
     } catch (error) {
       console.error("Failed to update user balance:", error);
@@ -80,6 +84,9 @@ class UserRepository {
     uuid: string,
     holdings: Record<string, Holding>
   ) {
+    console.log('====================================');
+    console.log("Updating portfolio for UUID:", uuid);
+    console.log('====================================');
     try {
       // Use Drizzle transaction for consistency
       await db.transaction(async (tx: any) => {

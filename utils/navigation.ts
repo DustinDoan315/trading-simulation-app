@@ -1,4 +1,4 @@
-import { Asset } from "@/app/types/crypto";
+import { Asset } from "@/types/crypto";
 import { router } from "expo-router";
 
 export const navigateToCryptoChart = (asset?: Asset) => {

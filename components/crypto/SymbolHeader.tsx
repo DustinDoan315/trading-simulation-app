@@ -1,5 +1,5 @@
 import React from "react";
-import { ChartType } from "../../app/types/crypto";
+import { ChartType } from "../../types/crypto";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";

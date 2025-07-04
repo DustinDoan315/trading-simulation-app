@@ -1,6 +1,6 @@
 import React from "react";
 import { chartHtml } from "@/utils/chartHtml";
-import { ChartType } from "../../app/types/crypto";
+import { ChartType } from "../../types/crypto";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import {

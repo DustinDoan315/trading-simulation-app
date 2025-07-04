@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import UserRepository from "../services/UserRepository";
 import UUIDService from "../services/UUIDService";
-import { Holding, HoldingUpdatePayload, Order } from "../app/types/crypto";
+import { Holding, HoldingUpdatePayload, Order } from "../types/crypto";
 
 export interface UserBalance {
   totalInUSD: number;
@@ -209,7 +209,7 @@ export const balanceSlice = createSlice({
       state.balance.totalInUSD = recalculatePortfolioValue(holdings);
 
       // Persist balance and holdings to database
-      UUIDService.getOrCreateUser().then((uuid) => {
+        UUIDService.getOrCreateUser().then((uuid) => {
         UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
         UserRepository.updatePortfolio(uuid, holdings);
       });

@@ -1,20 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "@/store";
-import { updatePortfolio } from "@/features/balanceSlice";
-import { Asset, PortfolioData, Holding } from "@/app/types/crypto";
-import { UserBalance } from "@/features/balanceSlice";
-import { LocalDatabaseService } from "@/services/LocalDatabase";
-import { SyncService } from "@/services/SupabaseService";
-import UUIDService from "@/services/UUIDService";
+import { Asset, PortfolioData } from "@/types/crypto";
 
 // Optimized selector with better memoization
 const selectPortfolioData = createSelector(
   (state: RootState) => state.balance.balance,
   (state: RootState) => state.balance.changeValue,
   (state: RootState) => state.balance.changePercentage,
-  (balance, changeValue, changePercentage) => ({
+  (balance: { holdings: any; totalInUSD: any; }, changeValue: any, changePercentage: any) => ({
     balance,
     changeValue,
     changePercentage,
@@ -24,7 +19,7 @@ const selectPortfolioData = createSelector(
 );
 
 export const usePortfolioData = () => {
-  const portfolioState = useSelector(selectPortfolioData);
+  const portfolioState: any = useSelector(selectPortfolioData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [visibleLowValueCount, setVisibleLowValueCount] = useState(5);
@@ -94,47 +89,6 @@ export const usePortfolioData = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Get user UUID
-      const uuid = await UUIDService.getOrCreateUser();
-
-      // First get local portfolio
-      const localPortfolio = await LocalDatabaseService.getUserPortfolio(uuid);
-
-      // Then sync with cloud if online
-      await SyncService.syncFromCloud(uuid);
-
-      // Get updated local data after sync
-      const portfolioItems = await LocalDatabaseService.getUserPortfolio(uuid);
-
-      // Transform to UserBalance format
-      const holdings: Record<string, Holding> = {};
-      portfolioItems.forEach((item) => {
-        holdings[item.symbol] = {
-          amount: parseFloat(item.quantity),
-          valueInUSD: parseFloat(item.quantity) * parseFloat(item.avgCost),
-          symbol: item.symbol,
-          name: item.symbol,
-          image:
-            item.image ||
-            `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
-          averageBuyPrice: parseFloat(item.avgCost),
-          currentPrice: parseFloat(item.avgCost),
-          profitLoss: 0,
-          profitLossPercentage: 0,
-        };
-      });
-
-      const updatedPortfolio: UserBalance = {
-        totalInUSD: Object.values(holdings).reduce(
-          (sum, holding) => sum + holding.valueInUSD,
-          0
-        ),
-        holdings,
-      };
-
-      const dispatch = useDispatch();
-      dispatch(updatePortfolio(updatedPortfolio));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to refresh portfolio"

@@ -609,4 +609,21 @@ export class SyncService {
       return {};
     }
   }
+
+  // Add new method to update user balance in Supabase
+  static async updateUserBalance(uuid: string, newBalance: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ balance: newBalance.toString() })
+        .eq('uuid', uuid);
+
+      if (error) {
+        throw new Error(`Failed to update user balance in Supabase: ${error.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating user balance in Supabase:", error);
+      throw error;
+    }
+  }
 }

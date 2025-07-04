@@ -8,7 +8,7 @@ import TimeframeSelector from "@/components/crypto/TimeframeSelector";
 import useHistoricalData from "@/hooks/useHistoricalData";
 import useOrderBook from "@/hooks/useOrderBook";
 import useCryptoAPI from "@/hooks/useCryptoAPI";
-import { ChartType, TimeframeOption, Order } from "../types/crypto";
+import { ChartType, TimeframeOption, Order } from "../../types/crypto";
 import { WebView } from "react-native-webview";
 import {
   SafeAreaView,
