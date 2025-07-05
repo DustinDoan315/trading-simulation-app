@@ -1,15 +1,13 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-import NetInfo from '@react-native-community/netinfo';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { LocalDatabaseService } from './LocalDatabase';
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import NetInfo from "@react-native-community/netinfo";
+import { AsyncStorageService } from "./AsyncStorageService";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 //SupabaseService.ts
 
-
 // Types for better type safety
-interface SyncResult<T = any> {
+interface SyncResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -24,8 +22,8 @@ interface NetworkStatus {
 
 interface QueuedOperation {
   id: string;
-  type: 'user_sync' | 'portfolio_sync' | 'collection_sync';
-  payload: any;
+  type: "user_sync" | "portfolio_sync" | "collection_sync";
+  payload: unknown;
   timestamp: string;
   retryCount: number;
   maxRetries: number;
@@ -36,26 +34,28 @@ class SupabaseConfig {
   private static validateConfig(url: string, key: string): void {
     if (!url || !key) {
       throw new Error(`Supabase configuration missing:
-        URL: ${url ? 'Set' : 'Missing'}
-        Key: ${key ? 'Set' : 'Missing'}
+        URL: ${url ? "Set" : "Missing"}
+        Key: ${key ? "Set" : "Missing"}
         
         Check your environment variables:
         - EXPO_PUBLIC_SUPABASE_URL
         - EXPO_PUBLIC_SUPABASE_KEY`);
     }
 
-    if (!url.startsWith('https://') && !url.startsWith('http://')) {
-      throw new Error('Supabase URL must start with https:// or http://');
+    if (!url.startsWith("https://") && !url.startsWith("http://")) {
+      throw new Error("Supabase URL must start with https:// or http://");
     }
   }
 
   static getConfig() {
-    const url = Constants.expoConfig?.extra?.SUPABASE_URL ||
-                process.env.EXPO_PUBLIC_SUPABASE_URL ||
-                "";
-    const key = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY ||
-                process.env.EXPO_PUBLIC_SUPABASE_KEY ||
-                "";
+    const url =
+      Constants.expoConfig?.extra?.SUPABASE_URL ||
+      process.env.EXPO_PUBLIC_SUPABASE_URL ||
+      "";
+    const key =
+      Constants.expoConfig?.extra?.SUPABASE_ANON_KEY ||
+      process.env.EXPO_PUBLIC_SUPABASE_KEY ||
+      "";
 
     this.validateConfig(url, key);
     return { url, key };
@@ -66,11 +66,11 @@ class SupabaseConfig {
 const initializeSupabase = (): SupabaseClient => {
   try {
     const { url, key } = SupabaseConfig.getConfig();
-    
-    console.log('Initializing Supabase:', {
-      url: url.substring(0, 30) + '...',
+
+    console.log("Initializing Supabase:", {
+      url: url.substring(0, 30) + "...",
       keyLength: key.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     return createClient(url, key, {
@@ -82,21 +82,21 @@ const initializeSupabase = (): SupabaseClient => {
       },
       global: {
         headers: {
-          'x-client-info': 'react-native-app'
-        }
+          "x-client-info": "react-native-app",
+        },
       },
       // Add retry logic at client level
       db: {
-        schema: 'public',
+        schema: "public",
       },
       realtime: {
         params: {
-          eventsPerSecond: 10
-        }
-      }
+          eventsPerSecond: 10,
+        },
+      },
     });
   } catch (error) {
-    console.error('Failed to initialize Supabase:', error);
+    console.error("Failed to initialize Supabase:", error);
     throw error;
   }
 };
@@ -111,42 +111,44 @@ class NetworkUtils {
       return {
         isConnected: netInfo.isConnected ?? false,
         type: netInfo.type,
-        isInternetReachable: netInfo.isInternetReachable
+        isInternetReachable: netInfo.isInternetReachable,
       };
     } catch (error) {
-      console.warn('Failed to get network status:', error);
+      console.warn("Failed to get network status:", error);
       return {
         isConnected: false,
-        type: 'unknown',
-        isInternetReachable: false
+        type: "unknown",
+        isInternetReachable: false,
       };
     }
   }
 
   static async waitForConnection(timeout = 30000): Promise<boolean> {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       const status = await this.getNetworkStatus();
       if (status.isConnected && status.isInternetReachable !== false) {
         return true;
       }
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-    
+
     return false;
   }
 }
 
 // Offline queue management
 class OfflineQueue {
-  private static QUEUE_KEY = '@sync_queue';
+  private static QUEUE_KEY = "@sync_queue";
   private static MAX_QUEUE_SIZE = 100;
 
-  static async addToQueue(operation: Omit<QueuedOperation, 'id' | 'retryCount'>): Promise<void> {
+  static async addToQueue(
+    operation: Omit<QueuedOperation, "id" | "retryCount">
+  ): Promise<void> {
     try {
       const queue = await this.getQueue();
-      
+
       if (queue.length >= this.MAX_QUEUE_SIZE) {
         // Remove oldest operations if queue is full
         queue.splice(0, queue.length - this.MAX_QUEUE_SIZE + 1);
@@ -157,13 +159,15 @@ class OfflineQueue {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         retryCount: 0,
       };
-      
+
       queue.push(queuedOp);
       await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
-      
-      console.log(`Added operation to queue: ${queuedOp.type} (Queue size: ${queue.length})`);
+
+      console.log(
+        `Added operation to queue: ${queuedOp.type} (Queue size: ${queue.length})`
+      );
     } catch (error) {
-      console.error('Failed to add operation to queue:', error);
+      console.error("Failed to add operation to queue:", error);
     }
   }
 
@@ -172,7 +176,7 @@ class OfflineQueue {
       const queueData = await AsyncStorage.getItem(this.QUEUE_KEY);
       return queueData ? JSON.parse(queueData) : [];
     } catch (error) {
-      console.error('Failed to get queue:', error);
+      console.error("Failed to get queue:", error);
       return [];
     }
   }
@@ -180,10 +184,10 @@ class OfflineQueue {
   static async removeFromQueue(operationId: string): Promise<void> {
     try {
       const queue = await this.getQueue();
-      const filteredQueue = queue.filter(op => op.id !== operationId);
+      const filteredQueue = queue.filter((op) => op.id !== operationId);
       await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(filteredQueue));
     } catch (error) {
-      console.error('Failed to remove operation from queue:', error);
+      console.error("Failed to remove operation from queue:", error);
     }
   }
 
@@ -191,60 +195,114 @@ class OfflineQueue {
     try {
       await AsyncStorage.removeItem(this.QUEUE_KEY);
     } catch (error) {
-      console.error('Failed to clear queue:', error);
+      console.error("Failed to clear queue:", error);
     }
   }
 }
 
+// Type guards for operation payloads
+interface UserSyncPayload {
+  uuid: string;
+}
+
+interface PortfolioSyncPayload {
+  uuid: string;
+  portfolio: Array<{
+    symbol: string;
+    quantity: string;
+    avg_cost: string;
+    image?: string | null;
+  }>;
+}
+
+interface CollectionSyncPayload {
+  collections: Array<{
+    id: number;
+    name: string;
+    ownerId: string;
+    invite_code: string;
+    rules: string;
+  }>;
+}
+
 // Enhanced Sync Service with network resilience
 export class SyncService {
-  private static readonly SYNC_STATUS_KEY = '@sync_status';
+  private static readonly SYNC_STATUS_KEY = "@sync_status";
   private static readonly RETRY_CONFIG = {
     maxRetries: 3,
     baseDelay: 1000,
     maxDelay: 10000,
   };
 
+  // Type guard methods
+  private static isUserSyncPayload(
+    payload: unknown
+  ): payload is UserSyncPayload {
+    return typeof payload === "object" && payload !== null && "uuid" in payload;
+  }
+
+  private static isPortfolioSyncPayload(
+    payload: unknown
+  ): payload is PortfolioSyncPayload {
+    return (
+      typeof payload === "object" &&
+      payload !== null &&
+      "uuid" in payload &&
+      "portfolio" in payload
+    );
+  }
+
+  private static isCollectionSyncPayload(
+    payload: unknown
+  ): payload is CollectionSyncPayload {
+    return (
+      typeof payload === "object" &&
+      payload !== null &&
+      "collections" in payload
+    );
+  }
+
   // Test Supabase connection
   static async testConnection(): Promise<SyncResult<boolean>> {
     try {
-      console.log('Testing Supabase connection...');
-      
+      console.log("Testing Supabase connection...");
+
       const networkStatus = await NetworkUtils.getNetworkStatus();
       if (!networkStatus.isConnected) {
         return {
           success: false,
-          error: 'No network connection',
-          timestamp: new Date().toISOString()
+          error: "No network connection",
+          timestamp: new Date().toISOString(),
         };
       }
 
       const { data, error } = await supabase
-        .from('users')
-        .select('count')
+        .from("users")
+        .select("count")
         .limit(1);
-        
+
       if (error) {
         return {
           success: false,
           error: `Connection test failed: ${error.message}`,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       }
 
-      console.log('Supabase connection successful');
+      console.log("Supabase connection successful");
       return {
         success: true,
         data: true,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Connection test failed:', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("Connection test failed:", errorMessage);
       return {
         success: false,
         error: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -263,15 +321,17 @@ export class SyncService {
         // Check network before each attempt
         const networkStatus = await NetworkUtils.getNetworkStatus();
         if (!networkStatus.isConnected) {
-          throw new Error('No network connection available');
+          throw new Error("No network connection available");
         }
 
         console.log(`${context} - Attempt ${attempt}/${maxRetries}`);
         return await operation();
-
       } catch (error) {
         lastError = error as Error;
-        console.log(`${context} failed (attempt ${attempt}):`, lastError.message);
+        console.log(
+          `${context} failed (attempt ${attempt}):`,
+          lastError.message
+        );
 
         if (attempt < maxRetries) {
           const delay = Math.min(
@@ -279,7 +339,7 @@ export class SyncService {
             this.RETRY_CONFIG.maxDelay
           );
           console.log(`Retrying ${context} in ${delay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
@@ -289,8 +349,8 @@ export class SyncService {
 
   // Update sync status
   private static async updateSyncStatus(
-    operation: string, 
-    status: 'synced' | 'failed' | 'pending', 
+    operation: string,
+    status: "synced" | "failed" | "pending",
     error?: string
   ): Promise<void> {
     try {
@@ -298,67 +358,70 @@ export class SyncService {
         [operation]: {
           lastSyncAt: new Date().toISOString(),
           status,
-          ...(error && { lastError: error })
-        }
+          ...(error && { lastError: error }),
+        },
       };
-      
+
       const existingStatus = await AsyncStorage.getItem(this.SYNC_STATUS_KEY);
       const currentStatus = existingStatus ? JSON.parse(existingStatus) : {};
-      
+
       await AsyncStorage.setItem(
-        this.SYNC_STATUS_KEY, 
+        this.SYNC_STATUS_KEY,
         JSON.stringify({ ...currentStatus, ...syncStatus })
       );
     } catch (error) {
-      console.error('Failed to update sync status:', error);
+      console.error("Failed to update sync status:", error);
     }
   }
 
   // Enhanced user data sync
   static async syncUserData(uuid: string): Promise<SyncResult> {
     try {
-      await this.updateSyncStatus('userSync', 'pending');
+      await this.updateSyncStatus("userSync", "pending");
 
       const result = await this.executeWithRetry(async () => {
         // Get local data
-        const localPortfolio = await LocalDatabaseService.getUserPortfolio(uuid);
+        const localPortfolio = await AsyncStorageService.getUserPortfolio(uuid);
         const localBalance = await AsyncStorage.getItem("user_balance");
 
         // Sync to Supabase
         await this.syncPortfolioToCloud(uuid, localPortfolio);
 
         return { portfolio: localPortfolio, balance: localBalance };
-      }, 'User Data Sync');
+      }, "User Data Sync");
 
       // Update sync timestamp
       await AsyncStorage.setItem("last_sync", new Date().toISOString());
-      await this.updateSyncStatus('userSync', 'synced');
+      await this.updateSyncStatus("userSync", "synced");
 
       return {
         success: true,
         data: result,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       console.error("User sync failed:", errorMessage);
-      
+
       // Add to offline queue if network related
-      if (errorMessage.includes('Network') || errorMessage.includes('network')) {
+      if (
+        errorMessage.includes("Network") ||
+        errorMessage.includes("network")
+      ) {
         await OfflineQueue.addToQueue({
-          type: 'user_sync',
+          type: "user_sync",
           payload: { uuid },
           timestamp: new Date().toISOString(),
-          maxRetries: 5
+          maxRetries: 5,
         });
       }
 
-      await this.updateSyncStatus('userSync', 'failed', errorMessage);
+      await this.updateSyncStatus("userSync", "failed", errorMessage);
       return {
         success: false,
         error: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -366,7 +429,7 @@ export class SyncService {
   // Enhanced sync from cloud
   static async syncFromCloud(uuid: string): Promise<SyncResult> {
     try {
-      await this.updateSyncStatus('cloudSync', 'pending');
+      await this.updateSyncStatus("cloudSync", "pending");
 
       const result = await this.executeWithRetry(async () => {
         // Get cloud data with proper error handling
@@ -381,92 +444,89 @@ export class SyncService {
 
         // Update local database
         if (cloudPortfolio && cloudPortfolio.length > 0) {
-          console.log(`Syncing ${cloudPortfolio.length} portfolio items from cloud`);
-          
+          console.log(
+            `Syncing ${cloudPortfolio.length} portfolio items from cloud`
+          );
+
           for (const asset of cloudPortfolio) {
-            await LocalDatabaseService.updatePortfolioAsset(asset);
+            await AsyncStorageService.updatePortfolioAsset(asset);
           }
         }
 
         return cloudPortfolio;
-      }, 'Cloud Data Sync');
+      }, "Cloud Data Sync");
 
-      await this.updateSyncStatus('cloudSync', 'synced');
+      await this.updateSyncStatus("cloudSync", "synced");
       return {
         success: true,
         data: result,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       console.error("Cloud sync failed:", errorMessage);
-      await this.updateSyncStatus('cloudSync', 'failed', errorMessage);
-      
+      await this.updateSyncStatus("cloudSync", "failed", errorMessage);
+
       return {
         success: false,
         error: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
   }
 
   // Enhanced portfolio sync with batch operations
-  private static async syncPortfolioToCloud(uuid: string, portfolio: any[]): Promise<void> {
-    console.log('====================================');
-    console.log("syncPortfolioToCloud called");
-    console.log("UUID:", uuid);
-    console.log("Portfolio:", JSON.stringify(portfolio, null, 2));
-    console.log('====================================');
-    
-    if (!portfolio || portfolio.length === 0) {
-      console.log('⚠️ No portfolio data to sync - portfolio is empty');
-      return;
-    }
+  private static async syncPortfolioToCloud(
+    uuid: string,
+    portfolio: Array<{
+      symbol: string;
+      quantity: string;
+      avg_cost: string;
+      image?: string | null;
+    }>
+  ): Promise<void> {
+    if (!portfolio || portfolio.length === 0) return;
 
-    console.log(`🔄 Syncing ${portfolio.length} portfolio items to cloud`);
-
-    // Prepare batch data
-    const portfolioData = portfolio.map(asset => ({
+    const portfolioData = portfolio.map((asset) => ({
       user_id: uuid,
-      symbol: asset.symbol,
+      symbol: asset.symbol.toUpperCase(),
       quantity: asset.quantity,
       avg_cost: asset.avg_cost,
       image: asset.image,
-      last_updated: new Date().toISOString()
+      last_updated: new Date().toISOString(),
     }));
 
-    console.log("📤 Prepared portfolio data for Supabase:", JSON.stringify(portfolioData, null, 2));
-
-    // Batch upsert for better performance
-    console.log("🔄 Executing Supabase upsert...");
     const { data, error } = await supabase
       .from("portfolios")
-      .upsert(portfolioData)
+      .upsert(portfolioData, {
+        onConflict: "user_id,symbol",
+        ignoreDuplicates: false,
+      })
       .select();
 
     if (error) {
       console.error("❌ Supabase upsert error:", error);
-      console.error("❌ Error details:", JSON.stringify(error, null, 2));
       throw new Error(`Portfolio sync failed: ${error.message}`);
     }
 
     console.log(`✅ Successfully synced ${data?.length || 0} portfolio items`);
-    console.log("✅ Supabase response data:", JSON.stringify(data, null, 2));
-    console.log('====================================');
   }
 
   // Public method for portfolio sync
-  static async syncPortfolio(uuid: string, portfolio: any[]): Promise<SyncResult> {
-    console.log('====================================');
+  static async syncPortfolio(
+    uuid: string,
+    portfolio: any[]
+  ): Promise<SyncResult> {
+    console.log("====================================");
     console.log("SyncService.syncPortfolio called");
     console.log("UUID:", uuid);
     console.log("Portfolio data:", JSON.stringify(portfolio, null, 2));
     console.log("Portfolio length:", portfolio.length);
-    console.log('====================================');
-    
+    console.log("====================================");
+
     try {
-      await this.updateSyncStatus('portfolioSync', 'pending');
+      await this.updateSyncStatus("portfolioSync", "pending");
       console.log("✅ Sync status set to pending");
 
       const result = await this.executeWithRetry(async () => {
@@ -474,68 +534,117 @@ export class SyncService {
         await this.syncPortfolioToCloud(uuid, portfolio);
         console.log("✅ syncPortfolioToCloud completed successfully");
         return portfolio;
-      }, 'Portfolio Sync');
+      }, "Portfolio Sync");
 
-      await this.updateSyncStatus('portfolioSync', 'synced');
+      await this.updateSyncStatus("portfolioSync", "synced");
       console.log("✅ Sync status set to synced");
-      
+
       const successResult = {
         success: true,
         data: result,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
-      console.log("✅ syncPortfolio returning success:", JSON.stringify(successResult, null, 2));
-      return successResult;
 
+      console.log(
+        "✅ syncPortfolio returning success:",
+        JSON.stringify(successResult, null, 2)
+      );
+      return successResult;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       console.error("❌ Portfolio sync failed:", errorMessage);
       console.error("❌ Error details:", error);
-      console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
-      
+      console.error(
+        "❌ Error stack:",
+        error instanceof Error ? error.stack : "No stack trace"
+      );
+
       // Add to offline queue if network related
-      if (errorMessage.includes('Network') || errorMessage.includes('network')) {
+      if (
+        errorMessage.includes("Network") ||
+        errorMessage.includes("network")
+      ) {
         console.log("📱 Adding to offline queue due to network error");
         await OfflineQueue.addToQueue({
-          type: 'portfolio_sync',
+          type: "portfolio_sync",
           payload: { uuid, portfolio },
           timestamp: new Date().toISOString(),
-          maxRetries: 5
+          maxRetries: 5,
         });
       }
 
-      await this.updateSyncStatus('portfolioSync', 'failed', errorMessage);
+      await this.updateSyncStatus("portfolioSync", "failed", errorMessage);
       console.log("❌ Sync status set to failed");
-      
+
       const errorResult = {
         success: false,
         error: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
-      console.log("❌ syncPortfolio returning error:", JSON.stringify(errorResult, null, 2));
+
+      console.log(
+        "❌ syncPortfolio returning error:",
+        JSON.stringify(errorResult, null, 2)
+      );
       return errorResult;
+    }
+  }
+
+  // Clear existing portfolio data for a user (useful for resolving conflicts)
+  static async clearUserPortfolio(uuid: string): Promise<SyncResult> {
+    try {
+      console.log("🗑️ Clearing portfolio data for user:", uuid);
+
+      const { error } = await supabase
+        .from("portfolios")
+        .delete()
+        .eq("user_id", uuid);
+
+      if (error) {
+        console.error("❌ Failed to clear portfolio:", error);
+        return {
+          success: false,
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      console.log("✅ Portfolio cleared successfully");
+      return {
+        success: true,
+        data: { message: "Portfolio cleared" },
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("❌ Error clearing portfolio:", errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 
   // Enhanced collections sync
   static async syncCollectionsToCloud(collections: any[]): Promise<SyncResult> {
     try {
-      await this.updateSyncStatus('collectionsSync', 'pending');
+      await this.updateSyncStatus("collectionsSync", "pending");
 
       const result = await this.executeWithRetry(async () => {
         if (!collections || collections.length === 0) {
           return [];
         }
 
-        const collectionsData = collections.map(collection => ({
+        const collectionsData = collections.map((collection) => ({
           id: collection.id,
           name: collection.name,
           owner_id: collection.ownerId,
           invite_code: collection.inviteCode,
           rules: collection.rules,
-          last_updated: new Date().toISOString()
+          last_updated: new Date().toISOString(),
         }));
 
         const { data, error } = await supabase
@@ -548,24 +657,24 @@ export class SyncService {
         }
 
         return data;
-      }, 'Collections Sync');
+      }, "Collections Sync");
 
-      await this.updateSyncStatus('collectionsSync', 'synced');
+      await this.updateSyncStatus("collectionsSync", "synced");
       return {
         success: true,
         data: result,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       console.error("Collections sync failed:", errorMessage);
-      await this.updateSyncStatus('collectionsSync', 'failed', errorMessage);
-      
+      await this.updateSyncStatus("collectionsSync", "failed", errorMessage);
+
       return {
         success: false,
         error: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -583,7 +692,7 @@ export class SyncService {
         }
 
         return cloudCollections || [];
-      }, 'Collections From Cloud Sync');
+      }, "Collections From Cloud Sync");
 
       return result.map((c) => ({
         id: c.id,
@@ -592,7 +701,6 @@ export class SyncService {
         inviteCode: c.invite_code,
         rules: c.rules,
       }));
-
     } catch (error) {
       console.error("Failed to sync collections from cloud:", error);
       return [];
@@ -606,8 +714,8 @@ export class SyncService {
       if (!networkStatus.isConnected) {
         return {
           success: false,
-          error: 'No network connection to process queue',
-          timestamp: new Date().toISOString()
+          error: "No network connection to process queue",
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -616,7 +724,7 @@ export class SyncService {
         return {
           success: true,
           data: { processed: 0 },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -627,31 +735,43 @@ export class SyncService {
       for (const operation of queue) {
         try {
           switch (operation.type) {
-            case 'user_sync':
-              await this.syncUserData(operation.payload.uuid);
+            case "user_sync":
+              if (this.isUserSyncPayload(operation.payload)) {
+                await this.syncUserData(operation.payload.uuid);
+              }
               break;
-            case 'portfolio_sync':
-              await this.syncPortfolioToCloud(
-                operation.payload.uuid, 
-                operation.payload.portfolio
-              );
+            case "portfolio_sync":
+              if (this.isPortfolioSyncPayload(operation.payload)) {
+                await this.syncPortfolioToCloud(
+                  operation.payload.uuid,
+                  operation.payload.portfolio
+                );
+              }
               break;
-            case 'collection_sync':
-              await this.syncCollectionsToCloud(operation.payload.collections);
+            case "collection_sync":
+              if (this.isCollectionSyncPayload(operation.payload)) {
+                await this.syncCollectionsToCloud(
+                  operation.payload.collections
+                );
+              }
               break;
           }
 
           await OfflineQueue.removeFromQueue(operation.id);
           processedCount++;
-
         } catch (error) {
-          console.error(`Failed to process queued operation ${operation.id}:`, error);
+          console.error(
+            `Failed to process queued operation ${operation.id}:`,
+            error
+          );
           failedOps.push(operation.id);
-          
+
           // Update retry count
           operation.retryCount++;
           if (operation.retryCount >= operation.maxRetries) {
-            console.log(`Removing failed operation ${operation.id} after ${operation.retryCount} retries`);
+            console.log(
+              `Removing failed operation ${operation.id} after ${operation.retryCount} retries`
+            );
             await OfflineQueue.removeFromQueue(operation.id);
           }
         }
@@ -659,21 +779,21 @@ export class SyncService {
 
       return {
         success: true,
-        data: { 
-          processed: processedCount, 
+        data: {
+          processed: processedCount,
           failed: failedOps.length,
-          remaining: queue.length - processedCount
+          remaining: queue.length - processedCount,
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Failed to process offline queue:', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("Failed to process offline queue:", errorMessage);
       return {
         success: false,
         error: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -684,21 +804,26 @@ export class SyncService {
       const statusData = await AsyncStorage.getItem(this.SYNC_STATUS_KEY);
       return statusData ? JSON.parse(statusData) : {};
     } catch (error) {
-      console.error('Failed to get sync status:', error);
+      console.error("Failed to get sync status:", error);
       return {};
     }
   }
 
   // Add new method to update user balance in Supabase
-  static async updateUserBalance(uuid: string, newBalance: number): Promise<void> {
+  static async updateUserBalance(
+    uuid: string,
+    newBalance: number
+  ): Promise<void> {
     try {
       const { error } = await supabase
-        .from('users')
+        .from("users")
         .update({ balance: newBalance.toString() })
-        .eq('uuid', uuid);
+        .eq("uuid", uuid);
 
       if (error) {
-        throw new Error(`Failed to update user balance in Supabase: ${error.message}`);
+        throw new Error(
+          `Failed to update user balance in Supabase: ${error.message}`
+        );
       }
     } catch (error) {
       console.error("Error updating user balance in Supabase:", error);
@@ -707,48 +832,55 @@ export class SyncService {
   }
 
   // Utility function to handle sync status notifications
-  static async notifySyncStatus(operation: string, success: boolean, error?: string): Promise<void> {
+  static async notifySyncStatus(
+    operation: string,
+    success: boolean,
+    error?: string
+  ): Promise<void> {
     try {
-      const status = success ? 'synced' : 'failed';
+      const status = success ? "synced" : "failed";
       await this.updateSyncStatus(operation, status, error);
-      
+
       // Log sync status for debugging
-      console.log(`Sync ${operation}: ${status}${error ? ` - ${error}` : ''}`);
-      
+      console.log(`Sync ${operation}: ${status}${error ? ` - ${error}` : ""}`);
+
       // TODO: Add user notification here if needed
       // You can integrate with your notification system to show sync status to users
       // Example: showToast(success ? 'success' : 'error', 'Sync Status', message);
     } catch (notificationError) {
-      console.error('Failed to notify sync status:', notificationError);
+      console.error("Failed to notify sync status:", notificationError);
     }
   }
 
   // Enhanced sync status monitoring
   static async getDetailedSyncStatus(): Promise<{
     lastSyncAt: string | null;
-    syncStatus: Record<string, { status: string; lastError?: string; lastSyncAt: string }>;
+    syncStatus: Record<
+      string,
+      { status: string; lastError?: string; lastSyncAt: string }
+    >;
     hasPendingOperations: boolean;
   }> {
     try {
       const [statusData, queue] = await Promise.all([
         AsyncStorage.getItem(this.SYNC_STATUS_KEY),
-        OfflineQueue.getQueue()
+        OfflineQueue.getQueue(),
       ]);
-      
+
       const syncStatus = statusData ? JSON.parse(statusData) : {};
       const lastSyncAt = await AsyncStorage.getItem("last_sync");
-      
+
       return {
         lastSyncAt,
         syncStatus,
-        hasPendingOperations: queue.length > 0
+        hasPendingOperations: queue.length > 0,
       };
     } catch (error) {
-      console.error('Failed to get detailed sync status:', error);
+      console.error("Failed to get detailed sync status:", error);
       return {
         lastSyncAt: null,
         syncStatus: {},
-        hasPendingOperations: false
+        hasPendingOperations: false,
       };
     }
   }

@@ -1,6 +1,10 @@
-import React, { useEffect, useRef, useMemo, useCallback } from "react";
-import { useLanguage } from "@/context/LanguageContext";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { Asset } from "@/types/crypto";
+import { BalanceCardProps as BaseBalanceCardProps } from "../../types/components";
+import { formatAmount } from "@/utils/formatters";
+import { height, width } from "@/utils/response";
 import { Ionicons } from "@expo/vector-icons";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   Animated,
   Dimensions,
@@ -17,18 +21,15 @@ import Svg, {
   Path,
   Stop,
 } from "react-native-svg";
-import { formatAmount } from "@/utils/formatters";
-import { Asset } from "@/types/crypto";
-import { height, width } from "@/utils/response";
 
-type BalanceCardProps = {
+interface BalanceCardProps extends BaseBalanceCardProps {
   balance: string;
   changePercentage: number;
   changeValue: string;
   progress: number;
   assets?: Asset[];
   onResetBalance?: () => void;
-};
+}
 
 const getTokenColors = (symbol: string): [string, string] => {
   // Simple hash function to convert symbol to consistent number

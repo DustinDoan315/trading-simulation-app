@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
-import { TimeframeOption } from "../types/crypto";
-import { getCoinMarketData, getPriceHistory } from "@/services/CryptoService";
 import { formatPercentage } from "@/utils/formatters";
+import { getCoinMarketData, getPriceHistory } from "@/services/CryptoService";
+import { HistoricalDataResponse } from "../types/api";
+import { TimeframeOption } from "../types/crypto";
+import { useEffect, useState } from "react";
 
 const useCryptoAPI = (timeframe: TimeframeOption, id: string) => {
   const [currentPrice, setCurrentPrice] = useState<string | null>(null);
   const [priceChange, setPriceChange] = useState<string | null>(null);
-  const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [historicalData, setHistoricalData] = useState<Array<[number, number]>>(
+    []
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,8 +43,10 @@ const useCryptoAPI = (timeframe: TimeframeOption, id: string) => {
 
         const history = await getPriceHistory(id, days);
         setHistoricalData(history?.prices || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch data");
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to fetch data";
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }

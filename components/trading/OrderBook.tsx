@@ -1,21 +1,22 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { useLanguage } from "@/context/LanguageContext";
-import useOrderBook from "@/hooks/useOrderBook";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
+import React, { useState } from "react";
 import Typography from "@/styles/typography";
+import useOrderBook from "@/hooks/useOrderBook";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { formatAmount } from "@/utils/formatters";
+import { OrderBookItemProps, OrderBookProps } from "../../types/components";
+import { useLanguage } from "@/context/LanguageContext";
 import { useUser } from "@/context/UserContext";
 
-const OrderBookItem = ({
+const OrderBookItem: React.FC<OrderBookItemProps> = ({
   price,
   amount,
   type,
   onPress,
   onLongPress,
   isCurrentPrice = false,
-}: any) => {
+}) => {
   const priceStyle = type === "bid" ? styles.bidPrice : styles.askPrice;
 
   if (isCurrentPrice) {
@@ -43,12 +44,12 @@ const OrderBookItem = ({
   );
 };
 
-const OrderBook = ({
+const OrderBook: React.FC<OrderBookProps> = ({
   symbol = "BTC",
   onSelectPrice,
   maxVisibleOrders = 5,
   onTradeExecuted,
-}: any) => {
+}) => {
   const { t } = useLanguage();
   const { askOrders, bidOrders, currentPrice } = useOrderBook(symbol);
   const [baseCurrency] = symbol.split("/");
@@ -112,6 +113,7 @@ const OrderBook = ({
       <OrderBookItem
         price={currentPrice}
         amount=""
+        type="ask"
         isCurrentPrice={true}
         onPress={() => handlePriceSelect(currentPrice)}
       />

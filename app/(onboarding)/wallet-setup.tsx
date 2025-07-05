@@ -1,22 +1,39 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-} from "react-native";
-import { useRouter } from "expo-router";
+import UUIDService from "../../services/UUIDService";
 import { Colors } from "../../constants/Colors";
+import { logger } from "../../utils/logger";
+import { useRouter } from "expo-router";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function WalletSetupScreen() {
   const [walletName, setWalletName] = useState("");
   const router = useRouter();
 
-  const handleCreateWallet = () => {
+  const handleCreateWallet = async () => {
     if (walletName.trim()) {
-      // TODO: Implement wallet creation logic
-      router.push("/security-options");
+      try {
+        // Create user
+        const userId = await UUIDService.getOrCreateUser();
+
+        logger.info("Wallet created successfully", "WalletSetup", {
+          walletName: walletName.trim(),
+          userId: userId,
+        });
+
+        router.push("/security-options");
+      } catch (error) {
+        logger.error("Failed to create wallet", "WalletSetup", { error });
+        Alert.alert("Error", "Failed to create wallet. Please try again.", [
+          { text: "OK" },
+        ]);
+      }
     }
   };
 
@@ -32,7 +49,7 @@ export default function WalletSetupScreen() {
         placeholder="Wallet Name (e.g., Personal Crypto)"
         value={walletName}
         onChangeText={setWalletName}
-        placeholderTextColor={Colors.secondText}
+        placeholderTextColor={Colors.light.icon}
       />
 
       <TouchableOpacity
@@ -58,36 +75,36 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 24,
     fontWeight: "bold",
-    color: Colors.primaryText,
+    color: Colors.light.text,
     textAlign: "center",
     marginBottom: 10,
   },
   subtitleText: {
     fontSize: 16,
-    color: Colors.secondText,
+    color: Colors.light.icon,
     textAlign: "center",
     marginBottom: 30,
   },
   input: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.light.background,
     borderWidth: 1,
-    borderColor: Colors.primaryBorder,
+    borderColor: Colors.light.icon,
     borderRadius: 10,
     padding: 15,
     marginBottom: 20,
     fontSize: 16,
   },
   actionButton: {
-    backgroundColor: Colors.highlight,
+    backgroundColor: Colors.light.primary,
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
   },
   disabledButton: {
-    backgroundColor: Colors.primaryBorder,
+    backgroundColor: Colors.light.icon,
   },
   actionButtonText: {
-    color: Colors.white,
+    color: Colors.light.background,
     fontSize: 18,
     fontWeight: "bold",
   },

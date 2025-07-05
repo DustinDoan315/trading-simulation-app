@@ -1,16 +1,10 @@
-import { and, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/expo-sqlite';
-import { openDatabaseSync } from 'expo-sqlite';
-import { portfolios, transactions, users } from '../database/schema';
-
+import { and, eq } from "drizzle-orm";
+import { db } from "../database/client";
+import { portfolios, transactions, users } from "../database/schema";
 
 // services/DatabaseService.ts
 
-const expo = openDatabaseSync("learn_trading_app.db");
-const db = drizzle(expo);
-
 export class LocalDatabaseService {
-
   static async createOrUpdateUser(userData: {
     uuid: string;
     balance: string;
@@ -31,15 +25,46 @@ export class LocalDatabaseService {
       return user;
     } catch (error) {
       console.error("Failed to create/update user:", error);
+
+      // Check if it's a readonly database error
+      if (
+        error instanceof Error &&
+        error.message.includes("readonly database")
+      ) {
+        console.warn(
+          "⚠️ Database is readonly - user will only be synced to Supabase"
+        );
+        // Return a mock user object for UI consistency
+        return {
+          uuid: userData.uuid,
+          balance: userData.balance,
+          createdAt: userData.createdAt,
+        };
+      }
+
       throw error;
     }
   }
 
   static async getUserPortfolio(user_id: string) {
-    return await db
-      .select()
-      .from(portfolios)
-      .where(eq(portfolios.user_id, user_id));
+    try {
+      return await db
+        .select()
+        .from(portfolios)
+        .where(eq(portfolios.user_id, user_id));
+    } catch (error) {
+      console.error("Failed to get user portfolio:", error);
+
+      if (
+        error instanceof Error &&
+        error.message.includes("readonly database")
+      ) {
+        console.warn("⚠️ Database is readonly - returning empty portfolio");
+        return [];
+      }
+
+      throw error;
+    }
   }
 
   static async updatePortfolioAsset(asset: any) {
@@ -60,30 +85,65 @@ export class LocalDatabaseService {
       });
   }
 
-    static async addTransaction(transaction: {
+  static async addTransaction(transaction: {
     user_id: string;
     type: "BUY" | "SELL";
     symbol: string;
     quantity: string;
     price: string;
   }) {
-    const [newTransaction] = await db
-      .insert(transactions)
-      .values({
-        ...transaction,
-        timestamp: new Date(),
-      })
-      .returning();
+    try {
+      const [newTransaction] = await db
+        .insert(transactions)
+        .values({
+          ...transaction,
+          timestamp: new Date(),
+        })
+        .returning();
 
-    return newTransaction;
+      return newTransaction;
+    } catch (error) {
+      console.error("Failed to add transaction:", error);
+
+      if (
+        error instanceof Error &&
+        error.message.includes("readonly database")
+      ) {
+        console.warn(
+          "⚠️ Database is readonly - transaction will only be synced to Supabase"
+        );
+        // Return a mock transaction object for UI consistency
+        return {
+          id: Date.now(),
+          ...transaction,
+          timestamp: new Date(),
+        };
+      }
+
+      throw error;
+    }
   }
 
-
   static async updateFromCloud(data: any) {
-    if (data.type === "transaction") {
-      await this.addTransaction(data);
-    } else if (data.type === "user") {
-      await this.createOrUpdateUser(data);
+    try {
+      if (data.type === "transaction") {
+        await this.addTransaction(data);
+      } else if (data.type === "user") {
+        await this.createOrUpdateUser(data);
+      }
+    } catch (error) {
+      console.error("Failed to update from cloud:", error);
+
+      if (
+        error instanceof Error &&
+        error.message.includes("readonly database")
+      ) {
+        console.warn(
+          "⚠️ Database is readonly - cloud data will not be stored locally"
+        );
+      } else {
+        throw error;
+      }
     }
   }
 }

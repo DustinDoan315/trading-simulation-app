@@ -1,5 +1,6 @@
 import React from "react";
 import { chartHtml } from "@/utils/chartHtml";
+import { ChartProps as BaseChartProps } from "../../types/components";
 import { ChartType } from "../../types/crypto";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
@@ -11,8 +12,8 @@ import {
   View,
 } from "react-native";
 
-interface ChartProps {
-  webViewRef: any;
+interface ChartProps extends BaseChartProps {
+  webViewRef: React.RefObject<WebView>;
   loading: boolean;
   error: string | null;
   onMessage: (event: any) => void;

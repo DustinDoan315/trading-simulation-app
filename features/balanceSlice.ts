@@ -1,8 +1,7 @@
-import UserRepository from '../services/UserRepository';
-import UUIDService from '../services/UUIDService';
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
-
+import UserRepository from "../services/UserRepository";
+import UUIDService from "../services/UUIDService";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Holding, HoldingUpdatePayload, Order } from "../types/crypto";
 
 export interface UserBalance {
   totalInUSD: number;
@@ -63,7 +62,7 @@ const initialState: BalanceState = {
   error: null,
 };
 
-// Async thunk to load balance from database
+// Async thunk to load balance from AsyncStorage
 export const loadBalance = createAsyncThunk("balance/load", async () => {
   const uuid = await UUIDService.getOrCreateUser();
   const user = await UserRepository.getUser(uuid);
@@ -85,7 +84,9 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
       valueInUSD: parseFloat(item.quantity) * parseFloat(item.avg_cost),
       symbol: item.symbol,
       name: item.symbol,
-      image: item.image || `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
+      image:
+        item.image ||
+        `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
       averageBuyPrice: parseFloat(item.avg_cost),
       currentPrice: parseFloat(item.avg_cost), // Will be updated with real price later
       profitLoss: 0,
@@ -145,21 +146,26 @@ export const balanceSlice = createSlice({
       return { ...initialState };
     },
     updateHolding: (state, action: PayloadAction<HoldingUpdatePayload>) => {
-      console.log('====================================');
+      console.log("====================================");
       console.log("updateHolding reducer called");
       console.log("Payload:", JSON.stringify(action.payload, null, 2));
-      console.log('====================================');
-      
+      console.log("====================================");
+
       const { cryptoId, amount, valueInUSD, symbol, name, image } =
         action.payload;
-      
+
       // Normalize cryptoId to uppercase to prevent duplicates
       const normalizedCryptoId = cryptoId.toUpperCase();
       const holdings = state.balance.holdings;
       const currentHolding = holdings[normalizedCryptoId];
       const pricePerToken = valueInUSD / amount;
 
-      console.log("Current holding for", normalizedCryptoId, ":", currentHolding);
+      console.log(
+        "Current holding for",
+        normalizedCryptoId,
+        ":",
+        currentHolding
+      );
 
       // Special handling for USDT
       if (normalizedCryptoId === "USDT") {
@@ -185,7 +191,10 @@ export const balanceSlice = createSlice({
 
           // Prevent negative balance
           if (newAmount < 0) {
-            console.error("Insufficient USDT balance - would result in:", newAmount);
+            console.error(
+              "Insufficient USDT balance - would result in:",
+              newAmount
+            );
             throw new Error("Insufficient USDT balance");
           }
 
@@ -213,7 +222,12 @@ export const balanceSlice = createSlice({
 
           // Recalculate profit/loss with updated values
           calculateProfitLoss(holdings[normalizedCryptoId]);
-          console.log("Updated existing holding for", normalizedCryptoId, "- new amount:", totalAmount);
+          console.log(
+            "Updated existing holding for",
+            normalizedCryptoId,
+            "- new amount:",
+            totalAmount
+          );
         } else {
           holdings[normalizedCryptoId] = {
             amount,
@@ -226,7 +240,12 @@ export const balanceSlice = createSlice({
             profitLoss: 0,
             profitLossPercentage: 0,
           };
-          console.log("Created new holding for", normalizedCryptoId, "- amount:", amount);
+          console.log(
+            "Created new holding for",
+            normalizedCryptoId,
+            "- amount:",
+            amount
+          );
         }
       }
 
@@ -235,47 +254,59 @@ export const balanceSlice = createSlice({
 
       // Persist balance and holdings to database
       console.log("About to persist to database...");
-      
+
       try {
         // Extract values from state before async operations to avoid Proxy issues
         const totalInUSD = state.balance.totalInUSD;
         const holdingsCopy = JSON.parse(JSON.stringify(holdings));
-        console.log("Holdings copy created successfully:", JSON.stringify(holdingsCopy, null, 2));
+        console.log(
+          "Holdings copy created successfully:",
+          JSON.stringify(holdingsCopy, null, 2)
+        );
         console.log("Total in USD extracted:", totalInUSD);
-        
+
         UUIDService.getOrCreateUser()
           .then((uuid) => {
             console.log("✅ Got UUID for persistence:", uuid);
-            
+
             // Update user balance first using extracted value
             return UserRepository.updateUserBalance(uuid, totalInUSD);
           })
           .then(() => {
             console.log("✅ User balance updated successfully");
-            
+
             // Get UUID again for portfolio update
             return UUIDService.getOrCreateUser();
           })
           .then((uuid) => {
             console.log("✅ Got UUID for portfolio update:", uuid);
             console.log("Calling UserRepository.updatePortfolio...");
-            
+
             return UserRepository.updatePortfolio(uuid, holdingsCopy);
           })
           .then(() => {
             console.log("✅ Portfolio updated successfully");
           })
           .catch((error) => {
-            console.error("❌ Error in updateHolding persistence chain:", error);
-            console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+            console.error(
+              "❌ Error in updateHolding persistence chain:",
+              error
+            );
+            console.error(
+              "❌ Error stack:",
+              error instanceof Error ? error.stack : "No stack trace"
+            );
           });
       } catch (error) {
         console.error("❌ Error in updateHolding (before async):", error);
-        console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+        console.error(
+          "❌ Error stack:",
+          error instanceof Error ? error.stack : "No stack trace"
+        );
       }
-      
+
       console.log("updateHolding reducer completed");
-      console.log('====================================');
+      console.log("====================================");
     },
     updatePortfolio: (state, action: PayloadAction<UserBalance>) => {
       state.balance = action.payload;

@@ -7,7 +7,6 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { loadBalance } from "@/features/balanceSlice";
 import { NotificationProvider } from "@/components/ui/Notification";
 import { Provider } from "react-redux";
-import { resetDatabase } from "@/utils/resetDatabase";
 import { SafeAreaView } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -39,25 +38,29 @@ export default function RootLayout() {
       if (loaded) {
         SplashScreen.hideAsync();
 
-        // DEVELOPMENT: Reset database to fix schema issues
-        // Remove this in production
-        try {
-          await resetDatabase();
-        } catch (error) {
-          console.log(
-            "Database reset failed (this is normal if database is already correct):",
-            error
-          );
-        }
-
         // Initialize daily balance update at midnight UTC
         scheduler.addDailyTask("daily-balance-update", updateDailyBalance, 0);
 
-        // Ensure user exists in both local DB and Supabase
+        // Ensure user exists in both local storage and Supabase
         await initializeUserProfile();
 
         // Get user UUID for sync operations
         const uuid = await UUIDService.getOrCreateUser();
+
+        // Clear existing portfolio data to resolve conflicts
+        try {
+          console.log(
+            "🔄 Clearing existing portfolio data to resolve conflicts..."
+          );
+          const clearResult = await SyncService.clearUserPortfolio(uuid);
+          if (clearResult.success) {
+            console.log("✅ Successfully cleared portfolio data");
+          } else {
+            console.warn("⚠️ Portfolio clear failed:", clearResult.error);
+          }
+        } catch (error) {
+          console.error("❌ Error clearing portfolio:", error);
+        }
 
         // Sync from cloud to get latest data
         try {
@@ -88,7 +91,7 @@ export default function RootLayout() {
           console.error("❌ Error processing offline queue:", error);
         }
 
-        // Load user balance from database (now with synced data)
+        // Load user balance from AsyncStorage (now with synced data)
         store.dispatch(loadBalance());
 
         return () => {

@@ -1,16 +1,55 @@
+import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from "react-native";
-import { useRouter } from "expo-router";
 import { Colors } from "../../constants/Colors";
+import { logger } from "../../utils/logger";
+import { useRouter } from "expo-router";
+
+import {
+  Alert,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function SecurityOptionsScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [pinEnabled, setPinEnabled] = useState(false);
   const router = useRouter();
 
-  const handleContinue = () => {
-    // TODO: Save security preferences
-    // router.push("/onboarding/backup-phrase");
+  const handleContinue = async () => {
+    try {
+      // Save security preferences to secure storage
+      const securityPrefs = {
+        biometricEnabled,
+        pinEnabled,
+        timestamp: new Date().toISOString(),
+      };
+
+      await SecureStore.setItemAsync(
+        "security_preferences",
+        JSON.stringify(securityPrefs)
+      );
+
+      logger.info(
+        "Security preferences saved",
+        "SecurityOptions",
+        securityPrefs
+      );
+
+      // Navigate to next screen
+      router.push("/onboarding");
+    } catch (error) {
+      logger.error("Failed to save security preferences", "SecurityOptions", {
+        error,
+      });
+      Alert.alert(
+        "Error",
+        "Failed to save security preferences. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   return (
@@ -25,10 +64,10 @@ export default function SecurityOptionsScreen() {
           <Text style={styles.optionText}>Enable Biometric Authentication</Text>
           <Switch
             trackColor={{
-              false: Colors.primaryBorder,
-              true: Colors.highlight,
+              false: Colors.light.icon,
+              true: Colors.light.primary,
             }}
-            thumbColor={Colors.white}
+            thumbColor={Colors.light.background}
             onValueChange={setBiometricEnabled}
             value={biometricEnabled}
           />
@@ -38,10 +77,10 @@ export default function SecurityOptionsScreen() {
           <Text style={styles.optionText}>Set PIN Code</Text>
           <Switch
             trackColor={{
-              false: Colors.primaryBorder,
-              true: Colors.highlight,
+              false: Colors.light.icon,
+              true: Colors.light.primary,
             }}
-            thumbColor={Colors.white}
+            thumbColor={Colors.light.background}
             onValueChange={setPinEnabled}
             value={pinEnabled}
           />
@@ -65,18 +104,18 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 24,
     fontWeight: "bold",
-    color: Colors.primaryText,
+    color: Colors.light.text,
     textAlign: "center",
     marginBottom: 10,
   },
   subtitleText: {
     fontSize: 16,
-    color: Colors.secondText,
+    color: Colors.light.icon,
     textAlign: "center",
     marginBottom: 30,
   },
   securityOptionContainer: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.light.background,
     borderRadius: 10,
     padding: 15,
     marginBottom: 20,
@@ -89,16 +128,16 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
-    color: Colors.primaryText,
+    color: Colors.light.text,
   },
   actionButton: {
-    backgroundColor: Colors.highlight,
+    backgroundColor: Colors.light.primary,
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
   },
   actionButtonText: {
-    color: Colors.white,
+    color: Colors.light.background,
     fontSize: 18,
     fontWeight: "bold",
   },
