@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Run type checking
+echo "📝 Type checking..."
+yarn type-check
+
+# Run linting with auto-fix
+echo "🧹 Linting and fixing..."
+yarn lint:fix
+
+# Check for console.log statements
+echo "🔍 Checking for console.log statements..."
+yarn check:console-logs
+
+# Check for TODO comments
+echo "🔍 Checking for TODO comments..."
+yarn check:todo
+
+echo "✅ Pre-commit checks completed!" 

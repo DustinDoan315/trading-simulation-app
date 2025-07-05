@@ -1,20 +1,21 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { createSelector } from "@reduxjs/toolkit";
-import { RootState } from "@/store";
-import { updatePortfolio } from "@/features/balanceSlice";
-import { Asset, PortfolioData, Holding } from "@/app/types/crypto";
-import { UserBalance } from "@/features/balanceSlice";
-import { DatabaseService } from "@/services/DatabaseService";
-import { SyncService } from "@/services/SupabaseService";
-import UUIDService from "@/services/UUIDService";
+import { Asset, Holding, PortfolioData } from '@/types/crypto';
+import { createSelector } from '@reduxjs/toolkit';
+import { RootState } from '@/store';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+  } from 'react';
+import { useSelector } from 'react-redux';
+
 
 // Optimized selector with better memoization
 const selectPortfolioData = createSelector(
   (state: RootState) => state.balance.balance,
   (state: RootState) => state.balance.changeValue,
   (state: RootState) => state.balance.changePercentage,
-  (balance, changeValue, changePercentage) => ({
+  (balance: { holdings: any; totalInUSD: any; }, changeValue: any, changePercentage: any) => ({
     balance,
     changeValue,
     changePercentage,
@@ -24,7 +25,7 @@ const selectPortfolioData = createSelector(
 );
 
 export const usePortfolioData = () => {
-  const portfolioState = useSelector(selectPortfolioData);
+  const portfolioState: any = useSelector(selectPortfolioData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [visibleLowValueCount, setVisibleLowValueCount] = useState(5);
@@ -48,10 +49,35 @@ export const usePortfolioData = () => {
       };
     }
 
-    const mappedAssets: Asset[] = holdings.map(([id, holding]) => ({
-      id: holding.name.toLowerCase(),
+    // Group holdings by symbol (case-insensitive) to merge duplicates
+    const groupedHoldings = new Map<string, Holding>();
+    
+    holdings.forEach(([id, holding]: [string, Holding]) => {
+      const symbolKey = holding.symbol?.toUpperCase() || holding.name?.toUpperCase() || 'UNKNOWN';
+      
+      if (groupedHoldings.has(symbolKey)) {
+        // Merge with existing holding
+        const existing = groupedHoldings.get(symbolKey)!;
+        const totalAmount = existing.amount + holding.amount;
+        const totalValue = existing.valueInUSD + holding.valueInUSD;
+        
+        groupedHoldings.set(symbolKey, {
+          ...existing,
+          amount: totalAmount,
+          valueInUSD: totalValue,
+          // Use the first non-zero averageBuyPrice, or calculate weighted average
+          averageBuyPrice: existing.averageBuyPrice || holding.averageBuyPrice,
+        });
+      } else {
+        // Add new holding
+        groupedHoldings.set(symbolKey, holding);
+      }
+    });
+
+    const mappedAssets: Asset[] = Array.from(groupedHoldings.values()).map((holding) => ({
+      id: holding.symbol?.toUpperCase() || holding.name?.toUpperCase() || 'UNKNOWN',
       name: holding.name || "Unknown",
-      symbol: holding.symbol || "UNKNOWN",
+      symbol: holding.symbol?.toUpperCase() || "UNKNOWN",
       amount: holding.amount?.toString() || "0",
       value: holding.valueInUSD?.toFixed(2) || "0.00",
       image: holding.image || null,
@@ -94,47 +120,6 @@ export const usePortfolioData = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Get user UUID
-      const uuid = await UUIDService.getOrCreateUser();
-
-      // First get local portfolio
-      const localPortfolio = await DatabaseService.getUserPortfolio(uuid);
-
-      // Then sync with cloud if online
-      await SyncService.syncFromCloud(uuid);
-
-      // Get updated local data after sync
-      const portfolioItems = await DatabaseService.getUserPortfolio(uuid);
-
-      // Transform to UserBalance format
-      const holdings: Record<string, Holding> = {};
-      portfolioItems.forEach((item) => {
-        holdings[item.symbol] = {
-          amount: parseFloat(item.quantity),
-          valueInUSD: parseFloat(item.quantity) * parseFloat(item.avgCost),
-          symbol: item.symbol,
-          name: item.symbol,
-          image:
-            item.image ||
-            `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
-          averageBuyPrice: parseFloat(item.avgCost),
-          currentPrice: parseFloat(item.avgCost),
-          profitLoss: 0,
-          profitLossPercentage: 0,
-        };
-      });
-
-      const updatedPortfolio: UserBalance = {
-        totalInUSD: Object.values(holdings).reduce(
-          (sum, holding) => sum + holding.valueInUSD,
-          0
-        ),
-        holdings,
-      };
-
-      const dispatch = useDispatch();
-      dispatch(updatePortfolio(updatedPortfolio));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to refresh portfolio"

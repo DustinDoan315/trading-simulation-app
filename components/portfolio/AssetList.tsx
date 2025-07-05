@@ -1,6 +1,6 @@
 import React, { memo, useCallback } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import { Asset } from "@/app/types/crypto";
+import { Asset } from "@/types/crypto";
 import AssetItem from "./AssetItem";
 import { OthersButton } from "./OthersButton";
 import { styles } from "./styles";

@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
-import { Asset } from "@/app/types/crypto";
+import { Asset } from "@/types/crypto";
 import { styles } from "./styles";
 
 interface OthersButtonProps {

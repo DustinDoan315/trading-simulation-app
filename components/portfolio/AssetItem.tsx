@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { formatAmount } from "@/utils/formatters";
-import { Asset } from "@/app/types/crypto";
+import { Asset } from "@/types/crypto";
 import { styles } from "./styles";
 import {
   DEFAULT_CRYPTO_IMAGE,

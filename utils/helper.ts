@@ -1,10 +1,13 @@
-import * as bip39 from "bip39";
-import * as Crypto from "expo-crypto";
-import { Buffer } from "buffer";
-import { store } from "@/store";
-import { balanceSlice } from "@/features/balanceSlice";
-import Toast from "react-native-toast-message";
-import { Order } from "@/app/types/crypto";
+import * as Application from 'expo-application';
+import * as bip39 from 'bip39';
+import * as Crypto from 'expo-crypto';
+import Toast from 'react-native-toast-message';
+import { Buffer } from 'buffer';
+import { Order } from '@/types/crypto';
+import { Platform } from 'react-native';
+import { ToastPos, ToastType } from '@/types/common';
+
+
 
 global.Buffer = Buffer;
 
@@ -97,136 +100,151 @@ export const generateSeedPhrase = async () => {
 //   }
 // };
 
-// Custom error class for order processing
-class OrderError extends Error {
-  constructor(message: string, public userFriendlyMessage: string) {
-    super(message);
+// --- Error Class ---
+export class OrderError extends Error {
+  public readonly userFriendlyMessage: string;
+  constructor(internalMessage: string, userFriendlyMessage: string) {
+    super(internalMessage);
     this.name = "OrderError";
+    this.userFriendlyMessage = userFriendlyMessage;
   }
 }
 
-// Helper to show consistent notifications
+// --- Toast Helper ---
 const showToast = (
-  type: "success" | "error" | "warning" | "info",
+  type: ToastType,
   text1: string,
   text2: string,
-  position: "top" | "bottom" = "top"
+  position: ToastPos = "top"
 ) => {
   Toast.show({
     type,
     text1,
     text2,
+    position,
     visibilityTime: type === "error" ? 4000 : 3000,
     autoHide: true,
-    position,
   });
 };
 
+
+
+// --- Core Logic ---
+const MIN_AMOUNT = 0.1;
+
+// Define types for the functions we need
+export interface OrderValidationContext {
+  getHoldings: () => Record<string, any>;
+}
+
+export interface OrderDispatchContext {
+  addTradeHistory: (order: Order) => void;
+  updateHolding: (payload: any) => void;
+}
+
+/** Throws OrderError on validation failure */
+function validateOrder(order: Order, context: OrderValidationContext): void {
+  if (!order.symbol) {
+    throw new OrderError("symbol.missing", "No token selected");
+  }
+  if (order.amount < MIN_AMOUNT) {
+    const msg = `Minimum order amount is ${MIN_AMOUNT} ${order.symbol}`;
+    throw new OrderError("amount.tooSmall", msg);
+  }
+  if (order.type === "sell") {
+    const holdings = context.getHoldings();
+    const h = holdings[order.symbol.toLowerCase()];
+    if (!h || h.amount < order.amount) {
+      const msg = `Insufficient ${order.symbol} balance`;
+      throw new OrderError("balance.insufficient", msg);
+    }
+  }
+}
+
+/** Dispatch both crypto and USDT adjustments */
+function dispatchUpdates(
+  order: Order, 
+  isBuy: boolean, 
+  imageUrl: string, 
+  context: OrderDispatchContext
+) {
+  const sign = isBuy ? 1 : -1;
+  const symbolId = order.symbol.toLowerCase();
+
+  context.addTradeHistory(order);
+
+  context.updateHolding({
+    cryptoId: symbolId,
+    amount: sign * order.amount,
+    valueInUSD: sign * order.total,
+    symbol: order.symbol,
+    name: order.name || order.symbol,
+    image: imageUrl,
+  });
+
+  if (symbolId !== "usdt") {
+    context.updateHolding({
+      cryptoId: "usdt",
+      amount: -sign * order.total,
+      valueInUSD: -sign * order.total,
+      symbol: "USDT",
+      name: "Tether",
+    });
+  }
+}
+
+
+/**
+ * Submits an order, updates state, and shows notifications.
+ * @param order Order details
+ * @param imageUrl URL for the asset image
+ * @param validationContext Context for validation
+ * @param dispatchContext Context for dispatching actions
+ * @param notify Optional callback({ message, type })
+ */
 export const handleOrderSubmission = async (
   order: Order,
-  symbol: string, // Changed from 'any' to string for type safety
-  image: string,
-  showNotification?: (notification: {
-    message: string;
-    type: "success" | "error" | "info";
-  }) => void
+  imageUrl: string,
+  validationContext: OrderValidationContext,
+  dispatchContext: OrderDispatchContext,
 ): Promise<Order> => {
-  console.debug("[Order] Submitting:", { ...order, symbol, image });
+  console.debug("[Order] Submitting:", order);
 
   try {
-    // Input validation
-    if (!symbol) throw new OrderError("No token selected", "No token selected");
+    validateOrder(order, validationContext);
 
-    const MIN_AMOUNT = 0.1;
-    if (order.amount < MIN_AMOUNT) {
-      const msg = `Minimum order amount is ${MIN_AMOUNT} ${symbol}`;
-      throw new OrderError(msg, msg);
-    }
+    const isBuy = order.type === "buy";
 
-    // Balance check for sell orders
-    if (order.type === "sell") {
-      const state = store.getState();
-      const holding = state.balance.balance.holdings[symbol.toLowerCase()];
-
-      if (!holding || holding.amount < order.amount) {
-        const msg = `Insufficient ${symbol} balance`;
-        if (showNotification) showNotification({ message: msg, type: "error" });
-        throw new OrderError(msg, msg);
-      }
-    }
-
-    // Create completed order object
-    const completedOrder: Order = {
+    const completed: Order = {
       ...order,
       status: "completed",
       executedPrice: order.price,
       executedAt: Date.now(),
-      image,
+      image: imageUrl,
     };
 
-    // Prepare dispatch parameters
-    const cryptoId = symbol.toLowerCase();
-    const assetName = order.name || "Unknown";
-    const isBuyOrder = order.type === "buy";
-    const sign = isBuyOrder ? 1 : -1;
+    dispatchUpdates(completed, isBuy, imageUrl, dispatchContext);
 
-    // Dispatch trade history
-    store.dispatch(balanceSlice.actions.addTradeHistory(completedOrder));
+    const successMsg = `${isBuy ? "Bought" : "Sold"} ${order.amount} ${
+      order.symbol
+    } for ${formatPrice(order.total)}`;
 
-    // Update crypto holding
-    store.dispatch(
-      balanceSlice.actions.updateHolding({
-        cryptoId,
-        amount: sign * order.amount,
-        valueInUSD: sign * order.total,
-        symbol,
-        image,
-        name: assetName,
-      })
-    );
+    showToast("success", "Order executed", successMsg);
 
-    // Update USDT holding
-    store.dispatch(
-      balanceSlice.actions.updateHolding({
-        cryptoId: "USDT",
-        amount: -sign * order.total,
-        valueInUSD: -sign * order.total,
-        symbol: "USDT",
-        name: "Tether",
-      })
-    );
+    console.debug("[Order] Success:", completed);
+    return completed;
+  } catch (err: unknown) {
+    console.error("[Order] Failed:", err);
 
-    // Success notification
-    showToast(
-      "success",
-      "Order executed",
-      `${isBuyOrder ? "Bought" : "Sold"} ${
-        order.amount
-      } ${symbol} for ${formatPrice(order.total)}`
-    );
-
-    console.debug("[Order] Submitted successfully:", completedOrder);
-    return completedOrder;
-  } catch (error: unknown) {
-    console.error("[Order] Failed:", error);
-
-    const defaultError = "Order processing failed";
+    const defaultMsg = "Order processing failed";
     const { message, userFriendlyMessage } =
-      error instanceof OrderError
-        ? {
-            message: error.message,
-            userFriendlyMessage: error.userFriendlyMessage,
-          }
-        : { message: defaultError, userFriendlyMessage: defaultError };
+      err instanceof OrderError
+        ? { message: err.message, userFriendlyMessage: err.userFriendlyMessage }
+        : { message: defaultMsg, userFriendlyMessage: defaultMsg };
 
-    // Show error notification
-    showToast(
-      "error",
-      "Order failed",
-      `Failed to ${order.type} ${symbol}: ${userFriendlyMessage}`
-    );
+    const errorText = `Failed to ${order.type} ${order.symbol}: ${userFriendlyMessage}`;
+    showToast("error", "Order failed", errorText);
 
-    // Propagate error for further handling
     throw new OrderError(message, userFriendlyMessage);
   }
 };

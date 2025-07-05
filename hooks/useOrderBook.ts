@@ -1,4 +1,4 @@
-import { OrderBookEntry } from "../app/types/crypto";
+import { OrderBookEntry } from "../types/crypto";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";

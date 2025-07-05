@@ -1,17 +1,15 @@
-// services/DatabaseService.ts
-import { drizzle } from "drizzle-orm/expo-sqlite";
-import { openDatabaseSync } from "expo-sqlite";
-import { users, portfolios, transactions } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
+import { openDatabaseSync } from 'expo-sqlite';
+import { portfolios, transactions, users } from '../database/schema';
 
-const expo = openDatabaseSync("trading_app.db");
+
+// services/DatabaseService.ts
+
+const expo = openDatabaseSync("learn_trading_app.db");
 const db = drizzle(expo);
 
-export class DatabaseService {
-  static async initializeDatabase() {
-    // Create tables if they don't exist
-    // This should be handled by your migration system
-  }
+export class LocalDatabaseService {
 
   static async createOrUpdateUser(userData: {
     uuid: string;
@@ -37,15 +35,33 @@ export class DatabaseService {
     }
   }
 
-  static async getUserPortfolio(userId: string) {
+  static async getUserPortfolio(user_id: string) {
     return await db
       .select()
       .from(portfolios)
-      .where(eq(portfolios.userId, userId));
+      .where(eq(portfolios.user_id, user_id));
   }
 
-  static async addTransaction(transaction: {
-    userId: string;
+  static async updatePortfolioAsset(asset: any) {
+    // Map Supabase 'user_id' to local 'user_id' if needed
+    const assetForDb = {
+      ...asset,
+      user_id: asset.user_id || asset.user_id, // prefer user_id, fallback to user_id
+    };
+    await db
+      .insert(portfolios)
+      .values(assetForDb)
+      .onConflictDoUpdate({
+        target: [portfolios.user_id, portfolios.symbol],
+        set: {
+          quantity: asset.quantity,
+          avg_cost: asset.avg_cost,
+        },
+      });
+  }
+
+    static async addTransaction(transaction: {
+    user_id: string;
     type: "BUY" | "SELL";
     symbol: string;
     quantity: string;
@@ -62,18 +78,6 @@ export class DatabaseService {
     return newTransaction;
   }
 
-  static async updatePortfolioAsset(asset: any) {
-    await db
-      .insert(portfolios)
-      .values(asset)
-      .onConflictDoUpdate({
-        target: [portfolios.userId, portfolios.symbol],
-        set: {
-          quantity: asset.quantity,
-          avgCost: asset.avg_cost,
-        },
-      });
-  }
 
   static async updateFromCloud(data: any) {
     if (data.type === "transaction") {

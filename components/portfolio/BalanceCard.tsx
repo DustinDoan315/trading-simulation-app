@@ -18,7 +18,7 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import { formatAmount } from "@/utils/formatters";
-import { Asset } from "@/app/types/crypto";
+import { Asset } from "@/types/crypto";
 import { height, width } from "@/utils/response";
 
 type BalanceCardProps = {
@@ -443,7 +443,7 @@ const BalanceCard = ({
         </View>
         <Text style={styles.balance}>{balance}</Text>
         {/* <View style={styles.changeContainer}> */}
-          {/* <Ionicons
+        {/* <Ionicons
             name={isPositive ? "caret-up" : "caret-down"}
             size={18}
             color={isPositive ? "#8C9EFF" : "#FF6B6B"}
@@ -479,19 +479,20 @@ const BalanceCard = ({
               opacity: fadeAnim,
             },
           ]}>
-          <View style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-          }}>
-             <View
-            style={[
-              styles.colorIndicator,
-              { backgroundColor: activeSegmentDetails.colors[0] },
-            ]}
-          />
-          <Text style={styles.tokenName}>{activeSegmentDetails.name}</Text>
-         </View>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+            <View
+              style={[
+                styles.colorIndicator,
+                { backgroundColor: activeSegmentDetails.colors[0] },
+              ]}
+            />
+            <Text style={styles.tokenName}>{activeSegmentDetails.name}</Text>
+          </View>
           <Text style={styles.tokenPercentage}>
             {Math.round(activeSegmentDetails.percentage)}%{" "}
             {t("portfolio.ofPortfolio")}
@@ -519,7 +520,6 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 8,
     marginTop: 20,
-
   },
   resetButton: {
     flexDirection: "row",

@@ -25,7 +25,7 @@ export interface Order {
 
 export interface TradeHistory {
   id: string;
-  userId: string;
+  user_id: string;
   order: Order;
   createdAt: string;
   updatedAt: string;

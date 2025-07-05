@@ -24,21 +24,21 @@ export const portfolios = sqliteTable(
   "portfolios",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    userId: text("userId").notNull(),
+    user_id: text("user_id").notNull(),
     symbol: text("symbol").notNull(),
     quantity: text("quantity").notNull(),
-    avgCost: text("avgCost").notNull(),
+    avg_cost: text("avg_cost").notNull(),
     image: text("image"),
   },
   (table) => ({
-    userAssetIdx: uniqueIndex("user_asset_idx").on(table.userId, table.symbol),
+    userAssetIdx: uniqueIndex("user_asset_idx").on(table.user_id, table.symbol),
   })
 );
 
 // Transactions table
 export const transactions = sqliteTable("transactions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: text("userId").notNull(),
+  user_id: text("user_id").notNull(),
   type: text("type", { enum: ["BUY", "SELL"] }).notNull(),
   symbol: text("symbol").notNull(),
   quantity: text("quantity").notNull(),

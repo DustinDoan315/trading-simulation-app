@@ -1,7 +1,8 @@
-import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
-import UserRepository from "../services/UserRepository";
-import UUIDService from "../services/UUIDService";
-import { Holding, HoldingUpdatePayload, Order } from "../app/types/crypto";
+import UserRepository from '../services/UserRepository';
+import UUIDService from '../services/UUIDService';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
+
 
 export interface UserBalance {
   totalInUSD: number;
@@ -69,11 +70,34 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   const balance = user ? parseFloat(user.balance) : 100000;
   const portfolio = await UserRepository.getPortfolio(uuid);
 
-  // Initialize holdings with USDT
-  const holdings: Record<string, Holding> = {
-    USDT: {
-      amount: 100000,
-      valueInUSD: 100000,
+  console.log("====================================");
+  console.log("Portfolio loaded:", portfolio);
+  console.log("User balance:", balance);
+  console.log("====================================");
+
+  // Initialize holdings object
+  const holdings: Record<string, Holding> = {};
+
+  // Add portfolio holdings first
+  portfolio.forEach((item) => {
+    holdings[item.symbol] = {
+      amount: parseFloat(item.quantity),
+      valueInUSD: parseFloat(item.quantity) * parseFloat(item.avg_cost),
+      symbol: item.symbol,
+      name: item.symbol,
+      image: item.image || `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
+      averageBuyPrice: parseFloat(item.avg_cost),
+      currentPrice: parseFloat(item.avg_cost), // Will be updated with real price later
+      profitLoss: 0,
+      profitLossPercentage: 0,
+    };
+  });
+
+  // If no USDT in portfolio, initialize with the balance amount
+  if (!holdings.USDT) {
+    holdings.USDT = {
+      amount: balance,
+      valueInUSD: balance,
       symbol: "USDT",
       name: "Tether",
       image:
@@ -82,26 +106,8 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
       currentPrice: 1,
       profitLoss: 0,
       profitLossPercentage: 0,
-    },
-  };
-
-  console.log("====================================");
-  console.log("Portfolio loaded:", portfolio);
-  console.log("====================================");
-  // Add portfolio holdings
-  portfolio.forEach((item) => {
-    holdings[item.symbol] = {
-      amount: parseFloat(item.quantity),
-      valueInUSD: parseFloat(item.quantity) * parseFloat(item.avgCost),
-      symbol: item.symbol,
-      name: item.symbol,
-      image: `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
-      averageBuyPrice: parseFloat(item.avgCost),
-      currentPrice: parseFloat(item.avgCost), // Will be updated with real price later
-      profitLoss: 0,
-      profitLossPercentage: 0,
     };
-  });
+  }
 
   return {
     totalInUSD: balance,
@@ -130,25 +136,37 @@ export const balanceSlice = createSlice({
       }
 
       // Persist balance to database
+      const totalInUSD = state.balance.totalInUSD;
       UUIDService.getOrCreateUser().then((uuid) => {
-        UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
+        UserRepository.updateUserBalance(uuid, totalInUSD);
       });
     },
     resetBalance: (state) => {
       return { ...initialState };
     },
     updateHolding: (state, action: PayloadAction<HoldingUpdatePayload>) => {
+      console.log('====================================');
+      console.log("updateHolding reducer called");
+      console.log("Payload:", JSON.stringify(action.payload, null, 2));
+      console.log('====================================');
+      
       const { cryptoId, amount, valueInUSD, symbol, name, image } =
         action.payload;
+      
+      // Normalize cryptoId to uppercase to prevent duplicates
+      const normalizedCryptoId = cryptoId.toUpperCase();
       const holdings = state.balance.holdings;
-      const currentHolding = holdings[cryptoId];
+      const currentHolding = holdings[normalizedCryptoId];
       const pricePerToken = valueInUSD / amount;
 
+      console.log("Current holding for", normalizedCryptoId, ":", currentHolding);
+
       // Special handling for USDT
-      if (cryptoId === "USDT") {
+      if (normalizedCryptoId === "USDT") {
+        console.log("Processing USDT update");
         if (!currentHolding) {
           // Initialize USDT if not exists
-          holdings[cryptoId] = {
+          holdings[normalizedCryptoId] = {
             amount: 100000,
             valueInUSD: 100000,
             symbol: "USDT",
@@ -160,29 +178,33 @@ export const balanceSlice = createSlice({
             profitLoss: 0,
             profitLossPercentage: 0,
           };
+          console.log("Initialized new USDT holding");
         } else {
           // For USDT, we only subtract (spend) never add new holdings
           const newAmount = currentHolding.amount + amount;
 
           // Prevent negative balance
           if (newAmount < 0) {
+            console.error("Insufficient USDT balance - would result in:", newAmount);
             throw new Error("Insufficient USDT balance");
           }
 
-          holdings[cryptoId] = {
+          holdings[normalizedCryptoId] = {
             ...currentHolding,
             amount: newAmount,
             valueInUSD: newAmount,
           };
+          console.log("Updated USDT holding - new amount:", newAmount);
         }
       } else {
+        console.log("Processing non-USDT cryptocurrency update");
         // Non-USDT cryptocurrencies
         if (currentHolding) {
           const totalCost =
             currentHolding.amount * currentHolding.averageBuyPrice + valueInUSD;
           const totalAmount = currentHolding.amount + amount;
 
-          holdings[cryptoId] = {
+          holdings[normalizedCryptoId] = {
             ...currentHolding,
             amount: totalAmount,
             valueInUSD: currentHolding.valueInUSD + valueInUSD,
@@ -190,12 +212,13 @@ export const balanceSlice = createSlice({
           };
 
           // Recalculate profit/loss with updated values
-          calculateProfitLoss(holdings[cryptoId]);
+          calculateProfitLoss(holdings[normalizedCryptoId]);
+          console.log("Updated existing holding for", normalizedCryptoId, "- new amount:", totalAmount);
         } else {
-          holdings[cryptoId] = {
+          holdings[normalizedCryptoId] = {
             amount,
             valueInUSD,
-            symbol,
+            symbol: symbol.toUpperCase(),
             name,
             image,
             averageBuyPrice: pricePerToken,
@@ -203,16 +226,56 @@ export const balanceSlice = createSlice({
             profitLoss: 0,
             profitLossPercentage: 0,
           };
+          console.log("Created new holding for", normalizedCryptoId, "- amount:", amount);
         }
       }
 
       state.balance.totalInUSD = recalculatePortfolioValue(holdings);
+      console.log("Updated total portfolio value:", state.balance.totalInUSD);
 
       // Persist balance and holdings to database
-      UUIDService.getOrCreateUser().then((uuid) => {
-        UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
-        UserRepository.updatePortfolio(uuid, holdings);
-      });
+      console.log("About to persist to database...");
+      
+      try {
+        // Extract values from state before async operations to avoid Proxy issues
+        const totalInUSD = state.balance.totalInUSD;
+        const holdingsCopy = JSON.parse(JSON.stringify(holdings));
+        console.log("Holdings copy created successfully:", JSON.stringify(holdingsCopy, null, 2));
+        console.log("Total in USD extracted:", totalInUSD);
+        
+        UUIDService.getOrCreateUser()
+          .then((uuid) => {
+            console.log("✅ Got UUID for persistence:", uuid);
+            
+            // Update user balance first using extracted value
+            return UserRepository.updateUserBalance(uuid, totalInUSD);
+          })
+          .then(() => {
+            console.log("✅ User balance updated successfully");
+            
+            // Get UUID again for portfolio update
+            return UUIDService.getOrCreateUser();
+          })
+          .then((uuid) => {
+            console.log("✅ Got UUID for portfolio update:", uuid);
+            console.log("Calling UserRepository.updatePortfolio...");
+            
+            return UserRepository.updatePortfolio(uuid, holdingsCopy);
+          })
+          .then(() => {
+            console.log("✅ Portfolio updated successfully");
+          })
+          .catch((error) => {
+            console.error("❌ Error in updateHolding persistence chain:", error);
+            console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+          });
+      } catch (error) {
+        console.error("❌ Error in updateHolding (before async):", error);
+        console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+      }
+      
+      console.log("updateHolding reducer completed");
+      console.log('====================================');
     },
     updatePortfolio: (state, action: PayloadAction<UserBalance>) => {
       state.balance = action.payload;
@@ -221,8 +284,9 @@ export const balanceSlice = createSlice({
       );
 
       // Persist to database
+      const totalInUSD = state.balance.totalInUSD;
       UUIDService.getOrCreateUser().then((uuid) => {
-        UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
+        UserRepository.updateUserBalance(uuid, totalInUSD);
         UserRepository.updatePortfolio(uuid, action.payload.holdings);
       });
     },
@@ -241,8 +305,9 @@ export const balanceSlice = createSlice({
         );
 
         // Persist balance to database
+        const totalInUSD = state.balance.totalInUSD;
         UUIDService.getOrCreateUser().then((uuid) => {
-          UserRepository.updateUserBalance(uuid, state.balance.totalInUSD);
+          UserRepository.updateUserBalance(uuid, totalInUSD);
         });
       }
     },
