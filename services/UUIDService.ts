@@ -1,9 +1,10 @@
-import * as Crypto from "expo-crypto";
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { getDeviceUUID } from "@/utils/deviceUtils";
-import { supabase } from "./SupabaseService";
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorageService } from './AsyncStorageService';
+import { getDeviceUUID } from '@/utils/deviceUtils';
+import { supabase } from './SupabaseService';
+import { TimestampUtils } from '@/utils/helper';
+
 
 // Enhanced UUIDService.ts
 
@@ -21,11 +22,11 @@ class UUIDService {
       uuid = await getDeviceUUID();
       await SecureStore.setItemAsync(USER_UUID_KEY, uuid);
 
-      // Initialize user profile
+      // Initialize user profile with proper timestamp format
       const userProfile = {
         uuid,
         balance: "100000",
-        createdAt: Math.floor(new Date().getTime() / 1000),
+        createdAt: new Date().toISOString(), // Use ISO string format for Supabase
         lastSyncAt: null,
       };
 
@@ -33,7 +34,7 @@ class UUIDService {
       await AsyncStorageService.createOrUpdateUser({
         uuid,
         balance: userProfile.balance,
-        createdAt: userProfile.createdAt,
+        createdAt: Math.floor(new Date().getTime() / 1000), // Keep Unix timestamp for local storage
       });
 
       // Save to AsyncStorage (cache)
@@ -48,21 +49,49 @@ class UUIDService {
           console.log("====================================");
           console.log("Syncing user to cloud:", userProfile);
           console.log("====================================");
-          await this.syncUserToCloud(userProfile);
-          break;
+          const syncResult = await this.syncUserToCloud(userProfile);
+          if (syncResult.success) {
+            console.log("✅ User successfully synced to cloud");
+            break;
+          } else {
+            throw new Error(syncResult.error);
+          }
         } catch (error) {
           retries--;
+          console.error(`User sync attempt ${4 - retries} failed:`, error);
           if (retries === 0) {
             console.error(
               "Failed to sync user to cloud after 3 attempts:",
               error
             );
+            // Don't throw here - user can still use the app locally
           } else {
             await new Promise((resolve) =>
               setTimeout(resolve, 1000 * (4 - retries))
             );
           }
         }
+      }
+    } else {
+      // User exists, ensure they're synced to Supabase
+      try {
+        const userProfileStr = await AsyncStorage.getItem(USER_PROFILE_KEY);
+        if (userProfileStr) {
+          const userProfile = JSON.parse(userProfileStr);
+          // Check if user exists in Supabase
+          const { data: existingUser, error } = await supabase
+            .from("users")
+            .select("uuid")
+            .eq("uuid", uuid)
+            .single();
+          
+          if (error || !existingUser) {
+            console.log("User not found in Supabase, syncing...");
+            await this.syncUserToCloud(userProfile);
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to verify user sync status:", error);
       }
     }
 
@@ -73,17 +102,21 @@ class UUIDService {
     userProfile: any
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-      // Ensure consistent timestamp format
-      const timestamp = Math.floor(
-        new Date(userProfile.createdAt).getTime() / 1000
-      );
+      // Use TimestampUtils to ensure proper timestamp format for Supabase
+      let createdAt: string;
+      try {
+        createdAt = TimestampUtils.toISOTimestamp(userProfile.createdAt);
+      } catch (error) {
+        console.warn("Invalid timestamp format, using current time:", error);
+        createdAt = new Date().toISOString();
+      }
 
       const { data, error } = await supabase
         .from("users")
         .upsert({
           uuid: userProfile.uuid,
           balance: userProfile.balance,
-          created_at: userProfile.createdAt,
+          created_at: createdAt,
         })
         .select()
         .single();
@@ -113,6 +146,7 @@ class UUIDService {
       return { success: false, error: errorMessage };
     }
   }
+
   // Helper method for cleaner sync status management
   private static async updateSyncStatus(
     status: "synced" | "failed",
@@ -125,6 +159,45 @@ class UUIDService {
     };
 
     await AsyncStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(syncStatus));
+  }
+
+  // New method to ensure user exists in Supabase before portfolio sync
+  static async ensureUserInSupabase(uuid: string): Promise<boolean> {
+    try {
+      // Check if user exists in Supabase
+      const { data: existingUser, error } = await supabase
+        .from("users")
+        .select("uuid")
+        .eq("uuid", uuid)
+        .single();
+
+      if (error || !existingUser) {
+        console.log("User not found in Supabase, creating...");
+        
+        // Get user profile from local storage
+        const userProfileStr = await AsyncStorage.getItem(USER_PROFILE_KEY);
+        if (userProfileStr) {
+          const userProfile = JSON.parse(userProfileStr);
+          const syncResult = await this.syncUserToCloud(userProfile);
+          return syncResult.success;
+        } else {
+          // Create default user profile
+          const userProfile = {
+            uuid,
+            balance: "100000",
+            createdAt: new Date().toISOString(),
+            lastSyncAt: null,
+          };
+          const syncResult = await this.syncUserToCloud(userProfile);
+          return syncResult.success;
+        }
+      }
+      
+      return true; // User exists
+    } catch (error) {
+      console.error("Failed to ensure user in Supabase:", error);
+      return false;
+    }
   }
 }
 
@@ -151,7 +224,7 @@ export async function initializeUserProfile() {
       userProfile = {
         uuid,
         balance: "100000",
-        createdAt: Math.floor(new Date().getTime() / 1000),
+        createdAt: new Date().toISOString(),
         lastSyncAt: null,
       };
     }

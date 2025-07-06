@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet } from "react-native";
-import { useLanguage } from "@/context/LanguageContext";
+import ActionButton from "./ActionButton";
+import AmountPercentButton from "../common/AmountPercentButton";
 import Dimensions from "@/styles/dimensions";
 import PriceInput from "../common/PriceInput";
-import AmountPercentButton from "../common/AmountPercentButton";
-import ActionButton from "./ActionButton";
-import { formatAmount } from "@/utils/formatters";
+import React, { useEffect, useRef, useState } from "react";
 import TabSelector from "./TableSelector";
-import { useSelector } from "react-redux";
+import { DEFAULT_CRYPTO, DEFAULT_CURRENCY } from "@/utils/constant";
+import { formatAmount } from "@/utils/formatters";
 import { RootState } from "@/store";
-import { DEFAULT_CURRENCY, DEFAULT_CRYPTO } from "@/utils/constant";
+import { StyleSheet, View } from "react-native";
+import { useLanguage } from "@/context/LanguageContext";
+import { useSelector } from "react-redux";
 
 interface OrderEntryProps {
   name?: string;
@@ -45,9 +45,22 @@ const OrderEntry = ({
   // Get token balance from store
   const tokenBalance = useSelector((state: RootState) => {
     const holdings = state.balance.balance.holdings;
-    const holding = Object.values(holdings).find(
-      (h: any) => h.symbol === symbol
-    );
+    // Try to find by symbol (case-insensitive) or by direct key access
+    const holding =
+      holdings[symbol.toUpperCase()] ||
+      holdings[symbol.toLowerCase()] ||
+      Object.values(holdings).find(
+        (h: any) => h.symbol.toUpperCase() === symbol.toUpperCase()
+      );
+
+    // Debug logging
+    console.log(`🔍 Token balance lookup for ${symbol}:`, {
+      symbol,
+      holdingsKeys: Object.keys(holdings),
+      foundHolding: holding,
+      balance: holding ? holding.amount : 0,
+    });
+
     return holding ? holding.amount : 0;
   });
 
@@ -62,6 +75,9 @@ const OrderEntry = ({
 
   const currentBalance =
     selectedTab === "buy" ? availableBalance : tokenBalance;
+
+  // Disable sell button if no token balance
+  const canSell = selectedTab === "buy" || tokenBalance > 0;
 
   const [sliderPosition, setSliderPosition] = useState(
     currentBalance > 0 ? 100 : 0
@@ -179,6 +195,7 @@ const OrderEntry = ({
         type={selectedTab}
         onPress={handleSubmitOrder}
         cryptoSymbol={symbol}
+        disabled={!canSell}
       />
     </View>
   );

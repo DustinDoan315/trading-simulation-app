@@ -1,7 +1,7 @@
-import UUIDService from "./UUIDService";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { Holding } from "../types/crypto";
-import { SyncService } from "./SupabaseService";
+import UUIDService from './UUIDService';
+import { AsyncStorageService } from './AsyncStorageService';
+import { Holding } from '../types/crypto';
+import { SyncService } from './SupabaseService';
 
 // repositories/UserRepository.ts
 
@@ -139,6 +139,14 @@ class UserRepository {
       // Sync to Supabase
       try {
         console.log("Preparing to sync portfolio to Supabase...");
+
+        // Ensure user exists in Supabase before syncing portfolio
+        const userExists = await UUIDService.ensureUserInSupabase(uuid);
+        if (!userExists) {
+          console.error("❌ Cannot sync portfolio: user does not exist in Supabase");
+          console.error("❌ Portfolio sync will be retried when user is created");
+          return; // Don't throw, just return and let the sync retry later
+        }
 
         // Convert holdings to portfolio array format expected by SyncService
         const portfolioArray = Object.entries(normalizedHoldings).map(

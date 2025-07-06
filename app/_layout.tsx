@@ -47,20 +47,8 @@ export default function RootLayout() {
         // Get user UUID for sync operations
         const uuid = await UUIDService.getOrCreateUser();
 
-        // Clear existing portfolio data to resolve conflicts
-        try {
-          console.log(
-            "🔄 Clearing existing portfolio data to resolve conflicts..."
-          );
-          const clearResult = await SyncService.clearUserPortfolio(uuid);
-          if (clearResult.success) {
-            console.log("✅ Successfully cleared portfolio data");
-          } else {
-            console.warn("⚠️ Portfolio clear failed:", clearResult.error);
-          }
-        } catch (error) {
-          console.error("❌ Error clearing portfolio:", error);
-        }
+        // Note: Portfolio clearing is no longer needed with MERGE strategy
+        // The sync will now preserve existing cloud data and only update what's changed
 
         // Sync from cloud to get latest data
         try {
