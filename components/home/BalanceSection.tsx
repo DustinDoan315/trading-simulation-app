@@ -1,25 +1,26 @@
 import React, { useState } from "react";
+import { clearSearchHistory } from "@/features/searchHistorySlice";
+import { formatAmount } from "@/utils/formatters";
+import { height } from "@/utils/response";
 import { Ionicons } from "@expo/vector-icons";
 import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
-import { useLanguage } from "@/context/LanguageContext";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import { useAppDispatch } from "@/store";
+import { persistor } from "@/store";
 import { resetBalance } from "@/features/balanceSlice";
 import { resetFavorites } from "@/features/favoritesSlice";
-import { clearSearchHistory } from "@/features/searchHistorySlice";
-import { persistor } from "@/store";
+import { ResetService } from "@/services/ResetService";
+import { router } from "expo-router";
+import { useAppDispatch } from "@/store";
+import { useLanguage } from "@/context/LanguageContext";
+import { UserBalance } from "@/services/CryptoService";
 import {
+  Alert,
+  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Modal,
-  Alert,
 } from "react-native";
-import { UserBalance } from "@/services/CryptoService";
-import { formatAmount } from "@/utils/formatters";
-import { height } from "@/utils/response";
 
 // components/home/BalanceSection.tsx
 
@@ -38,6 +39,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
 }) => {
   const { t } = useLanguage();
   const [showResetModal, setShowResetModal] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleResetPress = () => {
     setShowResetModal(true);
@@ -46,31 +48,69 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
   const dispatch = useAppDispatch();
 
   const confirmReset = async () => {
+    setIsResetting(true);
     try {
+      console.log("🔄 Starting comprehensive reset...");
+
+      // Step 1: Reset Redux state
       dispatch(resetBalance());
       dispatch(resetFavorites());
       dispatch(clearSearchHistory());
+
+      // Step 2: Clear Redux persist storage
       await persistor.purge();
 
-      onResetBalance?.();
-      setShowResetModal(false);
-      Alert.alert(`${t("balance.resetSuccess")}`, t("balance.resetMessage"));
+      // Step 3: Comprehensive data reset using ResetService
+      const resetResult = await ResetService.resetAllData();
+
+      if (resetResult.success) {
+        console.log("✅ Comprehensive reset completed successfully");
+        console.log("Reset details:", resetResult.details);
+
+        // Call the callback if provided
+        onResetBalance?.();
+
+        setShowResetModal(false);
+
+        // Show success message with details
+        const successMessage =
+          `Reset completed successfully!\n\nDetails:\n` +
+          `• Local storage: ${
+            resetResult.details.localStorage ? "✅" : "❌"
+          }\n` +
+          `• Cloud data: ${resetResult.details.cloudData ? "✅" : "⚠️"}\n` +
+          `• Database: ${resetResult.details.database ? "✅" : "⚠️"}\n` +
+          `• User profile: ${resetResult.details.userProfile ? "✅" : "❌"}`;
+
+        Alert.alert(
+          t("balance.resetSuccess") || "Reset Successful",
+          successMessage
+        );
+      } else {
+        console.error("❌ Reset failed:", resetResult.error);
+        Alert.alert(
+          t("balance.resetError") || "Reset Failed",
+          resetResult.error || "An error occurred during reset"
+        );
+      }
     } catch (error) {
-      console.error("Error resetting balance:", error);
+      console.error("Error during comprehensive reset:", error);
       Alert.alert(
-        `${t("balance.resetError")}`,
-        t("balance.resetErrorMessage")
+        t("balance.resetError") || "Reset Failed",
+        t("balance.resetErrorMessage") ||
+          "An unexpected error occurred during reset"
       );
+    } finally {
+      setIsResetting(false);
     }
   };
+
   const moveToPortfolio = () => {
     // router.navigate("/portfolio");
   };
 
   return (
-    <LinearGradient
-      colors={["#6262D9", "#9D62D9"]}
-      style={styles.container}>
+    <LinearGradient colors={["#6262D9", "#9D62D9"]} style={styles.container}>
       <TouchableOpacity onPress={moveToPortfolio}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
@@ -82,12 +122,23 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
               justifyContent: "center",
             }}>
             <TouchableOpacity
-              style={styles.resetButton}
-              onPress={handleResetPress}>
-              <Ionicons name="refresh" size={18} color="white" />
-              <Text style={styles.resetText}>{t("balance.reset")}</Text>
+              style={[
+                styles.resetButton,
+                isResetting && styles.resetButtonDisabled,
+              ]}
+              onPress={handleResetPress}
+              disabled={isResetting}>
+              <Ionicons
+                name={isResetting ? "hourglass" : "refresh"}
+                size={18}
+                color="white"
+              />
+              <Text style={styles.resetText}>
+                {isResetting
+                  ? t("balance.resetting") || "Resetting..."
+                  : t("balance.reset")}
+              </Text>
             </TouchableOpacity>
-            
           </View>
         </View>
         <Text style={styles.balanceTitle}>{t("balance.yourBalance")}</Text>
@@ -102,23 +153,37 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
         visible={showResetModal}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setShowResetModal(false)}>
+        onRequestClose={() => !isResetting && setShowResetModal(false)}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t("balance.resetBalance")}</Text>
             <Text style={styles.modalText}>
-              {t("balance.resetConfirmation")}
+              {isResetting
+                ? t("balance.resettingMessage") ||
+                  "Resetting all data to default values. This may take a moment..."
+                : t("balance.resetConfirmation") ||
+                  "This will reset ALL your data including:\n\n• Portfolio and balance\n• Transaction history\n• Favorites and search history\n• Local and cloud data\n\nThis action cannot be undone."}
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowResetModal(false)}>
+                onPress={() => !isResetting && setShowResetModal(false)}
+                disabled={isResetting}>
                 <Text style={styles.buttonText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={confirmReset}>
-                <Text style={styles.buttonText}>{t("common.confirm")}</Text>
+                style={[
+                  styles.modalButton,
+                  styles.confirmButton,
+                  isResetting && styles.confirmButtonDisabled,
+                ]}
+                onPress={confirmReset}
+                disabled={isResetting}>
+                <Text style={styles.buttonText}>
+                  {isResetting
+                    ? t("balance.resetting") || "Resetting..."
+                    : t("common.confirm")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -151,6 +216,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
+  resetButtonDisabled: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    opacity: 0.7,
+  },
   resetText: {
     color: "white",
     fontSize: 14,
@@ -179,6 +248,7 @@ const styles = StyleSheet.create({
     color: "#9DA3B4",
     fontSize: 16,
     marginBottom: 20,
+    lineHeight: 22,
   },
   modalButtons: {
     flexDirection: "row",
@@ -195,6 +265,10 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     backgroundColor: "#6262D9",
+  },
+  confirmButtonDisabled: {
+    backgroundColor: "#6262D9",
+    opacity: 0.5,
   },
   buttonText: {
     color: "white",

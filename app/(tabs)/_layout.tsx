@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { navigateToCryptoChart } from "@/utils/navigation";
 
-type RouteName = "index" | "portfolio" | "wallet" | "chart";
+type RouteName = "index" | "portfolio" | "wallet" | "chart" | "collections" | "leaderboard" | "profile";
 
 type IconMapping = {
   [key in RouteName]: {
@@ -38,6 +38,18 @@ const ICON_MAP: IconMapping = {
     inactive: "repeat-outline",
     active: "repeat",
   },
+  collections: {
+    inactive: "people-outline",
+    active: "people",
+  },
+  leaderboard: {
+    inactive: "trophy-outline",
+    active: "trophy",
+  },
+  profile: {
+    inactive: "person-outline",
+    active: "person",
+  },
 };
 
 function CustomTabBar({ state, navigation, descriptors }: any) {
@@ -50,16 +62,16 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
       route.name === "index" ||
       route.name === "chart" ||
       route.name === "portfolio" ||
-      route.name === "wallet"
-      // ||
-      // route.name === "products"
+      route.name === "collections" ||
+      route.name === "leaderboard" ||
+      route.name === "profile"
     ) {
       orderedRoutes.push(route);
     }
   });
 
   orderedRoutes.sort((a, b) => {
-    const order: RouteName[] = ["index", "chart", "portfolio", "wallet"];
+    const order: RouteName[] = ["index", "chart", "portfolio", "collections", "leaderboard", "profile"];
     return (
       order.indexOf(a.name as RouteName) - order.indexOf(b.name as RouteName)
     );
@@ -164,6 +176,27 @@ export default function TabLayout() {
         name="portfolio"
         options={{
           title: "Portfolio",
+        }}
+      />
+
+      <Tabs.Screen
+        name="collections"
+        options={{
+          title: "Collections",
+        }}
+      />
+
+      <Tabs.Screen
+        name="leaderboard"
+        options={{
+          title: "Leaderboard",
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
         }}
       />
     </Tabs>

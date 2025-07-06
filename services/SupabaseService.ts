@@ -1,8 +1,10 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
-import NetInfo from "@react-native-community/netinfo";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient, createClient } from '@supabase/supabase-js';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorageService } from './AsyncStorageService';
+import Constants from 'expo-constants';
+import NetInfo from '@react-native-community/netinfo';
+import UUIDService from './UUIDService';
 
 //SupabaseService.ts
 
@@ -476,7 +478,7 @@ export class SyncService {
     }
   }
 
-  // Enhanced portfolio sync with batch operations
+  // Enhanced portfolio sync with batch operations - MERGE strategy
   private static async syncPortfolioToCloud(
     uuid: string,
     portfolio: Array<{
@@ -488,29 +490,149 @@ export class SyncService {
   ): Promise<void> {
     if (!portfolio || portfolio.length === 0) return;
 
-    const portfolioData = portfolio.map((asset) => ({
-      user_id: uuid,
-      symbol: asset.symbol.toUpperCase(),
-      quantity: asset.quantity,
-      avg_cost: asset.avg_cost,
-      image: asset.image,
-      last_updated: new Date().toISOString(),
-    }));
-
-    const { data, error } = await supabase
-      .from("portfolios")
-      .upsert(portfolioData, {
-        onConflict: "user_id,symbol",
-        ignoreDuplicates: false,
-      })
-      .select();
-
-    if (error) {
-      console.error("❌ Supabase upsert error:", error);
-      throw new Error(`Portfolio sync failed: ${error.message}`);
+    // Ensure user exists in Supabase before syncing portfolio
+    const userExists = await UUIDService.ensureUserInSupabase(uuid);
+    if (!userExists) {
+      console.error("❌ Cannot sync portfolio: user does not exist in Supabase");
+      throw new Error("User does not exist in Supabase. Please ensure user is created first.");
     }
 
-    console.log(`✅ Successfully synced ${data?.length || 0} portfolio items`);
+    console.log("🔄 Starting portfolio sync with MERGE strategy...");
+    console.log("📊 Local portfolio items:", portfolio.length);
+
+    // Step 1: Get existing portfolio from cloud
+    const { data: existingPortfolio, error: fetchError } = await supabase
+      .from("portfolios")
+      .select("*")
+      .eq("user_id", uuid);
+
+    if (fetchError) {
+      console.error("❌ Failed to fetch existing portfolio:", fetchError);
+      throw new Error(`Failed to fetch existing portfolio: ${fetchError.message}`);
+    }
+
+    console.log("☁️ Existing cloud portfolio items:", existingPortfolio?.length || 0);
+
+    // Step 2: Create a map of existing portfolio for quick lookup
+    const existingPortfolioMap = new Map<string, any>();
+    if (existingPortfolio) {
+      existingPortfolio.forEach((item: any) => {
+        existingPortfolioMap.set(item.symbol.toUpperCase(), item);
+      });
+    }
+
+    // Step 3: Create a map of new portfolio for quick lookup
+    const newPortfolioMap = new Map<string, any>();
+    portfolio.forEach((item: any) => {
+      newPortfolioMap.set(item.symbol.toUpperCase(), item);
+    });
+
+    // Step 4: Prepare operations
+    const operations: Array<{
+      user_id: string;
+      symbol: string;
+      quantity: string;
+      avg_cost: string;
+      image: string | null;
+      last_updated: string;
+    }> = [];
+    const symbolsToUpdate = new Set<string>();
+    const symbolsToInsert = new Set<string>();
+
+    // Process each item in the new portfolio
+    portfolio.forEach((asset) => {
+      const symbol = asset.symbol.toUpperCase();
+      const existingAsset = existingPortfolioMap.get(symbol);
+
+      if (existingAsset) {
+        // Asset exists - check if it needs updating
+        const needsUpdate = 
+          existingAsset.quantity !== asset.quantity ||
+          existingAsset.avg_cost !== asset.avg_cost ||
+          existingAsset.image !== (asset.image || null);
+
+        if (needsUpdate) {
+          operations.push({
+            user_id: uuid,
+            symbol: symbol,
+            quantity: asset.quantity,
+            avg_cost: asset.avg_cost,
+            image: asset.image || null,
+            last_updated: new Date().toISOString(),
+          });
+          symbolsToUpdate.add(symbol);
+          console.log(`🔄 Will update: ${symbol}`);
+        } else {
+          console.log(`✅ No changes needed: ${symbol}`);
+        }
+      } else {
+        // New asset - insert
+        operations.push({
+          user_id: uuid,
+          symbol: symbol,
+          quantity: asset.quantity,
+          avg_cost: asset.avg_cost,
+          image: asset.image || null,
+          last_updated: new Date().toISOString(),
+        });
+        symbolsToInsert.add(symbol);
+        console.log(`➕ Will insert: ${symbol}`);
+      }
+    });
+
+    // Step 5: Check for assets that exist in cloud but not in local portfolio
+    const symbolsToDelete: string[] = [];
+    existingPortfolio?.forEach((cloudAsset: any) => {
+      const symbol = cloudAsset.symbol.toUpperCase();
+      if (!newPortfolioMap.has(symbol)) {
+        symbolsToDelete.push(symbol);
+        console.log(`🗑️ Will delete: ${symbol} (not in local portfolio)`);
+      }
+    });
+
+    console.log(`📋 Operations summary:
+      - Insert: ${symbolsToInsert.size} items
+      - Update: ${symbolsToUpdate.size} items  
+      - Delete: ${symbolsToDelete.length} items
+      - Total operations: ${operations.length}`);
+
+    // Step 6: Execute operations
+    if (operations.length > 0) {
+      const { data: upsertData, error: upsertError } = await supabase
+        .from("portfolios")
+        .upsert(operations, {
+          onConflict: "user_id,symbol",
+          ignoreDuplicates: false,
+        })
+        .select();
+
+      if (upsertError) {
+        console.error("❌ Supabase upsert error:", upsertError);
+        throw new Error(`Portfolio sync failed: ${upsertError.message}`);
+      }
+
+      console.log(`✅ Successfully upserted ${upsertData?.length || 0} portfolio items`);
+    }
+
+    // Step 7: Delete assets that are no longer in local portfolio
+    if (symbolsToDelete.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("portfolios")
+        .delete()
+        .eq("user_id", uuid)
+        .in("symbol", symbolsToDelete);
+
+      if (deleteError) {
+        console.error("❌ Failed to delete removed assets:", deleteError);
+        // Don't throw here - the main sync succeeded
+      } else {
+        console.log(`✅ Successfully deleted ${symbolsToDelete.length} removed assets`);
+      }
+    }
+
+    console.log(`✅ Portfolio sync completed successfully:
+      - Total items in cloud: ${(existingPortfolio?.length || 0) + symbolsToInsert.size - symbolsToDelete.length}
+      - Local items: ${portfolio.length}`);
   }
 
   // Public method for portfolio sync
@@ -591,8 +713,11 @@ export class SyncService {
     }
   }
 
-  // Clear existing portfolio data for a user (useful for resolving conflicts)
+  // DEPRECATED: Clear existing portfolio data for a user
+  // This method is deprecated as we now use MERGE strategy instead of clearing
   static async clearUserPortfolio(uuid: string): Promise<SyncResult> {
+    console.warn("⚠️ clearUserPortfolio is deprecated. Use MERGE strategy instead.");
+    
     try {
       console.log("🗑️ Clearing portfolio data for user:", uuid);
 
@@ -694,7 +819,7 @@ export class SyncService {
         return cloudCollections || [];
       }, "Collections From Cloud Sync");
 
-      return result.map((c) => ({
+      return result.map((c: any) => ({
         id: c.id,
         name: c.name,
         ownerId: c.owner_id,

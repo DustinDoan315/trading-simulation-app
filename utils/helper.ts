@@ -110,6 +110,86 @@ export class OrderError extends Error {
   }
 }
 
+// --- Timestamp Utilities ---
+export class TimestampUtils {
+  /**
+   * Converts various timestamp formats to ISO string for Supabase
+   */
+  static toISOTimestamp(timestamp: number | string | Date): string {
+    if (timestamp instanceof Date) {
+      return timestamp.toISOString();
+    }
+    
+    if (typeof timestamp === 'string') {
+      // If it's already an ISO string, return as is
+      if (timestamp.includes('T') && timestamp.includes('Z')) {
+        return timestamp;
+      }
+      // Try to parse as number
+      const num = parseInt(timestamp, 10);
+      if (!isNaN(num)) {
+        return new Date(num * 1000).toISOString();
+      }
+      // Try to parse as date string
+      return new Date(timestamp).toISOString();
+    }
+    
+    if (typeof timestamp === 'number') {
+      // Check if it's Unix timestamp in seconds (10 digits) or milliseconds (13 digits)
+      if (timestamp < 10000000000) {
+        // Unix timestamp in seconds
+        return new Date(timestamp * 1000).toISOString();
+      } else {
+        // Unix timestamp in milliseconds
+        return new Date(timestamp).toISOString();
+      }
+    }
+    
+    throw new Error(`Invalid timestamp format: ${timestamp}`);
+  }
+
+  /**
+   * Converts timestamp to Unix timestamp in seconds for local storage
+   */
+  static toUnixTimestamp(timestamp: number | string | Date): number {
+    if (timestamp instanceof Date) {
+      return Math.floor(timestamp.getTime() / 1000);
+    }
+    
+    if (typeof timestamp === 'string') {
+      return Math.floor(new Date(timestamp).getTime() / 1000);
+    }
+    
+    if (typeof timestamp === 'number') {
+      // Check if it's already in seconds
+      if (timestamp < 10000000000) {
+        return timestamp;
+      } else {
+        // Convert from milliseconds to seconds
+        return Math.floor(timestamp / 1000);
+      }
+    }
+    
+    throw new Error(`Invalid timestamp format: ${timestamp}`);
+  }
+
+  /**
+   * Validates if a timestamp is reasonable (not too far in past or future)
+   */
+  static isValidTimestamp(timestamp: number | string | Date): boolean {
+    try {
+      const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+      const now = new Date();
+      const minDate = new Date('2020-01-01'); // Reasonable minimum date
+      const maxDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year in future
+      
+      return date >= minDate && date <= maxDate;
+    } catch {
+      return false;
+    }
+  }
+}
+
 // --- Toast Helper ---
 const showToast = (
   type: ToastType,
@@ -144,6 +224,13 @@ export interface OrderDispatchContext {
 
 /** Throws OrderError on validation failure */
 function validateOrder(order: Order, context: OrderValidationContext): void {
+  console.log("🔍 Validating order:", {
+    symbol: order.symbol,
+    type: order.type,
+    amount: order.amount,
+    total: order.total
+  });
+
   if (!order.symbol) {
     throw new OrderError("symbol.missing", "No token selected");
   }
@@ -153,11 +240,30 @@ function validateOrder(order: Order, context: OrderValidationContext): void {
   }
   if (order.type === "sell") {
     const holdings = context.getHoldings();
-    const h = holdings[order.symbol.toLowerCase()];
-    if (!h || h.amount < order.amount) {
-      const msg = `Insufficient ${order.symbol} balance`;
+    console.log("📊 Current holdings:", holdings);
+    
+    // Try both uppercase and lowercase to handle case sensitivity
+    const h = holdings[order.symbol.toUpperCase()] || holdings[order.symbol.toLowerCase()];
+    console.log(`🔍 Looking for ${order.symbol} in holdings (tried both cases):`, h);
+    
+    if (!h) {
+      const msg = `No ${order.symbol} balance found. You need to buy ${order.symbol} first before you can sell it.`;
+      console.error("❌ No holding found for symbol:", order.symbol);
+      console.error("❌ Available holdings keys:", Object.keys(holdings));
       throw new OrderError("balance.insufficient", msg);
     }
+    
+    if (h.amount < order.amount) {
+      const msg = `Insufficient ${order.symbol} balance. You have ${h.amount} ${order.symbol}, trying to sell ${order.amount} ${order.symbol}`;
+      console.error("❌ Insufficient balance:", {
+        available: h.amount,
+        requested: order.amount,
+        symbol: order.symbol
+      });
+      throw new OrderError("balance.insufficient", msg);
+    }
+    
+    console.log("✅ Sufficient balance for sell order");
   }
 }
 
