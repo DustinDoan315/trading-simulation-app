@@ -60,7 +60,7 @@ const ProfileScreen = () => {
     >
       <View style={styles.settingLeft}>
         <View style={styles.iconContainer}>
-          <Ionicons name={icon} size={20} color={colors.text.primary} />
+          <Ionicons name={icon} size={20} color="#FFFFFF" />
         </View>
         <View style={styles.settingContent}>
           <Text style={styles.settingTitle}>{title}</Text>
@@ -70,7 +70,7 @@ const ProfileScreen = () => {
       <View style={styles.settingRight}>
         {rightComponent}
         {showChevron && !rightComponent && (
-          <Ionicons name="chevron-forward" size={16} color={colors.text.secondary} />
+          <Ionicons name="chevron-forward" size={16} color="#9DA3B4" />
         )}
       </View>
     </TouchableOpacity>
@@ -86,7 +86,7 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#131523" />
+      <StatusBar barStyle="light-content" backgroundColor="#121212" />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
@@ -106,24 +106,24 @@ const ProfileScreen = () => {
             value={userStats.totalTrades}
             subtitle="trades"
           />
-          <StatsCard
-            title="Win Rate"
-            value={`${userStats.winRate}%`}
-            subtitle="success rate"
-            color={colors.action.buy}
-          />
-          <StatsCard
-            title="Total P&L"
-            value={`$${userStats.totalPnL.toLocaleString()}`}
-            subtitle="profit"
-            color={userStats.totalPnL >= 0 ? colors.action.buy : colors.action.sell}
-          />
-          <StatsCard
-            title="Global Rank"
-            value={`#${userStats.rank}`}
-            subtitle="position"
-            color={colors.ui.highlight}
-          />
+                      <StatsCard
+              title="Win Rate"
+              value={`${userStats.winRate}%`}
+              subtitle="success rate"
+              color="#10BA68"
+            />
+                      <StatsCard
+              title="Total P&L"
+              value={`$${userStats.totalPnL.toLocaleString()}`}
+              subtitle="profit"
+              color={userStats.totalPnL >= 0 ? "#10BA68" : "#F9335D"}
+            />
+            <StatsCard
+              title="Global Rank"
+              value={`#${userStats.rank}`}
+              subtitle="position"
+              color="#6674CC"
+            />
         </View>
 
         {/* Account Settings */}
@@ -164,8 +164,8 @@ const ProfileScreen = () => {
                 <Switch
                   value={notificationsEnabled}
                   onValueChange={setNotificationsEnabled}
-                  trackColor={{ false: colors.border.light, true: colors.ui.highlight }}
-                  thumbColor={colors.text.primary}
+                  trackColor={{ false: "#333", true: "#6674CC" }}
+                  thumbColor="#FFFFFF"
                 />
               }
             />
@@ -178,8 +178,8 @@ const ProfileScreen = () => {
                 <Switch
                   value={biometricsEnabled}
                   onValueChange={setBiometricsEnabled}
-                  trackColor={{ false: colors.border.light, true: colors.ui.highlight }}
-                  thumbColor={colors.text.primary}
+                  trackColor={{ false: "#333", true: "#6674CC" }}
+                  thumbColor="#FFFFFF"
                 />
               }
             />
@@ -192,8 +192,8 @@ const ProfileScreen = () => {
                 <Switch
                   value={priceAlertsEnabled}
                   onValueChange={setPriceAlertsEnabled}
-                  trackColor={{ false: colors.border.light, true: colors.ui.highlight }}
-                  thumbColor={colors.text.primary}
+                  trackColor={{ false: "#333", true: "#6674CC" }}
+                  thumbColor="#FFFFFF"
                 />
               }
             />
@@ -206,8 +206,8 @@ const ProfileScreen = () => {
                 <Switch
                   value={balanceHidden}
                   onValueChange={setBalanceHidden}
-                  trackColor={{ false: colors.border.light, true: colors.ui.highlight }}
-                  thumbColor={colors.text.primary}
+                  trackColor={{ false: "#333", true: "#6674CC" }}
+                  thumbColor="#FFFFFF"
                 />
               }
             />
@@ -247,7 +247,7 @@ const ProfileScreen = () => {
 
         {/* Danger Zone */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.action.sell }]}>Danger Zone</Text>
+          <Text style={[styles.sectionTitle, { color: "#F9335D" }]}>Danger Zone</Text>
           <View style={styles.settingsGroup}>
             <SettingItem
               icon="log-out-outline"
@@ -271,7 +271,7 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: "#131523",
   },
   scrollView: {
     flex: 1,
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -296,17 +296,17 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text.primary,
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   email: {
     fontSize: 16,
-    color: colors.text.secondary,
+    color: "#9DA3B4",
     marginBottom: 4,
   },
   joinDate: {
     fontSize: 14,
-    color: colors.text.tertiary,
+    color: "#8F95B2",
   },
   statsGrid: {
     flexDirection: 'row',
@@ -318,26 +318,24 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     minWidth: '47%',
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border.light,
   },
   statTitle: {
     fontSize: 12,
-    color: colors.text.secondary,
+    color: "#9DA3B4",
     marginBottom: 4,
   },
   statValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   statSubtitle: {
     fontSize: 10,
-    color: colors.text.tertiary,
+    color: "#8F95B2",
     marginTop: 2,
   },
   section: {
@@ -346,16 +344,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: "#FFFFFF",
     marginBottom: 12,
     paddingHorizontal: 20,
   },
   settingsGroup: {
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     marginHorizontal: 20,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border.light,
   },
   settingItem: {
     flexDirection: 'row',
@@ -363,7 +359,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    borderBottomColor: "#333",
   },
   settingLeft: {
     flex: 1,
@@ -374,7 +370,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: colors.background.primary,
+    backgroundColor: "#131523",
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -385,11 +381,11 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   settingSubtitle: {
     fontSize: 12,
-    color: colors.text.secondary,
+    color: "#9DA3B4",
     marginTop: 2,
   },
   settingRight: {

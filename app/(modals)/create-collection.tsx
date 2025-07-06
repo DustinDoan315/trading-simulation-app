@@ -68,7 +68,7 @@ const CreateCollectionScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#131523" />
+      <StatusBar barStyle="light-content" backgroundColor="#121212" />
       
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -242,7 +242,7 @@ const CreateCollectionScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: "#131523",
   },
   header: {
     flexDirection: 'row',
@@ -251,21 +251,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    borderBottomColor: "#333",
   },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   createButton: {
-    backgroundColor: colors.ui.highlight,
+    backgroundColor: "#6674CC",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
   createButtonText: {
-    color: colors.text.primary,
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: '600',
   },

@@ -79,7 +79,7 @@ const CollectionsScreen = () => {
             <Ionicons 
               name={collection.isPublic ? "globe-outline" : "lock-closed-outline"} 
               size={12} 
-              color={colors.text.secondary} 
+              color="#9DA3B4" 
             />
             <Text style={styles.collectionMetaText}>
               {collection.members} members
@@ -108,7 +108,7 @@ const CollectionsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#131523" />
+      <StatusBar barStyle="light-content" backgroundColor="#121212" />
       
       <View style={styles.header}>
         <Text style={styles.title}>Collections</Text>
@@ -116,7 +116,7 @@ const CollectionsScreen = () => {
           style={styles.createButton}
           onPress={handleCreateCollection}
         >
-          <Ionicons name="add" size={24} color={colors.text.primary} />
+          <Ionicons name="add" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -149,7 +149,7 @@ const CollectionsScreen = () => {
               style={styles.createCollectionCard}
               onPress={handleCreateCollection}
             >
-              <Ionicons name="add-circle-outline" size={48} color={colors.ui.highlight} />
+              <Ionicons name="add-circle-outline" size={48} color="#6674CC" />
               <Text style={styles.createCollectionText}>Create New Collection</Text>
             </TouchableOpacity>
           </View>
@@ -162,7 +162,7 @@ const CollectionsScreen = () => {
               style={styles.joinCollectionCard}
               onPress={handleJoinCollection}
             >
-              <Ionicons name="people-outline" size={48} color={colors.ui.highlight} />
+              <Ionicons name="people-outline" size={48} color="#6674CC" />
               <Text style={styles.joinCollectionText}>Join Collection</Text>
             </TouchableOpacity>
           </View>
@@ -175,7 +175,7 @@ const CollectionsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: "#131523",
   },
   header: {
     flexDirection: 'row',
@@ -187,13 +187,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   createButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.ui.highlight,
+    backgroundColor: "#6674CC",
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 20,
     marginBottom: 20,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     borderRadius: 12,
     padding: 4,
   },
@@ -212,29 +212,27 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeTab: {
-    backgroundColor: colors.ui.highlight,
+    backgroundColor: "#6674CC",
   },
   tabText: {
-    color: colors.text.secondary,
+    color: "#9DA3B4",
     fontSize: 14,
     fontWeight: '500',
   },
   activeTabText: {
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   scrollView: {
     flex: 1,
   },
   collectionsContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
   },
   collectionItem: {
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.border.light,
   },
   collectionHeader: {
     flexDirection: 'row',
@@ -248,7 +246,7 @@ const styles = StyleSheet.create({
   collectionName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   collectionMeta: {
@@ -258,10 +256,10 @@ const styles = StyleSheet.create({
   },
   collectionMetaText: {
     fontSize: 12,
-    color: colors.text.secondary,
+    color: "#9DA3B4",
   },
   collectionRank: {
-    backgroundColor: colors.ui.highlight,
+    backgroundColor: "#6674CC",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -269,7 +267,7 @@ const styles = StyleSheet.create({
   rankText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   collectionStats: {
     flexDirection: 'row',
@@ -281,42 +279,42 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   statLabel: {
     fontSize: 12,
-    color: colors.text.secondary,
+    color: "#9DA3B4",
     marginTop: 2,
   },
   createCollectionCard: {
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     borderRadius: 12,
     padding: 24,
     alignItems: 'center',
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: colors.ui.highlight,
+    borderColor: "#6674CC",
     borderStyle: 'dashed',
   },
   createCollectionText: {
     fontSize: 16,
-    color: colors.ui.highlight,
+    color: "#6674CC",
     marginTop: 8,
     fontWeight: '500',
   },
   joinCollectionCard: {
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     borderRadius: 12,
     padding: 24,
     alignItems: 'center',
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: colors.ui.highlight,
+    borderColor: "#6674CC",
     borderStyle: 'dashed',
   },
   joinCollectionText: {
     fontSize: 16,
-    color: colors.ui.highlight,
+    color: "#6674CC",
     marginTop: 8,
     fontWeight: '500',
   },

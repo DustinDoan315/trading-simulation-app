@@ -155,7 +155,7 @@ const LeaderboardScreen = () => {
                 <Text style={styles.statLabel}>Total Value</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.action.buy }]}>
+                <Text style={[styles.statValue, { color: "#10BA68" }]}>
                   +{item.avgPnl}%
                 </Text>
                 <Text style={styles.statLabel}>Avg P&L</Text>
@@ -164,13 +164,13 @@ const LeaderboardScreen = () => {
           ) : (
             <>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: item.pnl >= 0 ? colors.action.buy : colors.action.sell }]}>
+                <Text style={[styles.statValue, { color: item.pnl >= 0 ? "#10BA68" : "#F9335D" }]}>
                   {item.pnl >= 0 ? '+' : ''}${item.pnl.toLocaleString()}
                 </Text>
                 <Text style={styles.statLabel}>P&L</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: item.percentage >= 0 ? colors.action.buy : colors.action.sell }]}>
+                <Text style={[styles.statValue, { color: item.percentage >= 0 ? "#10BA68" : "#F9335D" }]}>
                   {item.percentage >= 0 ? '+' : ''}{item.percentage}%
                 </Text>
                 <Text style={styles.statLabel}>Return</Text>
@@ -190,12 +190,12 @@ const LeaderboardScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#131523" />
+      <StatusBar barStyle="light-content" backgroundColor="#121212" />
       
       <View style={styles.header}>
         <Text style={styles.title}>Leaderboards</Text>
         <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter" size={20} color={colors.text.primary} />
+          <Ionicons name="filter" size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -268,7 +268,7 @@ const LeaderboardScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: "#131523",
   },
   header: {
     flexDirection: 'row',
@@ -280,13 +280,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   filterButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 20,
     marginBottom: 16,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     borderRadius: 12,
     padding: 4,
   },
@@ -305,15 +305,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeTab: {
-    backgroundColor: colors.ui.highlight,
+    backgroundColor: "#6674CC",
   },
   tabText: {
-    color: colors.text.secondary,
+    color: "#9DA3B4",
     fontSize: 14,
     fontWeight: '500',
   },
   activeTabText: {
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   periodContainer: {
     flexDirection: 'row',
@@ -325,36 +325,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
   },
   activePeriod: {
-    backgroundColor: colors.ui.highlight,
+    backgroundColor: "#6674CC",
   },
   periodText: {
-    color: colors.text.secondary,
+    color: "#9DA3B4",
     fontSize: 12,
     fontWeight: '500',
   },
   activePeriodText: {
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   list: {
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
   },
   rankedItem: {
     flexDirection: 'row',
-    backgroundColor: colors.background.secondary,
+    backgroundColor: "#1A1D2F",
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: colors.border.light,
   },
   currentUserItem: {
-    borderColor: colors.ui.highlight,
+    borderColor: "#6674CC",
     borderWidth: 2,
   },
   rankSection: {
@@ -389,14 +387,14 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   currentUserName: {
-    color: colors.ui.highlight,
+    color: "#6674CC",
   },
   members: {
     fontSize: 12,
-    color: colors.text.secondary,
+    color: "#9DA3B4",
   },
   statsContainer: {
     flexDirection: 'row',
@@ -408,11 +406,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: "#FFFFFF",
   },
   statLabel: {
     fontSize: 10,
-    color: colors.text.secondary,
+    color: "#9DA3B4",
     marginTop: 2,
   },
 });
