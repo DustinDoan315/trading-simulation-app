@@ -10,9 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { navigateToCryptoChart } from "@/utils/navigation";
 
-type RouteName = "index" | "portfolio" | "wallet" | "chart" | "collections" | "leaderboard" | "profile";
+type RouteName =
+  | "index"
+  | "portfolio"
+  | "collections"
+  | "leaderboard"
+  | "profile";
 
 type IconMapping = {
   [key in RouteName]: {
@@ -26,17 +30,9 @@ const ICON_MAP: IconMapping = {
     inactive: "home-outline",
     active: "home",
   },
-  wallet: {
-    inactive: "wallet-outline",
-    active: "wallet",
-  },
   portfolio: {
     inactive: "pie-chart-outline",
     active: "pie-chart",
-  },
-  chart: {
-    inactive: "repeat-outline",
-    active: "repeat",
   },
   collections: {
     inactive: "people-outline",
@@ -60,7 +56,6 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   state.routes.forEach((route: any) => {
     if (
       route.name === "index" ||
-      route.name === "chart" ||
       route.name === "portfolio" ||
       route.name === "collections" ||
       route.name === "leaderboard" ||
@@ -71,15 +66,17 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   });
 
   orderedRoutes.sort((a, b) => {
-    const order: RouteName[] = ["index", "chart", "portfolio", "collections", "leaderboard", "profile"];
+    const order: RouteName[] = [
+      "index",
+      "portfolio",
+      "collections",
+      "leaderboard",
+      "profile",
+    ];
     return (
       order.indexOf(a.name as RouteName) - order.indexOf(b.name as RouteName)
     );
   });
-
-  const navigateToChart = () => {
-    navigateToCryptoChart();
-  };
 
   return (
     <View style={[styles.container, { paddingBottom: 10 }]}>
@@ -94,8 +91,6 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
         const icons = ICON_MAP[route.name as RouteName];
         const iconName = isActive ? icons.active : icons.inactive;
 
-        const isCenter = index === 1;
-
         const onPress = () => {
           const event = navigation.emit({
             type: "tabPress",
@@ -107,29 +102,6 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
             navigation.navigate(route.name);
           }
         };
-
-        if (isCenter) {
-          return (
-            <View key={route.key} style={styles.centerButtonContainer}>
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityState={isActive ? { selected: true } : {}}
-                accessibilityLabel={label}
-                onPress={navigateToChart}
-                // onPress={onPress}
-                style={[
-                  styles.centerButton,
-                  isActive && styles.activeCenterButton,
-                ]}>
-                <Ionicons
-                  name={iconName}
-                  size={24}
-                  color={isActive ? "#FFFFFF" : "#000"}
-                />
-              </TouchableOpacity>
-            </View>
-          );
-        }
 
         return (
           <TouchableOpacity
@@ -162,13 +134,6 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-        }}
-      />
-
-      <Tabs.Screen
-        name="chart"
-        options={{
-          title: "Trading",
         }}
       />
 

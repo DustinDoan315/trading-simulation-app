@@ -83,4 +83,29 @@ export const styles = StyleSheet.create({
     color: "#8F95B2",
     fontSize: 14,
   },
+  // User stats styles
+  userStatsContainer: {
+    backgroundColor: "#1A1D2F",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+  },
+  statRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  statItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#9DA3B4",
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
 });

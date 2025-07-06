@@ -1,46 +1,88 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-  useEffect,
-} from "react";
-import UserRepository from "@/services/UserRepository";
-
-interface User {
-  uuid: string;
-  balance: string;
-  createdAt: Date;
-}
+import {
+  clearUser,
+  fetchFavorites,
+  fetchPortfolio,
+  fetchTransactions,
+  fetchUser,
+  fetchUserSettings,
+  fetchUserStats,
+} from "@/features/userSlice";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { User } from "@/types/database";
+import React, { ReactNode, createContext, useContext, useEffect } from "react";
 
 interface UserContextType {
   user: User | null;
-  setUser: (user: User | null) => void;
-  refreshUser: () => Promise<void>;
+  userStats: any;
+  portfolio: any[];
+  transactions: any[];
+  favorites: any[];
+  userSettings: any;
+  loading: boolean;
+  error: string | null;
+  refreshUser: (userId: string) => Promise<void>;
+  refreshUserData: (userId: string) => Promise<void>;
+  logout: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const dispatch = useAppDispatch();
+  const {
+    currentUser: user,
+    userStats,
+    portfolio,
+    transactions,
+    favorites,
+    userSettings,
+    loading,
+    error,
+  } = useAppSelector((state) => state.user);
 
-  const refreshUser = async () => {
+  const refreshUser = async (userId: string) => {
     try {
-      const userRepo = new UserRepository();
-      const userData = await userRepo.getCurrentUser();
-      setUser(userData || null);
+      await dispatch(fetchUser(userId)).unwrap();
     } catch (error) {
-      console.error("Failed to refresh user data:", error);
-      setUser(null);
+      console.error("Failed to refresh user:", error);
     }
   };
 
-  useEffect(() => {
-    refreshUser();
-  }, []);
+  const refreshUserData = async (userId: string) => {
+    try {
+      // Fetch all user-related data in parallel
+      await Promise.all([
+        dispatch(fetchUser(userId)),
+        dispatch(fetchUserStats(userId)),
+        dispatch(fetchPortfolio(userId)),
+        dispatch(fetchTransactions({ userId, limit: 50 })),
+        dispatch(fetchFavorites(userId)),
+        dispatch(fetchUserSettings(userId)),
+      ]);
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+    }
+  };
+
+  const logout = () => {
+    dispatch(clearUser());
+  };
 
   return (
-    <UserContext.Provider value={{ user, setUser, refreshUser }}>
+    <UserContext.Provider
+      value={{
+        user,
+        userStats,
+        portfolio,
+        transactions,
+        favorites,
+        userSettings,
+        loading,
+        error,
+        refreshUser,
+        refreshUserData,
+        logout,
+      }}>
       {children}
     </UserContext.Provider>
   );

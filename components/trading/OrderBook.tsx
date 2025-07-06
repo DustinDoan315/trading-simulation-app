@@ -46,15 +46,28 @@ const OrderBookItem: React.FC<OrderBookItemProps> = ({
 
 const OrderBook: React.FC<OrderBookProps> = ({
   symbol = "BTC",
+  askOrders: propAskOrders,
+  bidOrders: propBidOrders,
+  currentPrice: propCurrentPrice,
+  webViewRef,
   onSelectPrice,
   maxVisibleOrders = 5,
   onTradeExecuted,
 }) => {
   const { t } = useLanguage();
-  const { askOrders, bidOrders, currentPrice } = useOrderBook(symbol);
+  const {
+    askOrders: hookAskOrders,
+    bidOrders: hookBidOrders,
+    currentPrice: hookCurrentPrice,
+  } = useOrderBook(symbol);
   const [baseCurrency] = symbol.split("/");
   const [isProcessing, setIsProcessing] = useState(false);
   const { user } = useUser();
+
+  // Use props if provided, otherwise use hook data
+  const askOrders = propAskOrders || hookAskOrders;
+  const bidOrders = propBidOrders || hookBidOrders;
+  const currentPrice = propCurrentPrice || hookCurrentPrice;
 
   const handlePriceSelect = (price: any) => {
     if (onSelectPrice) {
@@ -63,7 +76,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
   };
 
   const handleTrade = async (type: "BUY" | "SELL", price: number) => {
-    if (!user || !user.uuid) {
+    if (!user || !user.id) {
       Alert.alert(t("error.title"), t("error.notAuthenticated"));
       return;
     }

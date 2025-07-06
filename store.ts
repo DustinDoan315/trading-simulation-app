@@ -1,19 +1,28 @@
-import { configureStore } from "@reduxjs/toolkit";
-import { combineReducers } from "redux";
-import { useDispatch, useSelector } from "react-redux";
-import type { TypedUseSelectorHook } from "react-redux";
-import { persistStore, persistReducer } from "redux-persist";
-import storage from "@react-native-async-storage/async-storage";
+import balanceReducer from "@/features/balanceSlice";
 import cryptoPricesReducer from "@/features/cryptoPricesSlice";
 import favoritesReducer from "@/features/favoritesSlice";
-import balanceReducer from "@/features/balanceSlice";
-import searchHistoryReducer from "@/features/searchHistorySlice";
 import languageReducer from "@/features/languageSlice";
+import searchHistoryReducer from "@/features/searchHistorySlice";
+import storage from "@react-native-async-storage/async-storage";
+import userReducer from "@/features/userSlice";
+import { combineReducers } from "redux";
+import { configureStore } from "@reduxjs/toolkit";
+import { persistReducer, persistStore } from "redux-persist";
+import { useDispatch, useSelector } from "react-redux";
+
+import type { TypedUseSelectorHook } from "react-redux";
 
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["favorites", "searchHistory", "balance", "cryptoPrices", "language"],
+  whitelist: [
+    "favorites",
+    "searchHistory",
+    "balance",
+    "cryptoPrices",
+    "language",
+    "user",
+  ],
 };
 
 const rootReducer = combineReducers({
@@ -22,6 +31,7 @@ const rootReducer = combineReducers({
   balance: balanceReducer,
   searchHistory: searchHistoryReducer,
   language: languageReducer,
+  user: userReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

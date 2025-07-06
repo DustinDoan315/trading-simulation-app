@@ -8,6 +8,7 @@ import TimeframeSelector from "@/components/crypto/TimeframeSelector";
 import useCryptoAPI from "@/hooks/useCryptoAPI";
 import useHistoricalData from "@/hooks/useHistoricalData";
 import useOrderBook from "@/hooks/useOrderBook";
+import UUIDService from "@/services/UUIDService";
 import { addTradeHistory, updateHolding } from "@/features/balanceSlice";
 import { ChartType, Order, TimeframeOption } from "../../types/crypto";
 import { RootState } from "@/store";
@@ -15,6 +16,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLanguage } from "@/context/LanguageContext";
 import { useLocalSearchParams } from "expo-router";
 import { useNotification } from "@/components/ui/Notification";
+import { UserService } from "@/services/UserService";
 import { WebView } from "react-native-webview";
 import {
   OrderDispatchContext,
@@ -146,6 +148,9 @@ const CryptoChartScreen = () => {
           chartType={chartType}
           title={`${symbol} ${t("chart.title")}`}
           seriesName={symbol}
+          data={[]}
+          symbol={symbol}
+          timeframe={timeframe}
         />
 
         {/* Order Book and Entry Components */}
@@ -155,7 +160,7 @@ const CryptoChartScreen = () => {
             name={name}
             orderType={orderType}
             currentPrice={currentPrice ? Number(currentPrice) : undefined}
-            onSubmitOrder={(order) => {
+            onSubmitOrder={async (order) => {
               const validationContext: OrderValidationContext = {
                 getHoldings: () => balance.holdings,
               };
@@ -163,6 +168,35 @@ const CryptoChartScreen = () => {
               const dispatchContext: OrderDispatchContext = {
                 addTradeHistory: (order) => dispatch(addTradeHistory(order)),
                 updateHolding: (payload) => dispatch(updateHolding(payload)),
+                syncTransaction: async (order) => {
+                  try {
+                    const uuid = await UUIDService.getOrCreateUser();
+                    await UserService.createTransaction({
+                      user_id: uuid,
+                      type: order.type.toUpperCase() as "BUY" | "SELL",
+                      symbol: order.symbol,
+                      quantity: (order.amount || 0).toString(),
+                      price: (order.price || 0).toString(),
+                      total_value: (order.total || 0).toString(),
+                      fee: (order.fees || 0).toString(),
+                      order_type: order.orderType.toUpperCase() as
+                        | "MARKET"
+                        | "LIMIT",
+                      status: order.status.toUpperCase() as
+                        | "PENDING"
+                        | "COMPLETED"
+                        | "FAILED",
+                      timestamp: new Date(order.timestamp).toISOString(),
+                    });
+                    console.log("✅ Transaction synced to cloud successfully");
+                  } catch (error) {
+                    console.error(
+                      "❌ Failed to sync transaction to cloud:",
+                      error
+                    );
+                    // Don't throw - local order succeeded, cloud sync can be retried later
+                  }
+                },
               };
 
               return handleOrderSubmission(

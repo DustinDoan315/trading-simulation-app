@@ -1,10 +1,9 @@
-import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AsyncStorageService } from './AsyncStorageService';
-import { getDeviceUUID } from '@/utils/deviceUtils';
-import { supabase } from './SupabaseService';
-import { TimestampUtils } from '@/utils/helper';
-
+import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AsyncStorageService } from "./AsyncStorageService";
+import { getDeviceUUID } from "@/utils/deviceUtils";
+import { supabase } from "./SupabaseService";
+import { TimestampUtils } from "@/utils/helper";
 
 // Enhanced UUIDService.ts
 
@@ -81,11 +80,19 @@ class UUIDService {
           // Check if user exists in Supabase
           const { data: existingUser, error } = await supabase
             .from("users")
-            .select("uuid")
-            .eq("uuid", uuid)
+            .select("id")
+            .eq("id", uuid)
             .single();
-          
-          if (error || !existingUser) {
+
+          if (error) {
+            // Handle the case where no user exists (PGRST116 error)
+            if (error.code === "PGRST116") {
+              console.log("User not found in Supabase, syncing...");
+              await this.syncUserToCloud(userProfile);
+            } else {
+              console.warn("Error checking user existence:", error);
+            }
+          } else if (!existingUser) {
             console.log("User not found in Supabase, syncing...");
             await this.syncUserToCloud(userProfile);
           }
@@ -114,7 +121,8 @@ class UUIDService {
       const { data, error } = await supabase
         .from("users")
         .upsert({
-          uuid: userProfile.uuid,
+          id: userProfile.uuid, // Use 'id' instead of 'uuid' to match schema
+          username: `user_${userProfile.uuid.slice(0, 8)}`, // Generate a username
           balance: userProfile.balance,
           created_at: createdAt,
         })
@@ -167,13 +175,23 @@ class UUIDService {
       // Check if user exists in Supabase
       const { data: existingUser, error } = await supabase
         .from("users")
-        .select("uuid")
-        .eq("uuid", uuid)
+        .select("id")
+        .eq("id", uuid)
         .single();
 
-      if (error || !existingUser) {
+      if (error) {
+        // Handle the case where no user exists (PGRST116 error)
+        if (error.code === "PGRST116") {
+          console.log("User not found in Supabase, creating...");
+        } else {
+          console.error("Error checking user existence:", error);
+          return false;
+        }
+      }
+
+      if (!existingUser) {
         console.log("User not found in Supabase, creating...");
-        
+
         // Get user profile from local storage
         const userProfileStr = await AsyncStorage.getItem(USER_PROFILE_KEY);
         if (userProfileStr) {
@@ -192,7 +210,7 @@ class UUIDService {
           return syncResult.success;
         }
       }
-      
+
       return true; // User exists
     } catch (error) {
       console.error("Failed to ensure user in Supabase:", error);

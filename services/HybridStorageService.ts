@@ -65,7 +65,10 @@ export class HybridStorageService {
     // Save locally first for immediate UI updates
     await AsyncStorageService.addTransaction({
       ...transaction,
-      timestamp: transaction.timestamp || Date.now(),
+      timestamp:
+        typeof transaction.timestamp === "string"
+          ? Date.parse(transaction.timestamp)
+          : transaction.timestamp || Date.now(),
     });
 
     // Queue for cloud sync
@@ -159,14 +162,17 @@ export class HybridStorageService {
       const transactionData = item.data as CreateTransactionParams;
       await AsyncStorageService.addTransaction({
         ...transactionData,
-        timestamp: transactionData.timestamp || Date.now(),
+        timestamp:
+          typeof transactionData.timestamp === "string"
+            ? Date.parse(transactionData.timestamp)
+            : transactionData.timestamp || Date.now(),
       });
     } else if (item.type === "user") {
       const userData = item.data as CreateUserParams;
       await AsyncStorageService.createOrUpdateUser({
-        uuid: userData.uuid,
+        uuid: userData.username, // Use username as uuid for local storage
         balance: userData.balance || "100000",
-        createdAt: userData.created_at || Date.now(),
+        createdAt: Date.now(),
       });
     }
   }
@@ -175,11 +181,19 @@ export class HybridStorageService {
     try {
       // Implementation depends on your data model
       // This is a placeholder - adjust based on your actual version tracking
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from(item.type === "transaction" ? "transactions" : "users")
         .select("version")
         .eq("id", (item.data as any).id)
         .single();
+
+      if (error) {
+        // Handle the case where no record exists (PGRST116 error)
+        if (error.code === "PGRST116") {
+          return null;
+        }
+        throw error;
+      }
 
       return data?.version || null;
     } catch {

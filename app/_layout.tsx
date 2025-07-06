@@ -1,22 +1,21 @@
 import * as SplashScreen from "expo-splash-screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import scheduler from "@/utils/scheduler";
 import Toast from "react-native-toast-message";
-import UUIDService from "@/services/UUIDService";
-import { initializeUserProfile } from "@/services/UUIDService";
+import { createUser, fetchUser } from "@/features/userSlice";
 import { LanguageProvider } from "@/context/LanguageContext";
-import { loadBalance } from "@/features/balanceSlice";
 import { NotificationProvider } from "@/components/ui/Notification";
 import { Provider } from "react-redux";
 import { SafeAreaView } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { store } from "../store";
-import { SyncService } from "@/services/SupabaseService";
 import { updateDailyBalance } from "@/utils/balanceUpdater";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect } from "react";
 import { useFonts } from "expo-font";
 import { UserProvider } from "@/context/UserContext";
+import { UserService } from "@/services/UserService";
 import "react-native-reanimated";
 
 import {
@@ -41,46 +40,8 @@ export default function RootLayout() {
         // Initialize daily balance update at midnight UTC
         scheduler.addDailyTask("daily-balance-update", updateDailyBalance, 0);
 
-        // Ensure user exists in both local storage and Supabase
-        await initializeUserProfile();
-
-        // Get user UUID for sync operations
-        const uuid = await UUIDService.getOrCreateUser();
-
-        // Note: Portfolio clearing is no longer needed with MERGE strategy
-        // The sync will now preserve existing cloud data and only update what's changed
-
-        // Sync from cloud to get latest data
-        try {
-          console.log("🔄 Syncing data from cloud...");
-          const syncResult = await SyncService.syncFromCloud(uuid);
-          if (syncResult.success) {
-            console.log("✅ Successfully synced data from cloud");
-          } else {
-            console.warn("⚠️ Cloud sync failed:", syncResult.error);
-          }
-        } catch (error) {
-          console.error("❌ Error during cloud sync:", error);
-        }
-
-        // Process any offline queue operations
-        try {
-          console.log("🔄 Processing offline queue...");
-          const queueResult = await SyncService.processOfflineQueue();
-          if (queueResult.success) {
-            console.log("✅ Successfully processed offline queue");
-          } else {
-            console.warn(
-              "⚠️ Offline queue processing failed:",
-              queueResult.error
-            );
-          }
-        } catch (error) {
-          console.error("❌ Error processing offline queue:", error);
-        }
-
-        // Load user balance from AsyncStorage (now with synced data)
-        store.dispatch(loadBalance());
+        // Check if user exists and initialize if needed
+        await initializeUser();
 
         return () => {
           scheduler.clear();
@@ -89,6 +50,63 @@ export default function RootLayout() {
     };
     initializeApp();
   }, [loaded]);
+
+  const initializeUser = async () => {
+    try {
+      // Use UUIDService to get or create user
+      const { default: UUIDService } = await import("@/services/UUIDService");
+      const userId = await UUIDService.getOrCreateUser();
+
+      console.log("🔄 Initializing user with ID:", userId);
+
+      // Store the user ID for Redux compatibility
+      await AsyncStorage.setItem("@user_id", userId);
+
+      // Try to fetch user data from Redux store
+      try {
+        await store.dispatch(fetchUser(userId)).unwrap();
+        console.log("✅ User data loaded successfully from Redux");
+      } catch (error) {
+        console.warn(
+          "⚠️ Failed to load user from Redux, user may not exist in database yet:",
+          error
+        );
+        // This is okay - the user exists in UUIDService but may not be in the Redux database yet
+        // The app can still function with the UUIDService user
+      }
+    } catch (error) {
+      console.error("❌ Error initializing user:", error);
+    }
+  };
+
+  const generateUsername = () => {
+    const adjectives = [
+      "Crypto",
+      "Trading",
+      "Digital",
+      "Smart",
+      "Pro",
+      "Elite",
+      "Master",
+      "Legend",
+    ];
+    const nouns = [
+      "Trader",
+      "Investor",
+      "Hodler",
+      "Whale",
+      "Shark",
+      "Guru",
+      "Ninja",
+      "Wizard",
+    ];
+    const randomNum = Math.floor(Math.random() * 1000);
+
+    const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+
+    return `${adjective}${noun}${randomNum}`;
+  };
 
   if (!loaded) {
     return null;

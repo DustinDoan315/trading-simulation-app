@@ -1,4 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import UserRepository from "./UserRepository";
+import UUIDService from "./UUIDService";
+import { AppDispatch } from "../store";
+import { log } from "console";
+import { resetBalance, setBalance } from "../features/balanceSlice";
+
 /**
  * Functional service for interacting with cryptocurrency APIs and blockchain data
  * Designed for React Native + Web3 integration
@@ -287,13 +293,6 @@ export const getCoinMarketData = async (id: string): Promise<any> => {
   }
 };
 
-import { AppDispatch } from "../store";
-import { setBalance, resetBalance } from "../features/balanceSlice";
-import { log } from "console";
-
-import UserRepository from "./UserRepository";
-import UUIDService from "./UUIDService";
-
 /**
  * Get user's cryptocurrency holdings and balance
  *
@@ -493,11 +492,11 @@ export const prepareForBlockchain = (balance: UserBalance): any => {
   // This is a placeholder for actual blockchain integration
   // In a real app, you'd use ethers.js or web3.js to format data for transactions
   return {
-    totalValue: balance.totalInUSD.toString(),
+    totalValue: (balance.totalInUSD || 0).toString(),
     tokens: Object.entries(balance.holdings).map(([id, data]) => ({
       id,
-      amount: data.amount.toString(),
-      value: data.valueInUSD.toString(),
+      amount: (data.amount || 0).toString(),
+      value: (data.valueInUSD || 0).toString(),
     })),
   };
 };

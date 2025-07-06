@@ -1,8 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import UUIDService from './UUIDService';
-import { AsyncStorageService } from './AsyncStorageService';
-import { supabase } from './SupabaseService';
-;
+import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import UUIDService from "./UUIDService";
+import { AsyncStorageService } from "./AsyncStorageService";
+import { clearUser } from "@/features/userSlice";
+import { getDeviceUUID } from "@/utils/deviceUtils";
+import { store } from "@/store";
+import { supabase } from "./SupabaseService";
 
 export interface ResetResult {
   success: boolean;
@@ -12,10 +15,201 @@ export interface ResetResult {
     cloudData: boolean;
     database: boolean;
     userProfile: boolean;
+    newUserCreated: boolean;
   };
 }
 
 export class ResetService {
+  /**
+   * Complete app reset - clears all data and creates a new user with fresh UUID
+   * This is the most comprehensive reset that creates a completely new user
+   */
+  static async resetAppAndCreateNewUser(): Promise<ResetResult> {
+    const result: ResetResult = {
+      success: true,
+      details: {
+        localStorage: false,
+        cloudData: false,
+        database: false,
+        userProfile: false,
+        newUserCreated: false,
+      },
+    };
+
+    try {
+      console.log("🔄 Starting complete app reset and new user creation...");
+
+      // Step 1: Get current UUID before clearing everything
+      const currentUuid = await SecureStore.getItemAsync("user_uuid_12");
+
+      // Step 2: Clear all local storage and cache
+      try {
+        await this.clearAllStorageAndCache();
+        result.details.localStorage = true;
+        console.log("✅ All local storage and cache cleared");
+      } catch (error) {
+        console.error("❌ Failed to clear local storage:", error);
+        result.success = false;
+        result.error = `Local storage reset failed: ${error}`;
+      }
+
+      // Step 2.5: Clear Redux state
+      try {
+        store.dispatch(clearUser());
+        console.log("✅ Redux state cleared");
+      } catch (error) {
+        console.error("❌ Failed to clear Redux state:", error);
+        // Don't fail the entire reset if Redux fails
+      }
+
+      // Step 3: Clear cloud data for the old user (if exists)
+      if (currentUuid) {
+        try {
+          await this.clearCloudData(currentUuid);
+          result.details.cloudData = true;
+          console.log("✅ Cloud data cleared for old user");
+        } catch (error) {
+          console.error("❌ Failed to clear cloud data:", error);
+          // Don't fail the entire reset if cloud fails
+          console.warn(
+            "⚠️ Cloud reset failed, but continuing with new user creation"
+          );
+        }
+      }
+
+      // Step 4: Generate new UUID and create fresh user
+      try {
+        const newUuid = await this.createNewUser();
+        result.details.newUserCreated = true;
+        result.details.userProfile = true;
+        console.log("✅ New user created with UUID:", newUuid);
+
+        // Track the reset timestamp
+        await AsyncStorage.setItem("last_app_reset", new Date().toISOString());
+      } catch (error) {
+        console.error("❌ Failed to create new user:", error);
+        result.success = false;
+        result.error = `New user creation failed: ${error}`;
+      }
+
+      console.log("✅ Complete app reset and new user creation completed");
+      return result;
+    } catch (error) {
+      console.error("❌ Complete app reset failed:", error);
+      return {
+        success: false,
+        error: `Complete reset failed: ${error}`,
+        details: result.details,
+      };
+    }
+  }
+
+  /**
+   * Clear all storage including SecureStore and AsyncStorage
+   */
+  private static async clearAllStorageAndCache(): Promise<void> {
+    try {
+      // Clear SecureStore (UUID storage)
+      await SecureStore.deleteItemAsync("user_uuid_12");
+
+      // Clear all AsyncStorage data
+      await AsyncStorageService.clearAllData();
+
+      // Clear additional AsyncStorage keys that might exist
+      const additionalKeys = [
+        "@user_id", // Clear the user ID that app initialization looks for
+        "user_balance",
+        "last_sync",
+        "sync_status",
+        "offline_queue",
+        "crypto_cache",
+        "market_data_cache",
+        "user_profile",
+        "portfolio_cache",
+        "transaction_cache",
+        "favorites_cache",
+        "search_history_cache",
+        "language_preference",
+        "theme_preference",
+        "notification_settings",
+        "app_settings",
+        "@sync_queue",
+        "@sync_status",
+      ];
+
+      await AsyncStorage.multiRemove(additionalKeys);
+      console.log("✅ All storage (SecureStore + AsyncStorage) cleared");
+    } catch (error) {
+      console.error("❌ Error clearing all storage:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a completely new user with fresh UUID
+   */
+  private static async createNewUser(): Promise<string> {
+    try {
+      // Generate new UUID
+      const newUuid = await getDeviceUUID();
+
+      // Store new UUID in SecureStore
+      await SecureStore.setItemAsync("user_uuid_12", newUuid);
+
+      // Create new user profile
+      const userProfile = {
+        uuid: newUuid,
+        balance: "100000",
+        createdAt: new Date().toISOString(),
+        lastSyncAt: null,
+      };
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem("user_profile", JSON.stringify(userProfile));
+
+      // Save to local database
+      await AsyncStorageService.createOrUpdateUser({
+        uuid: newUuid,
+        balance: userProfile.balance,
+        createdAt: Math.floor(new Date().getTime() / 1000),
+      });
+
+      // Sync to cloud with retry logic
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          console.log("Syncing new user to cloud:", userProfile);
+          const syncResult = await UUIDService.syncUserToCloud(userProfile);
+          if (syncResult.success) {
+            console.log("✅ New user successfully synced to cloud");
+            break;
+          } else {
+            throw new Error(syncResult.error);
+          }
+        } catch (error) {
+          retries--;
+          console.error(`New user sync attempt ${4 - retries} failed:`, error);
+          if (retries === 0) {
+            console.error(
+              "Failed to sync new user to cloud after 3 attempts:",
+              error
+            );
+            // Don't throw here - user can still use the app locally
+          } else {
+            await new Promise((resolve) =>
+              setTimeout(resolve, 1000 * (4 - retries))
+            );
+          }
+        }
+      }
+
+      return newUuid;
+    } catch (error) {
+      console.error("❌ Error creating new user:", error);
+      throw error;
+    }
+  }
+
   /**
    * Comprehensive reset that clears all user data from local storage, cloud, and database
    */
@@ -27,6 +221,7 @@ export class ResetService {
         cloudData: false,
         database: false,
         userProfile: false,
+        newUserCreated: false,
       },
     };
 
@@ -57,7 +252,6 @@ export class ResetService {
         // Don't fail the entire reset if cloud fails
         console.warn("⚠️ Cloud reset failed, but continuing with local reset");
       }
-
 
       // Step 4: Reset user profile to default
       try {
@@ -124,60 +318,66 @@ export class ResetService {
     try {
       console.log("🗑️ Clearing cloud data for user:", uuid);
 
-      // Clear portfolio data
-      const { error: portfolioError } = await supabase
-        .from("portfolios")
-        .delete()
-        .eq("user_id", uuid);
+      // Try to clear portfolio data (table might not exist)
+      try {
+        const { error: portfolioError } = await supabase
+          .from("portfolio")
+          .delete()
+          .eq("user_id", uuid);
 
-      if (portfolioError) {
-        console.error("❌ Failed to clear portfolio:", portfolioError);
-        throw new Error(`Portfolio clear failed: ${portfolioError.message}`);
+        if (portfolioError) {
+          console.error("❌ Failed to clear portfolio:", portfolioError);
+          console.warn("⚠️ Portfolio clear failed, but continuing");
+        } else {
+          console.log("✅ Portfolio data cleared");
+        }
+      } catch (portfolioError) {
+        console.warn("⚠️ Portfolio table might not exist, skipping...");
       }
 
-      // Clear transaction history
-      const { error: transactionError } = await supabase
-        .from("transactions")
-        .delete()
-        .eq("user_id", uuid);
+      // Try to clear transaction history (table might not exist)
+      try {
+        const { error: transactionError } = await supabase
+          .from("transactions")
+          .delete()
+          .eq("user_id", uuid);
 
-      if (transactionError) {
-        console.error("❌ Failed to clear transactions:", transactionError);
-        // Don't throw here as this table might not exist
-        console.warn("⚠️ Transaction clear failed, but continuing");
+        if (transactionError) {
+          console.error("❌ Failed to clear transactions:", transactionError);
+          console.warn("⚠️ Transaction clear failed, but continuing");
+        } else {
+          console.log("✅ Transaction data cleared");
+        }
+      } catch (transactionError) {
+        console.warn("⚠️ Transactions table might not exist, skipping...");
       }
 
-      // Clear portfolio list data
-      const { error: portfolioListError } = await supabase
-        .from("portfolios")
-        .delete()
-        .eq("user_id", uuid);
+      // Try to reset user balance to default
+      try {
+        const { error: userError } = await supabase
+          .from("users")
+          .update({ balance: "100000" })
+          .eq("id", uuid);
 
-      if (portfolioListError) {
-        console.error("❌ Failed to clear portfolio list:", portfolioListError);
-        // Don't throw here as this table might not exist
-        console.warn("⚠️ Portfolio list clear failed, but continuing");
-      }
-
-      // Reset user balance to default
-      const { error: userError } = await supabase
-        .from("users")
-        .update({ balance: "100000" })
-        .eq("uuid", uuid);
-
-      if (userError) {
-        console.error("❌ Failed to reset user balance:", userError);
-        throw new Error(`User balance reset failed: ${userError.message}`);
+        if (userError) {
+          console.error("❌ Failed to reset user balance:", userError);
+          console.warn("⚠️ User balance reset failed, but continuing");
+        } else {
+          console.log("✅ User balance reset to default");
+        }
+      } catch (userError) {
+        console.warn("⚠️ Users table might not exist, skipping...");
       }
 
       console.log("✅ Cloud data cleared successfully");
     } catch (error) {
       console.error("❌ Error clearing cloud data:", error);
-      throw error;
+      // Don't throw here - let the reset continue even if cloud operations fail
+      console.warn(
+        "⚠️ Cloud operations failed, but continuing with local reset"
+      );
     }
   }
-
-
 
   /**
    * Reset user profile to default values
@@ -193,7 +393,10 @@ export class ResetService {
       };
 
       // Save to AsyncStorage
-      await AsyncStorage.setItem("user_profile", JSON.stringify(defaultProfile));
+      await AsyncStorage.setItem(
+        "user_profile",
+        JSON.stringify(defaultProfile)
+      );
 
       // Save to local database
       try {
@@ -209,14 +412,12 @@ export class ResetService {
 
       // Sync to cloud
       try {
-        const { error } = await supabase
-          .from("users")
-          .upsert({
-            uuid,
-            balance: "100000",
-            created_at: new Date().toISOString(),
-          })
-          .single();
+        const { error } = await supabase.from("users").upsert({
+          id: uuid,
+          username: `user_${uuid.slice(0, 8)}`,
+          balance: "100000",
+          created_at: new Date().toISOString(),
+        });
 
         if (error) {
           console.error("❌ Failed to sync user profile to cloud:", error);
@@ -245,6 +446,7 @@ export class ResetService {
         cloudData: false,
         database: false,
         userProfile: false,
+        newUserCreated: false,
       },
     };
 
@@ -256,15 +458,22 @@ export class ResetService {
       result.details.localStorage = true;
 
       // Clear portfolio from cloud
-      const { error } = await supabase
-        .from("portfolios")
-        .delete()
-        .eq("user_id", uuid);
+      try {
+        const { error } = await supabase
+          .from("portfolio")
+          .delete()
+          .eq("user_id", uuid);
 
-      if (error) {
-        console.error("❌ Failed to clear cloud portfolio:", error);
-      } else {
-        result.details.cloudData = true;
+        if (error) {
+          console.error("❌ Failed to clear cloud portfolio:", error);
+        } else {
+          result.details.cloudData = true;
+          console.log("✅ Cloud portfolio cleared");
+        }
+      } catch (error) {
+        console.warn(
+          "⚠️ Portfolio table might not exist, skipping cloud clear"
+        );
       }
 
       return result;
@@ -288,6 +497,7 @@ export class ResetService {
         cloudData: false,
         database: false,
         userProfile: false,
+        newUserCreated: false,
       },
     };
 
@@ -299,15 +509,22 @@ export class ResetService {
       result.details.localStorage = true;
 
       // Clear transactions from cloud
-      const { error } = await supabase
-        .from("trade_history")
-        .delete()
-        .eq("user_id", uuid);
+      try {
+        const { error } = await supabase
+          .from("transactions")
+          .delete()
+          .eq("user_id", uuid);
 
-      if (error) {
-        console.error("❌ Failed to clear cloud transactions:", error);
-      } else {
-        result.details.cloudData = true;
+        if (error) {
+          console.error("❌ Failed to clear cloud transactions:", error);
+        } else {
+          result.details.cloudData = true;
+          console.log("✅ Cloud transactions cleared");
+        }
+      } catch (error) {
+        console.warn(
+          "⚠️ Transactions table might not exist, skipping cloud clear"
+        );
       }
 
       return result;
@@ -319,4 +536,4 @@ export class ResetService {
       };
     }
   }
-} 
+}

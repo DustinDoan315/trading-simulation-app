@@ -22,11 +22,11 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-interface BalanceCardProps extends BaseBalanceCardProps {
-  balance: string;
-  changePercentage: number;
-  changeValue: string;
-  progress: number;
+interface BalanceCardProps {
+  balance?: string;
+  changePercentage?: number;
+  changeValue?: string;
+  progress?: number;
   assets?: Asset[];
   onResetBalance?: () => void;
 }
@@ -392,7 +392,7 @@ const BalanceCard = ({
     [activeSegment]
   );
 
-  const isPositive = changePercentage >= 0;
+  const isPositive = (changePercentage || 0) >= 0;
 
   return (
     <Animated.View

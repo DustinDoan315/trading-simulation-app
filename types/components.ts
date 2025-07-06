@@ -96,6 +96,10 @@ export interface OrderBookItemProps {
 // Order book props
 export interface OrderBookProps {
   symbol?: string;
+  askOrders?: Array<{ price: string; amount: string }>;
+  bidOrders?: Array<{ price: string; amount: string }>;
+  currentPrice?: string | null;
+  webViewRef?: React.RefObject<any>;
   onSelectPrice?: (price: number) => void;
   maxVisibleOrders?: number;
   onTradeExecuted?: () => void;
@@ -130,11 +134,17 @@ export interface PortfolioItemProps {
 
 // Balance card props
 export interface BalanceCardProps {
-  totalBalance: string;
-  totalProfitLoss: string;
-  totalProfitLossPercent: string;
+  balance?: string;
+  changePercentage?: number;
+  changeValue?: string;
+  progress?: number;
+  assets?: any[];
+  totalBalance?: string;
+  totalProfitLoss?: string;
+  totalProfitLossPercent?: string;
   onRefresh?: () => void;
   loading?: boolean;
+  onResetBalance?: () => void;
 }
 
 // Header props

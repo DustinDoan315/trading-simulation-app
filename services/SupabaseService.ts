@@ -1,10 +1,9 @@
-import { SupabaseClient, createClient } from '@supabase/supabase-js';
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AsyncStorageService } from './AsyncStorageService';
-import Constants from 'expo-constants';
-import NetInfo from '@react-native-community/netinfo';
-import UUIDService from './UUIDService';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import NetInfo from "@react-native-community/netinfo";
+import UUIDService from "./UUIDService";
+import { AsyncStorageService } from "./AsyncStorageService";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 //SupabaseService.ts
 
@@ -139,6 +138,15 @@ class NetworkUtils {
     return false;
   }
 }
+
+// Utility function to handle PGRST116 errors (no rows returned)
+export const handleSupabaseError = (error: any, context: string): any => {
+  if (error?.code === "PGRST116") {
+    console.log(`${context}: No rows found (PGRST116)`);
+    return null;
+  }
+  throw error;
+};
 
 // Offline queue management
 class OfflineQueue {
@@ -436,7 +444,7 @@ export class SyncService {
       const result = await this.executeWithRetry(async () => {
         // Get cloud data with proper error handling
         const { data: cloudPortfolio, error } = await supabase
-          .from("portfolios")
+          .from("portfolio")
           .select("*")
           .eq("user_id", uuid);
 
@@ -485,6 +493,10 @@ export class SyncService {
       symbol: string;
       quantity: string;
       avg_cost: string;
+      current_price?: string;
+      total_value?: string;
+      profit_loss?: string;
+      profit_loss_percent?: string;
       image?: string | null;
     }>
   ): Promise<void> {
@@ -493,8 +505,12 @@ export class SyncService {
     // Ensure user exists in Supabase before syncing portfolio
     const userExists = await UUIDService.ensureUserInSupabase(uuid);
     if (!userExists) {
-      console.error("❌ Cannot sync portfolio: user does not exist in Supabase");
-      throw new Error("User does not exist in Supabase. Please ensure user is created first.");
+      console.error(
+        "❌ Cannot sync portfolio: user does not exist in Supabase"
+      );
+      throw new Error(
+        "User does not exist in Supabase. Please ensure user is created first."
+      );
     }
 
     console.log("🔄 Starting portfolio sync with MERGE strategy...");
@@ -502,16 +518,21 @@ export class SyncService {
 
     // Step 1: Get existing portfolio from cloud
     const { data: existingPortfolio, error: fetchError } = await supabase
-      .from("portfolios")
+      .from("portfolio")
       .select("*")
       .eq("user_id", uuid);
 
     if (fetchError) {
       console.error("❌ Failed to fetch existing portfolio:", fetchError);
-      throw new Error(`Failed to fetch existing portfolio: ${fetchError.message}`);
+      throw new Error(
+        `Failed to fetch existing portfolio: ${fetchError.message}`
+      );
     }
 
-    console.log("☁️ Existing cloud portfolio items:", existingPortfolio?.length || 0);
+    console.log(
+      "☁️ Existing cloud portfolio items:",
+      existingPortfolio?.length || 0
+    );
 
     // Step 2: Create a map of existing portfolio for quick lookup
     const existingPortfolioMap = new Map<string, any>();
@@ -533,7 +554,11 @@ export class SyncService {
       symbol: string;
       quantity: string;
       avg_cost: string;
-      image: string | null;
+      current_price: string;
+      total_value: string;
+      profit_loss: string;
+      profit_loss_percent: string;
+      image_url: string | null;
       last_updated: string;
     }> = [];
     const symbolsToUpdate = new Set<string>();
@@ -546,10 +571,15 @@ export class SyncService {
 
       if (existingAsset) {
         // Asset exists - check if it needs updating
-        const needsUpdate = 
+        const needsUpdate =
           existingAsset.quantity !== asset.quantity ||
           existingAsset.avg_cost !== asset.avg_cost ||
-          existingAsset.image !== (asset.image || null);
+          existingAsset.current_price !== (asset.current_price || "0") ||
+          existingAsset.total_value !== (asset.total_value || "0") ||
+          existingAsset.profit_loss !== (asset.profit_loss || "0") ||
+          existingAsset.profit_loss_percent !==
+            (asset.profit_loss_percent || "0") ||
+          existingAsset.image_url !== (asset.image || null);
 
         if (needsUpdate) {
           operations.push({
@@ -557,7 +587,11 @@ export class SyncService {
             symbol: symbol,
             quantity: asset.quantity,
             avg_cost: asset.avg_cost,
-            image: asset.image || null,
+            current_price: asset.current_price || "0",
+            total_value: asset.total_value || "0",
+            profit_loss: asset.profit_loss || "0",
+            profit_loss_percent: asset.profit_loss_percent || "0",
+            image_url: asset.image || null,
             last_updated: new Date().toISOString(),
           });
           symbolsToUpdate.add(symbol);
@@ -572,7 +606,11 @@ export class SyncService {
           symbol: symbol,
           quantity: asset.quantity,
           avg_cost: asset.avg_cost,
-          image: asset.image || null,
+          current_price: asset.current_price || "0",
+          total_value: asset.total_value || "0",
+          profit_loss: asset.profit_loss || "0",
+          profit_loss_percent: asset.profit_loss_percent || "0",
+          image_url: asset.image || null,
           last_updated: new Date().toISOString(),
         });
         symbolsToInsert.add(symbol);
@@ -599,7 +637,7 @@ export class SyncService {
     // Step 6: Execute operations
     if (operations.length > 0) {
       const { data: upsertData, error: upsertError } = await supabase
-        .from("portfolios")
+        .from("portfolio")
         .upsert(operations, {
           onConflict: "user_id,symbol",
           ignoreDuplicates: false,
@@ -611,13 +649,15 @@ export class SyncService {
         throw new Error(`Portfolio sync failed: ${upsertError.message}`);
       }
 
-      console.log(`✅ Successfully upserted ${upsertData?.length || 0} portfolio items`);
+      console.log(
+        `✅ Successfully upserted ${upsertData?.length || 0} portfolio items`
+      );
     }
 
     // Step 7: Delete assets that are no longer in local portfolio
     if (symbolsToDelete.length > 0) {
       const { error: deleteError } = await supabase
-        .from("portfolios")
+        .from("portfolio")
         .delete()
         .eq("user_id", uuid)
         .in("symbol", symbolsToDelete);
@@ -626,12 +666,18 @@ export class SyncService {
         console.error("❌ Failed to delete removed assets:", deleteError);
         // Don't throw here - the main sync succeeded
       } else {
-        console.log(`✅ Successfully deleted ${symbolsToDelete.length} removed assets`);
+        console.log(
+          `✅ Successfully deleted ${symbolsToDelete.length} removed assets`
+        );
       }
     }
 
     console.log(`✅ Portfolio sync completed successfully:
-      - Total items in cloud: ${(existingPortfolio?.length || 0) + symbolsToInsert.size - symbolsToDelete.length}
+      - Total items in cloud: ${
+        (existingPortfolio?.length || 0) +
+        symbolsToInsert.size -
+        symbolsToDelete.length
+      }
       - Local items: ${portfolio.length}`);
   }
 
@@ -716,13 +762,15 @@ export class SyncService {
   // DEPRECATED: Clear existing portfolio data for a user
   // This method is deprecated as we now use MERGE strategy instead of clearing
   static async clearUserPortfolio(uuid: string): Promise<SyncResult> {
-    console.warn("⚠️ clearUserPortfolio is deprecated. Use MERGE strategy instead.");
-    
+    console.warn(
+      "⚠️ clearUserPortfolio is deprecated. Use MERGE strategy instead."
+    );
+
     try {
       console.log("🗑️ Clearing portfolio data for user:", uuid);
 
       const { error } = await supabase
-        .from("portfolios")
+        .from("portfolio")
         .delete()
         .eq("user_id", uuid);
 
@@ -943,7 +991,7 @@ export class SyncService {
       const { error } = await supabase
         .from("users")
         .update({ balance: newBalance.toString() })
-        .eq("uuid", uuid);
+        .eq("id", uuid);
 
       if (error) {
         throw new Error(

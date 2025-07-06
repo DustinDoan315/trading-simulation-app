@@ -1,7 +1,7 @@
-import UUIDService from './UUIDService';
-import { AsyncStorageService } from './AsyncStorageService';
-import { Holding } from '../types/crypto';
-import { SyncService } from './SupabaseService';
+import UUIDService from "./UUIDService";
+import { AsyncStorageService } from "./AsyncStorageService";
+import { Holding } from "../types/crypto";
+import { SyncService } from "./SupabaseService";
 
 // repositories/UserRepository.ts
 
@@ -124,9 +124,13 @@ class UserRepository {
         ([symbol, holding]) => ({
           user_id: uuid,
           symbol,
-          quantity: holding.amount.toString(),
-          avg_cost: holding.averageBuyPrice.toString(),
-          image: holding.image || undefined,
+          quantity: (holding.amount || 0).toString(),
+          avg_cost: (holding.averageBuyPrice || 0).toString(),
+          current_price: (holding.currentPrice || 0).toString(),
+          total_value: (holding.valueInUSD || 0).toString(),
+          profit_loss: (holding.profitLoss || 0).toString(),
+          profit_loss_percent: (holding.profitLossPercentage || 0).toString(),
+          image_url: holding.image || undefined,
         })
       );
 
@@ -143,8 +147,12 @@ class UserRepository {
         // Ensure user exists in Supabase before syncing portfolio
         const userExists = await UUIDService.ensureUserInSupabase(uuid);
         if (!userExists) {
-          console.error("❌ Cannot sync portfolio: user does not exist in Supabase");
-          console.error("❌ Portfolio sync will be retried when user is created");
+          console.error(
+            "❌ Cannot sync portfolio: user does not exist in Supabase"
+          );
+          console.error(
+            "❌ Portfolio sync will be retried when user is created"
+          );
           return; // Don't throw, just return and let the sync retry later
         }
 
@@ -152,8 +160,12 @@ class UserRepository {
         const portfolioArray = Object.entries(normalizedHoldings).map(
           ([symbol, holding]) => ({
             symbol,
-            quantity: holding.amount.toString(),
-            avg_cost: holding.averageBuyPrice.toString(),
+            quantity: (holding.amount || 0).toString(),
+            avg_cost: (holding.averageBuyPrice || 0).toString(),
+            current_price: (holding.currentPrice || 0).toString(),
+            total_value: (holding.valueInUSD || 0).toString(),
+            profit_loss: (holding.profitLoss || 0).toString(),
+            profit_loss_percent: (holding.profitLossPercentage || 0).toString(),
             image: holding.image || null,
           })
         );
@@ -218,8 +230,14 @@ class UserRepository {
           const portfolioArray = Object.entries(holdings).map(
             ([symbol, holding]) => ({
               symbol: symbol.toUpperCase(),
-              quantity: holding.amount.toString(),
-              avg_cost: holding.averageBuyPrice.toString(),
+              quantity: (holding.amount || 0).toString(),
+              avg_cost: (holding.averageBuyPrice || 0).toString(),
+              current_price: (holding.currentPrice || 0).toString(),
+              total_value: (holding.valueInUSD || 0).toString(),
+              profit_loss: (holding.profitLoss || 0).toString(),
+              profit_loss_percent: (
+                holding.profitLossPercentage || 0
+              ).toString(),
               image: holding.image || null,
             })
           );

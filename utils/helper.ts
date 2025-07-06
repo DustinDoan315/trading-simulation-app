@@ -1,13 +1,11 @@
-import * as Application from 'expo-application';
-import * as bip39 from 'bip39';
-import * as Crypto from 'expo-crypto';
-import Toast from 'react-native-toast-message';
-import { Buffer } from 'buffer';
-import { Order } from '@/types/crypto';
-import { Platform } from 'react-native';
-import { ToastPos, ToastType } from '@/types/common';
-
-
+import * as Application from "expo-application";
+import * as bip39 from "bip39";
+import * as Crypto from "expo-crypto";
+import Toast from "react-native-toast-message";
+import { Buffer } from "buffer";
+import { Order } from "@/types/crypto";
+import { Platform } from "react-native";
+import { ToastPos, ToastType } from "@/types/common";
 
 global.Buffer = Buffer;
 
@@ -119,10 +117,10 @@ export class TimestampUtils {
     if (timestamp instanceof Date) {
       return timestamp.toISOString();
     }
-    
-    if (typeof timestamp === 'string') {
+
+    if (typeof timestamp === "string") {
       // If it's already an ISO string, return as is
-      if (timestamp.includes('T') && timestamp.includes('Z')) {
+      if (timestamp.includes("T") && timestamp.includes("Z")) {
         return timestamp;
       }
       // Try to parse as number
@@ -133,8 +131,8 @@ export class TimestampUtils {
       // Try to parse as date string
       return new Date(timestamp).toISOString();
     }
-    
-    if (typeof timestamp === 'number') {
+
+    if (typeof timestamp === "number") {
       // Check if it's Unix timestamp in seconds (10 digits) or milliseconds (13 digits)
       if (timestamp < 10000000000) {
         // Unix timestamp in seconds
@@ -144,7 +142,7 @@ export class TimestampUtils {
         return new Date(timestamp).toISOString();
       }
     }
-    
+
     throw new Error(`Invalid timestamp format: ${timestamp}`);
   }
 
@@ -155,12 +153,12 @@ export class TimestampUtils {
     if (timestamp instanceof Date) {
       return Math.floor(timestamp.getTime() / 1000);
     }
-    
-    if (typeof timestamp === 'string') {
+
+    if (typeof timestamp === "string") {
       return Math.floor(new Date(timestamp).getTime() / 1000);
     }
-    
-    if (typeof timestamp === 'number') {
+
+    if (typeof timestamp === "number") {
       // Check if it's already in seconds
       if (timestamp < 10000000000) {
         return timestamp;
@@ -169,7 +167,7 @@ export class TimestampUtils {
         return Math.floor(timestamp / 1000);
       }
     }
-    
+
     throw new Error(`Invalid timestamp format: ${timestamp}`);
   }
 
@@ -180,9 +178,9 @@ export class TimestampUtils {
     try {
       const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
       const now = new Date();
-      const minDate = new Date('2020-01-01'); // Reasonable minimum date
+      const minDate = new Date("2020-01-01"); // Reasonable minimum date
       const maxDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year in future
-      
+
       return date >= minDate && date <= maxDate;
     } catch {
       return false;
@@ -207,8 +205,6 @@ const showToast = (
   });
 };
 
-
-
 // --- Core Logic ---
 const MIN_AMOUNT = 0.1;
 
@@ -220,6 +216,7 @@ export interface OrderValidationContext {
 export interface OrderDispatchContext {
   addTradeHistory: (order: Order) => void;
   updateHolding: (payload: any) => void;
+  syncTransaction?: (order: Order) => void;
 }
 
 /** Throws OrderError on validation failure */
@@ -228,7 +225,7 @@ function validateOrder(order: Order, context: OrderValidationContext): void {
     symbol: order.symbol,
     type: order.type,
     amount: order.amount,
-    total: order.total
+    total: order.total,
   });
 
   if (!order.symbol) {
@@ -241,41 +238,54 @@ function validateOrder(order: Order, context: OrderValidationContext): void {
   if (order.type === "sell") {
     const holdings = context.getHoldings();
     console.log("📊 Current holdings:", holdings);
-    
+
     // Try both uppercase and lowercase to handle case sensitivity
-    const h = holdings[order.symbol.toUpperCase()] || holdings[order.symbol.toLowerCase()];
-    console.log(`🔍 Looking for ${order.symbol} in holdings (tried both cases):`, h);
-    
+    const h =
+      holdings[order.symbol.toUpperCase()] ||
+      holdings[order.symbol.toLowerCase()];
+    console.log(
+      `🔍 Looking for ${order.symbol} in holdings (tried both cases):`,
+      h
+    );
+
     if (!h) {
       const msg = `No ${order.symbol} balance found. You need to buy ${order.symbol} first before you can sell it.`;
       console.error("❌ No holding found for symbol:", order.symbol);
       console.error("❌ Available holdings keys:", Object.keys(holdings));
       throw new OrderError("balance.insufficient", msg);
     }
-    
+
     if (h.amount < order.amount) {
       const msg = `Insufficient ${order.symbol} balance. You have ${h.amount} ${order.symbol}, trying to sell ${order.amount} ${order.symbol}`;
       console.error("❌ Insufficient balance:", {
         available: h.amount,
         requested: order.amount,
-        symbol: order.symbol
+        symbol: order.symbol,
       });
       throw new OrderError("balance.insufficient", msg);
     }
-    
+
     console.log("✅ Sufficient balance for sell order");
   }
 }
 
 /** Dispatch both crypto and USDT adjustments */
 function dispatchUpdates(
-  order: Order, 
-  isBuy: boolean, 
-  imageUrl: string, 
+  order: Order,
+  isBuy: boolean,
+  imageUrl: string,
   context: OrderDispatchContext
 ) {
   const sign = isBuy ? 1 : -1;
   const symbolId = order.symbol.toLowerCase();
+
+  console.log("🔄 Dispatching order updates:", {
+    orderType: order.type,
+    symbol: order.symbol,
+    amount: order.amount,
+    total: order.total,
+    isBuy,
+  });
 
   context.addTradeHistory(order);
 
@@ -289,16 +299,28 @@ function dispatchUpdates(
   });
 
   if (symbolId !== "usdt") {
-    context.updateHolding({
+    const usdtUpdate = {
       cryptoId: "usdt",
       amount: -sign * order.total,
       valueInUSD: -sign * order.total,
       symbol: "USDT",
       name: "Tether",
-    });
+    };
+    console.log("🔄 Updating USDT balance:", usdtUpdate);
+    context.updateHolding(usdtUpdate);
+  }
+
+  // Sync transaction to cloud
+  if (context.syncTransaction) {
+    console.log("☁️ Syncing transaction to cloud...");
+    // Fire and forget - don't block the order processing
+    context.syncTransaction(order);
+  } else {
+    console.warn(
+      "⚠️ No syncTransaction function provided - transaction will not be synced to cloud"
+    );
   }
 }
-
 
 /**
  * Submits an order, updates state, and shows notifications.
@@ -312,7 +334,7 @@ export const handleOrderSubmission = async (
   order: Order,
   imageUrl: string,
   validationContext: OrderValidationContext,
-  dispatchContext: OrderDispatchContext,
+  dispatchContext: OrderDispatchContext
 ): Promise<Order> => {
   console.debug("[Order] Submitting:", order);
 

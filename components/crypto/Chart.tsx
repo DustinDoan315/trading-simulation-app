@@ -13,7 +13,7 @@ import {
 } from "react-native";
 
 interface ChartProps extends BaseChartProps {
-  webViewRef: React.RefObject<WebView>;
+  webViewRef: React.RefObject<WebView | null>;
   loading: boolean;
   error: string | null;
   onMessage: (event: any) => void;
