@@ -1,17 +1,14 @@
-import * as Crypto from "expo-crypto";
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { supabase } from "./SupabaseService";
-import { SyncService } from "./SupabaseService";
+import * as Crypto from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorageService } from './AsyncStorageService';
+import { supabase } from './SupabaseService';
 
 import {
   CreateTransactionParams,
   CreateUserParams,
-  SyncResult,
 } from "../types/database";
 
-// services/HybridStorageService.ts
 
 interface SyncItem {
   type: "transaction" | "user";
@@ -169,10 +166,19 @@ export class HybridStorageService {
       });
     } else if (item.type === "user") {
       const userData = item.data as CreateUserParams;
+      const now = new Date().toISOString();
       await AsyncStorageService.createOrUpdateUser({
-        uuid: userData.username, // Use username as uuid for local storage
-        balance: userData.balance || "100000",
-        createdAt: Date.now(),
+        id: userData.username, // Use username as id for local storage
+        username: userData.username,
+        usdt_balance: userData.usdt_balance || "100000",
+        total_portfolio_value: userData.total_portfolio_value || "100000",
+        total_pnl: "0.00",
+        total_trades: 0,
+        win_rate: "0.00",
+        join_date: now,
+        last_active: now,
+        created_at: now,
+        updated_at: now,
       });
     }
   }

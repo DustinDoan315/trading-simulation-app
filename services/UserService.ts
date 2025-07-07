@@ -1,5 +1,4 @@
-import { supabase } from "./SupabaseService";
-import { User as UserEntity } from "../entities/User";
+import { supabase } from './SupabaseService';
 import {
   Collection,
   CollectionMember,
@@ -7,36 +6,32 @@ import {
   CreateCollectionMemberParams,
   CreateCollectionParams,
   CreateFavoriteParams,
-  CreateLeaderboardRankingParams,
   CreatePortfolioParams,
-  CreatePriceAlertParams,
-  CreateSearchHistoryParams,
   CreateTransactionParams,
   CreateUserParams,
-  CreateUserSettingsParams,
   Favorite,
   LeaderboardRanking,
   Portfolio,
   PortfolioWithSymbol,
-  PriceAlert,
-  SearchHistory,
   Transaction,
   TransactionWithDetails,
   UpdateCollectionParams,
   UpdatePortfolioParams,
-  UpdatePriceAlertParams,
   UpdateUserParams,
-  UpdateUserSettingsParams,
   User,
-  UserSettings,
   UserWithStats,
 } from "../types/database";
+
 
 export class UserService {
   // User Operations
   static async createUser(params: CreateUserParams): Promise<User | null> {
     try {
-      const userData = UserEntity.create(params);
+      const userData = {
+        ...params,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
       const { data, error } = await supabase
         .from("users")
@@ -45,7 +40,7 @@ export class UserService {
         .single();
 
       if (error) throw error;
-      return data ? new UserEntity(data) : null;
+      return data;
     } catch (error) {
       console.error("Error creating user:", error);
       throw error;
@@ -60,15 +55,8 @@ export class UserService {
         .eq("id", id)
         .single();
 
-      if (error) {
-        // Handle the case where no user exists (PGRST116 error)
-        if (error.code === "PGRST116") {
-          console.log(`User with id ${id} not found in database`);
-          return null;
-        }
-        throw error;
-      }
-      return data ? new UserEntity(data) : null;
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error("Error fetching user:", error);
       throw error;
@@ -83,15 +71,8 @@ export class UserService {
         .eq("username", username)
         .single();
 
-      if (error) {
-        // Handle the case where no user exists (PGRST116 error)
-        if (error.code === "PGRST116") {
-          console.log(`User with username ${username} not found in database`);
-          return null;
-        }
-        throw error;
-      }
-      return data ? new UserEntity(data) : null;
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error("Error fetching user by username:", error);
       throw error;
@@ -103,10 +84,10 @@ export class UserService {
     params: UpdateUserParams
   ): Promise<User | null> {
     try {
-      const user = await this.getUserById(id);
-      if (!user) throw new Error("User not found");
-
-      const updates = (user as UserEntity).update(params);
+      const updates = {
+        ...params,
+        updated_at: new Date().toISOString(),
+      };
 
       const { data, error } = await supabase
         .from("users")
@@ -116,7 +97,7 @@ export class UserService {
         .single();
 
       if (error) throw error;
-      return data ? new UserEntity(data) : null;
+      return data;
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;
@@ -124,18 +105,17 @@ export class UserService {
   }
 
   static async updateUserBalance(
-    id: string,
+    userId: string,
     newBalance: string
   ): Promise<void> {
     try {
       const { error } = await supabase
         .from("users")
         .update({
-          balance: newBalance,
-          last_active: new Date().toISOString(),
+          usdt_balance: newBalance,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", id);
+        .eq("id", userId);
 
       if (error) throw error;
     } catch (error) {
@@ -256,12 +236,7 @@ export class UserService {
     try {
       const { data, error } = await supabase
         .from("transactions")
-        .select(
-          `
-          *,
-          collections!transactions_collection_id_fkey(name)
-        `
-        )
+        .select("*")
         .eq("user_id", userId)
         .order("timestamp", { ascending: false })
         .limit(limit);
@@ -312,7 +287,7 @@ export class UserService {
         .select(
           `
           *,
-          users!collections_owner_id_fkey(username, display_name)
+          users(username, display_name)
         `
         )
         .order("created_at", { ascending: false });
@@ -340,7 +315,7 @@ export class UserService {
         .select(
           `
           *,
-          users!collections_owner_id_fkey(username, display_name),
+          users(username, display_name),
           collection_members(
             *,
             users(username, display_name, avatar_emoji)
@@ -519,244 +494,7 @@ export class UserService {
     }
   }
 
-  // Search History Operations
-  static async getSearchHistory(
-    userId: string,
-    limit = 20
-  ): Promise<SearchHistory[]> {
-    try {
-      const { data, error } = await supabase
-        .from("search_history")
-        .select("*")
-        .eq("user_id", userId)
-        .order("searched_at", { ascending: false })
-        .limit(limit);
 
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching search history:", error);
-      throw error;
-    }
-  }
-
-  static async addSearchHistory(
-    params: CreateSearchHistoryParams
-  ): Promise<SearchHistory | null> {
-    try {
-      const historyData = {
-        ...params,
-        searched_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from("search_history")
-        .insert([historyData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error("Error adding search history:", error);
-      throw error;
-    }
-  }
-
-  static async clearSearchHistory(userId: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from("search_history")
-        .delete()
-        .eq("user_id", userId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error clearing search history:", error);
-      throw error;
-    }
-  }
-
-  // Price Alert Operations
-  static async getPriceAlerts(userId: string): Promise<PriceAlert[]> {
-    try {
-      const { data, error } = await supabase
-        .from("price_alerts")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching price alerts:", error);
-      throw error;
-    }
-  }
-
-  static async createPriceAlert(
-    params: CreatePriceAlertParams
-  ): Promise<PriceAlert | null> {
-    try {
-      const alertData = {
-        ...params,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from("price_alerts")
-        .insert([alertData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error("Error creating price alert:", error);
-      throw error;
-    }
-  }
-
-  static async updatePriceAlert(
-    id: string,
-    params: UpdatePriceAlertParams
-  ): Promise<PriceAlert | null> {
-    try {
-      const updates = {
-        ...params,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from("price_alerts")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error("Error updating price alert:", error);
-      throw error;
-    }
-  }
-
-  static async deletePriceAlert(id: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from("price_alerts")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error deleting price alert:", error);
-      throw error;
-    }
-  }
-
-  // User Settings Operations
-  static async getUserSettings(userId: string): Promise<UserSettings | null> {
-    try {
-      const { data, error } = await supabase
-        .from("user_settings")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error("Error fetching user settings:", error);
-      throw error;
-    }
-  }
-
-  static async getOrCreateUserSettings(
-    userId: string
-  ): Promise<UserSettings | null> {
-    try {
-      let settings = await this.getUserSettings(userId);
-
-      if (!settings) {
-        // Create default settings if they don't exist
-        settings = await this.createUserSettings({
-          user_id: userId,
-          notifications_enabled: true,
-          price_alerts_enabled: true,
-          balance_hidden: false,
-          language: "en",
-          theme: "dark",
-          currency: "USD",
-        });
-      }
-
-      return settings;
-    } catch (error) {
-      console.error("Error getting or creating user settings:", error);
-      throw error;
-    }
-  }
-
-  static async createUserSettings(
-    params: CreateUserSettingsParams
-  ): Promise<UserSettings | null> {
-    try {
-      const settingsData = {
-        ...params,
-        notifications_enabled: params.notifications_enabled ?? true,
-        price_alerts_enabled: params.price_alerts_enabled ?? true,
-        balance_hidden: params.balance_hidden ?? false,
-        language: params.language ?? "en",
-        theme: params.theme ?? "dark",
-        currency: params.currency ?? "USD",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from("user_settings")
-        .insert([settingsData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error("Error creating user settings:", error);
-      throw error;
-    }
-  }
-
-  static async updateUserSettings(
-    id: string,
-    params: UpdateUserSettingsParams
-  ): Promise<UserSettings | null> {
-    try {
-      const updates = {
-        ...params,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from("user_settings")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error("Error updating user settings:", error);
-      throw error;
-    }
-  }
 
   // Leaderboard Operations
   static async getLeaderboard(
@@ -807,7 +545,7 @@ export class UserService {
       const totalAssets = portfolio.length;
 
       const stats: UserWithStats = {
-        ...(user as UserEntity).toJSON(),
+        ...user,
         portfolio_value: (totalValue || 0).toString(),
         total_assets: totalAssets,
         best_performing_asset:

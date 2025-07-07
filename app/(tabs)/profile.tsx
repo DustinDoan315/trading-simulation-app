@@ -21,22 +21,21 @@ import {
 
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
-  const { user, userStats, userSettings, loading, error, logout, refreshUser } =
-    useUser();
+  const { user, userStats, loading, error, logout, refreshUser } = useUser();
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [priceAlertsEnabled, setPriceAlertsEnabled] = useState(true);
-  const [balanceHidden, setBalanceHidden] = useState(false);
+  // const [notificationsEnabled, setNotificationsEnabled] = useState(true); // Removed - no user settings
+  // const [priceAlertsEnabled, setPriceAlertsEnabled] = useState(true); // Removed - no user settings
+  // const [balanceHidden, setBalanceHidden] = useState(false); // Removed - no user settings
   const [isResetting, setIsResetting] = useState(false);
 
-  // Initialize settings when component mounts
-  useEffect(() => {
-    if (userSettings) {
-      setNotificationsEnabled(userSettings.notifications_enabled);
-      setPriceAlertsEnabled(userSettings.price_alerts_enabled);
-      setBalanceHidden(userSettings.balance_hidden);
-    }
-  }, [userSettings]);
+  // Initialize settings when component mounts - removed since user_settings table deleted
+  // useEffect(() => {
+  //   if (userSettings) {
+  //     setNotificationsEnabled(userSettings.notifications_enabled);
+  //     setPriceAlertsEnabled(userSettings.price_alerts_enabled);
+  //     setBalanceHidden(userSettings.balance_hidden);
+  //   }
+  // }, [userSettings]);
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -115,23 +114,23 @@ const ProfileScreen = () => {
   };
 
   const handleSettingChange = async (setting: string, value: boolean) => {
-    if (!user || !userSettings) return;
+    // if (!user || !userSettings) return; // Removed - no user settings
 
     try {
       const updates: any = {};
 
       switch (setting) {
         case "notifications":
-          updates.notifications_enabled = value;
-          setNotificationsEnabled(value);
+          // updates.notifications_enabled = value; // Removed - no user settings
+          // setNotificationsEnabled(value); // Removed - no user settings
           break;
         case "priceAlerts":
-          updates.price_alerts_enabled = value;
-          setPriceAlertsEnabled(value);
+          // updates.price_alerts_enabled = value; // Removed - no user settings
+          // setPriceAlertsEnabled(value); // Removed - no user settings
           break;
         case "balanceHidden":
-          updates.balance_hidden = value;
-          setBalanceHidden(value);
+          // updates.balance_hidden = value; // Removed - no user settings
+          // setBalanceHidden(value); // Removed - no user settings
           break;
       }
 
@@ -298,13 +297,12 @@ const ProfileScreen = () => {
               icon="card-outline"
               title="Balance"
               subtitle={
-                balanceHidden
-                  ? "Hidden"
-                  : `$${parseFloat(user.balance).toLocaleString()}`
+                // balanceHidden // Removed - no user settings
+                `$${parseFloat(user.usdt_balance).toLocaleString()}`
               }
-              onPress={() =>
-                handleSettingChange("balanceHidden", !balanceHidden)
-              }
+              // onPress={() => // Removed - no user settings
+              //   handleSettingChange("balanceHidden", !balanceHidden)
+              // }
             />
             <SettingItem
               icon="shield-outline"
@@ -324,48 +322,48 @@ const ProfileScreen = () => {
               title="Push Notifications"
               subtitle="Get notified about price changes"
               showChevron={false}
-              rightComponent={
-                <Switch
-                  value={notificationsEnabled}
-                  onValueChange={(value) =>
-                    handleSettingChange("notifications", value)
-                  }
-                  trackColor={{ false: "#333", true: "#6674CC" }}
-                  thumbColor="#FFFFFF"
-                />
-              }
+              // rightComponent={ // Removed - no user settings
+              //   <Switch
+              //     value={notificationsEnabled}
+              //     onValueChange={(value) =>
+              //       handleSettingChange("notifications", value)
+              //     }
+              //     trackColor={{ false: "#333", true: "#6674CC" }}
+              //     thumbColor="#FFFFFF"
+              //   />
+              // }
             />
             <SettingItem
               icon="alarm-outline"
               title="Price Alerts"
               subtitle="Get alerts when prices hit targets"
               showChevron={false}
-              rightComponent={
-                <Switch
-                  value={priceAlertsEnabled}
-                  onValueChange={(value) =>
-                    handleSettingChange("priceAlerts", value)
-                  }
-                  trackColor={{ false: "#333", true: "#6674CC" }}
-                  thumbColor="#FFFFFF"
-                />
-              }
+              // rightComponent={ // Removed - no user settings
+              //   <Switch
+              //     value={priceAlertsEnabled}
+              //     onValueChange={(value) =>
+              //       handleSettingChange("priceAlerts", value)
+              //     }
+              //     trackColor={{ false: "#333", true: "#6674CC" }}
+              //     thumbColor="#FFFFFF"
+              //   />
+              // }
             />
             <SettingItem
               icon="eye-outline"
               title="Hide Balance"
               subtitle="Keep your balance private"
               showChevron={false}
-              rightComponent={
-                <Switch
-                  value={balanceHidden}
-                  onValueChange={(value) =>
-                    handleSettingChange("balanceHidden", value)
-                  }
-                  trackColor={{ false: "#333", true: "#6674CC" }}
-                  thumbColor="#FFFFFF"
-                />
-              }
+              // rightComponent={ // Removed - no user settings
+              //   <Switch
+              //     value={balanceHidden}
+              //     onValueChange={(value) =>
+              //       handleSettingChange("balanceHidden", value)
+              //     }
+              //     trackColor={{ false: "#333", true: "#6674CC" }}
+              //     thumbColor="#FFFFFF"
+              //   />
+              // }
             />
           </View>
         </View>

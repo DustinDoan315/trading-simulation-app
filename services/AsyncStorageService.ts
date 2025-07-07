@@ -1,17 +1,26 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Holding } from "../types/crypto";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Holding } from '../types/crypto';
 
 // AsyncStorage keys
-const USER_KEY = "user_data";
+const USER_KEY = "user_profile"; // Changed to match UUIDService
 const PORTFOLIO_KEY = "portfolio_data";
 const TRANSACTIONS_KEY = "transactions_data";
 const SYNC_QUEUE_KEY = "sync_queue";
 
 interface UserData {
-  uuid: string;
-  balance: string;
-  createdAt: number;
-  lastSyncAt?: number;
+  id: string;
+  username: string;
+  display_name?: string;
+  avatar_emoji?: string;
+  usdt_balance: string;
+  total_portfolio_value: string;
+  total_pnl: string;
+  total_trades: number;
+  win_rate: string;
+  join_date: string;
+  last_active: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface PortfolioData {
@@ -19,6 +28,10 @@ interface PortfolioData {
   symbol: string;
   quantity: string;
   avg_cost: string;
+  current_price?: string;
+  total_value?: string;
+  profit_loss?: string;
+  profit_loss_percent?: string;
   image?: string;
 }
 
@@ -44,8 +57,14 @@ export class AsyncStorageService {
   // User operations
   static async createOrUpdateUser(userData: UserData): Promise<UserData> {
     try {
+      console.log("💾 AsyncStorageService.createOrUpdateUser - Saving user data:", userData);
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
-      console.log("✅ User data saved to AsyncStorage:", userData.uuid);
+      console.log("✅ User data saved to AsyncStorage:", userData.id);
+      
+      // Verify the data was saved correctly
+      const savedData = await AsyncStorage.getItem(USER_KEY);
+      console.log("💾 AsyncStorageService.createOrUpdateUser - Verification - saved data:", savedData);
+      
       return userData;
     } catch (error) {
       console.error("❌ Failed to save user data to AsyncStorage:", error);
@@ -53,13 +72,26 @@ export class AsyncStorageService {
     }
   }
 
-  static async getUser(uuid: string): Promise<UserData | null> {
+  static async getUser(userId: string): Promise<UserData | null> {
     try {
+      console.log("🔍 AsyncStorageService.getUser - Looking for userId:", userId);
       const userData = await AsyncStorage.getItem(USER_KEY);
+      console.log("🔍 AsyncStorageService.getUser - Raw userData:", userData);
+      
       if (userData) {
         const user = JSON.parse(userData) as UserData;
-        return user.uuid === uuid ? user : null;
+        console.log("🔍 AsyncStorageService.getUser - Parsed user:", user);
+        console.log("🔍 AsyncStorageService.getUser - User ID match:", user.id === userId);
+        
+        // Since we're storing a single user object, just verify the ID matches
+        if (user.id === userId) {
+          return user;
+        } else {
+          console.log("🔍 AsyncStorageService.getUser - User ID mismatch, expected:", userId, "got:", user.id);
+          return null;
+        }
       }
+      console.log("🔍 AsyncStorageService.getUser - No userData found");
       return null;
     } catch (error) {
       console.error("❌ Failed to get user from AsyncStorage:", error);
@@ -68,16 +100,42 @@ export class AsyncStorageService {
   }
 
   static async updateUserBalance(
-    uuid: string,
+    userId: string,
     newBalance: number
   ): Promise<void> {
     try {
-      const user = await this.getUser(uuid);
+      console.log("💰 AsyncStorageService.updateUserBalance - Updating balance for userId:", userId, "to:", newBalance);
+      const user = await this.getUser(userId);
+      console.log("💰 AsyncStorageService.updateUserBalance - Retrieved user:", user);
+      
       if (user) {
-        user.balance = newBalance.toString();
-        user.lastSyncAt = Date.now();
+        user.usdt_balance = newBalance.toString();
+        user.updated_at = new Date().toISOString();
+        console.log("💰 AsyncStorageService.updateUserBalance - Updated user object:", user);
         await this.createOrUpdateUser(user);
-        console.log("✅ User balance updated in AsyncStorage:", newBalance);
+        console.log("✅ User USDT balance updated in AsyncStorage:", newBalance);
+      } else {
+        console.error("❌ AsyncStorageService.updateUserBalance - User not found for userId:", userId);
+        console.log("💰 AsyncStorageService.updateUserBalance - Creating new user with balance:", newBalance);
+        
+        // Create a new user with the current balance
+        const now = new Date().toISOString();
+        const newUser: UserData = {
+          id: userId,
+          username: `user_${userId.slice(0, 8)}`,
+          usdt_balance: newBalance.toString(),
+          total_portfolio_value: newBalance.toString(),
+          total_pnl: "0",
+          total_trades: 0,
+          win_rate: "0",
+          join_date: now,
+          last_active: now,
+          created_at: now,
+          updated_at: now,
+        };
+        
+        await this.createOrUpdateUser(newUser);
+        console.log("✅ New user created with balance:", newBalance);
       }
     } catch (error) {
       console.error("❌ Failed to update user balance in AsyncStorage:", error);
@@ -281,6 +339,35 @@ export class AsyncStorageService {
       console.log("✅ All AsyncStorage data cleared");
     } catch (error) {
       console.error("❌ Failed to clear AsyncStorage data:", error);
+      throw error;
+    }
+  }
+
+  // Recreate user data if corrupted or missing
+  static async recreateUserData(userId: string, balance: number = 100000): Promise<UserData> {
+    try {
+      console.log("🔄 AsyncStorageService.recreateUserData - Recreating user data for:", userId);
+      
+      const now = new Date().toISOString();
+      const userData: UserData = {
+        id: userId,
+        username: `user_${userId.slice(0, 8)}`,
+        usdt_balance: balance.toString(),
+        total_portfolio_value: balance.toString(),
+        total_pnl: "0",
+        total_trades: 0,
+        win_rate: "0",
+        join_date: now,
+        last_active: now,
+        created_at: now,
+        updated_at: now,
+      };
+
+      await this.createOrUpdateUser(userData);
+      console.log("✅ User data recreated successfully:", userData);
+      return userData;
+    } catch (error) {
+      console.error("❌ Failed to recreate user data:", error);
       throw error;
     }
   }

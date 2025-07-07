@@ -1,9 +1,10 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
-import NetInfo from "@react-native-community/netinfo";
-import UUIDService from "./UUIDService";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import NetInfo from '@react-native-community/netinfo';
+import UUIDService from './UUIDService';
+import { AsyncStorageService } from './AsyncStorageService';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
 
 //SupabaseService.ts
 
@@ -221,6 +222,10 @@ interface PortfolioSyncPayload {
     symbol: string;
     quantity: string;
     avg_cost: string;
+    current_price?: string;
+    total_value?: string;
+    profit_loss?: string;
+    profit_loss_percent?: string;
     image?: string | null;
   }>;
 }
@@ -582,26 +587,7 @@ export class SyncService {
           existingAsset.image_url !== (asset.image || null);
 
         if (needsUpdate) {
-          operations.push({
-            user_id: uuid,
-            symbol: symbol,
-            quantity: asset.quantity,
-            avg_cost: asset.avg_cost,
-            current_price: asset.current_price || "0",
-            total_value: asset.total_value || "0",
-            profit_loss: asset.profit_loss || "0",
-            profit_loss_percent: asset.profit_loss_percent || "0",
-            image_url: asset.image || null,
-            last_updated: new Date().toISOString(),
-          });
-          symbolsToUpdate.add(symbol);
-          console.log(`🔄 Will update: ${symbol}`);
-        } else {
-          console.log(`✅ No changes needed: ${symbol}`);
-        }
-      } else {
-        // New asset - insert
-        operations.push({
+                  operations.push({
           user_id: uuid,
           symbol: symbol,
           quantity: asset.quantity,
@@ -613,6 +599,25 @@ export class SyncService {
           image_url: asset.image || null,
           last_updated: new Date().toISOString(),
         });
+          symbolsToUpdate.add(symbol);
+          console.log(`🔄 Will update: ${symbol}`);
+        } else {
+          console.log(`✅ No changes needed: ${symbol}`);
+        }
+      } else {
+        // New asset - insert
+                  operations.push({
+            user_id: uuid,
+            symbol: symbol,
+            quantity: asset.quantity,
+            avg_cost: asset.avg_cost,
+            current_price: asset.current_price || "0",
+            total_value: asset.total_value || "0",
+            profit_loss: asset.profit_loss || "0",
+            profit_loss_percent: asset.profit_loss_percent || "0",
+            image_url: asset.image || null,
+            last_updated: new Date().toISOString(),
+          });
         symbolsToInsert.add(symbol);
         console.log(`➕ Will insert: ${symbol}`);
       }
@@ -984,23 +989,72 @@ export class SyncService {
 
   // Add new method to update user balance in Supabase
   static async updateUserBalance(
-    uuid: string,
+    userId: string,
     newBalance: number
   ): Promise<void> {
     try {
-      const { error } = await supabase
+      await supabase
         .from("users")
-        .update({ balance: newBalance.toString() })
-        .eq("id", uuid);
+        .update({ usdt_balance: newBalance.toString() })
+        .eq("id", userId);
+
+      console.log(`✅ User USDT balance updated in Supabase: ${newBalance}`);
+    } catch (error: any) {
+      throw new Error(
+        `Failed to update user balance in Supabase: ${error.message}`
+      );
+    }
+  }
+
+  // Add new method to update user balance and portfolio value in Supabase
+  static async updateUserBalanceAndPortfolioValue(
+    userId: string,
+    usdtBalance: number,
+    totalPortfolioValue: number,
+    totalPnL: number,
+    totalPnLPercentage: number
+  ): Promise<void> {
+    try {
+      // First, ensure user exists in Supabase
+      const userExists = await UUIDService.ensureUserInSupabase(userId);
+      if (!userExists) {
+        throw new Error("User does not exist in Supabase");
+      }
+
+      // Update user data with proper error handling
+      const { data, error } = await supabase
+        .from("users")
+        .update({ 
+          usdt_balance: usdtBalance.toString(),
+          total_portfolio_value: totalPortfolioValue.toString(),
+          total_pnl: totalPnL.toString(),
+          total_pnl_percentage: totalPnLPercentage.toString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", userId)
+        .select()
+        .single();
 
       if (error) {
-        throw new Error(
-          `Failed to update user balance in Supabase: ${error.message}`
-        );
+        console.error("Supabase update error:", error);
+        throw new Error(`Failed to update user in Supabase: ${error.message}`);
       }
-    } catch (error) {
-      console.error("Error updating user balance in Supabase:", error);
-      throw error;
+
+      if (!data) {
+        throw new Error("No data returned from user update");
+      }
+
+      console.log(`✅ User balance and portfolio value updated in Supabase:
+        User ID: ${userId}
+        USDT Balance: ${usdtBalance}
+        Total Portfolio Value: ${totalPortfolioValue}
+        Total PnL: ${totalPnL}
+        PnL Percentage: ${totalPnLPercentage}%`);
+    } catch (error: any) {
+      console.error("Error in updateUserBalanceAndPortfolioValue:", error);
+      throw new Error(
+        `Failed to update user balance and portfolio value in Supabase: ${error.message}`
+      );
     }
   }
 

@@ -1,25 +1,21 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { UserService } from "../services/UserService";
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { UserService } from '../services/UserService';
 import {
   Collection,
   CollectionMember,
   CreateCollectionParams,
   CreateFavoriteParams,
   CreatePortfolioParams,
-  CreatePriceAlertParams,
-  CreateSearchHistoryParams,
   CreateTransactionParams,
   CreateUserParams,
   Favorite,
   Portfolio,
-  PriceAlert,
-  SearchHistory,
   Transaction,
   UpdateUserParams,
   User,
-  UserSettings,
   UserWithStats,
 } from "../types/database";
+
 
 // Async thunks
 export const createUser = createAsyncThunk(
@@ -126,53 +122,7 @@ export const removeFavorite = createAsyncThunk(
   }
 );
 
-export const fetchSearchHistory = createAsyncThunk(
-  "user/fetchSearchHistory",
-  async ({ userId, limit }: { userId: string; limit?: number }) => {
-    const history = await UserService.getSearchHistory(userId, limit);
-    return history;
-  }
-);
 
-export const addSearchHistory = createAsyncThunk(
-  "user/addSearchHistory",
-  async (params: CreateSearchHistoryParams) => {
-    const history = await UserService.addSearchHistory(params);
-    return history;
-  }
-);
-
-export const clearSearchHistory = createAsyncThunk(
-  "user/clearSearchHistory",
-  async (userId: string) => {
-    await UserService.clearSearchHistory(userId);
-    return userId;
-  }
-);
-
-export const fetchPriceAlerts = createAsyncThunk(
-  "user/fetchPriceAlerts",
-  async (userId: string) => {
-    const alerts = await UserService.getPriceAlerts(userId);
-    return alerts;
-  }
-);
-
-export const createPriceAlert = createAsyncThunk(
-  "user/createPriceAlert",
-  async (params: CreatePriceAlertParams) => {
-    const alert = await UserService.createPriceAlert(params);
-    return alert;
-  }
-);
-
-export const fetchUserSettings = createAsyncThunk(
-  "user/fetchUserSettings",
-  async (userId: string) => {
-    const settings = await UserService.getOrCreateUserSettings(userId);
-    return settings;
-  }
-);
 
 export const fetchUserStats = createAsyncThunk(
   "user/fetchUserStats",
@@ -182,17 +132,40 @@ export const fetchUserStats = createAsyncThunk(
   }
 );
 
+// User Settings functions removed - table deleted
+// export const fetchUserSettings = createAsyncThunk(
+//   "user/fetchUserSettings",
+//   async (userId: string) => {
+//     const settings = await UserService.getUserSettings(userId);
+//     return settings;
+//   }
+// );
+
+// export const createUserSettings = createAsyncThunk(
+//   "user/createUserSettings",
+//   async (params: CreateUserSettingsParams) => {
+//     const settings = await UserService.createUserSettings(params);
+//     return settings;
+//   }
+// );
+
+// export const updateUserSettings = createAsyncThunk(
+//   "user/updateUserSettings",
+//   async ({ id, params }: { id: string; params: UpdateUserSettingsParams }) => {
+//     const settings = await UserService.updateUserSettings(id, params);
+//     return settings;
+//   }
+// );
+
 // State interface
 interface UserState {
   currentUser: User | null;
   userStats: UserWithStats | null;
+  // userSettings: UserSettings | null; // Removed - table deleted
   portfolio: Portfolio[];
   transactions: Transaction[];
   collections: Collection[];
   favorites: Favorite[];
-  searchHistory: SearchHistory[];
-  priceAlerts: PriceAlert[];
-  userSettings: UserSettings | null;
   loading: boolean;
   error: string | null;
   lastUpdated: string | null;
@@ -202,13 +175,11 @@ interface UserState {
 const initialState: UserState = {
   currentUser: null,
   userStats: null,
+  // userSettings: null, // Removed - table deleted
   portfolio: [],
   transactions: [],
   collections: [],
   favorites: [],
-  searchHistory: [],
-  priceAlerts: [],
-  userSettings: null,
   loading: false,
   error: null,
   lastUpdated: null,
@@ -222,13 +193,11 @@ const userSlice = createSlice({
     clearUser: (state) => {
       state.currentUser = null;
       state.userStats = null;
+      // state.userSettings = null; // Removed - table deleted
       state.portfolio = [];
       state.transactions = [];
       state.collections = [];
       state.favorites = [];
-      state.searchHistory = [];
-      state.priceAlerts = [];
-      state.userSettings = null;
       state.error = null;
       state.lastUpdated = null;
     },
@@ -304,7 +273,7 @@ const userSlice = createSlice({
     // Update user balance
     builder.addCase(updateUserBalance.fulfilled, (state, action) => {
       if (state.currentUser && state.currentUser.id === action.payload.id) {
-        state.currentUser.balance = action.payload.newBalance;
+        state.currentUser.usdt_balance = action.payload.newBalance;
         state.lastUpdated = new Date().toISOString();
       }
     });
@@ -417,75 +386,7 @@ const userSlice = createSlice({
       state.lastUpdated = new Date().toISOString();
     });
 
-    // Fetch search history
-    builder
-      .addCase(fetchSearchHistory.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchSearchHistory.fulfilled, (state, action) => {
-        state.loading = false;
-        state.searchHistory = action.payload;
-        state.lastUpdated = new Date().toISOString();
-      })
-      .addCase(fetchSearchHistory.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || "Failed to fetch search history";
-      });
 
-    // Add search history
-    builder.addCase(addSearchHistory.fulfilled, (state, action) => {
-      if (action.payload) {
-        state.searchHistory.unshift(action.payload);
-        state.lastUpdated = new Date().toISOString();
-      }
-    });
-
-    // Clear search history
-    builder.addCase(clearSearchHistory.fulfilled, (state) => {
-      state.searchHistory = [];
-      state.lastUpdated = new Date().toISOString();
-    });
-
-    // Fetch price alerts
-    builder
-      .addCase(fetchPriceAlerts.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchPriceAlerts.fulfilled, (state, action) => {
-        state.loading = false;
-        state.priceAlerts = action.payload;
-        state.lastUpdated = new Date().toISOString();
-      })
-      .addCase(fetchPriceAlerts.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || "Failed to fetch price alerts";
-      });
-
-    // Create price alert
-    builder.addCase(createPriceAlert.fulfilled, (state, action) => {
-      if (action.payload) {
-        state.priceAlerts.unshift(action.payload);
-        state.lastUpdated = new Date().toISOString();
-      }
-    });
-
-    // Fetch user settings
-    builder
-      .addCase(fetchUserSettings.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchUserSettings.fulfilled, (state, action) => {
-        state.loading = false;
-        state.userSettings = action.payload;
-        state.lastUpdated = new Date().toISOString();
-      })
-      .addCase(fetchUserSettings.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || "Failed to fetch user settings";
-      });
 
     // Fetch user stats
     builder
@@ -502,6 +403,39 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || "Failed to fetch user stats";
       });
+
+    // User Settings functions removed - table deleted
+    // Fetch user settings
+    // builder
+    //   .addCase(fetchUserSettings.pending, (state) => {
+    //     state.loading = true;
+    //     state.error = null;
+    //   })
+    //   .addCase(fetchUserSettings.fulfilled, (state, action) => {
+    //     state.loading = false;
+    //     state.userSettings = action.payload;
+    //     state.lastUpdated = new Date().toISOString();
+    //   })
+    //   .addCase(fetchUserSettings.rejected, (state, action) => {
+    //     state.loading = false;
+    //     state.error = action.error.message || "Failed to fetch user settings";
+    //   });
+
+    // Create user settings
+    // builder.addCase(createUserSettings.fulfilled, (state, action) => {
+    //   if (action.payload) {
+    //     state.userSettings = action.payload;
+    //     state.lastUpdated = new Date().toISOString();
+    //   }
+    // });
+
+    // Update user settings
+    // builder.addCase(updateUserSettings.fulfilled, (state, action) => {
+    //   if (action.payload) {
+    //     state.userSettings = action.payload;
+    //     state.lastUpdated = new Date().toISOString();
+    //   }
+    // });
   },
 });
 

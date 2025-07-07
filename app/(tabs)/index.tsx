@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { AddButton } from "@/components/home/AddButton";
 import { BalanceSection } from "@/components/home/BalanceSection";
+import { loadBalance } from "@/features/balanceSlice";
 import { navigateToCryptoChart } from "@/utils/navigation";
+import { RootState, useAppDispatch } from "@/store";
 import { router } from "expo-router";
 import { useHomeData } from "@/hooks/useHomeData";
+import { useSelector } from "react-redux";
 import { useUser } from "@/context/UserContext";
 import { WatchListSection } from "@/components/home/WatchlistSection";
 import {
@@ -15,8 +18,15 @@ import {
   Text,
   View,
 } from "react-native";
+import {
+  calculatePortfolioMetrics,
+  formatPnL,
+  formatPortfolioValue,
+  getPnLColor,
+} from "@/utils/helper";
 
 const HomeScreen = () => {
+  const dispatch = useAppDispatch();
   const { user, userStats, loading, refreshUserData } = useUser();
   const {
     refreshing,
@@ -26,6 +36,9 @@ const HomeScreen = () => {
     onRefresh,
     onResetBalance,
   } = useHomeData();
+
+  // Get balance from Redux store
+  const reduxBalance = useSelector((state: RootState) => state.balance.balance);
 
   const navigateToChart = (crypto: any) => {
     navigateToCryptoChart(crypto);
@@ -38,9 +51,38 @@ const HomeScreen = () => {
   const handleRefresh = async () => {
     if (user) {
       await refreshUserData(user.id);
+      // Also refresh Redux balance
+      dispatch(loadBalance());
     }
     onRefresh();
   };
+
+  // Load balance from database on component mount
+  useEffect(() => {
+    if (user) {
+      dispatch(loadBalance());
+    }
+  }, [user, dispatch]);
+
+  // Calculate real-time portfolio metrics using utility function
+  const portfolioMetrics = useMemo(() => {
+    return calculatePortfolioMetrics(reduxBalance);
+  }, [reduxBalance]);
+
+  // Create a proper UserBalance object for BalanceSection
+  const balanceForDisplay = useMemo(() => {
+    if (!reduxBalance) {
+      return {
+        totalInUSD: 0,
+        holdings: {},
+      };
+    }
+
+    return {
+      totalInUSD: reduxBalance.totalPortfolioValue,
+      holdings: reduxBalance.holdings,
+    };
+  }, [reduxBalance]);
 
   if (loading) {
     return (
@@ -77,28 +119,25 @@ const HomeScreen = () => {
         )}
 
         <BalanceSection
-          balance={balance}
+          balance={balanceForDisplay}
           isBalanceHidden={isBalanceHidden}
           onResetBalance={onResetBalance}
         />
 
         {/* Portfolio Summary */}
-        {userStats && user && (
+        {user && (
           <View style={styles.portfolioSection}>
             <Text style={styles.sectionTitle}>Portfolio Summary</Text>
             <View style={styles.portfolioStats}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>
-                  $
-                  {parseFloat(
-                    userStats.portfolio_value || "0"
-                  ).toLocaleString()}
+                  {formatPortfolioValue(portfolioMetrics.totalValue)}
                 </Text>
                 <Text style={styles.statLabel}>Total Value</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>
-                  {userStats.total_assets || 0}
+                  {portfolioMetrics.totalAssets}
                 </Text>
                 <Text style={styles.statLabel}>Assets</Text>
               </View>
@@ -106,18 +145,23 @@ const HomeScreen = () => {
                 <Text
                   style={[
                     styles.statValue,
-                    {
-                      color:
-                        parseFloat(user.total_pnl || "0") >= 0
-                          ? "#10BA68"
-                          : "#F9335D",
-                    },
+                    { color: getPnLColor(portfolioMetrics.totalPnL) },
                   ]}>
-                  {parseFloat(user.total_pnl || "0") >= 0 ? "+" : ""}$
-                  {parseFloat(user.total_pnl || "0").toLocaleString()}
+                  {formatPnL(portfolioMetrics.totalPnL)}
                 </Text>
                 <Text style={styles.statLabel}>Total P&L</Text>
               </View>
+            </View>
+            {/* P&L Percentage */}
+            <View style={styles.pnlPercentageContainer}>
+              <Text
+                style={[
+                  styles.pnlPercentage,
+                  { color: getPnLColor(portfolioMetrics.totalPnLPercentage) },
+                ]}>
+                {portfolioMetrics.totalPnLPercentage >= 0 ? "+" : ""}
+                {portfolioMetrics.totalPnLPercentage.toFixed(2)}%
+              </Text>
             </View>
           </View>
         )}
@@ -130,7 +174,14 @@ const HomeScreen = () => {
           scrollEnabled={false}
         />
       </ScrollView>
-      <AddButton onPress={handleAddButtonPress} />
+      <View
+        style={{
+          position: "absolute",
+          bottom: -10,
+          right: 0,
+        }}>
+        <AddButton onPress={handleAddButtonPress} />
+      </View>
     </SafeAreaView>
   );
 };
@@ -201,6 +252,14 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: "#9DA3B4",
+  },
+  pnlPercentageContainer: {
+    alignItems: "center",
+    marginTop: 12,
+  },
+  pnlPercentage: {
+    fontSize: 20,
+    fontWeight: "bold",
   },
 });
 

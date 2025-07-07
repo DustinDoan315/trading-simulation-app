@@ -1,10 +1,13 @@
-import UserRepository from "../services/UserRepository";
-import UUIDService from "../services/UUIDService";
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Holding, HoldingUpdatePayload, Order } from "../types/crypto";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import UserRepository from '../services/UserRepository';
+import UUIDService from '../services/UUIDService';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
+
 
 export interface UserBalance {
-  totalInUSD: number;
+  usdtBalance: number; // Available USDT for trading
+  totalPortfolioValue: number; // Total portfolio value including all assets
   holdings: Record<string, Holding>;
 }
 
@@ -40,38 +43,47 @@ const calculateProfitLoss = (holding: Holding) => {
   return holding;
 };
 
-// Helper to recalculate total portfolio value
-const recalculatePortfolioValue = (holdings: Record<string, Holding>) => {
+// Helper to calculate total portfolio value
+const calculateTotalPortfolioValue = (
+  holdings: Record<string, Holding>,
+  usdtBalance: number
+): number => {
   if (!holdings || typeof holdings !== "object") {
     console.warn(
       "Invalid holdings object for portfolio value calculation:",
       holdings
     );
-    return 0;
+    return usdtBalance;
   }
 
-  return Object.values(holdings).reduce((sum, holding) => {
+  // Start with USDT balance as base
+  let totalValue = usdtBalance;
+
+  // Add value of all other holdings (excluding USDT to avoid double counting)
+  Object.keys(holdings).forEach((key) => {
+    const holding = holdings[key];
     if (
       !holding ||
       typeof holding.amount !== "number" ||
       typeof holding.valueInUSD !== "number"
     ) {
       console.warn("Invalid holding data in portfolio calculation:", holding);
-      return sum;
+      return;
     }
 
-    // For USDT, use the amount directly since 1 USDT = 1 USD
-    if (holding.symbol === "USDT") {
-      return sum + holding.amount;
+    // Skip USDT as it's already counted in usdtBalance
+    if (holding.symbol !== "USDT") {
+      totalValue += holding.valueInUSD;
     }
-    // For other tokens, use the valueInUSD which represents the actual USD value
-    return sum + holding.valueInUSD;
-  }, 0);
+  });
+
+  return totalValue;
 };
 
 const initialState: BalanceState = {
   balance: {
-    totalInUSD: 100000,
+    usdtBalance: 100000,
+    totalPortfolioValue: 100000,
     holdings: {
       USDT: {
         amount: 100000,
@@ -95,65 +107,138 @@ const initialState: BalanceState = {
   error: null,
 };
 
-// Async thunk to load balance from AsyncStorage
+// Async thunk to load balance from database
 export const loadBalance = createAsyncThunk("balance/load", async () => {
   const uuid = await UUIDService.getOrCreateUser();
-  const user = await UserRepository.getUser(uuid);
-  const balance = user ? parseFloat(user.balance) : 100000;
+  console.log("====================================");
+  console.log("Loading balance - UUID:", uuid);
+  
+  let user = await UserRepository.getUser(uuid);
+  console.log("Loading balance - Retrieved user from UserRepository:", user);
+  
+  // If user not found in UserRepository, try to get from UUIDService cache
+  if (!user) {
+    console.log("Loading balance - User not found in UserRepository, trying UUIDService cache...");
+    try {
+      const userProfileStr = await AsyncStorage.getItem("user_profile");
+      if (userProfileStr) {
+        const userProfile = JSON.parse(userProfileStr);
+        if (userProfile.id === uuid) {
+          user = userProfile;
+          console.log("Loading balance - Found user in UUIDService cache:", user);
+        }
+      }
+    } catch (error) {
+      console.error("Loading balance - Error getting user from UUIDService cache:", error);
+    }
+  }
+
+  // If still no user found, recreate user data
+  if (!user) {
+    console.log("Loading balance - No user found anywhere, recreating user data...");
+    try {
+      const { AsyncStorageService } = await import('../services/AsyncStorageService');
+      user = await AsyncStorageService.recreateUserData(uuid, 100000);
+      console.log("Loading balance - User data recreated:", user);
+    } catch (error) {
+      console.error("Loading balance - Error recreating user data:", error);
+    }
+  }
+  
+  let usdtBalance = user ? parseFloat(user.usdt_balance) : 100000;
+  console.log("Loading balance - Initial USDT balance from user data:", usdtBalance);
+  
   const portfolio = await UserRepository.getPortfolio(uuid);
 
+  console.log("Loading balance - Portfolio:", portfolio);
+  console.log("Loading balance - User USDT balance:", usdtBalance);
   console.log("====================================");
-  console.log("Portfolio loaded:", portfolio);
-  console.log("User balance:", balance);
-  console.log("====================================");
+
+  // Calculate the correct USDT balance based on portfolio data
+  // If there are crypto holdings, the USDT balance should be reduced
+  let calculatedUsdtBalance = 100000; // Start with initial balance
+  let totalCryptoValue = 0;
+
+  portfolio.forEach((item) => {
+    if (item.symbol.toUpperCase() !== "USDT") {
+      const quantity = parseFloat(item.quantity);
+      const currentPrice = parseFloat(item.current_price || item.avg_cost);
+      const valueInUSD = quantity * currentPrice;
+      totalCryptoValue += valueInUSD;
+      console.log(`Portfolio item ${item.symbol}: ${quantity} * ${currentPrice} = ${valueInUSD}`);
+    }
+  });
+
+  calculatedUsdtBalance = 100000 - totalCryptoValue;
+  console.log("Loading balance - Total crypto value:", totalCryptoValue);
+  console.log("Loading balance - Calculated USDT balance:", calculatedUsdtBalance);
+
+  // Use the calculated balance if it's different from the stored balance
+  if (Math.abs(calculatedUsdtBalance - usdtBalance) > 1) {
+    console.log("Loading balance - USDT balance mismatch detected!");
+    console.log("Loading balance - Stored balance:", usdtBalance);
+    console.log("Loading balance - Calculated balance:", calculatedUsdtBalance);
+    console.log("Loading balance - Using calculated balance");
+    usdtBalance = calculatedUsdtBalance;
+    
+    // Update the user's USDT balance in AsyncStorage
+    try {
+      await UserRepository.updateUserBalance(uuid, usdtBalance);
+      console.log("Loading balance - Updated user USDT balance in AsyncStorage");
+    } catch (error) {
+      console.error("Loading balance - Failed to update USDT balance:", error);
+    }
+  }
 
   // Initialize holdings object
   const holdings: Record<string, Holding> = {};
 
-  // Add portfolio holdings first
-  console.log("Loading portfolio items:", portfolio);
+  // Add portfolio holdings (excluding USDT)
   portfolio.forEach((item) => {
-    console.log("Processing portfolio item:", item);
-    holdings[item.symbol] = {
-      amount: parseFloat(item.quantity),
-      valueInUSD: parseFloat(item.quantity) * parseFloat(item.avg_cost),
-      symbol: item.symbol,
-      name: item.symbol,
-      image:
-        item.image ||
-        `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
-      averageBuyPrice: parseFloat(item.avg_cost),
-      currentPrice: parseFloat(item.avg_cost), // Will be updated with real price later
-      profitLoss: 0,
-      profitLossPercentage: 0,
-    };
-    console.log(`Loaded ${item.symbol}:`, holdings[item.symbol]);
+    if (item.symbol.toUpperCase() !== "USDT") {
+      console.log("Processing portfolio item:", item);
+      const quantity = parseFloat(item.quantity);
+      const currentPrice = parseFloat(item.current_price || item.avg_cost);
+      const avgCost = parseFloat(item.avg_cost);
+      const valueInUSD = quantity * currentPrice;
+      const profitLoss = valueInUSD - (quantity * avgCost);
+      const profitLossPercentage = avgCost > 0 ? (profitLoss / (quantity * avgCost)) * 100 : 0;
+      
+      holdings[item.symbol.toUpperCase()] = {
+        amount: quantity,
+        valueInUSD: valueInUSD,
+        symbol: item.symbol.toUpperCase(),
+        name: item.symbol,
+        image:
+          item.image ||
+          `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
+        averageBuyPrice: avgCost,
+        currentPrice: currentPrice,
+        profitLoss: profitLoss,
+        profitLossPercentage: profitLossPercentage,
+      };
+    }
   });
 
-  // If no USDT in portfolio, initialize with the balance amount
-  if (!holdings.USDT) {
-    console.log(
-      "No USDT found in portfolio, initializing with balance:",
-      balance
-    );
-    holdings.USDT = {
-      amount: balance,
-      valueInUSD: balance,
-      symbol: "USDT",
-      name: "Tether",
-      image:
-        "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
-      averageBuyPrice: 1,
-      currentPrice: 1,
-      profitLoss: 0,
-      profitLossPercentage: 0,
-    };
-  } else {
-    console.log("USDT found in portfolio:", holdings.USDT);
-  }
+  // Always include USDT in holdings for display purposes
+  holdings.USDT = {
+    amount: usdtBalance,
+    valueInUSD: usdtBalance,
+    symbol: "USDT",
+    name: "Tether",
+    image:
+      "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
+    averageBuyPrice: 1,
+    currentPrice: 1,
+    profitLoss: 0,
+    profitLossPercentage: 0,
+  };
+
+  const totalPortfolioValue = calculateTotalPortfolioValue(holdings, usdtBalance);
 
   return {
-    totalInUSD: balance,
+    usdtBalance,
+    totalPortfolioValue,
     holdings,
   };
 });
@@ -171,19 +256,30 @@ export const balanceSlice = createSlice({
 
       if (state.previousBalance) {
         state.changeValue =
-          state.balance.totalInUSD - state.previousBalance.totalInUSD;
+          state.balance.totalPortfolioValue - state.previousBalance.totalPortfolioValue;
         state.changePercentage =
-          state.previousBalance.totalInUSD !== 0
-            ? (state.changeValue / state.previousBalance.totalInUSD) * 100
+          state.previousBalance.totalPortfolioValue !== 0
+            ? (state.changeValue / state.previousBalance.totalPortfolioValue) * 100
             : 0;
       }
 
-      // Persist balance to database - use USDT balance only
-      const usdtBalance = state.balance.holdings.USDT
-        ? state.balance.holdings.USDT.amount
-        : 0;
+      // Persist both USDT balance and portfolio to database
       UUIDService.getOrCreateUser().then((uuid) => {
-        UserRepository.updateUserBalance(uuid, usdtBalance);
+        // Calculate total PnL
+        let totalPnL = 0;
+        Object.values(state.balance.holdings).forEach((holding: any) => {
+          if (holding.symbol !== "USDT") {
+            totalPnL += holding.profitLoss || 0;
+          }
+        });
+
+        UserRepository.updateUserBalanceAndPortfolioValue(
+          uuid, 
+          state.balance.usdtBalance, 
+          state.balance.totalPortfolioValue, 
+          totalPnL
+        );
+        UserRepository.updatePortfolio(uuid, state.balance.holdings);
       });
     },
     resetBalance: (state) => {
@@ -193,131 +289,112 @@ export const balanceSlice = createSlice({
       console.log("====================================");
       console.log("updateHolding reducer called");
       console.log("Payload:", JSON.stringify(action.payload, null, 2));
+      console.log("Current USDT balance:", state.balance.usdtBalance);
       console.log("====================================");
 
       const { cryptoId, amount, valueInUSD, symbol, name, image } =
         action.payload;
 
       // Normalize cryptoId to uppercase to prevent duplicates
-      const normalizedCryptoId = cryptoId.toUpperCase();
+      const normalizedSymbol = symbol.toUpperCase();
       const holdings = state.balance.holdings;
-      const currentHolding = holdings[normalizedCryptoId];
-      const pricePerToken = valueInUSD / amount;
+      const currentHolding = holdings[normalizedSymbol];
 
       console.log(
         "Current holding for",
-        normalizedCryptoId,
+        normalizedSymbol,
         ":",
         currentHolding
       );
 
-      // Special handling for USDT
-      if (normalizedCryptoId === "USDT") {
-        console.log("Processing USDT update");
+      // Handle USDT balance updates separately from other holdings
+      if (normalizedSymbol === "USDT") {
+        console.log("Processing USDT balance update");
         console.log("USDT update details:", {
-          currentAmount: currentHolding?.amount,
+          currentUsdtBalance: state.balance.usdtBalance,
           updateAmount: amount,
-          updateValueInUSD: valueInUSD,
-          symbol: symbol,
+          operation: amount > 0 ? "adding USDT (sell)" : "subtracting USDT (buy)",
         });
 
-        if (!currentHolding) {
-          // Initialize USDT if not exists
-          holdings[normalizedCryptoId] = {
-            amount: 100000,
-            valueInUSD: 100000,
-            symbol: "USDT",
-            name: "Tether",
-            image:
-              "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
-            averageBuyPrice: 1,
-            currentPrice: 1,
-            profitLoss: 0,
-            profitLossPercentage: 0,
-          };
-          console.log("Initialized new USDT holding with 100,000");
-        } else {
-          // For USDT, we can both add (when selling tokens) and subtract (when buying tokens)
-          const newAmount = currentHolding.amount + amount;
-          console.log("USDT balance calculation:", {
-            currentAmount: currentHolding.amount,
-            updateAmount: amount,
-            newAmount: newAmount,
-            operation:
-              amount > 0 ? "adding USDT (sell)" : "subtracting USDT (buy)",
-          });
-
-          // Prevent negative balance
-          if (newAmount < 0) {
-            console.error(
-              "Insufficient USDT balance - would result in:",
-              newAmount
-            );
-            throw new Error("Insufficient USDT balance");
-          }
-
-          holdings[normalizedCryptoId] = {
-            ...currentHolding,
-            amount: newAmount,
-            valueInUSD: newAmount, // USDT value is always equal to amount
-          };
-          console.log("Updated USDT holding - new amount:", newAmount);
+        // Update USDT balance directly
+        const newUsdtBalance = state.balance.usdtBalance + amount;
+        
+        // Prevent negative balance
+        if (newUsdtBalance < 0) {
+          console.error(
+            "Insufficient USDT balance - would result in:",
+            newUsdtBalance
+          );
+          throw new Error("Insufficient USDT balance");
         }
-      } else {
-        console.log("Processing non-USDT cryptocurrency update");
-        // Non-USDT cryptocurrencies
-        if (currentHolding) {
-          const totalAmount = currentHolding.amount + amount;
 
-          // For sell operations, we need to handle valueInUSD differently
-          let newValueInUSD;
-          if (amount < 0) {
-            // Selling: reduce valueInUSD proportionally
-            const sellRatio = Math.abs(amount) / currentHolding.amount;
-            newValueInUSD = currentHolding.valueInUSD * (1 - sellRatio);
+        state.balance.usdtBalance = newUsdtBalance;
+        
+        // Update USDT holding for display purposes
+        holdings.USDT = {
+          ...holdings.USDT,
+          amount: newUsdtBalance,
+          valueInUSD: newUsdtBalance,
+        };
+
+        console.log("Updated USDT balance to:", newUsdtBalance);
+      } else {
+        console.log("Processing cryptocurrency holding update");
+        const pricePerToken = amount !== 0 ? Math.abs(valueInUSD / amount) : 0;
+
+        if (currentHolding) {
+          const newAmount = currentHolding.amount + amount;
+
+          if (amount > 0) {
+            // Buying: add to position
+            const totalCost = currentHolding.amount * currentHolding.averageBuyPrice + valueInUSD;
+            const newAverageBuyPrice = newAmount > 0 ? totalCost / newAmount : 0;
+            const newValueInUSD = currentHolding.valueInUSD + valueInUSD;
+
+            holdings[normalizedSymbol] = {
+              ...currentHolding,
+              amount: newAmount,
+              valueInUSD: newValueInUSD,
+              averageBuyPrice: newAverageBuyPrice,
+            };
           } else {
-            // Buying: add the new value
-            newValueInUSD = currentHolding.valueInUSD + valueInUSD;
+            // Selling: reduce position proportionally
+            const sellRatio = Math.abs(amount) / currentHolding.amount;
+            const newValueInUSD = currentHolding.valueInUSD * (1 - sellRatio);
+
+            holdings[normalizedSymbol] = {
+              ...currentHolding,
+              amount: newAmount,
+              valueInUSD: newValueInUSD,
+              // Keep the same average buy price when selling
+            };
           }
 
-          // Calculate new average buy price
-          const totalCost =
-            currentHolding.amount * currentHolding.averageBuyPrice + valueInUSD;
-          const newAverageBuyPrice =
-            totalAmount > 0 ? totalCost / totalAmount : 0;
+          // Recalculate profit/loss
+          calculateProfitLoss(holdings[normalizedSymbol]);
 
-          holdings[normalizedCryptoId] = {
-            ...currentHolding,
-            amount: totalAmount,
-            valueInUSD: newValueInUSD,
-            averageBuyPrice: newAverageBuyPrice,
-          };
-
-          // Recalculate profit/loss with updated values
-          calculateProfitLoss(holdings[normalizedCryptoId]);
           console.log(
             "Updated existing holding for",
-            normalizedCryptoId,
+            normalizedSymbol,
             "- new amount:",
-            totalAmount,
-            "- new valueInUSD:",
-            newValueInUSD,
+            newAmount,
             "- operation:",
             amount > 0 ? "buy" : "sell"
           );
 
           // Remove holding if amount becomes zero or negative
-          if (totalAmount <= 0) {
+          if (newAmount <= 0) {
             console.log(
-              `Removing ${normalizedCryptoId} holding - amount is zero or negative`
+              `Removing ${normalizedSymbol} holding - amount is zero or negative`
             );
-            delete holdings[normalizedCryptoId];
+            delete holdings[normalizedSymbol];
           }
         } else {
-          holdings[normalizedCryptoId] = {
+          // Create new holding
+          holdings[normalizedSymbol] = {
             amount,
             valueInUSD,
-            symbol: symbol.toUpperCase(),
+            symbol: normalizedSymbol,
             name,
             image,
             averageBuyPrice: pricePerToken,
@@ -327,86 +404,75 @@ export const balanceSlice = createSlice({
           };
           console.log(
             "Created new holding for",
-            normalizedCryptoId,
+            normalizedSymbol,
             "- amount:",
             amount
           );
         }
       }
 
-      state.balance.totalInUSD = recalculatePortfolioValue(holdings);
-      console.log("Updated total portfolio value:", state.balance.totalInUSD);
-      console.log(
-        "Portfolio breakdown:",
-        Object.entries(holdings).map(([symbol, holding]) => ({
+      // Recalculate total portfolio value
+      state.balance.totalPortfolioValue = calculateTotalPortfolioValue(
+        holdings,
+        state.balance.usdtBalance
+      );
+
+      console.log("Updated USDT balance:", state.balance.usdtBalance);
+      console.log("Updated total portfolio value:", state.balance.totalPortfolioValue);
+      console.log("Portfolio breakdown:");
+      Object.keys(holdings).forEach((symbol) => {
+        const holding = holdings[symbol];
+        console.log({
           symbol,
           amount: holding.amount,
           valueInUSD: holding.valueInUSD,
           currentPrice: holding.currentPrice,
-        }))
-      );
+        });
+      });
 
-      // Persist balance and holdings to database
-      console.log("About to persist to database...");
+      // Persist to database
+      console.log("Persisting balance and portfolio to database...");
 
       try {
-        // Extract values from state before async operations to avoid Proxy issues
-        const totalInUSD = state.balance.totalInUSD;
+        // Extract values to avoid Proxy issues
+        const usdtBalance = state.balance.usdtBalance;
+        const totalPortfolioValue = state.balance.totalPortfolioValue;
         const holdingsCopy = JSON.parse(JSON.stringify(holdings));
-        const usdtBalance = holdingsCopy.USDT ? holdingsCopy.USDT.amount : 0;
 
-        console.log(
-          "Holdings copy created successfully:",
-          JSON.stringify(holdingsCopy, null, 2)
-        );
-        console.log("Total in USD extracted:", totalInUSD);
-        console.log("USDT balance extracted:", usdtBalance);
+        // Calculate total PnL
+        let totalPnL = 0;
+        Object.values(holdingsCopy).forEach((holding: any) => {
+          if (holding.symbol !== "USDT") {
+            totalPnL += holding.profitLoss || 0;
+          }
+        });
 
+        // Use a single async operation to update both balance and portfolio
         UUIDService.getOrCreateUser()
-          .then((uuid) => {
+          .then(async (uuid) => {
             console.log("✅ Got UUID for persistence:", uuid);
-
-            // Update user balance with USDT balance only (not total portfolio value)
-            const usdtBalance = holdingsCopy.USDT
-              ? holdingsCopy.USDT.amount
-              : 0;
-            console.log(
-              "Updating user balance with USDT balance only:",
-              usdtBalance
+            
+            // Update both USDT balance and total portfolio value in users table
+            await UserRepository.updateUserBalanceAndPortfolioValue(
+              uuid, 
+              usdtBalance, 
+              totalPortfolioValue, 
+              totalPnL
             );
-            return UserRepository.updateUserBalance(uuid, usdtBalance);
-          })
-          .then(() => {
-            console.log("✅ User balance updated successfully");
-
-            // Get UUID again for portfolio update
-            return UUIDService.getOrCreateUser();
-          })
-          .then((uuid) => {
-            console.log("✅ Got UUID for portfolio update:", uuid);
-            console.log("Calling UserRepository.updatePortfolio...");
-
-            return UserRepository.updatePortfolio(uuid, holdingsCopy);
-          })
-          .then(() => {
-            console.log("✅ Portfolio updated successfully");
+            
+            // Update portfolio holdings in the same operation
+            await UserRepository.updatePortfolio(uuid, holdingsCopy);
+            
+            console.log("✅ All database updates completed successfully");
           })
           .catch((error) => {
             console.error(
-              "❌ Error in updateHolding persistence chain:",
+              "❌ Error in updateHolding persistence:",
               error
-            );
-            console.error(
-              "❌ Error stack:",
-              error instanceof Error ? error.stack : "No stack trace"
             );
           });
       } catch (error) {
         console.error("❌ Error in updateHolding (before async):", error);
-        console.error(
-          "❌ Error stack:",
-          error instanceof Error ? error.stack : "No stack trace"
-        );
       }
 
       console.log("updateHolding reducer completed");
@@ -414,16 +480,27 @@ export const balanceSlice = createSlice({
     },
     updatePortfolio: (state, action: PayloadAction<UserBalance>) => {
       state.balance = action.payload;
-      state.balance.totalInUSD = recalculatePortfolioValue(
-        action.payload.holdings
+      state.balance.totalPortfolioValue = calculateTotalPortfolioValue(
+        action.payload.holdings,
+        action.payload.usdtBalance
       );
 
-      // Persist to database - use USDT balance only for user balance
-      const usdtBalance = action.payload.holdings.USDT
-        ? action.payload.holdings.USDT.amount
-        : 0;
+      // Persist to database
       UUIDService.getOrCreateUser().then((uuid) => {
-        UserRepository.updateUserBalance(uuid, usdtBalance);
+        // Calculate total PnL
+        let totalPnL = 0;
+        Object.values(action.payload.holdings).forEach((holding: any) => {
+          if (holding.symbol !== "USDT") {
+            totalPnL += holding.profitLoss || 0;
+          }
+        });
+
+        UserRepository.updateUserBalanceAndPortfolioValue(
+          uuid, 
+          action.payload.usdtBalance, 
+          action.payload.totalPortfolioValue, 
+          totalPnL
+        );
         UserRepository.updatePortfolio(uuid, action.payload.holdings);
       });
     },
@@ -432,23 +509,173 @@ export const balanceSlice = createSlice({
       action: PayloadAction<{ cryptoId: string; currentPrice: number }>
     ) => {
       const { cryptoId, currentPrice } = action.payload;
-      const holding = state.balance.holdings[cryptoId];
+      const normalizedSymbol = cryptoId.toUpperCase();
+      const holding = state.balance.holdings[normalizedSymbol];
 
       if (holding) {
         holding.currentPrice = currentPrice;
+        holding.valueInUSD = holding.amount * currentPrice;
         calculateProfitLoss(holding);
-        state.balance.totalInUSD = recalculatePortfolioValue(
-          state.balance.holdings
+        
+        // Recalculate total portfolio value
+        state.balance.totalPortfolioValue = calculateTotalPortfolioValue(
+          state.balance.holdings,
+          state.balance.usdtBalance
         );
 
-        // Persist balance to database - use USDT balance only
-        const usdtBalance = state.balance.holdings.USDT
-          ? state.balance.holdings.USDT.amount
-          : 0;
+        // Update database with new values
         UUIDService.getOrCreateUser().then((uuid) => {
-          UserRepository.updateUserBalance(uuid, usdtBalance);
+          UserRepository.updatePortfolio(uuid, state.balance.holdings);
         });
       }
+    },
+    // New action to sync USDT balance with the correct amount
+    syncUsdtBalance: (state, action: PayloadAction<number>) => {
+      const newBalance = action.payload;
+      state.balance.usdtBalance = newBalance;
+      
+      // Update USDT holding for display
+      if (state.balance.holdings.USDT) {
+        state.balance.holdings.USDT.amount = newBalance;
+        state.balance.holdings.USDT.valueInUSD = newBalance;
+      }
+      
+      // Recalculate total portfolio value
+      state.balance.totalPortfolioValue = calculateTotalPortfolioValue(
+        state.balance.holdings,
+        state.balance.usdtBalance
+      );
+    },
+    // New action to handle complete trade updates (crypto + USDT) in a single call
+    updateTrade: (state, action: PayloadAction<{
+      cryptoUpdate: HoldingUpdatePayload;
+      usdtUpdate: HoldingUpdatePayload;
+    }>) => {
+      console.log("====================================");
+      console.log("updateTrade reducer called");
+      console.log("Payload:", JSON.stringify(action.payload, null, 2));
+      console.log("Current USDT balance:", state.balance.usdtBalance);
+      console.log("====================================");
+
+      const { cryptoUpdate, usdtUpdate } = action.payload;
+      const holdings = state.balance.holdings;
+
+      // Process crypto update
+      const normalizedCryptoSymbol = cryptoUpdate.symbol.toUpperCase();
+      const currentCryptoHolding = holdings[normalizedCryptoSymbol];
+
+      if (currentCryptoHolding) {
+        const newAmount = currentCryptoHolding.amount + cryptoUpdate.amount;
+        
+        if (cryptoUpdate.amount > 0) {
+          // Buying: add to position
+          const totalCost = currentCryptoHolding.amount * currentCryptoHolding.averageBuyPrice + cryptoUpdate.valueInUSD;
+          const newAverageBuyPrice = newAmount > 0 ? totalCost / newAmount : 0;
+          const newValueInUSD = currentCryptoHolding.valueInUSD + cryptoUpdate.valueInUSD;
+
+          holdings[normalizedCryptoSymbol] = {
+            ...currentCryptoHolding,
+            amount: newAmount,
+            valueInUSD: newValueInUSD,
+            averageBuyPrice: newAverageBuyPrice,
+          };
+        } else {
+          // Selling: reduce position proportionally
+          const sellRatio = Math.abs(cryptoUpdate.amount) / currentCryptoHolding.amount;
+          const newValueInUSD = currentCryptoHolding.valueInUSD * (1 - sellRatio);
+
+          holdings[normalizedCryptoSymbol] = {
+            ...currentCryptoHolding,
+            amount: newAmount,
+            valueInUSD: newValueInUSD,
+          };
+        }
+
+        calculateProfitLoss(holdings[normalizedCryptoSymbol]);
+
+        if (newAmount <= 0) {
+          delete holdings[normalizedCryptoSymbol];
+        }
+      } else {
+        // Create new holding
+        const pricePerToken = cryptoUpdate.amount !== 0 ? Math.abs(cryptoUpdate.valueInUSD / cryptoUpdate.amount) : 0;
+        holdings[normalizedCryptoSymbol] = {
+          amount: cryptoUpdate.amount,
+          valueInUSD: cryptoUpdate.valueInUSD,
+          symbol: normalizedCryptoSymbol,
+          name: cryptoUpdate.name,
+          image: cryptoUpdate.image,
+          averageBuyPrice: pricePerToken,
+          currentPrice: pricePerToken,
+          profitLoss: 0,
+          profitLossPercentage: 0,
+        };
+      }
+
+      // Process USDT update
+      const newUsdtBalance = state.balance.usdtBalance + usdtUpdate.amount;
+      
+      if (newUsdtBalance < 0) {
+        console.error("Insufficient USDT balance - would result in:", newUsdtBalance);
+        throw new Error("Insufficient USDT balance");
+      }
+
+      state.balance.usdtBalance = newUsdtBalance;
+      
+      holdings.USDT = {
+        ...holdings.USDT,
+        amount: newUsdtBalance,
+        valueInUSD: newUsdtBalance,
+      };
+
+      // Recalculate total portfolio value
+      state.balance.totalPortfolioValue = calculateTotalPortfolioValue(
+        holdings,
+        state.balance.usdtBalance
+      );
+
+      console.log("Updated USDT balance:", state.balance.usdtBalance);
+      console.log("Updated total portfolio value:", state.balance.totalPortfolioValue);
+
+      // Persist to database in a single operation
+      console.log("Persisting trade to database...");
+
+      try {
+        const usdtBalance = state.balance.usdtBalance;
+        const totalPortfolioValue = state.balance.totalPortfolioValue;
+        const holdingsCopy = JSON.parse(JSON.stringify(holdings));
+
+        let totalPnL = 0;
+        Object.values(holdingsCopy).forEach((holding: any) => {
+          if (holding.symbol !== "USDT") {
+            totalPnL += holding.profitLoss || 0;
+          }
+        });
+
+        UUIDService.getOrCreateUser()
+          .then(async (uuid) => {
+            console.log("✅ Got UUID for trade persistence:", uuid);
+            
+            await UserRepository.updateUserBalanceAndPortfolioValue(
+              uuid, 
+              usdtBalance, 
+              totalPortfolioValue, 
+              totalPnL
+            );
+            
+            await UserRepository.updatePortfolio(uuid, holdingsCopy);
+            
+            console.log("✅ Trade database updates completed successfully");
+          })
+          .catch((error) => {
+            console.error("❌ Error in updateTrade persistence:", error);
+          });
+      } catch (error) {
+        console.error("❌ Error in updateTrade (before async):", error);
+      }
+
+      console.log("updateTrade reducer completed");
+      console.log("====================================");
     },
   },
   extraReducers: (builder) => {
@@ -475,5 +702,7 @@ export const {
   addTradeHistory,
   updateCurrentPrice,
   updatePortfolio,
+  syncUsdtBalance,
+  updateTrade,
 } = balanceSlice.actions;
 export default balanceSlice.reducer;

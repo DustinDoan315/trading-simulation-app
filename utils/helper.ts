@@ -1,11 +1,13 @@
-import * as Application from "expo-application";
-import * as bip39 from "bip39";
-import * as Crypto from "expo-crypto";
-import Toast from "react-native-toast-message";
-import { Buffer } from "buffer";
-import { Order } from "@/types/crypto";
-import { Platform } from "react-native";
-import { ToastPos, ToastType } from "@/types/common";
+import * as Application from 'expo-application';
+import * as bip39 from 'bip39';
+import * as Crypto from 'expo-crypto';
+import Toast from 'react-native-toast-message';
+import { Buffer } from 'buffer';
+import { Order } from '@/types/crypto';
+import { Platform } from 'react-native';
+import { ToastPos, ToastType } from '@/types/common';
+
+
 
 global.Buffer = Buffer;
 
@@ -32,18 +34,6 @@ export const formatTime = (time: number) => {
   return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 };
 
-// export const storePassword = async (password: string) => {
-//   try {
-//     // Store the password with a service name, making it identifiable
-//     await Keychain.setGenericPassword("walletPassword", password, {
-//       service: "crypto-wallet", // This is optional, can be used to group your sensitive data
-//     });
-//     console.log("Password stored securely!");
-//   } catch (error) {
-//     console.error("Failed to store password: ", error);
-//   }
-// };
-
 export const generateSeedPhrase = async () => {
   try {
     // Generate random bytes using expo-crypto
@@ -62,41 +52,6 @@ export const generateSeedPhrase = async () => {
     return null;
   }
 };
-
-// export const retrievePassword = async () => {
-//   try {
-//     const credentials = await Keychain.getGenericPassword({
-//       service: "crypto-wallet",
-//     });
-
-//     if (credentials) {
-//       console.log("Password retrieved:", credentials.password);
-//       return credentials.password;
-//     } else {
-//       console.log("No password stored");
-//       return null;
-//     }
-//   } catch (error) {
-//     console.error("Failed to retrieve password: ", error);
-//     return null;
-//   }
-// };
-
-// // Create a wallet from the seed phrase and password
-// export const createWalletFromSeed = async (seedPhrase: any) => {
-//   try {
-//     // Generate a wallet from the seed phrase
-//     const wallet = HDNodeWallet.fromMnemonic(seedPhrase);
-
-//     console.log("Wallet Address:", wallet.address);
-//     console.log("Wallet Private Key:", wallet.privateKey);
-
-//     return wallet;
-//   } catch (error) {
-//     console.error("Failed to create wallet: ", error);
-//     return null;
-//   }
-// };
 
 // --- Error Class ---
 export class OrderError extends Error {
@@ -217,6 +172,7 @@ export interface OrderDispatchContext {
   addTradeHistory: (order: Order) => void;
   updateHolding: (payload: any) => void;
   syncTransaction?: (order: Order) => void;
+  updateTrade?: (payload: { cryptoUpdate: any; usdtUpdate: any }) => void;
 }
 
 /** Throws OrderError on validation failure */
@@ -235,10 +191,11 @@ function validateOrder(order: Order, context: OrderValidationContext): void {
     const msg = `Minimum order amount is ${MIN_AMOUNT} ${order.symbol}`;
     throw new OrderError("amount.tooSmall", msg);
   }
-  if (order.type === "sell") {
-    const holdings = context.getHoldings();
-    console.log("📊 Current holdings:", holdings);
+  
+  const holdings = context.getHoldings();
+  console.log("📊 Current holdings:", holdings);
 
+  if (order.type === "sell") {
     // Try both uppercase and lowercase to handle case sensitivity
     const h =
       holdings[order.symbol.toUpperCase()] ||
@@ -266,19 +223,37 @@ function validateOrder(order: Order, context: OrderValidationContext): void {
     }
 
     console.log("✅ Sufficient balance for sell order");
+  } else if (order.type === "buy") {
+    // For buy orders, check USDT balance
+    const usdtHolding = holdings.USDT || holdings.usdt;
+    console.log("🔍 USDT holding for buy order:", usdtHolding);
+
+    if (!usdtHolding) {
+      const msg = "No USDT balance found for buying";
+      console.error("❌ No USDT holding found");
+      throw new OrderError("balance.insufficient", msg);
+    }
+
+    if (usdtHolding.amount < order.total) {
+      const msg = `Insufficient USDT balance. You have ${usdtHolding.amount} USDT, trying to spend ${order.total} USDT`;
+      console.error("❌ Insufficient USDT balance:", {
+        available: usdtHolding.amount,
+        requested: order.total,
+      });
+      throw new OrderError("balance.insufficient", msg);
+    }
+
+    console.log("✅ Sufficient USDT balance for buy order");
   }
 }
 
-/** Dispatch both crypto and USDT adjustments */
+/** Dispatch both crypto and USDT adjustments with improved logic */
 function dispatchUpdates(
   order: Order,
   isBuy: boolean,
   imageUrl: string,
   context: OrderDispatchContext
 ) {
-  const sign = isBuy ? 1 : -1;
-  const symbolId = order.symbol.toLowerCase();
-
   console.log("🔄 Dispatching order updates:", {
     orderType: order.type,
     symbol: order.symbol,
@@ -289,25 +264,64 @@ function dispatchUpdates(
 
   context.addTradeHistory(order);
 
-  context.updateHolding({
-    cryptoId: symbolId,
-    amount: sign * order.amount,
-    valueInUSD: sign * order.total,
-    symbol: order.symbol,
-    name: order.name || order.symbol,
-    image: imageUrl,
-  });
+  const normalizedSymbol = order.symbol.toUpperCase();
 
-  if (symbolId !== "usdt") {
-    const usdtUpdate = {
-      cryptoId: "usdt",
-      amount: -sign * order.total,
-      valueInUSD: -sign * order.total,
-      symbol: "USDT",
-      name: "Tether",
-    };
-    console.log("🔄 Updating USDT balance:", usdtUpdate);
-    context.updateHolding(usdtUpdate);
+  // Only process if it's not a USDT trade
+  if (normalizedSymbol !== "USDT") {
+    const cryptoUpdateAmount = isBuy ? order.amount : -order.amount;
+    const cryptoUpdateValue = isBuy ? order.total : -order.total;
+    const usdtUpdateAmount = isBuy ? -order.total : order.total;
+
+    console.log("🔄 Updating trade (crypto + USDT):", {
+      cryptoSymbol: normalizedSymbol,
+      cryptoAmount: cryptoUpdateAmount,
+      cryptoValue: cryptoUpdateValue,
+      usdtAmount: usdtUpdateAmount,
+      operation: isBuy ? "buy" : "sell",
+    });
+
+    // Use the new updateTrade action to handle both updates in a single call
+    if (context.updateTrade) {
+      context.updateTrade({
+        cryptoUpdate: {
+          cryptoId: normalizedSymbol.toLowerCase(),
+          amount: cryptoUpdateAmount,
+          valueInUSD: cryptoUpdateValue,
+          symbol: normalizedSymbol,
+          name: order.name || normalizedSymbol,
+          image: imageUrl,
+        },
+        usdtUpdate: {
+          cryptoId: "usdt",
+          amount: usdtUpdateAmount,
+          valueInUSD: usdtUpdateAmount,
+          symbol: "USDT",
+          name: "Tether",
+          image: "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
+        },
+      });
+    } else {
+      // Fallback to the old method if updateTrade is not available
+      console.warn("⚠️ updateTrade not available, falling back to separate updates");
+      
+      context.updateHolding({
+        cryptoId: normalizedSymbol.toLowerCase(),
+        amount: cryptoUpdateAmount,
+        valueInUSD: cryptoUpdateValue,
+        symbol: normalizedSymbol,
+        name: order.name || normalizedSymbol,
+        image: imageUrl,
+      });
+
+      context.updateHolding({
+        cryptoId: "usdt",
+        amount: usdtUpdateAmount,
+        valueInUSD: usdtUpdateAmount,
+        symbol: "USDT",
+        name: "Tether",
+        image: "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
+      });
+    }
   }
 
   // Sync transaction to cloud
@@ -328,7 +342,6 @@ function dispatchUpdates(
  * @param imageUrl URL for the asset image
  * @param validationContext Context for validation
  * @param dispatchContext Context for dispatching actions
- * @param notify Optional callback({ message, type })
  */
 export const handleOrderSubmission = async (
   order: Order,
@@ -375,4 +388,91 @@ export const handleOrderSubmission = async (
 
     throw new OrderError(message, userFriendlyMessage);
   }
+};
+
+/**
+ * Calculate portfolio metrics from balance holdings
+ * @param balance - The user's balance object from Redux store
+ * @returns Object containing portfolio metrics
+ */
+export const calculatePortfolioMetrics = (balance: any) => {
+  if (!balance || !balance.holdings) {
+    return {
+      totalValue: 0,
+      totalAssets: 0,
+      totalPnL: 0,
+      totalPnLPercentage: 0,
+      usdtBalance: 0,
+      cryptoValue: 0,
+    };
+  }
+
+  const holdings = balance.holdings;
+  let totalValue = balance.usdtBalance || 0;
+  let totalPnL = 0;
+  let totalCostBasis = 0;
+  let assetCount = 0;
+  let cryptoValue = 0;
+
+  // Calculate values for all holdings (excluding USDT to avoid double counting)
+  Object.values(holdings).forEach((holding: any) => {
+    if (holding.symbol !== "USDT") {
+      const marketValue = holding.amount * holding.currentPrice;
+      const costBasis = holding.amount * holding.averageBuyPrice;
+      
+      totalValue += marketValue;
+      cryptoValue += marketValue;
+      totalPnL += (marketValue - costBasis);
+      totalCostBasis += costBasis;
+      assetCount++;
+    }
+  });
+
+  const totalPnLPercentage = totalCostBasis > 0 ? (totalPnL / totalCostBasis) * 100 : 0;
+
+  return {
+    totalValue,
+    totalAssets: assetCount,
+    totalPnL,
+    totalPnLPercentage,
+    usdtBalance: balance.usdtBalance || 0,
+    cryptoValue,
+  };
+};
+
+/**
+ * Format portfolio value for display
+ * @param value - The portfolio value to format
+ * @returns Formatted string
+ */
+export const formatPortfolioValue = (value: number): string => {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(2)}M`;
+  } else if (value >= 1000) {
+    return `$${(value / 1000).toFixed(2)}K`;
+  } else {
+    return `$${value.toFixed(2)}`;
+  }
+};
+
+/**
+ * Get color for P&L display
+ * @param value - The P&L value
+ * @returns Color string
+ */
+export const getPnLColor = (value: number): string => {
+  return value >= 0 ? "#10BA68" : "#F9335D";
+};
+
+/**
+ * Format P&L for display
+ * @param value - The P&L value
+ * @returns Formatted string with sign
+ */
+export const formatPnL = (value: number): string => {
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}$${value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 };
