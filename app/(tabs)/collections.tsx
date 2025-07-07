@@ -1,173 +1,461 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-} from "react-native";
+import CollectionItem from "@/components/collections/CollectionItem";
+import EmptyState from "@/components/collections/EmptyState";
+import InviteCodeScanner from "@/components/collections/InviteCodeScanner";
+import React, { useCallback, useEffect, useState } from "react";
+import { CollectionData, useCollectionsData } from "@/hooks/useCollectionsData";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import colors from "@/styles/colors";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useFocusEffect } from "expo-router";
+import { useUser } from "@/context/UserContext";
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const CollectionsScreen = () => {
-  const [activeTab, setActiveTab] = useState<'my' | 'joined'>('my');
+  const [activeTab, setActiveTab] = useState<"my" | "joined">("my");
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(Date.now());
+  const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
+  const [showScanner, setShowScanner] = useState<boolean>(false);
+  const [joiningByCode, setJoiningByCode] = useState<boolean>(false);
+  const { user } = useUser();
 
-  const myCollections = [
-    {
-      id: '1',
-      name: 'Crypto Masters',
-      members: 12,
-      isPublic: true,
-      totalValue: 150000,
-      rank: 1,
+  const {
+    myCollections,
+    joinedCollections,
+    loading,
+    refreshing,
+    error,
+    onRefresh,
+    forceRefresh,
+    createNewCollection,
+    joinCollection,
+    joinCollectionByInviteCode,
+    leaveCollection,
+  } = useCollectionsData();
+
+  const handleCreateCollection = useCallback(() => {
+    router.push("/(modals)/create-collection");
+  }, []);
+
+  const handleJoinCollection = useCallback(() => {
+    router.push("/(modals)/discover-collections");
+  }, []);
+
+  const handleScanInviteCode = useCallback(() => {
+    setShowScanner(true);
+  }, []);
+
+  const handleCodeScanned = useCallback(
+    async (code: string) => {
+      if (!user?.id) {
+        Alert.alert("Error", "User not authenticated");
+        return;
+      }
+
+      setJoiningByCode(true);
+      try {
+        // Validate the invite code format
+        if (!code || code.length < 6) {
+          Alert.alert("Invalid Code", "Please scan a valid invite code");
+          return;
+        }
+
+        // Join the collection using the invite code
+        const result = await joinCollectionByInviteCode(code);
+
+        if (result) {
+          // Show success message and switch to joined tab
+          setShowSuccessMessage(true);
+          setTimeout(() => setShowSuccessMessage(false), 3000);
+
+          // Close scanner and refresh data
+          setShowScanner(false);
+          await forceRefresh();
+
+          // Switch to joined tab to show the newly joined collection
+          setActiveTab("joined");
+        }
+      } catch (error) {
+        console.error("Error joining collection by invite code:", error);
+
+        // Show specific error messages based on the error
+        let errorMessage = "Failed to join collection";
+        if (error instanceof Error) {
+          if (error.message.includes("already a member")) {
+            errorMessage = "You are already a member of this collection";
+          } else if (error.message.includes("Invalid or expired")) {
+            errorMessage = "Invalid or expired invite code";
+          } else if (error.message.includes("full")) {
+            errorMessage = "This collection is full";
+          } else if (error.message.includes("not accepting")) {
+            errorMessage = "This collection is not accepting new members";
+          } else {
+            errorMessage = error.message;
+          }
+        }
+
+        Alert.alert("Error", errorMessage);
+      } finally {
+        setJoiningByCode(false);
+      }
     },
-    {
-      id: '2',
-      name: 'DeFi Enthusiasts',
-      members: 8,
-      isPublic: false,
-      totalValue: 95000,
-      rank: 3,
+    [user?.id, joinCollectionByInviteCode, forceRefresh]
+  );
+
+  const handleCloseScanner = useCallback(() => {
+    setShowScanner(false);
+    setJoiningByCode(false);
+  }, []);
+
+  const handleCollectionPress = useCallback((collection: CollectionData) => {
+    router.push("/(modals)/collections");
+  }, []);
+
+  const handleCollectionLongPress = useCallback(
+    (collection: CollectionData) => {
+      if (collection.isOwner) {
+        Alert.alert("Collection Options", "What would you like to do?", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Edit",
+            onPress: () => router.push("/(modals)/collections"),
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => handleDeleteCollection(collection),
+          },
+        ]);
+      } else {
+        Alert.alert(
+          "Leave Collection",
+          `Are you sure you want to leave "${collection.name}"?`,
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Leave",
+              style: "destructive",
+              onPress: () => handleLeaveCollection(collection),
+            },
+          ]
+        );
+      }
     },
-  ];
+    []
+  );
 
-  const joinedCollections = [
-    {
-      id: '3',
-      name: 'Moonshot Hunters',
-      members: 45,
-      isPublic: true,
-      totalValue: 89000,
-      rank: 15,
-      owner: 'TradeMaster',
+  const handleDeleteCollection = useCallback(
+    async (collection: CollectionData) => {
+      Alert.alert(
+        "Delete Collection",
+        `Are you sure you want to delete "${collection.name}"? This action cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // TODO: Implement delete collection
+                console.log("Delete collection:", collection.id);
+              } catch (error) {
+                Alert.alert("Error", "Failed to delete collection");
+              }
+            },
+          },
+        ]
+      );
     },
-    {
-      id: '4',
-      name: 'Safe Traders',
-      members: 28,
-      isPublic: true,
-      totalValue: 112000,
-      rank: 8,
-      owner: 'CryptoGuru',
+    []
+  );
+
+  const handleLeaveCollection = useCallback(
+    async (collection: CollectionData) => {
+      try {
+        await leaveCollection(collection.id);
+        Alert.alert("Success", "You have left the collection");
+      } catch (error) {
+        Alert.alert("Error", "Failed to leave collection");
+      }
     },
-  ];
+    [leaveCollection]
+  );
 
-  const handleCreateCollection = () => {
-    router.push('/(modals)/create-collection');
-  };
+  // Refresh data when screen comes into focus (e.g., after creating a collection)
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        const now = Date.now();
+        const timeSinceLastRefresh = now - lastRefreshTime;
 
-  const handleJoinCollection = () => {
-    router.push('/(modals)/join-collection');
-  };
+        // Only refresh if it's been more than 2 seconds since last refresh
+        // This prevents excessive refreshes while still ensuring fresh data
+        if (timeSinceLastRefresh > 2000) {
+          console.log("🔄 Collections screen focused - refreshing data");
+          setLastRefreshTime(now);
+          forceRefresh();
+        } else {
+          console.log("⏭️ Skipping refresh - too soon since last refresh");
+        }
+      }
+    }, [user?.id, forceRefresh, lastRefreshTime])
+  );
 
-  const handleCollectionPress = (collection: any) => {
-    router.push(`/(modals)/collection-detail?id=${collection.id}`);
-  };
+  // Additional refresh trigger for immediate updates
+  const handleImmediateRefresh = useCallback(() => {
+    if (user?.id) {
+      console.log("🔄 Immediate refresh triggered");
+      setLastRefreshTime(Date.now());
+      forceRefresh().then(() => {
+        // Show success message briefly
+        setShowSuccessMessage(true);
+        setTimeout(() => setShowSuccessMessage(false), 2000);
+      });
+    }
+  }, [user?.id, forceRefresh]);
 
-  const CollectionItem = ({ collection, isOwner = false }: any) => (
-    <TouchableOpacity
-      style={styles.collectionItem}
-      onPress={() => handleCollectionPress(collection)}
-    >
-      <View style={styles.collectionHeader}>
-        <View style={styles.collectionInfo}>
-          <Text style={styles.collectionName}>{collection.name}</Text>
-          <View style={styles.collectionMeta}>
-            <Ionicons 
-              name={collection.isPublic ? "globe-outline" : "lock-closed-outline"} 
-              size={12} 
-              color="#9DA3B4" 
-            />
-            <Text style={styles.collectionMetaText}>
-              {collection.members} members
+  const renderContent = () => {
+    const refreshControl = (
+      <RefreshControl
+        refreshing={refreshing}
+        onRefresh={handleImmediateRefresh}
+        tintColor="#6674CC"
+        colors={["#6674CC"]}
+      />
+    );
+
+    if (!user) {
+      return (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={refreshControl}>
+          <View style={styles.errorContainer}>
+            <Ionicons name="person-circle-outline" size={48} color="#9DA3B4" />
+            <Text style={styles.errorTitle}>Authentication Required</Text>
+            <Text style={styles.errorText}>
+              Please log in to view your collections
             </Text>
           </View>
-        </View>
-        <View style={styles.collectionRank}>
-          <Text style={styles.rankText}>#{collection.rank}</Text>
-        </View>
-      </View>
-      
-      <View style={styles.collectionStats}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>${collection.totalValue.toLocaleString()}</Text>
-          <Text style={styles.statLabel}>Total Value</Text>
-        </View>
-        {!isOwner && (
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{collection.owner}</Text>
-            <Text style={styles.statLabel}>Owner</Text>
+        </ScrollView>
+      );
+    }
+
+    if (loading && !refreshing) {
+      return (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={refreshControl}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#6674CC" />
+            <Text style={styles.loadingText}>Loading collections...</Text>
           </View>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+        </ScrollView>
+      );
+    }
+
+    if (error) {
+      return (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={refreshControl}>
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+            <Text style={styles.errorTitle}>Something went wrong</Text>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={handleImmediateRefresh}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      );
+    }
+
+    const collections = activeTab === "my" ? myCollections : joinedCollections;
+
+    if (collections.length === 0) {
+      return (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={refreshControl}>
+          <EmptyState
+            type={activeTab}
+            onAction={
+              activeTab === "my" ? handleCreateCollection : handleJoinCollection
+            }
+          />
+        </ScrollView>
+      );
+    }
+
+    return (
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={refreshControl}>
+        <View style={styles.collectionsContainer}>
+          {collections.map((collection) => (
+            <CollectionItem
+              key={collection.id}
+              collection={collection}
+              onPress={handleCollectionPress}
+              onLongPress={handleCollectionLongPress}
+            />
+          ))}
+
+          {/* Action card */}
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={
+              activeTab === "my" ? handleCreateCollection : handleJoinCollection
+            }>
+            <LinearGradient
+              colors={["rgba(102, 116, 204, 0.1)", "rgba(102, 116, 204, 0.05)"]}
+              style={styles.actionCardGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}>
+              <Ionicons
+                name={
+                  activeTab === "my" ? "add-circle-outline" : "people-outline"
+                }
+                size={48}
+                color="#6674CC"
+              />
+              <Text style={styles.actionCardText}>
+                {activeTab === "my"
+                  ? "Create New Collection"
+                  : "Join Collection"}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#121212" />
-      
+
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Collections</Text>
-        <TouchableOpacity 
-          style={styles.createButton}
-          onPress={handleCreateCollection}
-        >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={styles.headerLeft}>
+          <Text style={styles.title}>Collections</Text>
+          <Text style={styles.subtitle}>
+            {activeTab === "my" ? "My Collections" : "Joined Collections"}
+          </Text>
+        </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.scanButton, showScanner && styles.scanButtonActive]}
+            onPress={handleScanInviteCode}
+            disabled={showScanner || joiningByCode}>
+            {joiningByCode ? (
+              <ActivityIndicator size="small" color="#6674CC" />
+            ) : (
+              <Ionicons
+                name="key-outline"
+                size={20}
+                color={showScanner ? "#FFFFFF" : "#6674CC"}
+              />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={handleCreateCollection}>
+            <LinearGradient
+              colors={["#6674CC", "#5A67D8"]}
+              style={styles.createButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}>
+              <Ionicons name="add" size={24} color="#FFFFFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </View>
 
+      {/* Tab Navigation */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'my' && styles.activeTab]}
-          onPress={() => setActiveTab('my')}
-        >
-          <Text style={[styles.tabText, activeTab === 'my' && styles.activeTabText]}>
+          style={[styles.tab, activeTab === "my" && styles.activeTab]}
+          onPress={() => {
+            if (activeTab !== "my") {
+              setActiveTab("my");
+              // Refresh data when switching to "my" tab
+              handleImmediateRefresh();
+            }
+          }}>
+          <Ionicons
+            name="people"
+            size={16}
+            color={activeTab === "my" ? "#FFFFFF" : "#9DA3B4"}
+          />
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "my" && styles.activeTabText,
+            ]}>
             My Collections
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'joined' && styles.activeTab]}
-          onPress={() => setActiveTab('joined')}
-        >
-          <Text style={[styles.tabText, activeTab === 'joined' && styles.activeTabText]}>
+          style={[styles.tab, activeTab === "joined" && styles.activeTab]}
+          onPress={() => {
+            if (activeTab !== "joined") {
+              setActiveTab("joined");
+              // Refresh data when switching to "joined" tab
+              handleImmediateRefresh();
+            }
+          }}>
+          <Ionicons
+            name="people-circle"
+            size={16}
+            color={activeTab === "joined" ? "#FFFFFF" : "#9DA3B4"}
+          />
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "joined" && styles.activeTabText,
+            ]}>
             Joined
           </Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {activeTab === 'my' ? (
-          <View style={styles.collectionsContainer}>
-            {myCollections.map((collection) => (
-              <CollectionItem key={collection.id} collection={collection} isOwner={true} />
-            ))}
-            <TouchableOpacity 
-              style={styles.createCollectionCard}
-              onPress={handleCreateCollection}
-            >
-              <Ionicons name="add-circle-outline" size={48} color="#6674CC" />
-              <Text style={styles.createCollectionText}>Create New Collection</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.collectionsContainer}>
-            {joinedCollections.map((collection) => (
-              <CollectionItem key={collection.id} collection={collection} isOwner={false} />
-            ))}
-            <TouchableOpacity 
-              style={styles.joinCollectionCard}
-              onPress={handleJoinCollection}
-            >
-              <Ionicons name="people-outline" size={48} color="#6674CC" />
-              <Text style={styles.joinCollectionText}>Join Collection</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <View style={styles.successMessage}>
+          <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+          <Text style={styles.successMessageText}>
+            Successfully joined collection!
+          </Text>
+        </View>
+      )}
+
+      {/* Content */}
+      {renderContent()}
+
+      <InviteCodeScanner
+        visible={showScanner}
+        onCodeScanned={handleCodeScanned}
+        onClose={handleCloseScanner}
+        loading={joiningByCode}
+      />
     </SafeAreaView>
   );
 };
@@ -178,27 +466,55 @@ const styles = StyleSheet.create({
     backgroundColor: "#131523",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  headerLeft: {
+    flex: 1,
+  },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#9DA3B4",
   },
   createButton: {
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  createButtonGradient: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#6674CC",
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  scanButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(102, 116, 204, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scanButtonActive: {
+    backgroundColor: "#6674CC",
+  },
+
   tabContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: 20,
     marginBottom: 20,
     backgroundColor: "#1A1D2F",
@@ -207,9 +523,12 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
-    alignItems: 'center',
     borderRadius: 8,
+    gap: 8,
   },
   activeTab: {
     backgroundColor: "#6674CC",
@@ -217,7 +536,7 @@ const styles = StyleSheet.create({
   tabText: {
     color: "#9DA3B4",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "600",
   },
   activeTabText: {
     color: "#FFFFFF",
@@ -225,98 +544,91 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   collectionsContainer: {
     paddingHorizontal: 15,
   },
-  collectionItem: {
-    backgroundColor: "#1A1D2F",
-    borderRadius: 12,
-    padding: 16,
+  actionCard: {
     marginBottom: 12,
+    borderRadius: 16,
+    overflow: "hidden",
   },
-  collectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+  actionCardGradient: {
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#6674CC",
+    borderStyle: "dashed",
   },
-  collectionInfo: {
+  actionCardText: {
+    fontSize: 16,
+    color: "#6674CC",
+    marginTop: 8,
+    fontWeight: "600",
+  },
+  loadingContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
-  collectionName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: "#FFFFFF",
-    marginBottom: 4,
-  },
-  collectionMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  collectionMetaText: {
-    fontSize: 12,
+  loadingText: {
+    fontSize: 16,
     color: "#9DA3B4",
+    marginTop: 16,
   },
-  collectionRank: {
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#9DA3B4",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  retryButton: {
     backgroundColor: "#6674CC",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
-  rankText: {
-    fontSize: 12,
-    fontWeight: '600',
+  retryButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
     color: "#FFFFFF",
   },
-  collectionStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  successMessage: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    borderColor: "#10B981",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    gap: 8,
   },
-  statItem: {
-    alignItems: 'flex-start',
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: "#FFFFFF",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#9DA3B4",
-    marginTop: 2,
-  },
-  createCollectionCard: {
-    backgroundColor: "#1A1D2F",
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "#6674CC",
-    borderStyle: 'dashed',
-  },
-  createCollectionText: {
-    fontSize: 16,
-    color: "#6674CC",
-    marginTop: 8,
-    fontWeight: '500',
-  },
-  joinCollectionCard: {
-    backgroundColor: "#1A1D2F",
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "#6674CC",
-    borderStyle: 'dashed',
-  },
-  joinCollectionText: {
-    fontSize: 16,
-    color: "#6674CC",
-    marginTop: 8,
-    fontWeight: '500',
+  successMessageText: {
+    fontSize: 14,
+    color: "#10B981",
+    fontWeight: "600",
   },
 });
 

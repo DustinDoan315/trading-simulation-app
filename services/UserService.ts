@@ -1,4 +1,4 @@
-import { supabase } from './SupabaseService';
+import { supabase } from "./SupabaseService";
 import {
   Collection,
   CollectionMember,
@@ -21,7 +21,6 @@ import {
   User,
   UserWithStats,
 } from "../types/database";
-
 
 export class UserService {
   // User Operations
@@ -287,7 +286,7 @@ export class UserService {
         .select(
           `
           *,
-          users(username, display_name)
+          users!collections_owner_id_fkey(username, display_name)
         `
         )
         .order("created_at", { ascending: false });
@@ -306,6 +305,98 @@ export class UserService {
     }
   }
 
+  static async getPublicCollections(
+    userId?: string,
+    limit = 20,
+    offset = 0
+  ): Promise<CollectionWithDetails[]> {
+    try {
+      let query = supabase
+        .from("collections")
+        .select(
+          `
+          *,
+          users!collections_owner_id_fkey(username, display_name)
+        `
+        )
+        .eq("is_public", true)
+        .eq("status", "ACTIVE")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Filter out collections where user is already a member
+      if (userId) {
+        const userCollectionIds = await this.getUserCollectionIds(userId);
+        return (data || []).filter(
+          (collection) => !userCollectionIds.includes(collection.id)
+        );
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching public collections:", error);
+      throw error;
+    }
+  }
+
+  static async searchCollections(
+    searchTerm: string,
+    userId?: string,
+    limit = 20
+  ): Promise<CollectionWithDetails[]> {
+    try {
+      let query = supabase
+        .from("collections")
+        .select(
+          `
+          *,
+          users!collections_owner_id_fkey(username, display_name)
+        `
+        )
+        .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+        .eq("is_public", true)
+        .eq("status", "ACTIVE")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Filter out collections where user is already a member
+      if (userId) {
+        const userCollectionIds = await this.getUserCollectionIds(userId);
+        return (data || []).filter(
+          (collection) => !userCollectionIds.includes(collection.id)
+        );
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error("Error searching collections:", error);
+      throw error;
+    }
+  }
+
+  static async getUserCollectionIds(userId: string): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from("collection_members")
+        .select("collection_id")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+      return (data || []).map((member) => member.collection_id);
+    } catch (error) {
+      console.error("Error fetching user collection IDs:", error);
+      return [];
+    }
+  }
+
   static async getCollectionById(
     id: string
   ): Promise<CollectionWithDetails | null> {
@@ -315,10 +406,10 @@ export class UserService {
         .select(
           `
           *,
-          users(username, display_name),
+          users!collections_owner_id_fkey(username, display_name),
           collection_members(
             *,
-            users(username, display_name, avatar_emoji)
+            users!collection_members_user_id_fkey(username, display_name, avatar_emoji)
           )
         `
         )
@@ -345,8 +436,10 @@ export class UserService {
         starting_balance: params.starting_balance ?? "100000.00",
         duration_days: params.duration_days ?? 30,
         rules: params.rules ?? {},
-        total_value: "0",
+        total_volume: "0",
+        total_trades: 0,
         avg_pnl: "0",
+        avg_pnl_percentage: "0",
         member_count: 0,
         status: "ACTIVE",
         start_date: new Date().toISOString(),
@@ -398,10 +491,35 @@ export class UserService {
     params: CreateCollectionMemberParams
   ): Promise<CollectionMember | null> {
     try {
+      // First check if user is already a member
+      const existingMember = await this.getCollectionMember(
+        params.collection_id,
+        params.user_id
+      );
+
+      if (existingMember) {
+        throw new Error("You are already a member of this collection");
+      }
+
+      // Check if collection exists and is active
+      const collection = await this.getCollectionById(params.collection_id);
+      if (!collection) {
+        throw new Error("Collection not found");
+      }
+
+      if (collection.status !== "ACTIVE") {
+        throw new Error("This collection is not accepting new members");
+      }
+
+      // Check if collection is full
+      if (collection.member_count >= collection.max_members) {
+        throw new Error("This collection is full");
+      }
+
       const memberData = {
         ...params,
         role: params.role || "MEMBER",
-        balance: params.balance || "0",
+        balance: params.balance || collection.starting_balance || "0",
         total_pnl: "0",
         joined_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
@@ -414,9 +532,101 @@ export class UserService {
         .single();
 
       if (error) throw error;
+
+      // Update collection member count
+      await this.updateCollectionMemberCount(params.collection_id);
+
       return data;
     } catch (error) {
       console.error("Error joining collection:", error);
+      throw error;
+    }
+  }
+
+  static async joinCollectionByInviteCode(
+    inviteCode: string,
+    userId: string
+  ): Promise<CollectionMember | null> {
+    try {
+      // Find collection by invite code
+      const { data: collection, error: collectionError } = await supabase
+        .from("collections")
+        .select("*")
+        .eq("invite_code", inviteCode)
+        .eq("status", "ACTIVE")
+        .single();
+
+      if (collectionError || !collection) {
+        throw new Error("Invalid or expired invite code");
+      }
+
+      // Check if user is already a member
+      const existingMember = await this.getCollectionMember(
+        collection.id,
+        userId
+      );
+
+      if (existingMember) {
+        throw new Error("You are already a member of this collection");
+      }
+
+      // Check if collection is full
+      if (collection.member_count >= collection.max_members) {
+        throw new Error("This collection is full");
+      }
+
+      return await this.joinCollection({
+        collection_id: collection.id,
+        user_id: userId,
+        balance: collection.starting_balance,
+      });
+    } catch (error) {
+      console.error("Error joining collection by invite code:", error);
+      throw error;
+    }
+  }
+
+  static async getCollectionMember(
+    collectionId: string,
+    userId: string
+  ): Promise<CollectionMember | null> {
+    try {
+      const { data, error } = await supabase
+        .from("collection_members")
+        .select("*")
+        .eq("collection_id", collectionId)
+        .eq("user_id", userId)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows returned
+      return data;
+    } catch (error) {
+      console.error("Error fetching collection member:", error);
+      throw error;
+    }
+  }
+
+  static async updateCollectionMemberCount(
+    collectionId: string
+  ): Promise<void> {
+    try {
+      const { data: members, error: countError } = await supabase
+        .from("collection_members")
+        .select("id", { count: "exact" })
+        .eq("collection_id", collectionId);
+
+      if (countError) throw countError;
+
+      const memberCount = members?.length || 0;
+
+      const { error: updateError } = await supabase
+        .from("collections")
+        .update({ member_count: memberCount })
+        .eq("id", collectionId);
+
+      if (updateError) throw updateError;
+    } catch (error) {
+      console.error("Error updating collection member count:", error);
       throw error;
     }
   }
@@ -493,8 +703,6 @@ export class UserService {
       throw error;
     }
   }
-
-
 
   // Leaderboard Operations
   static async getLeaderboard(

@@ -1,10 +1,8 @@
-import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AsyncStorageService } from './AsyncStorageService';
-import { getDeviceUUID } from '@/utils/deviceUtils';
-import { supabase } from './SupabaseService';
-import { TimestampUtils } from '@/utils/helper';
-
+import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AsyncStorageService } from "./AsyncStorageService";
+import { getDeviceUUID } from "@/utils/deviceUtils";
+import { UserSyncService } from "./UserSyncService";
 
 // Enhanced UUIDService.ts
 
@@ -54,7 +52,7 @@ class UUIDService {
           console.log("====================================");
           console.log("Syncing user to cloud:", userProfile);
           console.log("====================================");
-          const syncResult = await this.syncUserToCloud(userProfile);
+          const syncResult = await UserSyncService.syncUserToCloud(userProfile);
           if (syncResult.success) {
             console.log("✅ User successfully synced to cloud");
             break;
@@ -84,23 +82,13 @@ class UUIDService {
         if (userProfileStr) {
           const userProfile = JSON.parse(userProfileStr);
           // Check if user exists in Supabase
-          const { data: existingUser, error } = await supabase
-            .from("users")
-            .select("id")
-            .eq("id", uuid)
-            .single();
+          const { exists, error } = await UserSyncService.checkUserExists(uuid);
 
           if (error) {
-            // Handle the case where no user exists (PGRST116 error)
-            if (error.code === "PGRST116") {
-              console.log("User not found in Supabase, syncing...");
-              await this.syncUserToCloud(userProfile);
-            } else {
-              console.warn("Error checking user existence:", error);
-            }
-          } else if (!existingUser) {
+            console.warn("Error checking user existence:", error);
+          } else if (!exists) {
             console.log("User not found in Supabase, syncing...");
-            await this.syncUserToCloud(userProfile);
+            await UserSyncService.syncUserToCloud(userProfile);
           }
         }
       } catch (error) {
@@ -109,64 +97,6 @@ class UUIDService {
     }
 
     return uuid;
-  }
-
-  static async syncUserToCloud(
-    userProfile: any
-  ): Promise<{ success: boolean; data?: any; error?: string }> {
-    try {
-      // Use TimestampUtils to ensure proper timestamp format for Supabase
-      let createdAt: string;
-      try {
-        createdAt = TimestampUtils.toISOTimestamp(userProfile.created_at || userProfile.createdAt);
-      } catch (error) {
-        console.warn("Invalid timestamp format, using current time:", error);
-        createdAt = new Date().toISOString();
-      }
-
-      const { data, error } = await supabase
-        .from("users")
-        .upsert({
-          id: userProfile.id || userProfile.uuid, // Use 'id' instead of 'uuid' to match schema
-          username: userProfile.username || `user_${(userProfile.id || userProfile.uuid).slice(0, 8)}`,
-          usdt_balance: userProfile.usdt_balance || userProfile.balance || "100000",
-          total_portfolio_value: userProfile.total_portfolio_value || "100000",
-          initial_balance: userProfile.initial_balance || "100000",
-          total_pnl: userProfile.total_pnl || "0.00",
-          total_trades: userProfile.total_trades || 0,
-          win_rate: userProfile.win_rate || "0.00",
-          join_date: userProfile.join_date || createdAt,
-          last_active: userProfile.last_active || createdAt,
-          created_at: createdAt,
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      console.log("Sync operation result:", { data, error });
-
-      if (error) {
-        console.error("Supabase error:", error);
-        await this.updateSyncStatus("failed", error.message);
-        return { success: false, error: error.message };
-      }
-
-      if (!data) {
-        console.warn("No data returned from upsert");
-        await this.updateSyncStatus("failed", "No data returned");
-        return { success: false, error: "No data returned from upsert" };
-      }
-
-      await this.updateSyncStatus("synced");
-      console.log("User synced successfully:", data);
-      return { success: true, data };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error("Sync failed:", errorMessage);
-      await this.updateSyncStatus("failed", errorMessage);
-      return { success: false, error: errorMessage };
-    }
   }
 
   // Helper method for cleaner sync status management
@@ -186,55 +116,31 @@ class UUIDService {
   // New method to ensure user exists in Supabase before portfolio sync
   static async ensureUserInSupabase(uuid: string): Promise<boolean> {
     try {
-      // Check if user exists in Supabase
-      const { data: existingUser, error } = await supabase
-        .from("users")
-        .select("id")
-        .eq("id", uuid)
-        .single();
-
-      if (error) {
-        // Handle the case where no user exists (PGRST116 error)
-        if (error.code === "PGRST116") {
-          console.log("User not found in Supabase, creating...");
-        } else {
-          console.error("Error checking user existence:", error);
-          return false;
-        }
+      // Get user profile from local storage
+      const userProfileStr = await AsyncStorage.getItem(USER_PROFILE_KEY);
+      if (userProfileStr) {
+        const userProfile = JSON.parse(userProfileStr);
+        return await UserSyncService.ensureUserInSupabase(uuid, userProfile);
+      } else {
+        // Create default user profile
+        const now = new Date().toISOString();
+        const userProfile = {
+          id: uuid,
+          username: `user_${uuid.slice(0, 8)}`,
+          usdt_balance: "100000",
+          total_portfolio_value: "100000",
+          initial_balance: "100000",
+          total_pnl: "0.00",
+          total_trades: 0,
+          win_rate: "0.00",
+          join_date: now,
+          last_active: now,
+          created_at: now,
+          updated_at: now,
+        };
+        const syncResult = await UserSyncService.syncUserToCloud(userProfile);
+        return syncResult.success;
       }
-
-      if (!existingUser) {
-        console.log("User not found in Supabase, creating...");
-
-        // Get user profile from local storage
-        const userProfileStr = await AsyncStorage.getItem(USER_PROFILE_KEY);
-        if (userProfileStr) {
-          const userProfile = JSON.parse(userProfileStr);
-          const syncResult = await this.syncUserToCloud(userProfile);
-          return syncResult.success;
-        } else {
-          // Create default user profile
-          const now = new Date().toISOString();
-          const userProfile = {
-            id: uuid,
-            username: `user_${uuid.slice(0, 8)}`,
-            usdt_balance: "100000",
-            total_portfolio_value: "100000",
-            initial_balance: "100000",
-            total_pnl: "0.00",
-            total_trades: 0,
-            win_rate: "0.00",
-            join_date: now,
-            last_active: now,
-            created_at: now,
-            updated_at: now,
-          };
-          const syncResult = await this.syncUserToCloud(userProfile);
-          return syncResult.success;
-        }
-      }
-
-      return true; // User exists
     } catch (error) {
       console.error("Failed to ensure user in Supabase:", error);
       return false;
@@ -271,7 +177,7 @@ export async function initializeUserProfile() {
     }
 
     // Step 3: Ensure user exists in Supabase
-    const result = await UUIDService.syncUserToCloud(userProfile);
+    const result = await UserSyncService.syncUserToCloud(userProfile);
     if (result.success) {
       console.log("User profile initialized in Supabase.");
     } else {

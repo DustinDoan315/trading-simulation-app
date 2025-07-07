@@ -1,240 +1,251 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { useCollectionsData } from "@/hooks/useCollectionsData";
+import { useUser } from "@/context/UserContext";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  ScrollView,
-  Switch,
-  Alert,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import colors from "@/styles/colors";
 
 const CreateCollectionScreen = () => {
-  const [collectionName, setCollectionName] = useState("");
-  const [description, setDescription] = useState("");
-  const [isPublic, setIsPublic] = useState(true);
-  const [allowInvites, setAllowInvites] = useState(true);
-  const [maxMembers, setMaxMembers] = useState("50");
-  const [startingBalance, setStartingBalance] = useState("100000");
-  const [duration, setDuration] = useState("30");
-  const [rules, setRules] = useState({
-    noShortSelling: false,
-    maxPositionSize: false,
-    restrictedAssets: false,
-    minHoldTime: false,
+  const { user } = useUser();
+  const { createNewCollection } = useCollectionsData();
+  const [loading, setLoading] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    isPublic: true,
+    allowInvites: true,
+    maxMembers: "50",
+    startingBalance: "100000",
+    durationDays: "30",
   });
 
-  const handleCreate = () => {
-    if (!collectionName.trim()) {
-      Alert.alert("Error", "Collection name is required");
+  const generateInviteCode = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "";
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  const handleCreate = useCallback(async () => {
+    if (!formData.name.trim()) {
+      Alert.alert("Error", "Please enter a collection name");
       return;
     }
 
-    // Create collection logic here
-    console.log("Creating collection:", {
-      name: collectionName,
-      description,
-      isPublic,
-      allowInvites,
-      maxMembers: parseInt(maxMembers),
-      startingBalance: parseInt(startingBalance),
-      duration: parseInt(duration),
-      rules,
-    });
+    if (!user?.id) {
+      Alert.alert("Error", "User not authenticated");
+      return;
+    }
 
-    router.back();
+    setLoading(true);
+    try {
+      const inviteCode = generateInviteCode();
+
+      await createNewCollection({
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        invite_code: inviteCode,
+        is_public: formData.isPublic,
+        allow_invites: formData.allowInvites,
+        max_members: parseInt(formData.maxMembers),
+        starting_balance: formData.startingBalance,
+        duration_days: parseInt(formData.durationDays),
+        rules: {},
+      });
+
+      Alert.alert("Success", "Collection created successfully!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (error) {
+      console.error("Error creating collection:", error);
+      Alert.alert("Error", "Failed to create collection. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [formData, user?.id, createNewCollection]);
+
+  const updateFormData = (field: string, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
-
-  const RuleToggle = ({ title, subtitle, value, onValueChange }: any) => (
-    <View style={styles.ruleItem}>
-      <View style={styles.ruleContent}>
-        <Text style={styles.ruleTitle}>{title}</Text>
-        <Text style={styles.ruleSubtitle}>{subtitle}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: colors.border.light, true: colors.ui.highlight }}
-        thumbColor={colors.text.primary}
-      />
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#121212" />
-      
+
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color={colors.text.primary} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.title}>Create Collection</Text>
-        <TouchableOpacity onPress={handleCreate} style={styles.createButton}>
-          <Text style={styles.createButtonText}>Create</Text>
-        </TouchableOpacity>
+        <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Basic Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Basic Information</Text>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Collection Name</Text>
-            <TextInput
-              style={styles.input}
-              value={collectionName}
-              onChangeText={setCollectionName}
-              placeholder="Enter collection name"
-              placeholderTextColor={colors.text.tertiary}
-              maxLength={50}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description (Optional)</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Describe your collection..."
-              placeholderTextColor={colors.text.tertiary}
-              multiline
-              numberOfLines={3}
-              maxLength={200}
-            />
-          </View>
-        </View>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* Collection Info */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Collection Information</Text>
 
-        {/* Privacy Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Privacy Settings</Text>
-          <View style={styles.settingsGroup}>
-            <RuleToggle
-              title="Public Collection"
-              subtitle="Anyone can discover and join"
-              value={isPublic}
-              onValueChange={setIsPublic}
-            />
-            <RuleToggle
-              title="Allow Invites"
-              subtitle="Members can invite others"
-              value={allowInvites}
-              onValueChange={setAllowInvites}
-            />
-          </View>
-        </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Collection Name *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.name}
+                onChangeText={(value) => updateFormData("name", value)}
+                placeholder="Enter collection name"
+                placeholderTextColor="#9DA3B4"
+                maxLength={100}
+              />
+            </View>
 
-        {/* Collection Parameters */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Collection Parameters</Text>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Max Members</Text>
-            <TextInput
-              style={styles.input}
-              value={maxMembers}
-              onChangeText={setMaxMembers}
-              placeholder="50"
-              placeholderTextColor={colors.text.tertiary}
-              keyboardType="numeric"
-            />
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.description}
+                onChangeText={(value) => updateFormData("description", value)}
+                placeholder="Describe your collection..."
+                placeholderTextColor="#9DA3B4"
+                multiline
+                numberOfLines={3}
+                maxLength={500}
+              />
+            </View>
           </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Starting Balance ($)</Text>
-            <TextInput
-              style={styles.input}
-              value={startingBalance}
-              onChangeText={setStartingBalance}
-              placeholder="100000"
-              placeholderTextColor={colors.text.tertiary}
-              keyboardType="numeric"
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Duration (Days)</Text>
-            <TextInput
-              style={styles.input}
-              value={duration}
-              onChangeText={setDuration}
-              placeholder="30"
-              placeholderTextColor={colors.text.tertiary}
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
 
-        {/* Trading Rules */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Trading Rules</Text>
-          <View style={styles.settingsGroup}>
-            <RuleToggle
-              title="No Short Selling"
-              subtitle="Disable short positions"
-              value={rules.noShortSelling}
-              onValueChange={(value) => setRules({...rules, noShortSelling: value})}
-            />
-            <RuleToggle
-              title="Max Position Size"
-              subtitle="Limit position size to 20% of portfolio"
-              value={rules.maxPositionSize}
-              onValueChange={(value) => setRules({...rules, maxPositionSize: value})}
-            />
-            <RuleToggle
-              title="Restricted Assets"
-              subtitle="Only allow top 100 cryptocurrencies"
-              value={rules.restrictedAssets}
-              onValueChange={(value) => setRules({...rules, restrictedAssets: value})}
-            />
-            <RuleToggle
-              title="Minimum Hold Time"
-              subtitle="Require 24-hour minimum hold time"
-              value={rules.minHoldTime}
-              onValueChange={(value) => setRules({...rules, minHoldTime: value})}
-            />
-          </View>
-        </View>
+          {/* Settings */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Settings</Text>
 
-        {/* Preview */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preview</Text>
-          <View style={styles.previewCard}>
-            <View style={styles.previewHeader}>
-              <Text style={styles.previewName}>{collectionName || "Collection Name"}</Text>
-              <View style={styles.previewBadge}>
-                <Ionicons 
-                  name={isPublic ? "globe-outline" : "lock-closed-outline"} 
-                  size={12} 
-                  color={colors.text.primary} 
-                />
-                <Text style={styles.previewBadgeText}>
-                  {isPublic ? "Public" : "Private"}
+            <View style={styles.settingItem}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Public Collection</Text>
+                <Text style={styles.settingDescription}>
+                  Anyone can see and join this collection
                 </Text>
               </View>
+              <TouchableOpacity
+                style={[
+                  styles.toggle,
+                  formData.isPublic && styles.toggleActive,
+                ]}
+                onPress={() => updateFormData("isPublic", !formData.isPublic)}>
+                <View
+                  style={[
+                    styles.toggleThumb,
+                    formData.isPublic && styles.toggleThumbActive,
+                  ]}
+                />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.previewDescription}>
-              {description || "No description provided"}
-            </Text>
-            <View style={styles.previewStats}>
-              <View style={styles.previewStat}>
-                <Text style={styles.previewStatValue}>{maxMembers}</Text>
-                <Text style={styles.previewStatLabel}>Max Members</Text>
+
+            <View style={styles.settingItem}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Allow Invites</Text>
+                <Text style={styles.settingDescription}>
+                  Members can invite others to join
+                </Text>
               </View>
-              <View style={styles.previewStat}>
-                <Text style={styles.previewStatValue}>${parseInt(startingBalance || "0").toLocaleString()}</Text>
-                <Text style={styles.previewStatLabel}>Starting Balance</Text>
-              </View>
-              <View style={styles.previewStat}>
-                <Text style={styles.previewStatValue}>{duration} days</Text>
-                <Text style={styles.previewStatLabel}>Duration</Text>
-              </View>
+              <TouchableOpacity
+                style={[
+                  styles.toggle,
+                  formData.allowInvites && styles.toggleActive,
+                ]}
+                onPress={() =>
+                  updateFormData("allowInvites", !formData.allowInvites)
+                }>
+                <View
+                  style={[
+                    styles.toggleThumb,
+                    formData.allowInvites && styles.toggleThumbActive,
+                  ]}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Max Members</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.maxMembers}
+                onChangeText={(value) => updateFormData("maxMembers", value)}
+                placeholder="50"
+                placeholderTextColor="#9DA3B4"
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Starting Balance (USDT)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.startingBalance}
+                onChangeText={(value) =>
+                  updateFormData("startingBalance", value)
+                }
+                placeholder="100000"
+                placeholderTextColor="#9DA3B4"
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Duration (Days)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.durationDays}
+                onChangeText={(value) => updateFormData("durationDays", value)}
+                placeholder="30"
+                placeholderTextColor="#9DA3B4"
+                keyboardType="numeric"
+              />
             </View>
           </View>
         </View>
       </ScrollView>
+
+      {/* Create Button */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.createButton, loading && styles.createButtonDisabled]}
+          onPress={handleCreate}
+          disabled={loading}>
+          <LinearGradient
+            colors={loading ? ["#4A5568", "#4A5568"] : ["#6674CC", "#5A67D8"]}
+            style={styles.createButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+                <Text style={styles.createButtonText}>Create Collection</Text>
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -245,149 +256,132 @@ const styles = StyleSheet.create({
     backgroundColor: "#131523",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: "700",
     color: "#FFFFFF",
   },
-  createButton: {
-    backgroundColor: "#6674CC",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  createButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: '600',
+  placeholder: {
+    width: 40,
   },
   scrollView: {
     flex: 1,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   section: {
     marginBottom: 32,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: colors.text.primary,
+    fontWeight: "600",
+    color: "#FFFFFF",
     marginBottom: 16,
-    paddingHorizontal: 20,
   },
-  inputGroup: {
+  inputContainer: {
     marginBottom: 16,
-    paddingHorizontal: 20,
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
-    color: colors.text.primary,
+    fontWeight: "500",
+    color: "#FFFFFF",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: 8,
+    backgroundColor: "#1A1D2F",
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: colors.text.primary,
+    color: "#FFFFFF",
     borderWidth: 1,
-    borderColor: colors.border.light,
+    borderColor: "#2A2D3F",
   },
   textArea: {
     height: 80,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
-  settingsGroup: {
-    backgroundColor: colors.background.secondary,
-    marginHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-  },
-  ruleItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  settingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 16,
-    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    borderBottomColor: "#2A2D3F",
   },
-  ruleContent: {
+  settingInfo: {
     flex: 1,
+    marginRight: 16,
   },
-  ruleTitle: {
+  settingLabel: {
     fontSize: 16,
-    fontWeight: '500',
-    color: colors.text.primary,
-    marginBottom: 2,
+    fontWeight: "500",
+    color: "#FFFFFF",
+    marginBottom: 4,
   },
-  ruleSubtitle: {
-    fontSize: 12,
-    color: colors.text.secondary,
-  },
-  previewCard: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 20,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-  },
-  previewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  previewName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  previewBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.ui.highlight,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  previewBadgeText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text.primary,
-    marginLeft: 4,
-  },
-  previewDescription: {
+  settingDescription: {
     fontSize: 14,
-    color: colors.text.secondary,
-    marginBottom: 16,
+    color: "#9DA3B4",
   },
-  previewStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  toggle: {
+    width: 48,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#2A2D3F",
+    padding: 2,
   },
-  previewStat: {
-    alignItems: 'center',
+  toggleActive: {
+    backgroundColor: "#6674CC",
   },
-  previewStatValue: {
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+  },
+  toggleThumbActive: {
+    transform: [{ translateX: 24 }],
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#2A2D3F",
+  },
+  createButton: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  createButtonDisabled: {
+    opacity: 0.6,
+  },
+  createButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    gap: 8,
+  },
+  createButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  previewStatLabel: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    marginTop: 2,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });
 

@@ -65,10 +65,14 @@ export interface Collection {
   starting_balance: string; // DECIMAL(20,8)
   duration_days: number;
   rules: Record<string, any>; // JSONB
-  total_value: string; // DECIMAL(20,8)
+  total_volume: string; // DECIMAL(30,10)
+  total_trades: number;
   avg_pnl: string; // DECIMAL(10,4)
+  avg_pnl_percentage: string; // DECIMAL(10,4)
   member_count: number;
   rank?: number;
+  best_performer_id?: string; // UUID
+  worst_performer_id?: string; // UUID
   status: "ACTIVE" | "COMPLETED" | "CANCELLED";
   start_date: string; // TIMESTAMP
   end_date?: string; // TIMESTAMP
@@ -112,8 +116,6 @@ export interface LeaderboardRanking {
   calculated_at: string; // TIMESTAMP
   created_at: string; // TIMESTAMP
 }
-
-
 
 // Database operation types
 export interface CreateUserParams {
@@ -231,8 +233,6 @@ export interface CreateLeaderboardRankingParams {
   win_rate?: string;
 }
 
-
-
 // Query result types
 export interface PortfolioWithSymbol extends Portfolio {
   // Additional fields for UI display
@@ -249,7 +249,10 @@ export interface TransactionWithDetails extends Transaction {
 
 export interface CollectionWithDetails extends Collection {
   // Additional fields for UI display
-  owner_name?: string;
+  users?: {
+    username: string;
+    display_name?: string;
+  };
   member_list?: CollectionMember[];
 }
 
