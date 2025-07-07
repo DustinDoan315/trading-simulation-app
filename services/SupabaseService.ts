@@ -1,9 +1,10 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
-import NetInfo from "@react-native-community/netinfo";
-import UUIDService from "./UUIDService";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import NetInfo from '@react-native-community/netinfo';
+import UUIDService from './UUIDService';
+import { AsyncStorageService } from './AsyncStorageService';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
 
 //SupabaseService.ts
 
@@ -984,23 +985,20 @@ export class SyncService {
 
   // Add new method to update user balance in Supabase
   static async updateUserBalance(
-    uuid: string,
+    userId: string,
     newBalance: number
   ): Promise<void> {
     try {
-      const { error } = await supabase
+      await supabase
         .from("users")
-        .update({ balance: newBalance.toString() })
-        .eq("id", uuid);
+        .update({ usdt_balance: newBalance.toString() })
+        .eq("id", userId);
 
-      if (error) {
-        throw new Error(
-          `Failed to update user balance in Supabase: ${error.message}`
-        );
-      }
-    } catch (error) {
-      console.error("Error updating user balance in Supabase:", error);
-      throw error;
+      console.log(`✅ User USDT balance updated in Supabase: ${newBalance}`);
+    } catch (error: any) {
+      throw new Error(
+        `Failed to update user balance in Supabase: ${error.message}`
+      );
     }
   }
 

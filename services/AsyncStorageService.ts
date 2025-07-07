@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Holding } from "../types/crypto";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Holding } from '../types/crypto';
 
 // AsyncStorage keys
 const USER_KEY = "user_data";
@@ -8,10 +8,19 @@ const TRANSACTIONS_KEY = "transactions_data";
 const SYNC_QUEUE_KEY = "sync_queue";
 
 interface UserData {
-  uuid: string;
-  balance: string;
-  createdAt: number;
-  lastSyncAt?: number;
+  id: string;
+  username: string;
+  display_name?: string;
+  avatar_emoji?: string;
+  usdt_balance: string;
+  total_portfolio_value: string;
+  total_pnl: string;
+  total_trades: number;
+  win_rate: string;
+  join_date: string;
+  last_active: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface PortfolioData {
@@ -45,7 +54,7 @@ export class AsyncStorageService {
   static async createOrUpdateUser(userData: UserData): Promise<UserData> {
     try {
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
-      console.log("✅ User data saved to AsyncStorage:", userData.uuid);
+      console.log("✅ User data saved to AsyncStorage:", userData.id);
       return userData;
     } catch (error) {
       console.error("❌ Failed to save user data to AsyncStorage:", error);
@@ -53,12 +62,12 @@ export class AsyncStorageService {
     }
   }
 
-  static async getUser(uuid: string): Promise<UserData | null> {
+  static async getUser(userId: string): Promise<UserData | null> {
     try {
       const userData = await AsyncStorage.getItem(USER_KEY);
       if (userData) {
         const user = JSON.parse(userData) as UserData;
-        return user.uuid === uuid ? user : null;
+        return user.id === userId ? user : null;
       }
       return null;
     } catch (error) {
@@ -68,16 +77,16 @@ export class AsyncStorageService {
   }
 
   static async updateUserBalance(
-    uuid: string,
+    userId: string,
     newBalance: number
   ): Promise<void> {
     try {
-      const user = await this.getUser(uuid);
+      const user = await this.getUser(userId);
       if (user) {
-        user.balance = newBalance.toString();
-        user.lastSyncAt = Date.now();
+        user.usdt_balance = newBalance.toString();
+        user.updated_at = new Date().toISOString();
         await this.createOrUpdateUser(user);
-        console.log("✅ User balance updated in AsyncStorage:", newBalance);
+        console.log("✅ User USDT balance updated in AsyncStorage:", newBalance);
       }
     } catch (error) {
       console.error("❌ Failed to update user balance in AsyncStorage:", error);

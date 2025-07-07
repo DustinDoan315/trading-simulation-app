@@ -1,5 +1,5 @@
-import { supabase } from "./SupabaseService";
-import { User as UserEntity } from "../entities/User";
+import { supabase } from './SupabaseService';
+import { User as UserEntity } from '../entities/User';
 import {
   Collection,
   CollectionMember,
@@ -31,6 +31,7 @@ import {
   UserSettings,
   UserWithStats,
 } from "../types/database";
+
 
 export class UserService {
   // User Operations
@@ -124,20 +125,18 @@ export class UserService {
   }
 
   static async updateUserBalance(
-    id: string,
+    userId: string,
     newBalance: string
   ): Promise<void> {
     try {
-      const { error } = await supabase
+      await supabase
         .from("users")
         .update({
-          balance: newBalance,
-          last_active: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          usdt_balance: newBalance,
         })
-        .eq("id", id);
+        .eq("id", userId);
 
-      if (error) throw error;
+      console.log("✅ User balance updated successfully");
     } catch (error) {
       console.error("Error updating user balance:", error);
       throw error;
@@ -256,12 +255,7 @@ export class UserService {
     try {
       const { data, error } = await supabase
         .from("transactions")
-        .select(
-          `
-          *,
-          collections!transactions_collection_id_fkey(name)
-        `
-        )
+        .select("*")
         .eq("user_id", userId)
         .order("timestamp", { ascending: false })
         .limit(limit);
@@ -312,7 +306,7 @@ export class UserService {
         .select(
           `
           *,
-          users!collections_owner_id_fkey(username, display_name)
+          users(username, display_name)
         `
         )
         .order("created_at", { ascending: false });
@@ -340,7 +334,7 @@ export class UserService {
         .select(
           `
           *,
-          users!collections_owner_id_fkey(username, display_name),
+          users(username, display_name),
           collection_members(
             *,
             users(username, display_name, avatar_emoji)

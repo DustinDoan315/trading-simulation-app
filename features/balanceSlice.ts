@@ -1,7 +1,8 @@
-import UserRepository from "../services/UserRepository";
-import UUIDService from "../services/UUIDService";
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Holding, HoldingUpdatePayload, Order } from "../types/crypto";
+import UserRepository from '../services/UserRepository';
+import UUIDService from '../services/UUIDService';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
+
 
 export interface UserBalance {
   usdtBalance: number; // Available USDT for trading
@@ -109,7 +110,7 @@ const initialState: BalanceState = {
 export const loadBalance = createAsyncThunk("balance/load", async () => {
   const uuid = await UUIDService.getOrCreateUser();
   const user = await UserRepository.getUser(uuid);
-  const usdtBalance = user ? parseFloat(user.balance) : 100000;
+  const usdtBalance = user ? parseFloat(user.usdt_balance) : 100000;
   const portfolio = await UserRepository.getPortfolio(uuid);
 
   console.log("====================================");

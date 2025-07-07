@@ -1,14 +1,20 @@
-// Database Schema Types - Updated for Simplified Schema
+// Database Schema Types - Updated for Enhanced Schema
 export interface User {
   id: string; // UUID
   username: string;
   display_name?: string;
   avatar_emoji?: string;
-  balance: string; // DECIMAL(20,8)
-  total_pnl: string; // DECIMAL(20,8)
+  usdt_balance: string; // DECIMAL(30,10) - Available USDT for trading
+  total_portfolio_value: string; // DECIMAL(30,10) - Total portfolio value in USD
+  initial_balance: string; // DECIMAL(30,10) - Starting balance for PnL calculation
+  total_pnl: string; // DECIMAL(30,10)
+  total_pnl_percentage: string; // DECIMAL(10,4)
   total_trades: number;
+  total_buy_volume: string; // DECIMAL(30,10)
+  total_sell_volume: string; // DECIMAL(30,10)
   win_rate: string; // DECIMAL(5,2)
   global_rank?: number;
+  last_trade_at?: string; // TIMESTAMP
   join_date: string; // TIMESTAMP
   last_active: string; // TIMESTAMP
   created_at: string; // TIMESTAMP
@@ -148,18 +154,25 @@ export interface CreateUserParams {
   username: string;
   display_name?: string;
   avatar_emoji?: string;
-  balance?: string;
+  usdt_balance?: string;
+  total_portfolio_value?: string;
+  initial_balance?: string;
 }
 
 export interface UpdateUserParams {
   id: string;
   display_name?: string;
   avatar_emoji?: string;
-  balance?: string;
+  usdt_balance?: string;
+  total_portfolio_value?: string;
   total_pnl?: string;
+  total_pnl_percentage?: string;
   total_trades?: number;
+  total_buy_volume?: string;
+  total_sell_volume?: string;
   win_rate?: string;
   global_rank?: number;
+  last_trade_at?: string;
   last_active?: string;
 }
 

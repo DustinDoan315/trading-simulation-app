@@ -1,11 +1,12 @@
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import UUIDService from "./UUIDService";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { clearUser } from "@/features/userSlice";
-import { getDeviceUUID } from "@/utils/deviceUtils";
-import { store } from "@/store";
-import { supabase } from "./SupabaseService";
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import UUIDService from './UUIDService';
+import { AsyncStorageService } from './AsyncStorageService';
+import { clearUser } from '@/features/userSlice';
+import { getDeviceUUID } from '@/utils/deviceUtils';
+import { store } from '@/store';
+import { supabase } from './SupabaseService';
+
 
 export interface ResetResult {
   success: boolean;
@@ -156,23 +157,25 @@ export class ResetService {
       // Store new UUID in SecureStore
       await SecureStore.setItemAsync("user_uuid_12", newUuid);
 
-      // Create new user profile
+      // Create new user profile with correct structure
+      const now = new Date().toISOString();
       const userProfile = {
-        uuid: newUuid,
-        balance: "100000",
-        createdAt: new Date().toISOString(),
-        lastSyncAt: null,
+        id: newUuid,
+        username: `user_${newUuid.slice(0, 8)}`,
+        usdt_balance: "100000",
+        total_portfolio_value: "100000",
+        initial_balance: "100000",
+        total_pnl: "0.00",
+        total_trades: 0,
+        win_rate: "0.00",
+        join_date: now,
+        last_active: now,
+        created_at: now,
+        updated_at: now,
       };
 
-      // Save to AsyncStorage
-      await AsyncStorage.setItem("user_profile", JSON.stringify(userProfile));
-
-      // Save to local database
-      await AsyncStorageService.createOrUpdateUser({
-        uuid: newUuid,
-        balance: userProfile.balance,
-        createdAt: Math.floor(new Date().getTime() / 1000),
-      });
+      // Save to AsyncStorage using the correct service
+      await AsyncStorageService.createOrUpdateUser(userProfile);
 
       // Sync to cloud with retry logic
       let retries = 3;
@@ -203,9 +206,10 @@ export class ResetService {
         }
       }
 
+      console.log("✅ New user created successfully:", newUuid);
       return newUuid;
     } catch (error) {
-      console.error("❌ Error creating new user:", error);
+      console.error("❌ Failed to create new user:", error);
       throw error;
     }
   }
@@ -356,14 +360,14 @@ export class ResetService {
       try {
         const { error: userError } = await supabase
           .from("users")
-          .update({ balance: "100000" })
+          .update({ usdt_balance: "100000" })
           .eq("id", uuid);
 
         if (userError) {
           console.error("❌ Failed to reset user balance:", userError);
           console.warn("⚠️ User balance reset failed, but continuing");
         } else {
-          console.log("✅ User balance reset to default");
+          console.log("✅ User USDT balance reset to default");
         }
       } catch (userError) {
         console.warn("⚠️ Users table might not exist, skipping...");
@@ -386,10 +390,18 @@ export class ResetService {
     try {
       // Create default user profile
       const defaultProfile = {
-        uuid,
-        balance: "100000",
-        createdAt: new Date().toISOString(),
-        lastSyncAt: null,
+        id: uuid,
+        username: `user_${uuid.slice(0, 8)}`,
+        usdt_balance: "100000",
+        total_portfolio_value: "100000",
+        initial_balance: "100000",
+        total_pnl: "0.00",
+        total_trades: 0,
+        win_rate: "0.00",
+        join_date: new Date().toISOString(),
+        last_active: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       // Save to AsyncStorage
@@ -415,7 +427,9 @@ export class ResetService {
         const { error } = await supabase.from("users").upsert({
           id: uuid,
           username: `user_${uuid.slice(0, 8)}`,
-          balance: "100000",
+          usdt_balance: "100000",
+          total_portfolio_value: "100000",
+          initial_balance: "100000",
           created_at: new Date().toISOString(),
         });
 

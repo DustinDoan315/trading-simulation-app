@@ -1,9 +1,10 @@
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { getDeviceUUID } from "@/utils/deviceUtils";
-import { supabase } from "./SupabaseService";
-import { TimestampUtils } from "@/utils/helper";
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorageService } from './AsyncStorageService';
+import { getDeviceUUID } from '@/utils/deviceUtils';
+import { supabase } from './SupabaseService';
+import { TimestampUtils } from '@/utils/helper';
+
 
 // Enhanced UUIDService.ts
 
@@ -22,19 +23,24 @@ class UUIDService {
       await SecureStore.setItemAsync(USER_UUID_KEY, uuid);
 
       // Initialize user profile with proper timestamp format
+      const now = new Date().toISOString();
       const userProfile = {
-        uuid,
-        balance: "100000",
-        createdAt: new Date().toISOString(), // Use ISO string format for Supabase
-        lastSyncAt: null,
+        id: uuid,
+        username: `user_${uuid.slice(0, 8)}`,
+        usdt_balance: "100000",
+        total_portfolio_value: "100000",
+        initial_balance: "100000",
+        total_pnl: "0.00",
+        total_trades: 0,
+        win_rate: "0.00",
+        join_date: now,
+        last_active: now,
+        created_at: now,
+        updated_at: now,
       };
 
       // Save locally to AsyncStorage (persistent)
-      await AsyncStorageService.createOrUpdateUser({
-        uuid,
-        balance: userProfile.balance,
-        createdAt: Math.floor(new Date().getTime() / 1000), // Keep Unix timestamp for local storage
-      });
+      await AsyncStorageService.createOrUpdateUser(userProfile);
 
       // Save to AsyncStorage (cache)
       await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(userProfile));
@@ -112,7 +118,7 @@ class UUIDService {
       // Use TimestampUtils to ensure proper timestamp format for Supabase
       let createdAt: string;
       try {
-        createdAt = TimestampUtils.toISOTimestamp(userProfile.createdAt);
+        createdAt = TimestampUtils.toISOTimestamp(userProfile.created_at || userProfile.createdAt);
       } catch (error) {
         console.warn("Invalid timestamp format, using current time:", error);
         createdAt = new Date().toISOString();
@@ -121,10 +127,18 @@ class UUIDService {
       const { data, error } = await supabase
         .from("users")
         .upsert({
-          id: userProfile.uuid, // Use 'id' instead of 'uuid' to match schema
-          username: `user_${userProfile.uuid.slice(0, 8)}`, // Generate a username
-          balance: userProfile.balance,
+          id: userProfile.id || userProfile.uuid, // Use 'id' instead of 'uuid' to match schema
+          username: userProfile.username || `user_${(userProfile.id || userProfile.uuid).slice(0, 8)}`,
+          usdt_balance: userProfile.usdt_balance || userProfile.balance || "100000",
+          total_portfolio_value: userProfile.total_portfolio_value || "100000",
+          initial_balance: userProfile.initial_balance || "100000",
+          total_pnl: userProfile.total_pnl || "0.00",
+          total_trades: userProfile.total_trades || 0,
+          win_rate: userProfile.win_rate || "0.00",
+          join_date: userProfile.join_date || createdAt,
+          last_active: userProfile.last_active || createdAt,
           created_at: createdAt,
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -200,11 +214,20 @@ class UUIDService {
           return syncResult.success;
         } else {
           // Create default user profile
+          const now = new Date().toISOString();
           const userProfile = {
-            uuid,
-            balance: "100000",
-            createdAt: new Date().toISOString(),
-            lastSyncAt: null,
+            id: uuid,
+            username: `user_${uuid.slice(0, 8)}`,
+            usdt_balance: "100000",
+            total_portfolio_value: "100000",
+            initial_balance: "100000",
+            total_pnl: "0.00",
+            total_trades: 0,
+            win_rate: "0.00",
+            join_date: now,
+            last_active: now,
+            created_at: now,
+            updated_at: now,
           };
           const syncResult = await this.syncUserToCloud(userProfile);
           return syncResult.success;
