@@ -1,6 +1,5 @@
 import CollectionItem from "@/components/collections/CollectionItem";
 import EmptyState from "@/components/collections/EmptyState";
-import InviteCodeScanner from "@/components/collections/InviteCodeScanner";
 import React, { useCallback, useEffect, useState } from "react";
 import { CollectionData, useCollectionsData } from "@/hooks/useCollectionsData";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,8 +23,6 @@ const CollectionsScreen = () => {
   const [activeTab, setActiveTab] = useState<"my" | "joined">("my");
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(Date.now());
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
-  const [showScanner, setShowScanner] = useState<boolean>(false);
-  const [joiningByCode, setJoiningByCode] = useState<boolean>(false);
   const { user } = useUser();
 
   const {
@@ -51,70 +48,10 @@ const CollectionsScreen = () => {
   }, []);
 
   const handleScanInviteCode = useCallback(() => {
-    setShowScanner(true);
+    router.push("/(modals)/invite-code-scanner");
   }, []);
 
-  const handleCodeScanned = useCallback(
-    async (code: string) => {
-      if (!user?.id) {
-        Alert.alert("Error", "User not authenticated");
-        return;
-      }
-
-      setJoiningByCode(true);
-      try {
-        // Validate the invite code format
-        if (!code || code.length < 6) {
-          Alert.alert("Invalid Code", "Please scan a valid invite code");
-          return;
-        }
-
-        // Join the collection using the invite code
-        const result = await joinCollectionByInviteCode(code);
-
-        if (result) {
-          // Show success message and switch to joined tab
-          setShowSuccessMessage(true);
-          setTimeout(() => setShowSuccessMessage(false), 3000);
-
-          // Close scanner and refresh data
-          setShowScanner(false);
-          await forceRefresh();
-
-          // Switch to joined tab to show the newly joined collection
-          setActiveTab("joined");
-        }
-      } catch (error) {
-        console.error("Error joining collection by invite code:", error);
-
-        // Show specific error messages based on the error
-        let errorMessage = "Failed to join collection";
-        if (error instanceof Error) {
-          if (error.message.includes("already a member")) {
-            errorMessage = "You are already a member of this collection";
-          } else if (error.message.includes("Invalid or expired")) {
-            errorMessage = "Invalid or expired invite code";
-          } else if (error.message.includes("full")) {
-            errorMessage = "This collection is full";
-          } else if (error.message.includes("not accepting")) {
-            errorMessage = "This collection is not accepting new members";
-          } else {
-            errorMessage = error.message;
-          }
-        }
-
-        Alert.alert("Error", errorMessage);
-      } finally {
-        setJoiningByCode(false);
-      }
-    },
-    [user?.id, joinCollectionByInviteCode, forceRefresh]
-  );
-
-  const handleCloseScanner = useCallback(() => {
-    setShowScanner(false);
-    setJoiningByCode(false);
-  }, []);
+  // Note: Code scanning is now handled by the invite-code-scanner screen
 
   const handleCollectionPress = useCallback((collection: CollectionData) => {
     router.push("/(modals)/collections");
@@ -362,18 +299,9 @@ const CollectionsScreen = () => {
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity
-            style={[styles.scanButton, showScanner && styles.scanButtonActive]}
-            onPress={handleScanInviteCode}
-            disabled={showScanner || joiningByCode}>
-            {joiningByCode ? (
-              <ActivityIndicator size="small" color="#6674CC" />
-            ) : (
-              <Ionicons
-                name="key-outline"
-                size={20}
-                color={showScanner ? "#FFFFFF" : "#6674CC"}
-              />
-            )}
+            style={styles.scanButton}
+            onPress={handleScanInviteCode}>
+            <Ionicons name="qr-code" size={20} color="#6674CC" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.createButton}
@@ -450,12 +378,7 @@ const CollectionsScreen = () => {
       {/* Content */}
       {renderContent()}
 
-      <InviteCodeScanner
-        visible={showScanner}
-        onCodeScanned={handleCodeScanned}
-        onClose={handleCloseScanner}
-        loading={joiningByCode}
-      />
+      {/* InviteCodeScanner now handled by navigation */}
     </SafeAreaView>
   );
 };

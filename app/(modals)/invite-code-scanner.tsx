@@ -1,6 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 // Conditional camera import to handle cases where it's not available
 let CameraView: any = null;
@@ -21,40 +36,13 @@ try {
   console.warn("expo-clipboard not available:", error);
 }
 
-import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Dimensions,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-
-interface InviteCodeScannerProps {
-  visible: boolean;
-  onClose: () => void;
-  onCodeScanned: (code: string) => void;
-  loading?: boolean;
-}
-
 const { height: screenHeight } = Dimensions.get("window");
 
-const InviteCodeScanner: React.FC<InviteCodeScannerProps> = ({
-  visible,
-  onClose,
-  onCodeScanned,
-  loading = false,
-}) => {
+const InviteCodeScannerScreen: React.FC = () => {
   const [manualCode, setManualCode] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [scanMode, setScanMode] = useState<"manual" | "camera">("manual");
+  const [loading, setLoading] = useState(false);
   const [permission, requestPermission] = useCameraPermissions
     ? useCameraPermissions()
     : [null, () => {}];
@@ -81,59 +69,37 @@ const InviteCodeScanner: React.FC<InviteCodeScannerProps> = ({
   }, []);
 
   useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 100,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    // Start animation when screen mounts
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-      // Auto-focus input after animation if in manual mode
-      if (scanMode === "manual") {
-        setTimeout(() => {
-          inputRef.current?.focus();
-        }, 350);
-      }
-    } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 50,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 0.9,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Deactivate camera when modal closes
-      setCameraActive(false);
+    // Auto-focus input after animation if in manual mode
+    if (scanMode === "manual") {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 350);
     }
-  }, [visible, fadeAnim, slideAnim, scaleAnim, scanMode]);
+  }, [fadeAnim, slideAnim, scaleAnim, scanMode]);
 
   // Handle camera permissions and activation
   useEffect(() => {
-    if (visible && scanMode === "camera") {
+    if (scanMode === "camera") {
       if (permission?.granted) {
         setCameraActive(true);
       } else if (permission?.canAskAgain) {
@@ -142,14 +108,27 @@ const InviteCodeScanner: React.FC<InviteCodeScannerProps> = ({
     } else {
       setCameraActive(false);
     }
-  }, [visible, scanMode, permission?.granted, permission?.canAskAgain]);
+  }, [scanMode, permission?.granted, permission?.canAskAgain]);
 
-  const handleManualSubmit = () => {
+  const handleManualSubmit = async () => {
     if (manualCode.trim().length >= 6) {
+      setLoading(true);
       Keyboard.dismiss();
-      onCodeScanned(manualCode.trim());
-      setManualCode("");
-      onClose();
+
+      try {
+        // Here you would typically make an API call to join the collection
+        // For now, we'll simulate the process
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        // Navigate back with the invite code
+        router.back();
+        // You might want to pass the code back to the previous screen
+        // This could be done through a callback or state management
+      } catch (error) {
+        Alert.alert("Error", "Failed to join collection. Please try again.");
+      } finally {
+        setLoading(false);
+      }
     } else {
       Alert.alert(
         "Invalid Code",
@@ -162,16 +141,28 @@ const InviteCodeScanner: React.FC<InviteCodeScannerProps> = ({
     Keyboard.dismiss();
     setManualCode("");
     setCameraActive(false);
-    onClose();
+    router.back();
   };
 
-  const handleBarcodeScanned = (result: any) => {
+  const handleBarcodeScanned = async (result: any) => {
     if (result?.data) {
       const scannedCode = result.data.trim();
       if (scannedCode.length >= 6) {
         setCameraActive(false);
-        onCodeScanned(scannedCode);
-        onClose();
+        setLoading(true);
+
+        try {
+          // Here you would typically make an API call to join the collection
+          // For now, we'll simulate the process
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          // Navigate back with the scanned code
+          router.back();
+        } catch (error) {
+          Alert.alert("Error", "Failed to join collection. Please try again.");
+        } finally {
+          setLoading(false);
+        }
       } else {
         Alert.alert(
           "Invalid QR Code",
@@ -433,144 +424,132 @@ const InviteCodeScanner: React.FC<InviteCodeScannerProps> = ({
   );
 
   return (
-    <Modal
-      visible={visible}
-      animationType="none"
-      transparent={true}
-      onRequestClose={handleClose}>
-      <Animated.View
-        style={[
-          styles.overlay,
-          {
-            opacity: fadeAnim,
-          },
-        ]}>
-        <KeyboardAvoidingView
-          style={styles.keyboardAvoidingView}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}>
-          <Animated.View
+    <Animated.View
+      style={[
+        styles.overlay,
+        {
+          opacity: fadeAnim,
+        },
+      ]}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}>
+        <Animated.View
+          style={[
+            styles.container,
+            {
+              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+            },
+          ]}>
+          {/* Header with gradient background */}
+          <LinearGradient
+            colors={["#1A1D2F", "#131523"]}
+            style={styles.headerGradient}>
+            <View style={styles.header}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={handleClose}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <LinearGradient
+                  colors={[
+                    "rgba(255, 255, 255, 0.1)",
+                    "rgba(255, 255, 255, 0.05)",
+                  ]}
+                  style={styles.closeButtonGradient}>
+                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                </LinearGradient>
+              </TouchableOpacity>
+              <Text style={styles.title}>Join Collection</Text>
+              <TouchableOpacity
+                style={styles.modeToggle}
+                onPress={toggleScanMode}
+                activeOpacity={0.8}>
+                <LinearGradient
+                  colors={[
+                    "rgba(255, 255, 255, 0.1)",
+                    "rgba(255, 255, 255, 0.05)",
+                  ]}
+                  style={styles.modeToggleGradient}>
+                  <Ionicons
+                    name={scanMode === "manual" ? "camera" : "keypad"}
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+
+          {/* Content */}
+          <View
             style={[
-              styles.container,
-              {
-                transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-              },
+              styles.content,
+              keyboardVisible && styles.contentKeyboardVisible,
             ]}>
-            {/* Header with gradient background */}
-            <LinearGradient
-              colors={["#1A1D2F", "#131523"]}
-              style={styles.headerGradient}>
-              <View style={styles.header}>
+            {scanMode === "manual"
+              ? renderManualInput()
+              : renderCameraScanner()}
+          </View>
+
+          {/* Footer with gradient background */}
+          <LinearGradient
+            colors={["#131523", "#1A1D2F"]}
+            style={styles.footerGradient}>
+            <View style={styles.footer}>
+              {scanMode === "manual" && (
                 <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={handleClose}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <LinearGradient
-                    colors={[
-                      "rgba(255, 255, 255, 0.1)",
-                      "rgba(255, 255, 255, 0.05)",
-                    ]}
-                    style={styles.closeButtonGradient}>
-                    <Ionicons name="close" size={20} color="#FFFFFF" />
-                  </LinearGradient>
-                </TouchableOpacity>
-                <Text style={styles.title}>Join Collection</Text>
-                <TouchableOpacity
-                  style={styles.modeToggle}
-                  onPress={toggleScanMode}
+                  style={[
+                    styles.submitButton,
+                    !manualCode.trim() && styles.submitButtonDisabled,
+                  ]}
+                  onPress={handleManualSubmit}
+                  disabled={!manualCode.trim() || loading}
                   activeOpacity={0.8}>
                   <LinearGradient
-                    colors={[
-                      "rgba(255, 255, 255, 0.1)",
-                      "rgba(255, 255, 255, 0.05)",
-                    ]}
-                    style={styles.modeToggleGradient}>
-                    <Ionicons
-                      name={scanMode === "manual" ? "camera" : "keypad"}
-                      size={20}
-                      color="#FFFFFF"
-                    />
+                    colors={
+                      !manualCode.trim()
+                        ? ["#4A5568", "#2D3748"]
+                        : ["#6674CC", "#5A67D8", "#4C51BF"]
+                    }
+                    style={styles.submitButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}>
+                    {loading ? (
+                      <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                        <Text style={styles.submitButtonText}>Joining...</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.buttonContent}>
+                        <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+                        <Text style={styles.submitButtonText}>
+                          Join Collection
+                        </Text>
+                      </View>
+                    )}
                   </LinearGradient>
                 </TouchableOpacity>
-              </View>
-            </LinearGradient>
+              )}
 
-            {/* Content */}
-            <View
-              style={[
-                styles.content,
-                keyboardVisible && styles.contentKeyboardVisible,
-              ]}>
-              {scanMode === "manual"
-                ? renderManualInput()
-                : renderCameraScanner()}
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleClose}
+                activeOpacity={0.7}>
+                <LinearGradient
+                  colors={[
+                    "rgba(255, 255, 255, 0.1)",
+                    "rgba(255, 255, 255, 0.05)",
+                  ]}
+                  style={styles.cancelButtonGradient}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
-
-            {/* Footer with gradient background */}
-            <LinearGradient
-              colors={["#131523", "#1A1D2F"]}
-              style={styles.footerGradient}>
-              <View style={styles.footer}>
-                {scanMode === "manual" && (
-                  <TouchableOpacity
-                    style={[
-                      styles.submitButton,
-                      !manualCode.trim() && styles.submitButtonDisabled,
-                    ]}
-                    onPress={handleManualSubmit}
-                    disabled={!manualCode.trim() || loading}
-                    activeOpacity={0.8}>
-                    <LinearGradient
-                      colors={
-                        !manualCode.trim()
-                          ? ["#4A5568", "#2D3748"]
-                          : ["#6674CC", "#5A67D8", "#4C51BF"]
-                      }
-                      style={styles.submitButtonGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}>
-                      {loading ? (
-                        <View style={styles.loadingContainer}>
-                          <ActivityIndicator size="small" color="#FFFFFF" />
-                          <Text style={styles.submitButtonText}>
-                            Joining...
-                          </Text>
-                        </View>
-                      ) : (
-                        <View style={styles.buttonContent}>
-                          <Ionicons
-                            name="add-circle"
-                            size={20}
-                            color="#FFFFFF"
-                          />
-                          <Text style={styles.submitButtonText}>
-                            Join Collection
-                          </Text>
-                        </View>
-                      )}
-                    </LinearGradient>
-                  </TouchableOpacity>
-                )}
-
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={handleClose}
-                  activeOpacity={0.7}>
-                  <LinearGradient
-                    colors={[
-                      "rgba(255, 255, 255, 0.1)",
-                      "rgba(255, 255, 255, 0.05)",
-                    ]}
-                    style={styles.cancelButtonGradient}>
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-        </KeyboardAvoidingView>
-      </Animated.View>
-    </Modal>
+          </LinearGradient>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </Animated.View>
   );
 };
 
@@ -946,4 +925,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default InviteCodeScanner;
+export default InviteCodeScannerScreen;

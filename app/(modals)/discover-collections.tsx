@@ -1,5 +1,4 @@
 import DiscoverCollectionItem from "@/components/collections/DiscoverCollectionItem";
-import InviteCodeInput from "@/components/collections/InviteCodeInput";
 import React, { useCallback, useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,8 +21,6 @@ import {
 const DiscoverCollectionsScreen = () => {
   const { user } = useUser();
   const [searchTerm, setSearchTerm] = useState("");
-  const [showInviteInput, setShowInviteInput] = useState(false);
-  const [inviteCode, setInviteCode] = useState("");
 
   const {
     loading,
@@ -226,24 +223,14 @@ const DiscoverCollectionsScreen = () => {
       <View style={styles.inviteSection}>
         <TouchableOpacity
           style={styles.inviteToggle}
-          onPress={() => setShowInviteInput(!showInviteInput)}>
+          onPress={() => router.push("/(modals)/invite-code-input")}>
           <Ionicons name="link" size={20} color="#6674CC" />
           <Text style={styles.inviteToggleText}>Join by Invite Code</Text>
-          <Ionicons
-            name={showInviteInput ? "chevron-up" : "chevron-down"}
-            size={20}
-            color="#6674CC"
-          />
+          <Ionicons name="chevron-forward" size={20} color="#6674CC" />
         </TouchableOpacity>
       </View>
 
-      {/* Invite Code Input Modal */}
-      <InviteCodeInput
-        visible={showInviteInput}
-        onClose={() => setShowInviteInput(false)}
-        onCodeSubmitted={handleJoinByInviteCode}
-        loading={joining}
-      />
+      {/* Invite Code Input Modal - Now handled by navigation */}
 
       {/* Content */}
       {renderContent()}
