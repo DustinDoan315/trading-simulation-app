@@ -125,19 +125,26 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   portfolio.forEach((item) => {
     if (item.symbol.toUpperCase() !== "USDT") {
       console.log("Processing portfolio item:", item);
-                     holdings[item.symbol.toUpperCase()] = {
-          amount: parseFloat(item.quantity),
-          valueInUSD: parseFloat(item.quantity) * parseFloat(item.avg_cost),
-          symbol: item.symbol.toUpperCase(),
-          name: item.symbol,
-          image:
-            item.image ||
-            `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
-          averageBuyPrice: parseFloat(item.avg_cost),
-          currentPrice: parseFloat(item.avg_cost),
-          profitLoss: 0,
-          profitLossPercentage: 0,
-        };
+      const quantity = parseFloat(item.quantity);
+      const currentPrice = parseFloat(item.current_price || item.avg_cost);
+      const avgCost = parseFloat(item.avg_cost);
+      const valueInUSD = quantity * currentPrice;
+      const profitLoss = valueInUSD - (quantity * avgCost);
+      const profitLossPercentage = avgCost > 0 ? (profitLoss / (quantity * avgCost)) * 100 : 0;
+      
+      holdings[item.symbol.toUpperCase()] = {
+        amount: quantity,
+        valueInUSD: valueInUSD,
+        symbol: item.symbol.toUpperCase(),
+        name: item.symbol,
+        image:
+          item.image ||
+          `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
+        averageBuyPrice: avgCost,
+        currentPrice: currentPrice,
+        profitLoss: profitLoss,
+        profitLossPercentage: profitLossPercentage,
+      };
     }
   });
 
@@ -186,7 +193,20 @@ export const balanceSlice = createSlice({
 
       // Persist both USDT balance and portfolio to database
       UUIDService.getOrCreateUser().then((uuid) => {
-        UserRepository.updateUserBalance(uuid, state.balance.usdtBalance);
+        // Calculate total PnL
+        let totalPnL = 0;
+        Object.values(state.balance.holdings).forEach((holding: any) => {
+          if (holding.symbol !== "USDT") {
+            totalPnL += holding.profitLoss || 0;
+          }
+        });
+
+        UserRepository.updateUserBalanceAndPortfolioValue(
+          uuid, 
+          state.balance.usdtBalance, 
+          state.balance.totalPortfolioValue, 
+          totalPnL
+        );
         UserRepository.updatePortfolio(uuid, state.balance.holdings);
       });
     },
@@ -344,25 +364,39 @@ export const balanceSlice = createSlice({
       try {
         // Extract values to avoid Proxy issues
         const usdtBalance = state.balance.usdtBalance;
+        const totalPortfolioValue = state.balance.totalPortfolioValue;
         const holdingsCopy = JSON.parse(JSON.stringify(holdings));
+
+        // Calculate total PnL
+        let totalPnL = 0;
+        Object.values(holdingsCopy).forEach((holding: any) => {
+          if (holding.symbol !== "USDT") {
+            totalPnL += holding.profitLoss || 0;
+          }
+        });
 
         UUIDService.getOrCreateUser()
           .then((uuid) => {
             console.log("✅ Got UUID for persistence:", uuid);
             
-            // Update USDT balance in users table
-            return UserRepository.updateUserBalance(uuid, usdtBalance);
+            // Update both USDT balance and total portfolio value in users table
+            return UserRepository.updateUserBalanceAndPortfolioValue(
+              uuid, 
+              usdtBalance, 
+              totalPortfolioValue, 
+              totalPnL
+            );
           })
           .then(() => {
-            console.log("✅ USDT balance updated successfully");
+            console.log("✅ User balance and portfolio value updated successfully");
             return UUIDService.getOrCreateUser();
           })
           .then((uuid) => {
-            console.log("✅ Updating portfolio...");
+            console.log("✅ Updating portfolio holdings...");
             return UserRepository.updatePortfolio(uuid, holdingsCopy);
           })
           .then(() => {
-            console.log("✅ Portfolio updated successfully");
+            console.log("✅ Portfolio holdings updated successfully");
           })
           .catch((error) => {
             console.error(
@@ -386,7 +420,20 @@ export const balanceSlice = createSlice({
 
       // Persist to database
       UUIDService.getOrCreateUser().then((uuid) => {
-        UserRepository.updateUserBalance(uuid, action.payload.usdtBalance);
+        // Calculate total PnL
+        let totalPnL = 0;
+        Object.values(action.payload.holdings).forEach((holding: any) => {
+          if (holding.symbol !== "USDT") {
+            totalPnL += holding.profitLoss || 0;
+          }
+        });
+
+        UserRepository.updateUserBalanceAndPortfolioValue(
+          uuid, 
+          action.payload.usdtBalance, 
+          action.payload.totalPortfolioValue, 
+          totalPnL
+        );
         UserRepository.updatePortfolio(uuid, action.payload.holdings);
       });
     },

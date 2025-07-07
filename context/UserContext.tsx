@@ -1,15 +1,14 @@
+import React, { createContext, ReactNode, useContext, useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { User } from "@/types/database";
 import {
   clearUser,
   fetchFavorites,
   fetchPortfolio,
   fetchTransactions,
   fetchUser,
-  fetchUserSettings,
   fetchUserStats,
 } from "@/features/userSlice";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { User } from "@/types/database";
-import React, { ReactNode, createContext, useContext, useEffect } from "react";
 
 interface UserContextType {
   user: User | null;
@@ -17,7 +16,6 @@ interface UserContextType {
   portfolio: any[];
   transactions: any[];
   favorites: any[];
-  userSettings: any;
   loading: boolean;
   error: string | null;
   refreshUser: (userId: string) => Promise<void>;
@@ -35,7 +33,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     portfolio,
     transactions,
     favorites,
-    userSettings,
     loading,
     error,
   } = useAppSelector((state) => state.user);
@@ -57,7 +54,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         dispatch(fetchPortfolio(userId)),
         dispatch(fetchTransactions({ userId, limit: 50 })),
         dispatch(fetchFavorites(userId)),
-        dispatch(fetchUserSettings(userId)),
       ]);
     } catch (error) {
       console.error("Failed to refresh user data:", error);
@@ -76,7 +72,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         portfolio,
         transactions,
         favorites,
-        userSettings,
         loading,
         error,
         refreshUser,

@@ -3,16 +3,12 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AsyncStorageService } from './AsyncStorageService';
 import { supabase } from './SupabaseService';
-import { SyncService } from './SupabaseService';
 
 import {
   CreateTransactionParams,
   CreateUserParams,
-  SyncResult,
 } from "../types/database";
 
-
-// services/HybridStorageService.ts
 
 interface SyncItem {
   type: "transaction" | "user";

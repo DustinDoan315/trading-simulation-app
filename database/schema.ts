@@ -31,18 +31,13 @@ export const SUPABASE_SCHEMA = {
     id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
     user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
     symbol: "VARCHAR(20) NOT NULL",
-    name: "VARCHAR(100) NOT NULL",
-    quantity: "DECIMAL(30,10) NOT NULL DEFAULT 0 CHECK (quantity >= 0)",
-    avg_cost: "DECIMAL(30,10) NOT NULL DEFAULT 0 CHECK (avg_cost >= 0)",
-    current_price: "DECIMAL(30,10) DEFAULT 0 CHECK (current_price >= 0)",
-    total_cost_basis: "DECIMAL(30,10) DEFAULT 0", // Total amount invested
-    current_value: "DECIMAL(30,10) DEFAULT 0", // Current market value
-    unrealized_pnl: "DECIMAL(30,10) DEFAULT 0", // Unrealized profit/loss
-    unrealized_pnl_percentage: "DECIMAL(10,4) DEFAULT 0",
-    realized_pnl: "DECIMAL(30,10) DEFAULT 0", // Realized profit/loss from sells
+    quantity: "DECIMAL(20,8) NOT NULL DEFAULT 0 CHECK (quantity >= 0)",
+    avg_cost: "DECIMAL(20,8) NOT NULL DEFAULT 0 CHECK (avg_cost >= 0)",
+    current_price: "DECIMAL(20,8) DEFAULT 0 CHECK (current_price >= 0)",
+    total_value: "DECIMAL(20,8) DEFAULT 0", // Current market value
+    profit_loss: "DECIMAL(20,8) DEFAULT 0", // Profit/loss
+    profit_loss_percent: "DECIMAL(10,4) DEFAULT 0",
     image_url: "TEXT",
-    is_base_currency: "BOOLEAN DEFAULT FALSE", // Mark USDT as base currency
-    first_purchase_at: "TIMESTAMP WITH TIME ZONE",
     last_updated: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
     created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
     updated_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
@@ -124,30 +119,6 @@ export const SUPABASE_SCHEMA = {
     unique_constraint: "UNIQUE(collection_id, user_id)",
   },
 
-  // Trade statistics table - New table for detailed trading analytics
-  trade_statistics: {
-    id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
-    user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
-    collection_id: "UUID REFERENCES collections(id) ON DELETE SET NULL",
-    symbol: "VARCHAR(20) NOT NULL",
-    // Trade performance metrics
-    total_trades: "INTEGER DEFAULT 0",
-    buy_trades: "INTEGER DEFAULT 0",
-    sell_trades: "INTEGER DEFAULT 0",
-    total_volume: "DECIMAL(30,10) DEFAULT 0",
-    total_pnl: "DECIMAL(30,10) DEFAULT 0",
-    win_rate: "DECIMAL(5,2) DEFAULT 0",
-    avg_trade_size: "DECIMAL(30,10) DEFAULT 0",
-    largest_win: "DECIMAL(30,10) DEFAULT 0",
-    largest_loss: "DECIMAL(30,10) DEFAULT 0",
-    avg_hold_time_hours: "DECIMAL(10,2) DEFAULT 0",
-    first_trade_at: "TIMESTAMP WITH TIME ZONE",
-    last_trade_at: "TIMESTAMP WITH TIME ZONE",
-    created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-    updated_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-    unique_constraint: "UNIQUE(user_id, collection_id, symbol)",
-  },
-
   // Favorites table - Enhanced with tracking
   favorites: {
     id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
@@ -184,77 +155,77 @@ export const SUPABASE_SCHEMA = {
   },
 
   // Search history table - Enhanced with analytics
-  search_history: {
-    id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
-    user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
-    query: "VARCHAR(255) NOT NULL",
-    crypto_id: "VARCHAR(50)",
-    symbol: "VARCHAR(20)",
-    result_count: "INTEGER DEFAULT 0",
-    clicked_result: "BOOLEAN DEFAULT FALSE",
-    searched_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-    created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-  },
+  // search_history: { // REMOVED - table deleted
+  //   id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+  //   user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
+  //   query: "VARCHAR(255) NOT NULL",
+  //   crypto_id: "VARCHAR(50)",
+  //   symbol: "VARCHAR(20)",
+  //   result_count: "INTEGER DEFAULT 0",
+  //   clicked_result: "BOOLEAN DEFAULT FALSE",
+  //   searched_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+  //   created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+  // },
 
   // Price alerts table - Enhanced with more options
-  price_alerts: {
-    id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
-    user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
-    crypto_id: "VARCHAR(50) NOT NULL",
-    symbol: "VARCHAR(20) NOT NULL",
-    target_price: "DECIMAL(30,10) NOT NULL CHECK (target_price > 0)",
-    alert_type: "VARCHAR(20) NOT NULL CHECK (alert_type IN ('ABOVE', 'BELOW', 'PERCENTAGE_CHANGE'))",
-    percentage_threshold: "DECIMAL(10,4)", // For percentage-based alerts
-    current_price_when_set: "DECIMAL(30,10)",
-    is_active: "BOOLEAN DEFAULT TRUE",
-    is_repeating: "BOOLEAN DEFAULT FALSE",
-    triggered_count: "INTEGER DEFAULT 0",
-    triggered_at: "TIMESTAMP WITH TIME ZONE",
-    last_triggered_at: "TIMESTAMP WITH TIME ZONE",
-    expires_at: "TIMESTAMP WITH TIME ZONE",
-    created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-    updated_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-  },
+  // price_alerts: { // REMOVED - table deleted
+  //   id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+  //   user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
+  //   crypto_id: "VARCHAR(50) NOT NULL",
+  //   symbol: "VARCHAR(20) NOT NULL",
+  //   target_price: "DECIMAL(30,10) NOT NULL CHECK (target_price > 0)",
+  //   alert_type: "VARCHAR(20) NOT NULL CHECK (alert_type IN ('ABOVE', 'BELOW', 'PERCENTAGE_CHANGE'))",
+  //   percentage_threshold: "DECIMAL(10,4)", // For percentage-based alerts
+  //   current_price_when_set: "DECIMAL(30,10)",
+  //   is_active: "BOOLEAN DEFAULT TRUE",
+  //   is_repeating: "BOOLEAN DEFAULT FALSE",
+  //   triggered_count: "INTEGER DEFAULT 0",
+  //   triggered_at: "TIMESTAMP WITH TIME ZONE",
+  //   last_triggered_at: "TIMESTAMP WITH TIME ZONE",
+  //   expires_at: "TIMESTAMP WITH TIME ZONE",
+  //   created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+  //   updated_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+  // },
 
   // User settings table - Enhanced with more options
-  user_settings: {
-    id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
-    user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
-    // Display preferences
-    notifications_enabled: "BOOLEAN DEFAULT TRUE",
-    price_alerts_enabled: "BOOLEAN DEFAULT TRUE",
-    balance_hidden: "BOOLEAN DEFAULT FALSE",
-    show_portfolio_percentage: "BOOLEAN DEFAULT TRUE",
-    show_unrealized_pnl: "BOOLEAN DEFAULT TRUE",
-    language: "VARCHAR(10) DEFAULT 'en'",
-    theme: "VARCHAR(20) DEFAULT 'dark'",
-    currency: "VARCHAR(10) DEFAULT 'USD'",
-    // Trading preferences
-    default_order_type: "VARCHAR(10) DEFAULT 'MARKET' CHECK (default_order_type IN ('MARKET', 'LIMIT'))",
-    auto_refresh_interval: "INTEGER DEFAULT 30", // Seconds
-    risk_tolerance: "VARCHAR(20) DEFAULT 'MEDIUM' CHECK (risk_tolerance IN ('LOW', 'MEDIUM', 'HIGH'))",
-    // Privacy settings
-    public_profile: "BOOLEAN DEFAULT TRUE",
-    show_in_leaderboard: "BOOLEAN DEFAULT TRUE",
-    allow_friend_requests: "BOOLEAN DEFAULT TRUE",
-    created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-    updated_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-    unique_constraint: "UNIQUE(user_id)",
-  },
+  // user_settings: { // REMOVED - table deleted
+  //   id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+  //   user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
+  //   // Display preferences
+  //   notifications_enabled: "BOOLEAN DEFAULT TRUE",
+  //   price_alerts_enabled: "BOOLEAN DEFAULT TRUE",
+  //   balance_hidden: "BOOLEAN DEFAULT FALSE",
+  //   show_portfolio_percentage: "BOOLEAN DEFAULT TRUE",
+  //   show_profit_loss: "BOOLEAN DEFAULT TRUE",
+  //   language: "VARCHAR(10) DEFAULT 'en'",
+  //   theme: "VARCHAR(20) DEFAULT 'dark'",
+  //   currency: "VARCHAR(10) DEFAULT 'USD'",
+  //   // Trading preferences
+  //   default_order_type: "VARCHAR(10) DEFAULT 'MARKET' CHECK (default_order_type IN ('MARKET', 'LIMIT'))",
+  //   auto_refresh_interval: "INTEGER DEFAULT 30", // Seconds
+  //   risk_tolerance: "VARCHAR(20) DEFAULT 'MEDIUM' CHECK (risk_tolerance IN ('LOW', 'MEDIUM', 'HIGH'))",
+  //   // Privacy settings
+  //   public_profile: "BOOLEAN DEFAULT TRUE",
+  //   show_in_leaderboard: "BOOLEAN DEFAULT TRUE",
+  //   allow_friend_requests: "BOOLEAN DEFAULT TRUE",
+  //   created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+  //   updated_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+  //   unique_constraint: "UNIQUE(user_id)",
+  // },
 
   // Balance audit log - New table for tracking balance changes
-  balance_audit_log: {
-    id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
-    user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
-    transaction_id: "UUID REFERENCES transactions(id) ON DELETE SET NULL",
-    operation_type: "VARCHAR(50) NOT NULL", // 'TRADE', 'DEPOSIT', 'WITHDRAWAL', 'CORRECTION'
-    symbol: "VARCHAR(20)",
-    balance_before: "DECIMAL(30,10)",
-    balance_after: "DECIMAL(30,10)",
-    amount_changed: "DECIMAL(30,10)",
-    reason: "TEXT",
-    created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-  },
+  // balance_audit_log: { // REMOVED - table deleted
+  //   id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+  //   user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
+  //   transaction_id: "UUID REFERENCES transactions(id) ON DELETE SET NULL",
+  //   operation_type: "VARCHAR(50) NOT NULL", // 'TRADE', 'DEPOSIT', 'WITHDRAWAL', 'CORRECTION'
+  //   symbol: "VARCHAR(20)",
+  //   balance_before: "DECIMAL(30,10)",
+  //   balance_after: "DECIMAL(30,10)",
+  //   amount_changed: "DECIMAL(30,10)",
+  //   reason: "TEXT",
+  //   created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+  // },
 };
 
 // Enhanced indexes for better performance
@@ -269,8 +240,8 @@ export const SUPABASE_INDEXES = [
   "CREATE INDEX IF NOT EXISTS idx_portfolio_user_symbol ON portfolio(user_id, symbol)",
   "CREATE INDEX IF NOT EXISTS idx_portfolio_user_id ON portfolio(user_id)",
   "CREATE INDEX IF NOT EXISTS idx_portfolio_symbol ON portfolio(symbol)",
-  "CREATE INDEX IF NOT EXISTS idx_portfolio_current_value ON portfolio(current_value DESC)",
-  "CREATE INDEX IF NOT EXISTS idx_portfolio_unrealized_pnl ON portfolio(unrealized_pnl DESC)",
+  "CREATE INDEX IF NOT EXISTS idx_portfolio_total_value ON portfolio(total_value DESC)",
+  "CREATE INDEX IF NOT EXISTS idx_portfolio_profit_loss ON portfolio(profit_loss DESC)",
 
   // Transaction indexes
   "CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)",
@@ -294,11 +265,6 @@ export const SUPABASE_INDEXES = [
   "CREATE INDEX IF NOT EXISTS idx_collection_members_rank ON collection_members(collection_id, rank)",
   "CREATE INDEX IF NOT EXISTS idx_collection_members_pnl ON collection_members(collection_id, total_pnl DESC)",
 
-  // Trade statistics indexes
-  "CREATE INDEX IF NOT EXISTS idx_trade_stats_user_symbol ON trade_statistics(user_id, symbol)",
-  "CREATE INDEX IF NOT EXISTS idx_trade_stats_collection ON trade_statistics(collection_id)",
-  "CREATE INDEX IF NOT EXISTS idx_trade_stats_performance ON trade_statistics(total_pnl DESC)",
-
   // Leaderboard indexes
   "CREATE INDEX IF NOT EXISTS idx_leaderboard_period_rank ON leaderboard_rankings(period, rank)",
   "CREATE INDEX IF NOT EXISTS idx_leaderboard_collection_period ON leaderboard_rankings(collection_id, period)",
@@ -310,20 +276,20 @@ export const SUPABASE_INDEXES = [
   "CREATE INDEX IF NOT EXISTS idx_favorites_crypto_id ON favorites(crypto_id)",
   "CREATE INDEX IF NOT EXISTS idx_favorites_added_at ON favorites(user_id, added_at DESC)",
 
-  // Search history indexes
-  "CREATE INDEX IF NOT EXISTS idx_search_history_user_id ON search_history(user_id)",
-  "CREATE INDEX IF NOT EXISTS idx_search_history_searched_at ON search_history(searched_at DESC)",
-  "CREATE INDEX IF NOT EXISTS idx_search_history_query ON search_history(query)",
+  // Search history indexes - REMOVED - table deleted
+  // "CREATE INDEX IF NOT EXISTS idx_search_history_user_id ON search_history(user_id)",
+  // "CREATE INDEX IF NOT EXISTS idx_search_history_searched_at ON search_history(searched_at DESC)",
+  // "CREATE INDEX IF NOT EXISTS idx_search_history_query ON search_history(query)",
 
-  // Price alerts indexes
-  "CREATE INDEX IF NOT EXISTS idx_price_alerts_user_active ON price_alerts(user_id, is_active)",
-  "CREATE INDEX IF NOT EXISTS idx_price_alerts_crypto_active ON price_alerts(crypto_id, is_active)",
-  "CREATE INDEX IF NOT EXISTS idx_price_alerts_triggered ON price_alerts(triggered_at)",
+  // Price alerts indexes - REMOVED - table deleted
+  // "CREATE INDEX IF NOT EXISTS idx_price_alerts_user_active ON price_alerts(user_id, is_active)",
+  // "CREATE INDEX IF NOT EXISTS idx_price_alerts_crypto_active ON price_alerts(crypto_id, is_active)",
+  // "CREATE INDEX IF NOT EXISTS idx_price_alerts_triggered ON price_alerts(triggered_at)",
 
-  // Balance audit log indexes
-  "CREATE INDEX IF NOT EXISTS idx_balance_audit_user_time ON balance_audit_log(user_id, created_at DESC)",
-  "CREATE INDEX IF NOT EXISTS idx_balance_audit_transaction ON balance_audit_log(transaction_id)",
-  "CREATE INDEX IF NOT EXISTS idx_balance_audit_operation ON balance_audit_log(operation_type)",
+  // Balance audit log indexes - REMOVED - table deleted
+  // "CREATE INDEX IF NOT EXISTS idx_balance_audit_user_time ON balance_audit_log(user_id, created_at DESC)",
+  // "CREATE INDEX IF NOT EXISTS idx_balance_audit_transaction ON balance_audit_log(transaction_id)",
+  // "CREATE INDEX IF NOT EXISTS idx_balance_audit_operation ON balance_audit_log(operation_type)",
 ];
 
 // Enhanced RLS Policies with better security
@@ -332,7 +298,7 @@ export const SUPABASE_RLS_POLICIES = {
     "CREATE POLICY \"Users can view their own data\" ON users FOR SELECT USING (auth.uid() = id OR auth.role() = 'service_role')",
     "CREATE POLICY \"Users can update their own data\" ON users FOR UPDATE USING (auth.uid() = id OR auth.role() = 'service_role')",
     "CREATE POLICY \"Users can insert their own data\" ON users FOR INSERT WITH CHECK (auth.uid() = id OR auth.role() = 'service_role')",
-    "CREATE POLICY \"Public profiles are viewable\" ON users FOR SELECT USING (EXISTS (SELECT 1 FROM user_settings WHERE user_id = users.id AND public_profile = true))",
+    // "CREATE POLICY \"Public profiles are viewable\" ON users FOR SELECT USING (EXISTS (SELECT 1 FROM user_settings WHERE user_id = users.id AND public_profile = true))", // REMOVED - user_settings table deleted
   ],
 
   portfolio: [
@@ -363,12 +329,6 @@ export const SUPABASE_RLS_POLICIES = {
     "CREATE POLICY \"Collection owners can manage members\" ON collection_members FOR ALL USING (EXISTS (SELECT 1 FROM collections WHERE id = collection_members.collection_id AND owner_id = auth.uid()) OR auth.role() = 'service_role')",
   ],
 
-  trade_statistics: [
-    "CREATE POLICY \"Users can view their own stats\" ON trade_statistics FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role')",
-    "CREATE POLICY \"Collection members can view collection stats\" ON trade_statistics FOR SELECT USING (collection_id IS NOT NULL AND EXISTS (SELECT 1 FROM collection_members WHERE collection_id = trade_statistics.collection_id AND user_id = auth.uid()))",
-    "CREATE POLICY \"System can manage trade statistics\" ON trade_statistics FOR ALL USING (auth.role() = 'service_role')",
-  ],
-
   favorites: [
     "CREATE POLICY \"Users can manage their own favorites\" ON favorites FOR ALL USING (auth.uid() = user_id OR auth.role() = 'service_role')",
   ],
@@ -378,22 +338,22 @@ export const SUPABASE_RLS_POLICIES = {
     "CREATE POLICY \"System can manage leaderboard rankings\" ON leaderboard_rankings FOR ALL USING (auth.role() = 'service_role')",
   ],
 
-  search_history: [
-    "CREATE POLICY \"Users can manage their own search history\" ON search_history FOR ALL USING (auth.uid() = user_id OR auth.role() = 'service_role')",
-  ],
+  // search_history: [ // REMOVED - table deleted
+  //   "CREATE POLICY \"Users can manage their own search history\" ON search_history FOR ALL USING (auth.uid() = user_id OR auth.role() = 'service_role')",
+  // ],
 
-  price_alerts: [
-    "CREATE POLICY \"Users can manage their own price alerts\" ON price_alerts FOR ALL USING (auth.uid() = user_id OR auth.role() = 'service_role')",
-  ],
+  // price_alerts: [ // REMOVED - table deleted
+  //   "CREATE POLICY \"Users can manage their own price alerts\" ON price_alerts FOR ALL USING (auth.uid() = user_id OR auth.role() = 'service_role')",
+  // ],
 
-  user_settings: [
-    "CREATE POLICY \"Users can manage their own settings\" ON user_settings FOR ALL USING (auth.uid() = user_id OR auth.role() = 'service_role')",
-  ],
+  // user_settings: [ // REMOVED - table deleted
+  //   "CREATE POLICY \"Users can manage their own settings\" ON user_settings FOR ALL USING (auth.uid() = user_id OR auth.role() = 'service_role')",
+  // ],
 
-  balance_audit_log: [
-    "CREATE POLICY \"Users can view their own balance history\" ON balance_audit_log FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role')",
-    "CREATE POLICY \"System can manage balance audit log\" ON balance_audit_log FOR INSERT WITH CHECK (auth.role() = 'service_role')",
-  ],
+  // balance_audit_log: [ // REMOVED - table deleted
+  //   "CREATE POLICY \"Users can view their own balance history\" ON balance_audit_log FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role')",
+  //   "CREATE POLICY \"System can manage balance audit log\" ON balance_audit_log FOR INSERT WITH CHECK (auth.role() = 'service_role')",
+  // ],
 };
 
 // Database functions for calculated fields and triggers
@@ -435,10 +395,10 @@ export const SUPABASE_FUNCTIONS = [
   `CREATE OR REPLACE FUNCTION update_portfolio_stats()
   RETURNS TRIGGER AS $$
   BEGIN
-    -- Recalculate unrealized PnL
-    NEW.unrealized_pnl = NEW.current_value - NEW.total_cost_basis;
-    NEW.unrealized_pnl_percentage = CASE 
-      WHEN NEW.total_cost_basis > 0 THEN (NEW.unrealized_pnl / NEW.total_cost_basis) * 100
+    -- Recalculate profit/loss
+    NEW.profit_loss = NEW.total_value - (NEW.quantity * NEW.avg_cost);
+    NEW.profit_loss_percent = CASE 
+      WHEN (NEW.quantity * NEW.avg_cost) > 0 THEN (NEW.profit_loss / (NEW.quantity * NEW.avg_cost)) * 100
       ELSE 0
     END;
     

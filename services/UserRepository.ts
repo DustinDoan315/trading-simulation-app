@@ -1,17 +1,26 @@
-import UUIDService from "./UUIDService";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { Holding } from "../types/crypto";
-import { SyncService } from "./SupabaseService";
+import UUIDService from './UUIDService';
+import { AsyncStorageService } from './AsyncStorageService';
+import { Holding } from '../types/crypto';
+import { SyncService } from './SupabaseService';
 
 // repositories/UserRepository.ts
 
 class UserRepository {
   static async createUser(uuid: string) {
     try {
+      const now = new Date().toISOString();
       const userData = {
-        uuid,
-        balance: "100000",
-        createdAt: Date.now(),
+        id: uuid,
+        username: `user_${uuid.slice(0, 8)}`,
+        usdt_balance: "100000",
+        total_portfolio_value: "100000",
+        total_pnl: "0",
+        total_trades: 0,
+        win_rate: "0",
+        join_date: now,
+        last_active: now,
+        created_at: now,
+        updated_at: now,
       };
 
       await AsyncStorageService.createOrUpdateUser(userData);
@@ -64,6 +73,73 @@ class UserRepository {
       return { success: true };
     } catch (error) {
       console.error("Failed to update user balance:", error);
+      throw error;
+    }
+  }
+
+  static async updateUserBalanceAndPortfolioValue(
+    uuid: string, 
+    usdtBalance: number, 
+    totalPortfolioValue: number,
+    totalPnL: number = 0
+  ) {
+    try {
+      // Calculate total PnL percentage based on initial balance (default 100000)
+      const initialBalance = 100000; // Default initial balance
+      const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
+
+      // Update local storage
+      await AsyncStorageService.updateUserBalance(uuid, usdtBalance);
+
+      console.log(
+        "User balance and portfolio value updated for user:",
+        uuid,
+        "USDT balance:",
+        usdtBalance,
+        "Total portfolio value:",
+        totalPortfolioValue,
+        "Total PnL:",
+        totalPnL,
+        "PnL percentage:",
+        totalPnLPercentage
+      );
+
+      // Sync to Supabase with better error handling
+      try {
+        console.log("🔄 Starting Supabase sync for user balance and portfolio value...");
+        
+        // Ensure user exists in Supabase first
+        const userExists = await UUIDService.ensureUserInSupabase(uuid);
+        if (!userExists) {
+          console.error("❌ Cannot sync: user does not exist in Supabase");
+          throw new Error("User does not exist in Supabase");
+        }
+
+        await SyncService.updateUserBalanceAndPortfolioValue(
+          uuid, 
+          usdtBalance, 
+          totalPortfolioValue, 
+          totalPnL, 
+          totalPnLPercentage
+        );
+        console.log("✅ User balance and portfolio value synced to Supabase");
+      } catch (syncError) {
+        console.error("❌ Failed to sync user balance and portfolio value to Supabase:", syncError);
+        console.error("Sync error details:", {
+          uuid,
+          usdtBalance,
+          totalPortfolioValue,
+          totalPnL,
+          error: syncError instanceof Error ? syncError.message : syncError
+        });
+        
+        // Log sync failure for manual retry
+        console.log("⚠️ Sync failed - will retry on next operation");
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to update user balance and portfolio value:", error);
       throw error;
     }
   }

@@ -73,7 +73,7 @@ const PortfolioScreen = () => {
     ? parseFloat(user.total_pnl || "0")
     : changeValue;
   const portfolioChangePercent = user
-    ? (portfolioChange / parseFloat(user.balance || "100000")) * 100
+    ? (portfolioChange / parseFloat(user.usdt_balance || "100000")) * 100
     : changePercentage;
 
   const ListHeaderComponent = useMemo(

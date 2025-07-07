@@ -1,9 +1,10 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import UserRepository from "./UserRepository";
-import UUIDService from "./UUIDService";
-import { AppDispatch } from "../store";
-import { log } from "console";
-import { resetBalance, setBalance } from "../features/balanceSlice";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import UserRepository from './UserRepository';
+import UUIDService from './UUIDService';
+import { AppDispatch } from '../store';
+import { log } from 'console';
+import { resetBalance, setBalance } from '../features/balanceSlice';
+
 
 /**
  * Functional service for interacting with cryptocurrency APIs and blockchain data
@@ -305,7 +306,7 @@ export const getUserBalance = async (): Promise<UserBalance> => {
     const user = await UserRepository.getUser(uuid);
 
     return {
-      totalInUSD: user ? parseFloat(user.balance) : 100000,
+      totalInUSD: user ? parseFloat(user.usdt_balance) : 100000,
       holdings: {}, // Holdings will be loaded separately
     };
   } catch (error) {

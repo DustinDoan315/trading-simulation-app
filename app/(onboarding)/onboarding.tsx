@@ -107,7 +107,7 @@ const OnboardingScreen = () => {
           username,
           display_name: username,
           avatar_emoji: "🚀",
-          balance: "100000.00",
+          usdt_balance: "100000.00",
         })
       ).unwrap();
 

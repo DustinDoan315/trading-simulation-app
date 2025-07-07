@@ -113,41 +113,7 @@ export interface LeaderboardRanking {
   created_at: string; // TIMESTAMP
 }
 
-export interface SearchHistory {
-  id: string; // UUID
-  user_id: string; // UUID
-  query: string;
-  crypto_id?: string;
-  symbol?: string;
-  searched_at: string; // TIMESTAMP
-  created_at: string; // TIMESTAMP
-}
 
-export interface PriceAlert {
-  id: string; // UUID
-  user_id: string; // UUID
-  crypto_id: string;
-  symbol: string;
-  target_price: string; // DECIMAL(20,8)
-  alert_type: "ABOVE" | "BELOW";
-  is_active: boolean;
-  triggered_at?: string; // TIMESTAMP
-  created_at: string; // TIMESTAMP
-  updated_at: string; // TIMESTAMP
-}
-
-export interface UserSettings {
-  id: string; // UUID
-  user_id: string; // UUID
-  notifications_enabled: boolean;
-  price_alerts_enabled: boolean;
-  balance_hidden: boolean;
-  language: string;
-  theme: string;
-  currency: string;
-  created_at: string; // TIMESTAMP
-  updated_at: string; // TIMESTAMP
-}
 
 // Database operation types
 export interface CreateUserParams {
@@ -265,48 +231,7 @@ export interface CreateLeaderboardRankingParams {
   win_rate?: string;
 }
 
-export interface CreateSearchHistoryParams {
-  user_id: string;
-  query: string;
-  crypto_id?: string;
-  symbol?: string;
-}
 
-export interface CreatePriceAlertParams {
-  user_id: string;
-  crypto_id: string;
-  symbol: string;
-  target_price: string;
-  alert_type: "ABOVE" | "BELOW";
-}
-
-export interface UpdatePriceAlertParams {
-  id: string;
-  target_price?: string;
-  alert_type?: "ABOVE" | "BELOW";
-  is_active?: boolean;
-  triggered_at?: string;
-}
-
-export interface CreateUserSettingsParams {
-  user_id: string;
-  notifications_enabled?: boolean;
-  price_alerts_enabled?: boolean;
-  balance_hidden?: boolean;
-  language?: string;
-  theme?: string;
-  currency?: string;
-}
-
-export interface UpdateUserSettingsParams {
-  id: string;
-  notifications_enabled?: boolean;
-  price_alerts_enabled?: boolean;
-  balance_hidden?: boolean;
-  language?: string;
-  theme?: string;
-  currency?: string;
-}
 
 // Query result types
 export interface PortfolioWithSymbol extends Portfolio {
@@ -335,6 +260,67 @@ export interface UserWithStats extends User {
   best_performing_asset?: string;
   worst_performing_asset?: string;
 }
+
+// User Settings interfaces removed - table deleted
+// export interface UserSettings {
+//   id: string; // UUID
+//   user_id: string; // UUID
+//   // Display preferences
+//   notifications_enabled: boolean;
+//   price_alerts_enabled: boolean;
+//   balance_hidden: boolean;
+//   show_portfolio_percentage: boolean;
+//   show_profit_loss: boolean;
+//   language: string;
+//   theme: string;
+//   currency: string;
+//   // Trading preferences
+//   default_order_type: "MARKET" | "LIMIT";
+//   auto_refresh_interval: number;
+//   risk_tolerance: "LOW" | "MEDIUM" | "HIGH";
+//   // Privacy settings
+//   public_profile: boolean;
+//   show_in_leaderboard: boolean;
+//   allow_friend_requests: boolean;
+//   created_at: string; // TIMESTAMP
+//   updated_at: string; // TIMESTAMP
+// }
+
+// export interface CreateUserSettingsParams {
+//   user_id: string;
+//   notifications_enabled?: boolean;
+//   price_alerts_enabled?: boolean;
+//   balance_hidden?: boolean;
+//   show_portfolio_percentage?: boolean;
+//   show_profit_loss?: boolean;
+//   language?: string;
+//   theme?: string;
+//   currency?: string;
+//   default_order_type?: "MARKET" | "LIMIT";
+//   auto_refresh_interval?: number;
+//   risk_tolerance?: "LOW" | "MEDIUM" | "HIGH";
+//   public_profile?: boolean;
+//   show_in_leaderboard?: boolean;
+//   allow_friend_requests?: boolean;
+// }
+
+// export interface UpdateUserSettingsParams {
+//   id: string;
+//   notifications_enabled?: boolean;
+//   price_alerts_enabled?: boolean;
+//   balance_hidden?: boolean;
+//   show_portfolio_percentage?: boolean;
+//   show_profit_loss?: boolean;
+//   language?: string;
+//   theme?: string;
+//   currency?: string;
+//   default_order_type?: "MARKET" | "LIMIT";
+//   auto_refresh_interval?: number;
+//   risk_tolerance?: "LOW" | "MEDIUM" | "HIGH";
+//   public_profile?: boolean;
+//   show_in_leaderboard?: boolean;
+//   allow_friend_requests?: boolean;
+// }
 
 // Database sync types
 export interface SyncStatus {

@@ -1,12 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { AddButton } from "@/components/home/AddButton";
 import { BalanceSection } from "@/components/home/BalanceSection";
-import {
-  calculatePortfolioMetrics,
-  formatPnL,
-  formatPortfolioValue,
-  getPnLColor,
-} from "@/utils/helper";
 import { loadBalance } from "@/features/balanceSlice";
 import { navigateToCryptoChart } from "@/utils/navigation";
 import { RootState, useAppDispatch } from "@/store";
@@ -24,6 +18,12 @@ import {
   Text,
   View,
 } from "react-native";
+import {
+  calculatePortfolioMetrics,
+  formatPnL,
+  formatPortfolioValue,
+  getPnLColor,
+} from "@/utils/helper";
 
 const HomeScreen = () => {
   const dispatch = useAppDispatch();
@@ -174,7 +174,14 @@ const HomeScreen = () => {
           scrollEnabled={false}
         />
       </ScrollView>
-      <AddButton onPress={handleAddButtonPress} />
+      <View
+        style={{
+          position: "absolute",
+          bottom: -10,
+          right: 0,
+        }}>
+        <AddButton onPress={handleAddButtonPress} />
+      </View>
     </SafeAreaView>
   );
 };

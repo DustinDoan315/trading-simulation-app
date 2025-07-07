@@ -28,6 +28,10 @@ interface PortfolioData {
   symbol: string;
   quantity: string;
   avg_cost: string;
+  current_price?: string;
+  total_value?: string;
+  profit_loss?: string;
+  profit_loss_percent?: string;
   image?: string;
 }
 
