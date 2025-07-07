@@ -41,6 +41,7 @@ export interface Candle {
 }
 
 export interface Asset {
+  image_url: any;
   id: string;
   name: string;
   symbol: string;
@@ -68,7 +69,7 @@ export interface Holding {
   valueInUSD: number;
   symbol: string;
   name: string;
-  image?: string;
+  image_url?: string;
   averageBuyPrice: number;
   currentPrice: number;
   profitLoss: number;
@@ -81,5 +82,5 @@ export interface HoldingUpdatePayload {
   valueInUSD: number;
   symbol: string;
   name: string;
-  image?: string;
+  image_url?: string;
 }

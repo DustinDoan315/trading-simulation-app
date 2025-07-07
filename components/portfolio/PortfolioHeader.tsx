@@ -25,8 +25,7 @@ const PortfolioHeader = ({
             styles.changeText,
             isPositive ? styles.positive : styles.negative,
           ]}>
-          {isPositive ? "+" : ""}
-          {changePercentage}% ({changeValue})
+          {changeValue} ({changePercentage.toFixed(2)}%)
         </Text>
         <Text style={styles.overallText}>{t("portfolio.overall")}</Text>
       </View>
@@ -53,10 +52,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   positive: {
-    color: "#6674CC",
+    color: "#4CAF50",
   },
   negative: {
-    color: "#FF6B6B",
+    color: "#F44336",
   },
   overallText: {
     fontSize: 18,

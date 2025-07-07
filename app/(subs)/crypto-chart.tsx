@@ -1,27 +1,22 @@
-import Chart from "@/components/crypto/Chart";
-import colors from "@/styles/colors";
-import OrderBook from "@/components/trading/OrderBook";
-import OrderEntry from "@/components/trading/OrderEntry";
-import React, { useRef, useState } from "react";
-import SymbolHeader from "@/components/crypto/SymbolHeader";
-import TimeframeSelector from "@/components/crypto/TimeframeSelector";
-import useCryptoAPI from "@/hooks/useCryptoAPI";
-import useHistoricalData from "@/hooks/useHistoricalData";
-import useOrderBook from "@/hooks/useOrderBook";
-import UUIDService from "@/services/UUIDService";
-import {
-  addTradeHistory,
-  updateHolding,
-  updateTrade,
-} from "@/features/balanceSlice";
-import { ChartType, Order, TimeframeOption } from "../../types/crypto";
-import { RootState } from "@/store";
-import { useDispatch, useSelector } from "react-redux";
-import { useLanguage } from "@/context/LanguageContext";
-import { useLocalSearchParams } from "expo-router";
-import { useNotification } from "@/components/ui/Notification";
-import { UserService } from "@/services/UserService";
-import { WebView } from "react-native-webview";
+import Chart from '@/components/crypto/Chart';
+import colors from '@/styles/colors';
+import OrderBook from '@/components/trading/OrderBook';
+import OrderEntry from '@/components/trading/OrderEntry';
+import React, { useRef, useState } from 'react';
+import SymbolHeader from '@/components/crypto/SymbolHeader';
+import TimeframeSelector from '@/components/crypto/TimeframeSelector';
+import useCryptoAPI from '@/hooks/useCryptoAPI';
+import useHistoricalData from '@/hooks/useHistoricalData';
+import useOrderBook from '@/hooks/useOrderBook';
+import UUIDService from '@/services/UUIDService';
+import { ChartType, Order, TimeframeOption } from '../../types/crypto';
+import { RootState } from '@/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { useLanguage } from '@/context/LanguageContext';
+import { useLocalSearchParams } from 'expo-router';
+import { useNotification } from '@/components/ui/Notification';
+import { UserService } from '@/services/UserService';
+import { WebView } from 'react-native-webview';
 import {
   OrderDispatchContext,
   OrderValidationContext,
@@ -34,13 +29,18 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import {
+  addTradeHistory,
+  updateHolding,
+  updateTrade,
+} from "@/features/balanceSlice";
+
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
   const { id, symbol, name, image }: any = useLocalSearchParams();
   const { balance } = useSelector((state: RootState) => state.balance);
   const dispatch = useDispatch();
-  const { showNotification } = useNotification();
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");

@@ -1,13 +1,22 @@
-import React, { memo } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { formatAmount } from "@/utils/formatters";
-import { Asset } from "@/types/crypto";
-import { styles } from "./styles";
+import React, { memo } from 'react';
+import { Asset } from '@/types/crypto';
+import { formatAmount } from '@/utils/formatters';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+  } from 'react-native';
+import { RootState } from '@/store';
+import { styles } from './styles';
+import { useSelector } from 'react-redux';
 import {
   DEFAULT_CRYPTO_IMAGE,
   DEFAULT_CRYPTO_NAME,
   DEFAULT_CRYPTO_SYMBOL,
 } from "@/utils/constant";
+
 
 interface AssetItemProps {
   asset: Asset;
@@ -16,14 +25,29 @@ interface AssetItemProps {
 }
 
 const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
+  // Get holding data from Redux store for PnL information
+  const holding = useSelector((state: RootState) => {
+    const holdings = state.balance.balance.holdings;
+    return holdings[asset.symbol.toUpperCase()];
+  });
+  console.log(asset);
+
   const percentage =
     totalBalance > 0 ? (Number(asset.value) / totalBalance) * 100 : 0;
-
-  const imageSource = asset.image
-    ? { uri: asset.image }
+  console.log("====================================");
+  console.log(asset);
+  console.log("====================================");
+  const imageSource = asset.image_url
+    ? { uri: asset.image_url }
     : { uri: DEFAULT_CRYPTO_IMAGE.tether };
 
   const handlePress = () => onPress(asset);
+
+  // Calculate PnL if holding data is available
+  const hasPnL = holding && holding.profitLoss !== undefined;
+  const pnlValue = hasPnL ? holding.profitLoss : 0;
+  const pnlPercentage = hasPnL ? holding.profitLossPercentage : 0;
+  const isPositive = pnlValue >= 0;
 
   return (
     <TouchableOpacity
@@ -54,6 +78,26 @@ const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
       <View style={styles.rightSection}>
         <Text style={styles.value}>${formatAmount(Number(asset.value))}</Text>
         <Text style={styles.percentage}>{percentage.toFixed(1)}%</Text>
+        {hasPnL && (
+          <View style={styles.pnlContainer}>
+            <Text
+              style={[
+                styles.pnlValue,
+                { color: isPositive ? "#4CAF50" : "#F44336" },
+              ]}>
+              {isPositive ? "+" : ""}
+              {pnlValue.toFixed(2)}
+            </Text>
+            <Text
+              style={[
+                styles.pnlPercentage,
+                { color: isPositive ? "#4CAF50" : "#F44336" },
+              ]}>
+              ({isPositive ? "+" : ""}
+              {pnlPercentage.toFixed(2)}%)
+            </Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );

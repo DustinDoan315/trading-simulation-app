@@ -289,7 +289,7 @@ function dispatchUpdates(
           valueInUSD: cryptoUpdateValue,
           symbol: normalizedSymbol,
           name: order.name || normalizedSymbol,
-          image: imageUrl,
+          image_url: imageUrl,
         },
         usdtUpdate: {
           cryptoId: "usdt",
@@ -447,11 +447,11 @@ export const calculatePortfolioMetrics = (balance: any) => {
  */
 export const formatPortfolioValue = (value: number): string => {
   if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(2)}M`;
+    return `$${(value / 1000000).toFixed(3)}M`;
   } else if (value >= 1000) {
-    return `$${(value / 1000).toFixed(2)}K`;
+    return `$${(value / 1000).toFixed(3)}K`;
   } else {
-    return `$${value.toFixed(2)}`;
+    return `$${value.toFixed(3)}`;
   }
 };
 

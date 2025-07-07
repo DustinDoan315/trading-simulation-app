@@ -1,28 +1,31 @@
-import * as SplashScreen from "expo-splash-screen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import scheduler from "@/utils/scheduler";
-import Toast from "react-native-toast-message";
-import { createUser, fetchUser } from "@/features/userSlice";
-import { LanguageProvider } from "@/context/LanguageContext";
-import { NotificationProvider } from "@/components/ui/Notification";
-import { Provider } from "react-redux";
-import { SafeAreaView } from "react-native";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { store } from "../store";
-import { updateDailyBalance } from "@/utils/balanceUpdater";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { useEffect } from "react";
-import { useFonts } from "expo-font";
-import { UserProvider } from "@/context/UserContext";
-import { UserService } from "@/services/UserService";
 import "react-native-reanimated";
+
+import * as SplashScreen from "expo-splash-screen";
 
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { createUser, fetchUser } from "@/features/userSlice";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { NotificationProvider } from "@/components/ui/Notification";
+import { Provider } from "react-redux";
+import RealTimeDataService from "@/services/RealTimeDataService";
+import { SafeAreaView } from "react-native";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import Toast from "react-native-toast-message";
+import { UserProvider } from "@/context/UserContext";
+import { UserService } from "@/services/UserService";
+import scheduler from "@/utils/scheduler";
+import { store } from "../store";
+import { updateDailyBalance } from "@/utils/balanceUpdater";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useEffect } from "react";
+import { useFonts } from "expo-font";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,6 +48,8 @@ export default function RootLayout() {
 
         return () => {
           scheduler.clear();
+          // Stop real-time data service when app is unmounted
+          RealTimeDataService.getInstance().stopUpdates();
         };
       }
     };

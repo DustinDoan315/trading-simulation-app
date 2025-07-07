@@ -213,7 +213,7 @@ class UserRepository {
           total_value: (holding.valueInUSD || 0).toString(),
           profit_loss: (holding.profitLoss || 0).toString(),
           profit_loss_percent: (holding.profitLossPercentage || 0).toString(),
-          image_url: holding.image || undefined,
+          image_url: holding.image_url || undefined,
         })
       );
 
@@ -249,7 +249,7 @@ class UserRepository {
             total_value: (holding.valueInUSD || 0).toString(),
             profit_loss: (holding.profitLoss || 0).toString(),
             profit_loss_percent: (holding.profitLossPercentage || 0).toString(),
-            image: holding.image || null,
+            image: holding.image_url || null,
           })
         );
 
@@ -321,7 +321,7 @@ class UserRepository {
               profit_loss_percent: (
                 holding.profitLossPercentage || 0
               ).toString(),
-              image: holding.image || null,
+              image: holding.image_url || null,
             })
           );
 

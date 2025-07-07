@@ -90,7 +90,7 @@ const initialState: BalanceState = {
         valueInUSD: 100000,
         symbol: "USDT",
         name: "Tether",
-        image:
+        image_url:
           "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
         averageBuyPrice: 1,
         currentPrice: 1,
@@ -106,6 +106,16 @@ const initialState: BalanceState = {
   loading: false,
   error: null,
 };
+
+// Add this type above the loadBalance thunk
+interface PortfolioItem {
+  symbol: string;
+  quantity: string;
+  avg_cost: string;
+  current_price?: string;
+  image_url?: string;
+  image?: string;
+}
 
 // Async thunk to load balance from database
 export const loadBalance = createAsyncThunk("balance/load", async () => {
@@ -148,7 +158,7 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   let usdtBalance = user ? parseFloat(user.usdt_balance) : 100000;
   console.log("Loading balance - Initial USDT balance from user data:", usdtBalance);
   
-  const portfolio = await UserRepository.getPortfolio(uuid);
+  const portfolio = (await UserRepository.getPortfolio(uuid)) as PortfolioItem[];
 
   console.log("Loading balance - Portfolio:", portfolio);
   console.log("Loading balance - User USDT balance:", usdtBalance);
@@ -209,8 +219,8 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
         valueInUSD: valueInUSD,
         symbol: item.symbol.toUpperCase(),
         name: item.symbol,
-        image:
-          item.image ||
+        image_url:
+          item.image_url || item.image ||
           `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
         averageBuyPrice: avgCost,
         currentPrice: currentPrice,
@@ -226,7 +236,7 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
     valueInUSD: usdtBalance,
     symbol: "USDT",
     name: "Tether",
-    image:
+    image_url:
       "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
     averageBuyPrice: 1,
     currentPrice: 1,
@@ -292,7 +302,7 @@ export const balanceSlice = createSlice({
       console.log("Current USDT balance:", state.balance.usdtBalance);
       console.log("====================================");
 
-      const { cryptoId, amount, valueInUSD, symbol, name, image } =
+      const { cryptoId, amount, valueInUSD, symbol, name, image_url } =
         action.payload;
 
       // Normalize cryptoId to uppercase to prevent duplicates
@@ -396,7 +406,7 @@ export const balanceSlice = createSlice({
             valueInUSD,
             symbol: normalizedSymbol,
             name,
-            image,
+            image_url,
             averageBuyPrice: pricePerToken,
             currentPrice: pricePerToken,
             profitLoss: 0,
@@ -604,7 +614,7 @@ export const balanceSlice = createSlice({
           valueInUSD: cryptoUpdate.valueInUSD,
           symbol: normalizedCryptoSymbol,
           name: cryptoUpdate.name,
-          image: cryptoUpdate.image,
+          image_url: cryptoUpdate.image_url,
           averageBuyPrice: pricePerToken,
           currentPrice: pricePerToken,
           profitLoss: 0,

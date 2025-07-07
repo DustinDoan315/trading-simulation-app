@@ -1,11 +1,12 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import colors from '@/styles/colors';
-import React, { useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { updateUser } from '@/features/userSlice';
-import { useAppDispatch } from '@/store';
-import { UserService } from '@/services/UserService';
-import { useUser } from '@/context/UserContext';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import colors from "@/styles/colors";
+import React, { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { updateUser } from "@/features/userSlice";
+import { useAppDispatch } from "@/store";
+import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
+import { UserService } from "@/services/UserService";
+import { useUser } from "@/context/UserContext";
 import {
   ActivityIndicator,
   Alert,
@@ -20,10 +21,21 @@ import {
   View,
 } from "react-native";
 
-
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
   const { user, userStats, loading, error, refreshUser } = useUser();
+
+  // Use real-time balance hook for live updates
+  const {
+    totalBalance,
+    totalPnL,
+    totalPnLPercentage,
+    formattedTotalBalance,
+    formattedTotalPnL,
+    formattedTotalPnLPercentage,
+    isLoading: realTimeLoading,
+    refresh: refreshRealTimeData,
+  } = useRealTimeBalance();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -84,6 +96,13 @@ const ProfileScreen = () => {
     setEditModalVisible(false);
   };
 
+  const handleRefresh = async () => {
+    if (user) {
+      await refreshUser(user.id);
+    }
+    await refreshRealTimeData();
+  };
+
   const SettingItem = ({
     icon,
     title,
@@ -129,7 +148,7 @@ const ProfileScreen = () => {
     </View>
   );
 
-  if (loading) {
+  if (loading || realTimeLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -189,12 +208,32 @@ const ProfileScreen = () => {
             Member since {new Date(user.join_date).toLocaleDateString()}
           </Text>
 
-          <TouchableOpacity
-            style={styles.editProfileButton}
-            onPress={handleEditProfile}>
-            <Ionicons name="create-outline" size={16} color="#6674CC" />
-            <Text style={styles.editProfileText}>Edit Profile</Text>
-          </TouchableOpacity>
+          <View style={styles.profileActions}>
+            <TouchableOpacity
+              style={styles.editProfileButton}
+              onPress={handleEditProfile}>
+              <Ionicons name="create-outline" size={16} color="#6674CC" />
+              <Text style={styles.editProfileText}>Edit Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={handleRefresh}
+              disabled={realTimeLoading}>
+              <Ionicons
+                name="refresh"
+                size={16}
+                color={realTimeLoading ? "#9DA3B4" : "#6674CC"}
+              />
+              <Text
+                style={[
+                  styles.refreshButtonText,
+                  { color: realTimeLoading ? "#9DA3B4" : "#6674CC" },
+                ]}>
+                {realTimeLoading ? "Updating..." : "Refresh"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Enhanced Stats Grid */}
@@ -217,9 +256,9 @@ const ProfileScreen = () => {
             />
             <StatsCard
               title="Total P&L"
-              value={`$${parseFloat(user.total_pnl).toLocaleString()}`}
-              subtitle="profit/loss"
-              color={parseFloat(user.total_pnl) >= 0 ? "#10BA68" : "#F9335D"}
+              value={formattedTotalPnL}
+              subtitle={formattedTotalPnLPercentage}
+              color={totalPnL >= 0 ? "#10BA68" : "#F9335D"}
               icon="wallet"
             />
             <StatsCard
@@ -233,20 +272,16 @@ const ProfileScreen = () => {
         </View>
 
         {/* Portfolio Value */}
-        {userStats && (
-          <View style={styles.portfolioCard}>
-            <View style={styles.portfolioHeader}>
-              <Ionicons name="pie-chart" size={20} color="#6674CC" />
-              <Text style={styles.portfolioTitle}>Portfolio Value</Text>
-            </View>
-            <Text style={styles.portfolioValue}>
-              ${parseFloat(userStats.portfolio_value || "0").toLocaleString()}
-            </Text>
-            <Text style={styles.portfolioSubtitle}>
-              {userStats.total_assets || 0} assets in portfolio
-            </Text>
+        <View style={styles.portfolioCard}>
+          <View style={styles.portfolioHeader}>
+            <Ionicons name="pie-chart" size={20} color="#6674CC" />
+            <Text style={styles.portfolioTitle}>Portfolio Value</Text>
           </View>
-        )}
+          <Text style={styles.portfolioValue}>{formattedTotalBalance}</Text>
+          <Text style={styles.portfolioSubtitle}>
+            Real-time portfolio value
+          </Text>
+        </View>
 
         {/* Account Information */}
         <View style={styles.section}>
@@ -254,8 +289,8 @@ const ProfileScreen = () => {
           <View style={styles.settingsGroup}>
             <SettingItem
               icon="card-outline"
-              title="Balance"
-              subtitle={`$${parseFloat(user.usdt_balance).toLocaleString()}`}
+              title="Available Balance"
+              subtitle={formattedTotalBalance}
             />
             <SettingItem
               icon="trending-up-outline"
@@ -422,6 +457,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: "#6674CC",
+    marginLeft: 6,
+  },
+  profileActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 16,
+  },
+  refreshButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#1A1D2F",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#6674CC",
+  },
+  refreshButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
     marginLeft: 6,
   },
   statsContainer: {

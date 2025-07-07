@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
@@ -63,6 +63,18 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 2,
     color: "#6674CC",
+  },
+  pnlContainer: {
+    alignItems: "flex-end",
+    marginTop: 2,
+  },
+  pnlValue: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  pnlPercentage: {
+    fontSize: 10,
+    marginTop: 1,
   },
   // OthersButton styles
   othersContainer: {

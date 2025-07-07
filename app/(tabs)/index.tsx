@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo } from "react";
-import { AddButton } from "@/components/home/AddButton";
-import { BalanceSection } from "@/components/home/BalanceSection";
-import { loadBalance } from "@/features/balanceSlice";
-import { navigateToCryptoChart } from "@/utils/navigation";
-import { RootState, useAppDispatch } from "@/store";
-import { router } from "expo-router";
-import { useHomeData } from "@/hooks/useHomeData";
-import { useSelector } from "react-redux";
-import { useUser } from "@/context/UserContext";
-import { WatchListSection } from "@/components/home/WatchlistSection";
+import React, { useEffect, useMemo } from 'react';
+import { AddButton } from '@/components/home/AddButton';
+import { BalanceSection } from '@/components/home/BalanceSection';
+import { loadBalance } from '@/features/balanceSlice';
+import { navigateToCryptoChart } from '@/utils/navigation';
+import { RootState, useAppDispatch } from '@/store';
+import { router } from 'expo-router';
+import { useHomeData } from '@/hooks/useHomeData';
+import { useSelector } from 'react-redux';
+import { useUser } from '@/context/UserContext';
+import { WatchListSection } from '@/components/home/WatchlistSection';
 import {
   RefreshControl,
   SafeAreaView,
@@ -24,6 +24,7 @@ import {
   formatPortfolioValue,
   getPnLColor,
 } from "@/utils/helper";
+
 
 const HomeScreen = () => {
   const dispatch = useAppDispatch();
@@ -151,17 +152,6 @@ const HomeScreen = () => {
                 </Text>
                 <Text style={styles.statLabel}>Total P&L</Text>
               </View>
-            </View>
-            {/* P&L Percentage */}
-            <View style={styles.pnlPercentageContainer}>
-              <Text
-                style={[
-                  styles.pnlPercentage,
-                  { color: getPnLColor(portfolioMetrics.totalPnLPercentage) },
-                ]}>
-                {portfolioMetrics.totalPnLPercentage >= 0 ? "+" : ""}
-                {portfolioMetrics.totalPnLPercentage.toFixed(2)}%
-              </Text>
             </View>
           </View>
         )}

@@ -1,16 +1,16 @@
-import AssetItem from "@/components/portfolio/AssetItem";
-import BalanceCard from "@/components/portfolio/BalanceCard";
-import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
-import React, { useCallback, useMemo } from "react";
-import { Asset } from "@/types/crypto";
-import { formatAmount } from "@/utils/formatters";
-import { navigateToCryptoChart } from "@/utils/navigation";
-import { OthersButton } from "@/components/portfolio/OthersButton";
-import { styles } from "@/components/portfolio/styles";
-import { useLanguage } from "@/context/LanguageContext";
-import { usePortfolioData } from "@/hooks/usePortfolioData";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useUser } from "@/context/UserContext";
+import AssetItem from '@/components/portfolio/AssetItem';
+import BalanceCard from '@/components/portfolio/BalanceCard';
+import PortfolioHeader from '@/components/portfolio/PortfolioHeader';
+import React, { useCallback, useMemo } from 'react';
+import { Asset } from '@/types/crypto';
+import { navigateToCryptoChart } from '@/utils/navigation';
+import { OthersButton } from '@/components/portfolio/OthersButton';
+import { styles } from '@/components/portfolio/styles';
+import { useLanguage } from '@/context/LanguageContext';
+import { usePortfolioData } from '@/hooks/usePortfolioData';
+import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   FlatList,
@@ -20,23 +20,27 @@ import {
   View,
 } from "react-native";
 
+
 const PortfolioScreen = () => {
   const insets = useSafeAreaInsets();
-  const { user, userStats, loading: userLoading, refreshUserData } = useUser();
+  const { user, loading: userLoading, refreshUserData } = useUser();
+  const { displayAssets, loading, error } = usePortfolioData();
+
+  // Use real-time balance hook for live updates
   const {
-    displayAssets,
-    totalValue,
-    changeValue,
-    changePercentage,
-    loading,
-    error,
-    refreshPortfolio,
-  } = usePortfolioData();
+    totalBalance,
+    totalPnL,
+    totalPnLPercentage,
+    formattedTotalBalance,
+    formattedAvailableBalance,
+    formattedTotalPnL,
+    formattedTotalPnLPercentage,
+    isLoading: realTimeLoading,
+    refresh: refreshRealTimeData,
+  } = useRealTimeBalance();
 
   const handleAssetPress = useCallback((asset: Asset) => {
     if (asset.isOthers) {
-      // Navigate to detailed others view or show modal
-      // router.push("/(modals)/others-assets");
       return;
     }
 
@@ -47,8 +51,8 @@ const PortfolioScreen = () => {
     if (user) {
       await refreshUserData(user.id);
     }
-    refreshPortfolio();
-  }, [user, refreshUserData, refreshPortfolio]);
+    await refreshRealTimeData();
+  }, [user, refreshUserData, refreshRealTimeData]);
 
   const renderAsset = useCallback(
     ({ item }: { item: Asset }) => {
@@ -59,40 +63,55 @@ const PortfolioScreen = () => {
       return (
         <AssetItem
           asset={item}
-          totalBalance={totalValue}
+          totalBalance={totalBalance}
           onPress={handleAssetPress}
         />
       );
     },
-    [totalValue, handleAssetPress]
+    [totalBalance, handleAssetPress]
   );
 
-  // Use user data for portfolio summary if available
-  const portfolioValue = userStats?.portfolio_value || totalValue;
-  const portfolioChange = user
-    ? parseFloat(user.total_pnl || "0")
-    : changeValue;
-  const portfolioChangePercent = user
-    ? (portfolioChange / parseFloat(user.usdt_balance || "100000")) * 100
-    : changePercentage;
+  const portfolioChangePercent = totalPnLPercentage;
 
   const ListHeaderComponent = useMemo(
     () => (
       <>
         <PortfolioHeader
-          totalValue={`$${formatAmount(portfolioValue)}`}
+          totalValue={formattedTotalBalance}
           changePercentage={portfolioChangePercent}
-          changeValue={`${portfolioChange >= 0 ? "+" : "-"}$${Math.abs(
-            portfolioChange
-          ).toFixed(2)}`}
+          changeValue={formattedTotalPnL}
         />
         <BalanceCard
-          balance={`$${formatAmount(portfolioValue, 0)}`}
-          changePercentage={portfolioChangePercent}
-          changeValue={`$${Math.abs(portfolioChange).toFixed(2)}`}
+          balance={formattedAvailableBalance}
           progress={0}
           assets={displayAssets}
         />
+
+        {/* Real-time Balance Information */}
+        <View style={styles.userStatsContainer}>
+          <View style={styles.statRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Total P&L</Text>
+              <Text
+                style={[
+                  styles.statValue,
+                  { color: totalPnL >= 0 ? "#4CAF50" : "#F44336" },
+                ]}>
+                {formattedTotalPnL}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>P&L %</Text>
+              <Text
+                style={[
+                  styles.statValue,
+                  { color: totalPnLPercentage >= 0 ? "#4CAF50" : "#F44336" },
+                ]}>
+                {formattedTotalPnLPercentage}
+              </Text>
+            </View>
+          </View>
+        </View>
 
         {/* User Trading Stats */}
         {user && (
@@ -120,16 +139,20 @@ const PortfolioScreen = () => {
       </>
     ),
     [
-      portfolioValue,
+      formattedTotalBalance,
       portfolioChangePercent,
-      portfolioChange,
+      formattedTotalPnL,
       displayAssets,
       user,
+      formattedAvailableBalance,
+      totalPnL,
+      totalPnLPercentage,
+      formattedTotalPnLPercentage,
     ]
   );
 
   const ListEmptyComponent = useMemo(() => {
-    if (loading || userLoading) {
+    if (loading || userLoading || realTimeLoading) {
       return <ActivityIndicator size="large" color="#FFFFFF" />;
     }
     if (error) {
@@ -138,20 +161,20 @@ const PortfolioScreen = () => {
       );
     }
     return null;
-  }, [loading, userLoading, error]);
+  }, [loading, userLoading, realTimeLoading, error]);
 
   const { t } = useLanguage();
   const refreshControl = useMemo(
     () => (
       <RefreshControl
-        refreshing={loading || userLoading}
+        refreshing={loading || userLoading || realTimeLoading}
         onRefresh={handleRefresh}
         tintColor="#FFFFFF"
         title={t("portfolio.pullToRefresh")}
         titleColor="#FFFFFF"
       />
     ),
-    [loading, userLoading, handleRefresh, t]
+    [loading, userLoading, realTimeLoading, handleRefresh, t]
   );
 
   const keyExtractor = useCallback((item: Asset) => item.id, []);

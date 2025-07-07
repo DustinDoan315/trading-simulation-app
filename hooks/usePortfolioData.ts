@@ -7,6 +7,7 @@ import {
   useMemo,
   useState
   } from 'react';
+import { useRealTimeBalance } from './useRealTimeBalance';
 import { useSelector } from 'react-redux';
 
 
@@ -15,12 +16,12 @@ const selectPortfolioData = createSelector(
   (state: RootState) => state.balance.balance,
   (state: RootState) => state.balance.changeValue,
   (state: RootState) => state.balance.changePercentage,
-  (balance: { holdings: any; totalInUSD: any; }, changeValue: any, changePercentage: any) => ({
+  (balance, changeValue, changePercentage) => ({
     balance,
     changeValue,
     changePercentage,
     holdings: Object.entries(balance.holdings || {}),
-    totalInUSD: balance.totalInUSD || 0,
+    totalInUSD: balance.totalPortfolioValue || 0,
   })
 );
 
@@ -30,18 +31,21 @@ export const usePortfolioData = () => {
   const [error, setError] = useState<string | null>(null);
   const [visibleLowValueCount, setVisibleLowValueCount] = useState(5);
 
+  // Use real-time balance hook for live updates
+  const realTimeBalance = useRealTimeBalance();
+
   const loadMoreLowValueTokens = useCallback(() => {
     setVisibleLowValueCount((prev) => prev + 5);
   }, []);
 
-  // Memoized asset processing
+  // Memoized asset processing with real-time data
   const processedData = useMemo((): PortfolioData => {
     const { holdings, totalInUSD } = portfolioState;
 
     if (!holdings.length) {
       return {
         assets: [],
-        totalValue: 0,
+        totalValue: realTimeBalance.totalBalance,
         highValueAssets: [],
         lowValueAssets: [],
         visibleLowValueTokens: [],
@@ -80,7 +84,8 @@ export const usePortfolioData = () => {
       symbol: holding.symbol?.toUpperCase() || "UNKNOWN",
       amount: holding.amount?.toString() || "0",
       value: holding.valueInUSD?.toFixed(2) || "0.00",
-      image: holding.image || null,
+      image_url: holding.image_url || null,
+      image: holding.image_url || null,
     }));
 
     // Efficient filtering and sorting
@@ -103,7 +108,7 @@ export const usePortfolioData = () => {
 
     return {
       assets: mappedAssets,
-      totalValue: totalInUSD,
+      totalValue: realTimeBalance.totalBalance,
       highValueAssets: aboveOne,
       lowValueAssets: belowOne,
       visibleLowValueTokens,
@@ -114,6 +119,7 @@ export const usePortfolioData = () => {
     portfolioState.holdings,
     portfolioState.totalInUSD,
     visibleLowValueCount,
+    realTimeBalance.totalBalance,
   ]);
 
   const refreshPortfolio = useCallback(async () => {
@@ -142,8 +148,8 @@ export const usePortfolioData = () => {
   return {
     ...processedData,
     ...portfolioState,
-    loading,
-    error,
+    loading: loading || realTimeBalance.isLoading,
+    error: error || realTimeBalance.error,
     refreshPortfolio,
     loadMoreLowValueTokens,
   };

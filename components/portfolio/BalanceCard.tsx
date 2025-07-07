@@ -1,13 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { Asset } from "@/types/crypto";
-import { BalanceCardProps as BaseBalanceCardProps } from "../../types/components";
-import { formatAmount } from "@/utils/formatters";
-import { height, width } from "@/utils/response";
-import { Ionicons } from "@expo/vector-icons";
-import { useLanguage } from "@/context/LanguageContext";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef
+  } from 'react';
+import { Asset } from '@/types/crypto';
+import { formatAmount } from '@/utils/formatters';
+import { height, width } from '@/utils/response';
+import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   Animated,
-  Dimensions,
   Easing,
   StyleSheet,
   Text,
@@ -21,6 +24,7 @@ import Svg, {
   Path,
   Stop,
 } from "react-native-svg";
+
 
 interface BalanceCardProps {
   balance?: string;
@@ -443,21 +447,6 @@ const BalanceCard = ({
           <Text style={styles.label}>{t("portfolio.availableBalance")}</Text>
         </View>
         <Text style={styles.balance}>{balance}</Text>
-        {/* <View style={styles.changeContainer}> */}
-        {/* <Ionicons
-            name={isPositive ? "caret-up" : "caret-down"}
-            size={18}
-            color={isPositive ? "#8C9EFF" : "#FF6B6B"}
-          />
-          <Text
-            style={[
-              styles.change,
-              isPositive ? styles.positive : styles.negative,
-            ]}>
-            {isPositive ? "+" : ""}
-            {changePercentage}% ({changeValue})
-          </Text>
-        </View> */}
       </View>
 
       {/* Legend items */}
@@ -622,10 +611,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   positive: {
-    color: "#8C9EFF",
+    color: "#4CAF50",
   },
   negative: {
-    color: "#FF6B6B",
+    color: "#F44336",
   },
   tokenInfoContainer: {
     position: "absolute",
