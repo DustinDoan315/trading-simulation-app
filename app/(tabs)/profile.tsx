@@ -1,150 +1,87 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import colors from "@/styles/colors";
-import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { ResetService } from "@/services/ResetService";
-import { updateUser } from "@/features/userSlice";
-import { useAppDispatch } from "@/store";
-import { UserService } from "@/services/UserService";
-import { useUser } from "@/context/UserContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import colors from '@/styles/colors';
+import React, { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { updateUser } from '@/features/userSlice';
+import { useAppDispatch } from '@/store';
+import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 import {
+  ActivityIndicator,
   Alert,
+  Modal,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
-  Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
+
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
-  const { user, userStats, loading, error, logout, refreshUser } = useUser();
+  const { user, userStats, loading, error, refreshUser } = useUser();
 
-  // const [notificationsEnabled, setNotificationsEnabled] = useState(true); // Removed - no user settings
-  // const [priceAlertsEnabled, setPriceAlertsEnabled] = useState(true); // Removed - no user settings
-  // const [balanceHidden, setBalanceHidden] = useState(false); // Removed - no user settings
-  const [isResetting, setIsResetting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editForm, setEditForm] = useState({
+    display_name: "",
+    avatar_emoji: "",
+  });
 
-  // Initialize settings when component mounts - removed since user_settings table deleted
-  // useEffect(() => {
-  //   if (userSettings) {
-  //     setNotificationsEnabled(userSettings.notifications_enabled);
-  //     setPriceAlertsEnabled(userSettings.price_alerts_enabled);
-  //     setBalanceHidden(userSettings.balance_hidden);
-  //   }
-  // }, [userSettings]);
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        display_name: user.display_name || "",
+        avatar_emoji: user.avatar_emoji || "🚀",
+      });
+    }
+  }, [user]);
 
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Logout", style: "destructive", onPress: () => logout() },
-    ]);
+  const handleEditProfile = () => {
+    setEditModalVisible(true);
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "This action cannot be undone. All your data will be permanently deleted.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => console.log("Delete account"),
-        },
-      ]
-    );
-  };
-
-  const handleResetApp = () => {
-    Alert.alert(
-      "Reset App & Create New User",
-      "This will completely reset the app and create a new user with fresh data. All current data will be lost. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset App",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setIsResetting(true);
-              console.log("🔄 Starting app reset...");
-
-              const result = await ResetService.resetAppAndCreateNewUser();
-
-              if (result.success) {
-                Alert.alert(
-                  "Reset Complete",
-                  "App has been reset successfully! A new user has been created. Please restart the app to see the changes.",
-                  [
-                    {
-                      text: "OK",
-                      onPress: () => {
-                        // Force app restart by clearing navigation state
-                        // In a real app, you might want to restart the entire app
-                        console.log("App reset completed successfully");
-                      },
-                    },
-                  ]
-                );
-              } else {
-                Alert.alert(
-                  "Reset Failed",
-                  `Failed to reset app: ${result.error}`,
-                  [{ text: "OK" }]
-                );
-              }
-            } catch (error) {
-              console.error("Reset error:", error);
-              Alert.alert(
-                "Reset Error",
-                `An error occurred during reset: ${error}`,
-                [{ text: "OK" }]
-              );
-            } finally {
-              setIsResetting(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleSettingChange = async (setting: string, value: boolean) => {
-    // if (!user || !userSettings) return; // Removed - no user settings
+  const handleSaveProfile = async () => {
+    if (!user) return;
 
     try {
-      const updates: any = {};
+      setEditLoading(true);
 
-      switch (setting) {
-        case "notifications":
-          // updates.notifications_enabled = value; // Removed - no user settings
-          // setNotificationsEnabled(value); // Removed - no user settings
-          break;
-        case "priceAlerts":
-          // updates.price_alerts_enabled = value; // Removed - no user settings
-          // setPriceAlertsEnabled(value); // Removed - no user settings
-          break;
-        case "balanceHidden":
-          // updates.balance_hidden = value; // Removed - no user settings
-          // setBalanceHidden(value); // Removed - no user settings
-          break;
-      }
+      const updateParams = {
+        id: user.id,
+        display_name: editForm.display_name.trim() || undefined,
+        avatar_emoji: editForm.avatar_emoji.trim() || "🚀",
+      };
 
-      // For now, just update local state
-      // TODO: Implement user settings update when available
-      console.log("Setting updated:", setting, value);
+      // Update in Redux store
+      await dispatch(
+        updateUser({ id: user.id, params: updateParams })
+      ).unwrap();
+
+      // Update in cloud
+      await UserService.updateUser(user.id, updateParams);
+
+      setEditModalVisible(false);
+      Alert.alert("Success", "Profile updated successfully!");
     } catch (error) {
-      console.error("Error updating setting:", error);
+      console.error("Error updating profile:", error);
+      Alert.alert("Error", "Failed to update profile. Please try again.");
+    } finally {
+      setEditLoading(false);
     }
   };
 
-  const handleEditProfile = () => {
-    // Navigate to edit profile screen
-    console.log("Edit profile");
+  const handleCancelEdit = () => {
+    setEditForm({
+      display_name: user?.display_name || "",
+      avatar_emoji: user?.avatar_emoji || "🚀",
+    });
+    setEditModalVisible(false);
   };
 
   const SettingItem = ({
@@ -153,7 +90,6 @@ const ProfileScreen = () => {
     subtitle,
     onPress,
     showChevron = true,
-    rightComponent,
   }: any) => (
     <TouchableOpacity
       style={styles.settingItem}
@@ -169,8 +105,7 @@ const ProfileScreen = () => {
         </View>
       </View>
       <View style={styles.settingRight}>
-        {rightComponent}
-        {showChevron && !rightComponent && (
+        {showChevron && (
           <Ionicons name="chevron-forward" size={16} color="#9DA3B4" />
         )}
       </View>
@@ -182,9 +117,13 @@ const ProfileScreen = () => {
     value,
     subtitle,
     color = colors.text.primary,
+    icon,
   }: any) => (
     <View style={styles.statCard}>
-      <Text style={styles.statTitle}>{title}</Text>
+      <View style={styles.statHeader}>
+        <Ionicons name={icon} size={16} color={color} />
+        <Text style={[styles.statTitle, { color }]}>{title}</Text>
+      </View>
       <Text style={[styles.statValue, { color }]}>{value}</Text>
       {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
     </View>
@@ -194,6 +133,7 @@ const ProfileScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6674CC" />
           <Text style={styles.loadingText}>Loading profile...</Text>
         </View>
       </SafeAreaView>
@@ -233,145 +173,90 @@ const ProfileScreen = () => {
         showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user.avatar_emoji || "🚀"}</Text>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{user.avatar_emoji || "🚀"}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.editAvatarButton}
+              onPress={handleEditProfile}>
+              <Ionicons name="camera" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
           <Text style={styles.name}>{user.display_name || user.username}</Text>
           <Text style={styles.username}>@{user.username}</Text>
           <Text style={styles.joinDate}>
             Member since {new Date(user.join_date).toLocaleDateString()}
           </Text>
+
+          <TouchableOpacity
+            style={styles.editProfileButton}
+            onPress={handleEditProfile}>
+            <Ionicons name="create-outline" size={16} color="#6674CC" />
+            <Text style={styles.editProfileText}>Edit Profile</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          <StatsCard
-            title="Total Trades"
-            value={user.total_trades}
-            subtitle="trades"
-          />
-          <StatsCard
-            title="Win Rate"
-            value={`${parseFloat(user.win_rate).toFixed(1)}%`}
-            subtitle="success rate"
-            color="#10BA68"
-          />
-          <StatsCard
-            title="Total P&L"
-            value={`$${parseFloat(user.total_pnl).toLocaleString()}`}
-            subtitle="profit"
-            color={parseFloat(user.total_pnl) >= 0 ? "#10BA68" : "#F9335D"}
-          />
-          <StatsCard
-            title="Global Rank"
-            value={user.global_rank ? `#${user.global_rank}` : "N/A"}
-            subtitle="position"
-            color="#6674CC"
-          />
+        {/* Enhanced Stats Grid */}
+        <View style={styles.statsContainer}>
+          <Text style={styles.statsSectionTitle}>Trading Statistics</Text>
+          <View style={styles.statsGrid}>
+            <StatsCard
+              title="Total Trades"
+              value={user.total_trades}
+              subtitle="trades"
+              color="#6674CC"
+              icon="trending-up"
+            />
+            <StatsCard
+              title="Win Rate"
+              value={`${parseFloat(user.win_rate).toFixed(1)}%`}
+              subtitle="success rate"
+              color="#10BA68"
+              icon="trophy"
+            />
+            <StatsCard
+              title="Total P&L"
+              value={`$${parseFloat(user.total_pnl).toLocaleString()}`}
+              subtitle="profit/loss"
+              color={parseFloat(user.total_pnl) >= 0 ? "#10BA68" : "#F9335D"}
+              icon="wallet"
+            />
+            <StatsCard
+              title="Global Rank"
+              value={user.global_rank ? `#${user.global_rank}` : "N/A"}
+              subtitle="position"
+              color="#FF9500"
+              icon="star"
+            />
+          </View>
         </View>
 
         {/* Portfolio Value */}
         {userStats && (
           <View style={styles.portfolioCard}>
-            <Text style={styles.portfolioTitle}>Portfolio Value</Text>
+            <View style={styles.portfolioHeader}>
+              <Ionicons name="pie-chart" size={20} color="#6674CC" />
+              <Text style={styles.portfolioTitle}>Portfolio Value</Text>
+            </View>
             <Text style={styles.portfolioValue}>
               ${parseFloat(userStats.portfolio_value || "0").toLocaleString()}
             </Text>
             <Text style={styles.portfolioSubtitle}>
-              {userStats.total_assets || 0} assets
+              {userStats.total_assets || 0} assets in portfolio
             </Text>
           </View>
         )}
 
-        {/* Account Settings */}
+        {/* Account Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={styles.sectionTitle}>Account Information</Text>
           <View style={styles.settingsGroup}>
-            <SettingItem
-              icon="person-outline"
-              title="Edit Profile"
-              subtitle="Update your personal information"
-              onPress={handleEditProfile}
-            />
             <SettingItem
               icon="card-outline"
               title="Balance"
-              subtitle={
-                // balanceHidden // Removed - no user settings
-                `$${parseFloat(user.usdt_balance).toLocaleString()}`
-              }
-              // onPress={() => // Removed - no user settings
-              //   handleSettingChange("balanceHidden", !balanceHidden)
-              // }
+              subtitle={`$${parseFloat(user.usdt_balance).toLocaleString()}`}
             />
-            <SettingItem
-              icon="shield-outline"
-              title="Security"
-              subtitle="Two-factor authentication, password"
-              onPress={() => console.log("Security")}
-            />
-          </View>
-        </View>
-
-        {/* App Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Settings</Text>
-          <View style={styles.settingsGroup}>
-            <SettingItem
-              icon="notifications-outline"
-              title="Push Notifications"
-              subtitle="Get notified about price changes"
-              showChevron={false}
-              // rightComponent={ // Removed - no user settings
-              //   <Switch
-              //     value={notificationsEnabled}
-              //     onValueChange={(value) =>
-              //       handleSettingChange("notifications", value)
-              //     }
-              //     trackColor={{ false: "#333", true: "#6674CC" }}
-              //     thumbColor="#FFFFFF"
-              //   />
-              // }
-            />
-            <SettingItem
-              icon="alarm-outline"
-              title="Price Alerts"
-              subtitle="Get alerts when prices hit targets"
-              showChevron={false}
-              // rightComponent={ // Removed - no user settings
-              //   <Switch
-              //     value={priceAlertsEnabled}
-              //     onValueChange={(value) =>
-              //       handleSettingChange("priceAlerts", value)
-              //     }
-              //     trackColor={{ false: "#333", true: "#6674CC" }}
-              //     thumbColor="#FFFFFF"
-              //   />
-              // }
-            />
-            <SettingItem
-              icon="eye-outline"
-              title="Hide Balance"
-              subtitle="Keep your balance private"
-              showChevron={false}
-              // rightComponent={ // Removed - no user settings
-              //   <Switch
-              //     value={balanceHidden}
-              //     onValueChange={(value) =>
-              //       handleSettingChange("balanceHidden", value)
-              //     }
-              //     trackColor={{ false: "#333", true: "#6674CC" }}
-              //     thumbColor="#FFFFFF"
-              //   />
-              // }
-            />
-          </View>
-        </View>
-
-        {/* Trading Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Trading</Text>
-          <View style={styles.settingsGroup}>
             <SettingItem
               icon="trending-up-outline"
               title="Trading History"
@@ -392,61 +277,73 @@ const ProfileScreen = () => {
             />
           </View>
         </View>
-
-        {/* Support & Legal */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support & Legal</Text>
-          <View style={styles.settingsGroup}>
-            <SettingItem
-              icon="help-circle-outline"
-              title="Help & Support"
-              subtitle="Get help with the app"
-              onPress={() => console.log("Help")}
-            />
-            <SettingItem
-              icon="document-text-outline"
-              title="Terms of Service"
-              subtitle="Read our terms"
-              onPress={() => console.log("Terms")}
-            />
-            <SettingItem
-              icon="shield-checkmark-outline"
-              title="Privacy Policy"
-              subtitle="How we protect your data"
-              onPress={() => console.log("Privacy")}
-            />
-          </View>
-        </View>
-
-        {/* Account Actions */}
-        <View style={styles.section}>
-          <View style={styles.settingsGroup}>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={20} color="#F9335D" />
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={handleDeleteAccount}>
-              <Ionicons name="trash-outline" size={20} color="#F9335D" />
-              <Text style={styles.deleteText}>Delete Account</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={handleResetApp}
-              disabled={isResetting}>
-              <Ionicons name="refresh-outline" size={20} color="#6674CC" />
-              <Text style={styles.resetText}>
-                {isResetting ? "Resetting..." : "Reset App & New User"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
       </ScrollView>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={handleCancelEdit}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <TouchableOpacity onPress={handleCancelEdit}>
+                <Ionicons name="close" size={24} color="#9DA3B4" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Display Name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editForm.display_name}
+                  onChangeText={(text) =>
+                    setEditForm({ ...editForm, display_name: text })
+                  }
+                  placeholder="Enter display name"
+                  placeholderTextColor="#8F95B2"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Avatar Emoji</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editForm.avatar_emoji}
+                  onChangeText={(text) =>
+                    setEditForm({ ...editForm, avatar_emoji: text })
+                  }
+                  placeholder="🚀"
+                  placeholderTextColor="#8F95B2"
+                  maxLength={2}
+                />
+              </View>
+            </View>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancelEdit}
+                disabled={editLoading}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSaveProfile}
+                disabled={editLoading}>
+                {editLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -464,23 +361,42 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     paddingHorizontal: 20,
   },
+  avatarContainer: {
+    position: "relative",
+    marginBottom: 16,
+  },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: "#1A1D2F",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    borderWidth: 3,
+    borderColor: "#6674CC",
   },
   avatarText: {
-    fontSize: 36,
+    fontSize: 48,
+  },
+  editAvatarButton: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#6674CC",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#131523",
   },
   name: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 4,
+    textAlign: "center",
   },
   username: {
     fontSize: 16,
@@ -490,52 +406,94 @@ const styles = StyleSheet.create({
   joinDate: {
     fontSize: 14,
     color: "#8F95B2",
+    marginBottom: 16,
+  },
+  editProfileButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#1A1D2F",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#6674CC",
+  },
+  editProfileText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#6674CC",
+    marginLeft: 6,
+  },
+  statsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  statsSectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginBottom: 16,
   },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: 20,
-    marginBottom: 24,
     gap: 12,
   },
   statCard: {
     flex: 1,
     minWidth: "47%",
     backgroundColor: "#1A1D2F",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#2A2E42",
+  },
+  statHeader: {
+    flexDirection: "row",
     alignItems: "center",
+    marginBottom: 8,
   },
   statTitle: {
     fontSize: 12,
-    color: "#9DA3B4",
-    marginBottom: 4,
+    fontWeight: "600",
+    marginLeft: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#FFFFFF",
+    marginBottom: 4,
   },
   statSubtitle: {
-    fontSize: 10,
+    fontSize: 11,
     color: "#8F95B2",
-    marginTop: 2,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   portfolioCard: {
     backgroundColor: "#1A1D2F",
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: 24,
     marginHorizontal: 20,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#2A2E42",
+  },
+  portfolioHeader: {
+    flexDirection: "row",
     alignItems: "center",
+    marginBottom: 12,
   },
   portfolioTitle: {
     fontSize: 16,
+    fontWeight: "600",
     color: "#9DA3B4",
-    marginBottom: 8,
+    marginLeft: 8,
   },
   portfolioValue: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 4,
@@ -548,24 +506,26 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "600",
     color: "#FFFFFF",
-    marginBottom: 12,
+    marginBottom: 16,
     paddingHorizontal: 20,
   },
   settingsGroup: {
     backgroundColor: "#1A1D2F",
     marginHorizontal: 20,
-    borderRadius: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#2A2E42",
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: "#2A2E42",
   },
   settingLeft: {
     flex: 1,
@@ -573,13 +533,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     backgroundColor: "#131523",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 14,
   },
   settingContent: {
     flex: 1,
@@ -590,7 +550,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   settingSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#9DA3B4",
     marginTop: 2,
   },
@@ -598,51 +558,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginLeft: 12,
-  },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: "#262A3F",
-    marginBottom: 12,
-  },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#F9335D",
-    marginLeft: 10,
-  },
-  deleteButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: "#262A3F",
-    marginBottom: 12,
-  },
-  deleteText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#F9335D",
-    marginLeft: 10,
-  },
-  resetButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: "#262A3F",
-    marginBottom: 12,
-  },
-  resetText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#6674CC",
-    marginLeft: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -653,6 +568,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 18,
     color: "#FFFFFF",
+    marginTop: 16,
   },
   errorContainer: {
     flex: 1,
@@ -672,6 +588,83 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#FFFFFF",
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#1A1D2F",
+    borderRadius: 20,
+    padding: 24,
+    width: "90%",
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: "#2A2E42",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  modalBody: {
+    marginBottom: 24,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#9DA3B4",
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: "#131523",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#2A2E42",
+  },
+  modalFooter: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: "#262A3F",
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#9DA3B4",
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: "#6674CC",
+    alignItems: "center",
+  },
+  saveButtonText: {
     fontSize: 16,
     fontWeight: "500",
     color: "#FFFFFF",
