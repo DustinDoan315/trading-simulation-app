@@ -1,11 +1,13 @@
-import * as Application from "expo-application";
-import * as bip39 from "bip39";
-import * as Crypto from "expo-crypto";
-import Toast from "react-native-toast-message";
-import { Buffer } from "buffer";
-import { Order } from "@/types/crypto";
-import { Platform } from "react-native";
-import { ToastPos, ToastType } from "@/types/common";
+import * as Application from 'expo-application';
+import * as bip39 from 'bip39';
+import * as Crypto from 'expo-crypto';
+import Toast from 'react-native-toast-message';
+import { Buffer } from 'buffer';
+import { Order } from '@/types/crypto';
+import { Platform } from 'react-native';
+import { ToastPos, ToastType } from '@/types/common';
+
+
 
 global.Buffer = Buffer;
 
@@ -368,4 +370,91 @@ export const handleOrderSubmission = async (
 
     throw new OrderError(message, userFriendlyMessage);
   }
+};
+
+/**
+ * Calculate portfolio metrics from balance holdings
+ * @param balance - The user's balance object from Redux store
+ * @returns Object containing portfolio metrics
+ */
+export const calculatePortfolioMetrics = (balance: any) => {
+  if (!balance || !balance.holdings) {
+    return {
+      totalValue: 0,
+      totalAssets: 0,
+      totalPnL: 0,
+      totalPnLPercentage: 0,
+      usdtBalance: 0,
+      cryptoValue: 0,
+    };
+  }
+
+  const holdings = balance.holdings;
+  let totalValue = balance.usdtBalance || 0;
+  let totalPnL = 0;
+  let totalCostBasis = 0;
+  let assetCount = 0;
+  let cryptoValue = 0;
+
+  // Calculate values for all holdings (excluding USDT to avoid double counting)
+  Object.values(holdings).forEach((holding: any) => {
+    if (holding.symbol !== "USDT") {
+      const marketValue = holding.amount * holding.currentPrice;
+      const costBasis = holding.amount * holding.averageBuyPrice;
+      
+      totalValue += marketValue;
+      cryptoValue += marketValue;
+      totalPnL += (marketValue - costBasis);
+      totalCostBasis += costBasis;
+      assetCount++;
+    }
+  });
+
+  const totalPnLPercentage = totalCostBasis > 0 ? (totalPnL / totalCostBasis) * 100 : 0;
+
+  return {
+    totalValue,
+    totalAssets: assetCount,
+    totalPnL,
+    totalPnLPercentage,
+    usdtBalance: balance.usdtBalance || 0,
+    cryptoValue,
+  };
+};
+
+/**
+ * Format portfolio value for display
+ * @param value - The portfolio value to format
+ * @returns Formatted string
+ */
+export const formatPortfolioValue = (value: number): string => {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(2)}M`;
+  } else if (value >= 1000) {
+    return `$${(value / 1000).toFixed(2)}K`;
+  } else {
+    return `$${value.toFixed(2)}`;
+  }
+};
+
+/**
+ * Get color for P&L display
+ * @param value - The P&L value
+ * @returns Color string
+ */
+export const getPnLColor = (value: number): string => {
+  return value >= 0 ? "#10BA68" : "#F9335D";
+};
+
+/**
+ * Format P&L for display
+ * @param value - The P&L value
+ * @returns Formatted string with sign
+ */
+export const formatPnL = (value: number): string => {
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}$${value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 };
