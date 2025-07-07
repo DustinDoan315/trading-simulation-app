@@ -32,18 +32,6 @@ export const formatTime = (time: number) => {
   return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 };
 
-// export const storePassword = async (password: string) => {
-//   try {
-//     // Store the password with a service name, making it identifiable
-//     await Keychain.setGenericPassword("walletPassword", password, {
-//       service: "crypto-wallet", // This is optional, can be used to group your sensitive data
-//     });
-//     console.log("Password stored securely!");
-//   } catch (error) {
-//     console.error("Failed to store password: ", error);
-//   }
-// };
-
 export const generateSeedPhrase = async () => {
   try {
     // Generate random bytes using expo-crypto
@@ -62,41 +50,6 @@ export const generateSeedPhrase = async () => {
     return null;
   }
 };
-
-// export const retrievePassword = async () => {
-//   try {
-//     const credentials = await Keychain.getGenericPassword({
-//       service: "crypto-wallet",
-//     });
-
-//     if (credentials) {
-//       console.log("Password retrieved:", credentials.password);
-//       return credentials.password;
-//     } else {
-//       console.log("No password stored");
-//       return null;
-//     }
-//   } catch (error) {
-//     console.error("Failed to retrieve password: ", error);
-//     return null;
-//   }
-// };
-
-// // Create a wallet from the seed phrase and password
-// export const createWalletFromSeed = async (seedPhrase: any) => {
-//   try {
-//     // Generate a wallet from the seed phrase
-//     const wallet = HDNodeWallet.fromMnemonic(seedPhrase);
-
-//     console.log("Wallet Address:", wallet.address);
-//     console.log("Wallet Private Key:", wallet.privateKey);
-
-//     return wallet;
-//   } catch (error) {
-//     console.error("Failed to create wallet: ", error);
-//     return null;
-//   }
-// };
 
 // --- Error Class ---
 export class OrderError extends Error {
@@ -235,10 +188,11 @@ function validateOrder(order: Order, context: OrderValidationContext): void {
     const msg = `Minimum order amount is ${MIN_AMOUNT} ${order.symbol}`;
     throw new OrderError("amount.tooSmall", msg);
   }
-  if (order.type === "sell") {
-    const holdings = context.getHoldings();
-    console.log("📊 Current holdings:", holdings);
+  
+  const holdings = context.getHoldings();
+  console.log("📊 Current holdings:", holdings);
 
+  if (order.type === "sell") {
     // Try both uppercase and lowercase to handle case sensitivity
     const h =
       holdings[order.symbol.toUpperCase()] ||
@@ -266,19 +220,37 @@ function validateOrder(order: Order, context: OrderValidationContext): void {
     }
 
     console.log("✅ Sufficient balance for sell order");
+  } else if (order.type === "buy") {
+    // For buy orders, check USDT balance
+    const usdtHolding = holdings.USDT || holdings.usdt;
+    console.log("🔍 USDT holding for buy order:", usdtHolding);
+
+    if (!usdtHolding) {
+      const msg = "No USDT balance found for buying";
+      console.error("❌ No USDT holding found");
+      throw new OrderError("balance.insufficient", msg);
+    }
+
+    if (usdtHolding.amount < order.total) {
+      const msg = `Insufficient USDT balance. You have ${usdtHolding.amount} USDT, trying to spend ${order.total} USDT`;
+      console.error("❌ Insufficient USDT balance:", {
+        available: usdtHolding.amount,
+        requested: order.total,
+      });
+      throw new OrderError("balance.insufficient", msg);
+    }
+
+    console.log("✅ Sufficient USDT balance for buy order");
   }
 }
 
-/** Dispatch both crypto and USDT adjustments */
+/** Dispatch both crypto and USDT adjustments with improved logic */
 function dispatchUpdates(
   order: Order,
   isBuy: boolean,
   imageUrl: string,
   context: OrderDispatchContext
 ) {
-  const sign = isBuy ? 1 : -1;
-  const symbolId = order.symbol.toLowerCase();
-
   console.log("🔄 Dispatching order updates:", {
     orderType: order.type,
     symbol: order.symbol,
@@ -289,26 +261,48 @@ function dispatchUpdates(
 
   context.addTradeHistory(order);
 
-  context.updateHolding({
-    cryptoId: symbolId,
-    amount: sign * order.amount,
-    valueInUSD: sign * order.total,
-    symbol: order.symbol,
-    name: order.name || order.symbol,
-    image: imageUrl,
+  const normalizedSymbol = order.symbol.toUpperCase();
+
+  // Handle the main crypto asset (the one being bought/sold)
+  if (normalizedSymbol !== "USDT") {
+    const cryptoUpdateAmount = isBuy ? order.amount : -order.amount;
+    const cryptoUpdateValue = isBuy ? order.total : -order.total;
+
+    console.log("🔄 Updating crypto holding:", {
+      symbol: normalizedSymbol,
+      amount: cryptoUpdateAmount,
+      valueInUSD: cryptoUpdateValue,
+    });
+
+    context.updateHolding({
+      cryptoId: normalizedSymbol.toLowerCase(),
+      amount: cryptoUpdateAmount,
+      valueInUSD: cryptoUpdateValue,
+      symbol: normalizedSymbol,
+      name: order.name || normalizedSymbol,
+      image: imageUrl,
+    });
+  }
+
+  // Handle USDT balance update (opposite of crypto trade)
+  // When buying crypto: subtract USDT
+  // When selling crypto: add USDT
+  const usdtUpdateAmount = isBuy ? -order.total : order.total;
+
+  console.log("🔄 Updating USDT balance:", {
+    symbol: "USDT",
+    amount: usdtUpdateAmount,
+    operation: isBuy ? "subtract (buying crypto)" : "add (selling crypto)",
   });
 
-  if (symbolId !== "usdt") {
-    const usdtUpdate = {
-      cryptoId: "usdt",
-      amount: -sign * order.total,
-      valueInUSD: -sign * order.total,
-      symbol: "USDT",
-      name: "Tether",
-    };
-    console.log("🔄 Updating USDT balance:", usdtUpdate);
-    context.updateHolding(usdtUpdate);
-  }
+  context.updateHolding({
+    cryptoId: "usdt",
+    amount: usdtUpdateAmount,
+    valueInUSD: usdtUpdateAmount,
+    symbol: "USDT",
+    name: "Tether",
+    image: "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
+  });
 
   // Sync transaction to cloud
   if (context.syncTransaction) {
@@ -328,7 +322,6 @@ function dispatchUpdates(
  * @param imageUrl URL for the asset image
  * @param validationContext Context for validation
  * @param dispatchContext Context for dispatching actions
- * @param notify Optional callback({ message, type })
  */
 export const handleOrderSubmission = async (
   order: Order,
