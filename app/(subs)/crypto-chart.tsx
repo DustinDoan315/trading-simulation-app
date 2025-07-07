@@ -9,7 +9,11 @@ import useCryptoAPI from "@/hooks/useCryptoAPI";
 import useHistoricalData from "@/hooks/useHistoricalData";
 import useOrderBook from "@/hooks/useOrderBook";
 import UUIDService from "@/services/UUIDService";
-import { addTradeHistory, updateHolding } from "@/features/balanceSlice";
+import {
+  addTradeHistory,
+  updateHolding,
+  updateTrade,
+} from "@/features/balanceSlice";
 import { ChartType, Order, TimeframeOption } from "../../types/crypto";
 import { RootState } from "@/store";
 import { useDispatch, useSelector } from "react-redux";
@@ -168,6 +172,7 @@ const CryptoChartScreen = () => {
               const dispatchContext: OrderDispatchContext = {
                 addTradeHistory: (order) => dispatch(addTradeHistory(order)),
                 updateHolding: (payload) => dispatch(updateHolding(payload)),
+                updateTrade: (payload) => dispatch(updateTrade(payload)),
                 syncTransaction: async (order) => {
                   try {
                     const uuid = await UUIDService.getOrCreateUser();

@@ -84,12 +84,19 @@ class UserRepository {
     totalPnL: number = 0
   ) {
     try {
+      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - Starting update...");
+      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - UUID:", uuid);
+      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - USDT Balance:", usdtBalance);
+      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - Total Portfolio Value:", totalPortfolioValue);
+      
       // Calculate total PnL percentage based on initial balance (default 100000)
       const initialBalance = 100000; // Default initial balance
       const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
 
       // Update local storage
+      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - Calling AsyncStorageService.updateUserBalance...");
       await AsyncStorageService.updateUserBalance(uuid, usdtBalance);
+      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - AsyncStorageService.updateUserBalance completed");
 
       console.log(
         "User balance and portfolio value updated for user:",

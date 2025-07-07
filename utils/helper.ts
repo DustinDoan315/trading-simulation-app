@@ -172,6 +172,7 @@ export interface OrderDispatchContext {
   addTradeHistory: (order: Order) => void;
   updateHolding: (payload: any) => void;
   syncTransaction?: (order: Order) => void;
+  updateTrade?: (payload: { cryptoUpdate: any; usdtUpdate: any }) => void;
 }
 
 /** Throws OrderError on validation failure */
@@ -265,46 +266,63 @@ function dispatchUpdates(
 
   const normalizedSymbol = order.symbol.toUpperCase();
 
-  // Handle the main crypto asset (the one being bought/sold)
+  // Only process if it's not a USDT trade
   if (normalizedSymbol !== "USDT") {
     const cryptoUpdateAmount = isBuy ? order.amount : -order.amount;
     const cryptoUpdateValue = isBuy ? order.total : -order.total;
+    const usdtUpdateAmount = isBuy ? -order.total : order.total;
 
-    console.log("🔄 Updating crypto holding:", {
-      symbol: normalizedSymbol,
-      amount: cryptoUpdateAmount,
-      valueInUSD: cryptoUpdateValue,
+    console.log("🔄 Updating trade (crypto + USDT):", {
+      cryptoSymbol: normalizedSymbol,
+      cryptoAmount: cryptoUpdateAmount,
+      cryptoValue: cryptoUpdateValue,
+      usdtAmount: usdtUpdateAmount,
+      operation: isBuy ? "buy" : "sell",
     });
 
-    context.updateHolding({
-      cryptoId: normalizedSymbol.toLowerCase(),
-      amount: cryptoUpdateAmount,
-      valueInUSD: cryptoUpdateValue,
-      symbol: normalizedSymbol,
-      name: order.name || normalizedSymbol,
-      image: imageUrl,
-    });
+    // Use the new updateTrade action to handle both updates in a single call
+    if (context.updateTrade) {
+      context.updateTrade({
+        cryptoUpdate: {
+          cryptoId: normalizedSymbol.toLowerCase(),
+          amount: cryptoUpdateAmount,
+          valueInUSD: cryptoUpdateValue,
+          symbol: normalizedSymbol,
+          name: order.name || normalizedSymbol,
+          image: imageUrl,
+        },
+        usdtUpdate: {
+          cryptoId: "usdt",
+          amount: usdtUpdateAmount,
+          valueInUSD: usdtUpdateAmount,
+          symbol: "USDT",
+          name: "Tether",
+          image: "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
+        },
+      });
+    } else {
+      // Fallback to the old method if updateTrade is not available
+      console.warn("⚠️ updateTrade not available, falling back to separate updates");
+      
+      context.updateHolding({
+        cryptoId: normalizedSymbol.toLowerCase(),
+        amount: cryptoUpdateAmount,
+        valueInUSD: cryptoUpdateValue,
+        symbol: normalizedSymbol,
+        name: order.name || normalizedSymbol,
+        image: imageUrl,
+      });
+
+      context.updateHolding({
+        cryptoId: "usdt",
+        amount: usdtUpdateAmount,
+        valueInUSD: usdtUpdateAmount,
+        symbol: "USDT",
+        name: "Tether",
+        image: "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
+      });
+    }
   }
-
-  // Handle USDT balance update (opposite of crypto trade)
-  // When buying crypto: subtract USDT
-  // When selling crypto: add USDT
-  const usdtUpdateAmount = isBuy ? -order.total : order.total;
-
-  console.log("🔄 Updating USDT balance:", {
-    symbol: "USDT",
-    amount: usdtUpdateAmount,
-    operation: isBuy ? "subtract (buying crypto)" : "add (selling crypto)",
-  });
-
-  context.updateHolding({
-    cryptoId: "usdt",
-    amount: usdtUpdateAmount,
-    valueInUSD: usdtUpdateAmount,
-    symbol: "USDT",
-    name: "Tether",
-    image: "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
-  });
 
   // Sync transaction to cloud
   if (context.syncTransaction) {

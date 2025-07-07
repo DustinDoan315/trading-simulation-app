@@ -8,7 +8,7 @@ import { TimestampUtils } from '@/utils/helper';
 
 // Enhanced UUIDService.ts
 
-const USER_UUID_KEY = "user_uuid_12";
+const USER_UUID_KEY = "user_uuid_13";
 const USER_PROFILE_KEY = "user_profile";
 const SYNC_STATUS_KEY = "sync_status";
 

@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import UserRepository from '../services/UserRepository';
 import UUIDService from '../services/UUIDService';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
@@ -109,14 +110,85 @@ const initialState: BalanceState = {
 // Async thunk to load balance from database
 export const loadBalance = createAsyncThunk("balance/load", async () => {
   const uuid = await UUIDService.getOrCreateUser();
-  const user = await UserRepository.getUser(uuid);
-  const usdtBalance = user ? parseFloat(user.usdt_balance) : 100000;
+  console.log("====================================");
+  console.log("Loading balance - UUID:", uuid);
+  
+  let user = await UserRepository.getUser(uuid);
+  console.log("Loading balance - Retrieved user from UserRepository:", user);
+  
+  // If user not found in UserRepository, try to get from UUIDService cache
+  if (!user) {
+    console.log("Loading balance - User not found in UserRepository, trying UUIDService cache...");
+    try {
+      const userProfileStr = await AsyncStorage.getItem("user_profile");
+      if (userProfileStr) {
+        const userProfile = JSON.parse(userProfileStr);
+        if (userProfile.id === uuid) {
+          user = userProfile;
+          console.log("Loading balance - Found user in UUIDService cache:", user);
+        }
+      }
+    } catch (error) {
+      console.error("Loading balance - Error getting user from UUIDService cache:", error);
+    }
+  }
+
+  // If still no user found, recreate user data
+  if (!user) {
+    console.log("Loading balance - No user found anywhere, recreating user data...");
+    try {
+      const { AsyncStorageService } = await import('../services/AsyncStorageService');
+      user = await AsyncStorageService.recreateUserData(uuid, 100000);
+      console.log("Loading balance - User data recreated:", user);
+    } catch (error) {
+      console.error("Loading balance - Error recreating user data:", error);
+    }
+  }
+  
+  let usdtBalance = user ? parseFloat(user.usdt_balance) : 100000;
+  console.log("Loading balance - Initial USDT balance from user data:", usdtBalance);
+  
   const portfolio = await UserRepository.getPortfolio(uuid);
 
-  console.log("====================================");
   console.log("Loading balance - Portfolio:", portfolio);
   console.log("Loading balance - User USDT balance:", usdtBalance);
   console.log("====================================");
+
+  // Calculate the correct USDT balance based on portfolio data
+  // If there are crypto holdings, the USDT balance should be reduced
+  let calculatedUsdtBalance = 100000; // Start with initial balance
+  let totalCryptoValue = 0;
+
+  portfolio.forEach((item) => {
+    if (item.symbol.toUpperCase() !== "USDT") {
+      const quantity = parseFloat(item.quantity);
+      const currentPrice = parseFloat(item.current_price || item.avg_cost);
+      const valueInUSD = quantity * currentPrice;
+      totalCryptoValue += valueInUSD;
+      console.log(`Portfolio item ${item.symbol}: ${quantity} * ${currentPrice} = ${valueInUSD}`);
+    }
+  });
+
+  calculatedUsdtBalance = 100000 - totalCryptoValue;
+  console.log("Loading balance - Total crypto value:", totalCryptoValue);
+  console.log("Loading balance - Calculated USDT balance:", calculatedUsdtBalance);
+
+  // Use the calculated balance if it's different from the stored balance
+  if (Math.abs(calculatedUsdtBalance - usdtBalance) > 1) {
+    console.log("Loading balance - USDT balance mismatch detected!");
+    console.log("Loading balance - Stored balance:", usdtBalance);
+    console.log("Loading balance - Calculated balance:", calculatedUsdtBalance);
+    console.log("Loading balance - Using calculated balance");
+    usdtBalance = calculatedUsdtBalance;
+    
+    // Update the user's USDT balance in AsyncStorage
+    try {
+      await UserRepository.updateUserBalance(uuid, usdtBalance);
+      console.log("Loading balance - Updated user USDT balance in AsyncStorage");
+    } catch (error) {
+      console.error("Loading balance - Failed to update USDT balance:", error);
+    }
+  }
 
   // Initialize holdings object
   const holdings: Record<string, Holding> = {};
@@ -375,28 +447,23 @@ export const balanceSlice = createSlice({
           }
         });
 
+        // Use a single async operation to update both balance and portfolio
         UUIDService.getOrCreateUser()
-          .then((uuid) => {
+          .then(async (uuid) => {
             console.log("✅ Got UUID for persistence:", uuid);
             
             // Update both USDT balance and total portfolio value in users table
-            return UserRepository.updateUserBalanceAndPortfolioValue(
+            await UserRepository.updateUserBalanceAndPortfolioValue(
               uuid, 
               usdtBalance, 
               totalPortfolioValue, 
               totalPnL
             );
-          })
-          .then(() => {
-            console.log("✅ User balance and portfolio value updated successfully");
-            return UUIDService.getOrCreateUser();
-          })
-          .then((uuid) => {
-            console.log("✅ Updating portfolio holdings...");
-            return UserRepository.updatePortfolio(uuid, holdingsCopy);
-          })
-          .then(() => {
-            console.log("✅ Portfolio holdings updated successfully");
+            
+            // Update portfolio holdings in the same operation
+            await UserRepository.updatePortfolio(uuid, holdingsCopy);
+            
+            console.log("✅ All database updates completed successfully");
           })
           .catch((error) => {
             console.error(
@@ -479,6 +546,137 @@ export const balanceSlice = createSlice({
         state.balance.usdtBalance
       );
     },
+    // New action to handle complete trade updates (crypto + USDT) in a single call
+    updateTrade: (state, action: PayloadAction<{
+      cryptoUpdate: HoldingUpdatePayload;
+      usdtUpdate: HoldingUpdatePayload;
+    }>) => {
+      console.log("====================================");
+      console.log("updateTrade reducer called");
+      console.log("Payload:", JSON.stringify(action.payload, null, 2));
+      console.log("Current USDT balance:", state.balance.usdtBalance);
+      console.log("====================================");
+
+      const { cryptoUpdate, usdtUpdate } = action.payload;
+      const holdings = state.balance.holdings;
+
+      // Process crypto update
+      const normalizedCryptoSymbol = cryptoUpdate.symbol.toUpperCase();
+      const currentCryptoHolding = holdings[normalizedCryptoSymbol];
+
+      if (currentCryptoHolding) {
+        const newAmount = currentCryptoHolding.amount + cryptoUpdate.amount;
+        
+        if (cryptoUpdate.amount > 0) {
+          // Buying: add to position
+          const totalCost = currentCryptoHolding.amount * currentCryptoHolding.averageBuyPrice + cryptoUpdate.valueInUSD;
+          const newAverageBuyPrice = newAmount > 0 ? totalCost / newAmount : 0;
+          const newValueInUSD = currentCryptoHolding.valueInUSD + cryptoUpdate.valueInUSD;
+
+          holdings[normalizedCryptoSymbol] = {
+            ...currentCryptoHolding,
+            amount: newAmount,
+            valueInUSD: newValueInUSD,
+            averageBuyPrice: newAverageBuyPrice,
+          };
+        } else {
+          // Selling: reduce position proportionally
+          const sellRatio = Math.abs(cryptoUpdate.amount) / currentCryptoHolding.amount;
+          const newValueInUSD = currentCryptoHolding.valueInUSD * (1 - sellRatio);
+
+          holdings[normalizedCryptoSymbol] = {
+            ...currentCryptoHolding,
+            amount: newAmount,
+            valueInUSD: newValueInUSD,
+          };
+        }
+
+        calculateProfitLoss(holdings[normalizedCryptoSymbol]);
+
+        if (newAmount <= 0) {
+          delete holdings[normalizedCryptoSymbol];
+        }
+      } else {
+        // Create new holding
+        const pricePerToken = cryptoUpdate.amount !== 0 ? Math.abs(cryptoUpdate.valueInUSD / cryptoUpdate.amount) : 0;
+        holdings[normalizedCryptoSymbol] = {
+          amount: cryptoUpdate.amount,
+          valueInUSD: cryptoUpdate.valueInUSD,
+          symbol: normalizedCryptoSymbol,
+          name: cryptoUpdate.name,
+          image: cryptoUpdate.image,
+          averageBuyPrice: pricePerToken,
+          currentPrice: pricePerToken,
+          profitLoss: 0,
+          profitLossPercentage: 0,
+        };
+      }
+
+      // Process USDT update
+      const newUsdtBalance = state.balance.usdtBalance + usdtUpdate.amount;
+      
+      if (newUsdtBalance < 0) {
+        console.error("Insufficient USDT balance - would result in:", newUsdtBalance);
+        throw new Error("Insufficient USDT balance");
+      }
+
+      state.balance.usdtBalance = newUsdtBalance;
+      
+      holdings.USDT = {
+        ...holdings.USDT,
+        amount: newUsdtBalance,
+        valueInUSD: newUsdtBalance,
+      };
+
+      // Recalculate total portfolio value
+      state.balance.totalPortfolioValue = calculateTotalPortfolioValue(
+        holdings,
+        state.balance.usdtBalance
+      );
+
+      console.log("Updated USDT balance:", state.balance.usdtBalance);
+      console.log("Updated total portfolio value:", state.balance.totalPortfolioValue);
+
+      // Persist to database in a single operation
+      console.log("Persisting trade to database...");
+
+      try {
+        const usdtBalance = state.balance.usdtBalance;
+        const totalPortfolioValue = state.balance.totalPortfolioValue;
+        const holdingsCopy = JSON.parse(JSON.stringify(holdings));
+
+        let totalPnL = 0;
+        Object.values(holdingsCopy).forEach((holding: any) => {
+          if (holding.symbol !== "USDT") {
+            totalPnL += holding.profitLoss || 0;
+          }
+        });
+
+        UUIDService.getOrCreateUser()
+          .then(async (uuid) => {
+            console.log("✅ Got UUID for trade persistence:", uuid);
+            
+            await UserRepository.updateUserBalanceAndPortfolioValue(
+              uuid, 
+              usdtBalance, 
+              totalPortfolioValue, 
+              totalPnL
+            );
+            
+            await UserRepository.updatePortfolio(uuid, holdingsCopy);
+            
+            console.log("✅ Trade database updates completed successfully");
+          })
+          .catch((error) => {
+            console.error("❌ Error in updateTrade persistence:", error);
+          });
+      } catch (error) {
+        console.error("❌ Error in updateTrade (before async):", error);
+      }
+
+      console.log("updateTrade reducer completed");
+      console.log("====================================");
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -505,5 +703,6 @@ export const {
   updateCurrentPrice,
   updatePortfolio,
   syncUsdtBalance,
+  updateTrade,
 } = balanceSlice.actions;
 export default balanceSlice.reducer;
