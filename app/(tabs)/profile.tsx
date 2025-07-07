@@ -1,12 +1,13 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import colors from "@/styles/colors";
-import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { updateUser } from "@/features/userSlice";
-import { useAppDispatch } from "@/store";
-import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
-import { UserService } from "@/services/UserService";
-import { useUser } from "@/context/UserContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import colors from '@/styles/colors';
+import React, { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { updateUser } from '@/features/userSlice';
+import { useAppDispatch } from '@/store';
+import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
+import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
@@ -288,27 +290,22 @@ const ProfileScreen = () => {
           <Text style={styles.sectionTitle}>Account Information</Text>
           <View style={styles.settingsGroup}>
             <SettingItem
-              icon="card-outline"
-              title="Available Balance"
-              subtitle={formattedTotalBalance}
-            />
-            <SettingItem
               icon="trending-up-outline"
               title="Trading History"
               subtitle="View your past trades"
-              onPress={() => console.log("Trading history")}
+              onPress={() => router.push("/trading-history" as any)}
             />
             <SettingItem
               icon="trophy-outline"
               title="Leaderboard"
               subtitle="See your ranking"
-              onPress={() => console.log("Leaderboard")}
+              onPress={() => router.push("/leaderboard" as any)}
             />
             <SettingItem
               icon="people-outline"
               title="Collections"
               subtitle="Manage your trading groups"
-              onPress={() => console.log("Collections")}
+              onPress={() => router.push("/collections" as any)}
             />
           </View>
         </View>
