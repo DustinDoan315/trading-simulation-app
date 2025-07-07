@@ -1,5 +1,5 @@
-import { Stack } from "expo-router";
-import React from "react";
+import React from 'react';
+import { Stack } from 'expo-router';
 
 export default function ModalsLayout() {
   return (
@@ -9,8 +9,7 @@ export default function ModalsLayout() {
         presentation: "modal",
         animationTypeForReplace: "push",
         animation: "slide_from_bottom",
-      }}
-    >
+      }}>
       <Stack.Screen name="create-collection" />
       <Stack.Screen name="join-collection" />
       <Stack.Screen name="collection-detail" />
