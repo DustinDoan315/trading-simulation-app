@@ -53,14 +53,6 @@ const OrderEntry = ({
         (h: any) => h.symbol.toUpperCase() === symbol.toUpperCase()
       );
 
-    // Debug logging
-    console.log(`🔍 Token balance lookup for ${symbol}:`, {
-      symbol,
-      holdingsKeys: Object.keys(holdings),
-      foundHolding: holding,
-      balance: holding ? holding.amount : 0,
-    });
-
     return holding ? holding.amount : 0;
   });
 

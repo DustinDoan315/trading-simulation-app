@@ -50,8 +50,6 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
   const confirmReset = async () => {
     setIsResetting(true);
     try {
-      console.log("🔄 Starting comprehensive reset...");
-
       // Step 1: Reset Redux state
       dispatch(resetBalance());
       dispatch(resetFavorites());
@@ -64,8 +62,6 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
       const resetResult = await ResetService.resetAllData();
 
       if (resetResult.success) {
-        console.log("✅ Comprehensive reset completed successfully");
-        console.log("Reset details:", resetResult.details);
 
         // Call the callback if provided
         onResetBalance?.();
@@ -87,14 +83,12 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
           successMessage
         );
       } else {
-        console.error("❌ Reset failed:", resetResult.error);
         Alert.alert(
           t("balance.resetError") || "Reset Failed",
           resetResult.error || "An error occurred during reset"
         );
       }
     } catch (error) {
-      console.error("Error during comprehensive reset:", error);
       Alert.alert(
         t("balance.resetError") || "Reset Failed",
         t("balance.resetErrorMessage") ||

@@ -1,23 +1,38 @@
 {
   "expo": {
-    "name": "trading-simulation-app",
-    "slug": "trading-simulation-app",
+    "name": "CryptoSim Pro",
+    "slug": "cryptosim-pro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/rocket.png",
-    "scheme": "myapp",
+    "scheme": "cryptosim",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "description": "Master cryptocurrency trading with our realistic simulation platform. Practice trading strategies, compete with friends, and learn without financial risk.",
+    "keywords": ["crypto", "trading", "simulation", "education", "investment", "portfolio", "bitcoin", "ethereum"],
+    "privacy": "public",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dustindoan.trading-simulation-app"
+      "bundleIdentifier": "com.dustindoan.cryptosim-pro",
+      "infoPlist": {
+        "NSCameraUsageDescription": "CryptoSim Pro uses the camera to scan QR codes for sharing trading collections and invite codes.",
+        "NSPhotoLibraryUsageDescription": "CryptoSim Pro accesses your photo library to save QR codes for sharing trading collections.",
+        "NSPhotoLibraryAddUsageDescription": "CryptoSim Pro saves QR code images to your photo library for easy sharing of trading collections."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dustindoan.tradingsimulationapp"
+      "package": "com.dustindoan.cryptosimpro",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "VIBRATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -40,8 +55,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes",
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
+          "cameraPermission": "CryptoSim Pro uses the camera to scan QR codes for sharing trading collections and invite codes.",
+          "microphonePermission": "CryptoSim Pro may access your microphone for video features (currently not used)."
         }
       ]
     ],

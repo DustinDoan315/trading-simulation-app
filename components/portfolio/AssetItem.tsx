@@ -30,13 +30,9 @@ const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
     const holdings = state.balance.balance.holdings;
     return holdings[asset.symbol.toUpperCase()];
   });
-  console.log(asset);
 
   const percentage =
     totalBalance > 0 ? (Number(asset.value) / totalBalance) * 100 : 0;
-  console.log("====================================");
-  console.log(asset);
-  console.log("====================================");
   const imageSource = asset.image_url
     ? { uri: asset.image_url }
     : { uri: DEFAULT_CRYPTO_IMAGE.tether };

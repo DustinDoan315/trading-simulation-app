@@ -17,6 +17,7 @@ import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { UserProvider } from '@/context/UserContext';
 import { UserService } from '@/services/UserService';
+import { STORAGE_KEYS } from '@/constants/AppConstants';
 import 'react-native-reanimated';
 
 
@@ -62,25 +63,18 @@ export default function RootLayout() {
       const { default: UUIDService } = await import("@/services/UUIDService");
       const userId = await UUIDService.getOrCreateUser();
 
-      console.log("🔄 Initializing user with ID:", userId);
-
       // Store the user ID for Redux compatibility
-      await AsyncStorage.setItem("@user_id", userId);
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_ID, userId);
 
       // Try to fetch user data from Redux store
       try {
         await store.dispatch(fetchUser(userId)).unwrap();
-        console.log("✅ User data loaded successfully from Redux");
       } catch (error) {
-        console.warn(
-          "⚠️ Failed to load user from Redux, user may not exist in database yet:",
-          error
-        );
-        // This is okay - the user exists in UUIDService but may not be in the Redux database yet
+        // Silent error handling - user exists in UUIDService but may not be in database yet
         // The app can still function with the UUIDService user
       }
     } catch (error) {
-      console.error("❌ Error initializing user:", error);
+      // Silent error handling for production
     }
   };
 
