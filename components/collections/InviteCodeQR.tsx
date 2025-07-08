@@ -1,18 +1,25 @@
-import * as MediaLibrary from "expo-media-library";
-import QRCode from "react-native-qrcode-svg";
-import React, { useRef } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
+import QRCode from 'react-native-qrcode-svg';
+import React, { useEffect, useRef, useState } from 'react';
+import Toast from 'react-native-toast-message';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import {
   Alert,
+  Animated,
+  Linking,
   Modal,
+  Platform,
+  ScrollView,
   Share,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 interface InviteCodeQRProps {
   visible: boolean;
@@ -28,50 +35,85 @@ const InviteCodeQR: React.FC<InviteCodeQRProps> = ({
   collectionName,
 }) => {
   const qrRef = useRef<any>(null);
+  const hiddenQrRef = useRef<any>(null);
+  const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [qrReady, setQrReady] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Set QR as ready after component mounts
+  useEffect(() => {
+    if (visible) {
+      const timer = setTimeout(() => {
+        setQrReady(true);
+        console.log("QR Code marked as ready");
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  const generateDeepLink = () => {
+    return `myapp://join-collection?code=${inviteCode}&name=${encodeURIComponent(
+      collectionName
+    )}`;
+  };
+
+  const animatePress = () => {
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const handleShare = async () => {
     try {
-      const shareMessage = `Join my collection "${collectionName}" on TradingSim!\n\nInvite Code: ${inviteCode}\n\nDownload the app and enter this code to join.`;
+      animatePress();
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const deepLink = generateDeepLink();
+      const shareMessage = `🚀 Join my collection "${collectionName}" on TradingSim!\n\n📱 Invite Code: ${inviteCode}\n\n💡 Download the app and scan this QR code or use the invite code to join.\n\n🔗 Or click this link: ${deepLink}`;
 
       await Share.share({
         message: shareMessage,
         title: `Join ${collectionName}`,
+        url: deepLink,
       });
     } catch (error) {
       Alert.alert("Error", "Failed to share invite code");
     }
   };
 
-  const handleSaveToGallery = async () => {
+  const handleCopyInviteCode = async () => {
     try {
-      // Request permissions
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Please grant permission to save images to your gallery"
-        );
-        return;
-      }
+      animatePress();
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await Clipboard.setStringAsync(inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
 
-      // Generate QR code as data URL
-      if (qrRef.current) {
-        qrRef.current.toDataURL((data: string) => {
-          // Convert data URL to base64
-          const base64Data = data.replace("data:image/png;base64,", "");
-
-          // Save to media library
-          MediaLibrary.saveToLibraryAsync(`data:image/png;base64,${base64Data}`)
-            .then(() => {
-              Alert.alert("Success", "QR code saved to gallery!");
-            })
-            .catch((error) => {
-              Alert.alert("Error", "Failed to save QR code to gallery");
-            });
-        });
-      }
+      Toast.show({
+        type: "success",
+        text1: "✅ Invite Code Copied!",
+        text2: "The invite code has been copied to your clipboard",
+        position: "top",
+        visibilityTime: 2000,
+      });
     } catch (error) {
-      Alert.alert("Error", "Failed to save QR code to gallery");
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Toast.show({
+        type: "error",
+        text1: "❌ Copy Failed",
+        text2: "Failed to copy invite code to clipboard",
+        position: "top",
+        visibilityTime: 2000,
+      });
     }
   };
 
@@ -81,100 +123,101 @@ const InviteCodeQR: React.FC<InviteCodeQRProps> = ({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Ionicons name="close" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.title}>Invite Code</Text>
+          <Text style={styles.title}>Share Collection</Text>
           <View style={styles.placeholder} />
         </View>
 
         {/* Content */}
         <View style={styles.content}>
-          <View style={styles.iconContainer}>
-            <LinearGradient
-              colors={["#6674CC", "#5A67D8"]}
-              style={styles.iconGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}>
-              <Ionicons name="qr-code" size={32} color="#FFFFFF" />
-            </LinearGradient>
+          {/* Collection Info */}
+          <View style={styles.collectionInfo}>
+            <View style={styles.collectionIcon}>
+              <LinearGradient
+                colors={["#6674CC", "#5A67D8"]}
+                style={styles.iconGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}>
+                <Ionicons name="people" size={24} color="#FFFFFF" />
+              </LinearGradient>
+            </View>
+            <Text style={styles.collectionName}>{collectionName}</Text>
           </View>
 
-          <Text style={styles.mainTitle}>Share Invite Code</Text>
+          <Text style={styles.mainTitle}>Invite Friends to Join</Text>
           <Text style={styles.subtitle}>
-            Share this code with others to invite them to join "{collectionName}
-            "
+            Share this invite code with friends to let them join your collection
           </Text>
 
-          {/* QR Code */}
-          <View style={styles.qrContainer}>
-            <View style={styles.qrWrapper}>
-              <QRCode
-                value={inviteCode}
-                size={180}
-                color="#6674CC"
-                backgroundColor="#1A1D2F"
-                logoSize={40}
-                logoBackgroundColor="#1A1D2F"
-                logoBorderRadius={8}
-                quietZone={10}
-                enableLinearGradient={false}
-                ref={qrRef}
-              />
-            </View>
-            <Text style={styles.qrText}>Scan to join collection</Text>
-          </View>
-
-          {/* Invite Code Display */}
-          <View style={styles.codeContainer}>
-            <Text style={styles.codeLabel}>Invite Code</Text>
-            <View style={styles.codeDisplay}>
-              <Text style={styles.codeText}>{inviteCode}</Text>
+          {/* QR Code Section */}
+          <View style={styles.qrSection}>
+            <Text style={styles.sectionTitle}>📱 Scan QR Code</Text>
+            <View style={styles.qrContainer}>
+              <View style={styles.qrWrapper}>
+                <QRCode
+                  value={generateDeepLink()}
+                  size={200}
+                  color="#6674CC"
+                  backgroundColor="#1A1D2F"
+                  logoSize={50}
+                  logoBackgroundColor="#1A1D2F"
+                  logoBorderRadius={10}
+                  quietZone={15}
+                  enableLinearGradient={false}
+                  ref={qrRef}
+                  onError={(error: any) =>
+                    console.error("QR Code generation error:", error)
+                  }
+                />
+              </View>
+              <Text style={styles.qrText}>Point camera at QR code to join</Text>
             </View>
           </View>
 
-          <View style={styles.infoContainer}>
-            <Ionicons name="information-circle" size={16} color="#9DA3B4" />
-            <Text style={styles.infoText}>
-              Share this code with friends to invite them to your collection
-            </Text>
+          {/* Invite Code Section */}
+          <View style={styles.codeSection}>
+            <Text style={styles.sectionTitle}>🔑 Manual Entry</Text>
+            <View style={styles.codeContainer}>
+              <View style={styles.codeDisplay}>
+                <Text style={styles.codeText}>{inviteCode}</Text>
+                <TouchableOpacity
+                  style={[styles.copyButton, copied && styles.copyButtonActive]}
+                  onPress={handleCopyInviteCode}>
+                  <Ionicons
+                    name={copied ? "checkmark" : "copy-outline"}
+                    size={20}
+                    color={copied ? "#10B981" : "#6674CC"}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Share Options */}
+          <View style={styles.shareOptions}>
+            <Text style={styles.sectionTitle}>📤 Share Options</Text>
+            <View style={styles.optionsGrid}>
+              <TouchableOpacity
+                style={styles.optionButton}
+                onPress={handleShare}>
+                <LinearGradient
+                  colors={["#6674CC", "#5A67D8"]}
+                  style={styles.optionGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}>
+                  <Ionicons name="share-social" size={24} color="#FFFFFF" />
+                  <Text style={styles.optionText}>Share Link</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-            <LinearGradient
-              colors={["#6674CC", "#5A67D8"]}
-              style={styles.shareButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}>
-              <Ionicons name="share" size={20} color="#FFFFFF" />
-              <Text style={styles.shareButtonText}>Share Invite Code</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSaveToGallery}>
-            <LinearGradient
-              colors={["#10B981", "#059669"]}
-              style={styles.saveButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}>
-              <Ionicons name="download" size={20} color="#FFFFFF" />
-              <Text style={styles.saveButtonText}>Save QR Code</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </ScrollView>
     </Modal>
   );
 };
@@ -189,7 +232,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 20,
     paddingBottom: 20,
   },
   closeButton: {
@@ -210,19 +253,30 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  iconContainer: {
+  collectionInfo: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 24,
+    paddingVertical: 16,
+  },
+  collectionIcon: {
+    marginRight: 12,
   },
   iconGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
+  },
+  collectionName: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   mainTitle: {
     fontSize: 24,
@@ -236,33 +290,43 @@ const styles = StyleSheet.create({
     color: "#9DA3B4",
     textAlign: "center",
     lineHeight: 22,
-    marginBottom: 40,
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginBottom: 16,
+  },
+  qrSection: {
+    marginBottom: 32,
   },
   qrContainer: {
     alignItems: "center",
-    marginBottom: 32,
   },
   qrWrapper: {
     backgroundColor: "#1A1D2F",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 2,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 3,
     borderColor: "#6674CC",
     marginBottom: 12,
+    shadowColor: "#6674CC",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   qrText: {
     fontSize: 14,
     color: "#9DA3B4",
     textAlign: "center",
   },
-  codeContainer: {
-    marginBottom: 24,
+  codeSection: {
+    marginBottom: 32,
   },
-  codeLabel: {
-    fontSize: 14,
-    color: "#9DA3B4",
-    marginBottom: 8,
-    textAlign: "center",
+  codeContainer: {
+    alignItems: "center",
   },
   codeDisplay: {
     flexDirection: "row",
@@ -273,73 +337,97 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderWidth: 2,
     borderColor: "#6674CC",
+    marginBottom: 8,
+    minWidth: 300,
   },
   codeText: {
     flex: 1,
-    fontSize: 18,
+    fontSize: 20,
     color: "#FFFFFF",
     textAlign: "center",
     fontWeight: "600",
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
   copyButton: {
-    marginLeft: 12,
+    position: "absolute",
+    right: 10,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "rgba(102, 116, 204, 0.1)",
   },
-  infoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
+  copyButtonActive: {
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
   },
-  infoText: {
-    fontSize: 14,
+  codeHint: {
+    fontSize: 12,
     color: "#9DA3B4",
     textAlign: "center",
+  },
+  shareOptions: {
+    marginBottom: 32,
+  },
+  optionsGrid: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  optionButton: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  optionButtonDisabled: {
+    opacity: 0.6,
+  },
+
+  optionGradient: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  optionText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  infoSection: {
+    marginBottom: 20,
+  },
+  infoCard: {
+    flexDirection: "row",
+    backgroundColor: "rgba(102, 116, 204, 0.1)",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(102, 116, 204, 0.2)",
+  },
+  infoContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  infoText: {
+    fontSize: 12,
+    color: "#9DA3B4",
+    lineHeight: 16,
   },
   footer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
-    gap: 16,
   },
-  shareButton: {
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  shareButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 18,
-    gap: 8,
-  },
-  shareButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  saveButton: {
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  saveButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 18,
-    gap: 8,
-  },
-  saveButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  cancelButton: {
+  doneButton: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: "center",
   },
-  cancelButtonText: {
+  doneButtonText: {
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",

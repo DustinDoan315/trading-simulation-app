@@ -1,4 +1,4 @@
-import { supabase } from "./SupabaseService";
+import { supabase } from './SupabaseService';
 import {
   Collection,
   CollectionMember,
@@ -21,6 +21,7 @@ import {
   User,
   UserWithStats,
 } from "../types/database";
+
 
 export class UserService {
   // User Operations
@@ -440,7 +441,7 @@ export class UserService {
         total_trades: 0,
         avg_pnl: "0",
         avg_pnl_percentage: "0",
-        member_count: 0,
+        member_count: 1, // Start with 1 member (the owner)
         status: "ACTIVE",
         start_date: new Date().toISOString(),
         created_at: new Date().toISOString(),
@@ -454,6 +455,36 @@ export class UserService {
         .single();
 
       if (error) throw error;
+
+      // Automatically add the owner as a member
+      if (data) {
+        const ownerMemberData = {
+          collection_id: data.id,
+          user_id: params.owner_id,
+          role: "OWNER",
+          starting_balance: params.starting_balance ?? "100000.00",
+          current_balance: params.starting_balance ?? "100000.00",
+          total_pnl: "0",
+          total_pnl_percentage: "0",
+          total_trades: 0,
+          win_rate: "0",
+          rank: 1, // Owner is always rank 1
+          joined_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+        };
+
+        const { error: memberError } = await supabase
+          .from("collection_members")
+          .insert([ownerMemberData]);
+
+        if (memberError) {
+          console.error("Error adding owner as member:", memberError);
+          // Don't throw error here as collection was created successfully
+        } else {
+          console.log("✅ Owner automatically added as collection member");
+        }
+      }
+
       return data;
     } catch (error) {
       console.error("Error creating collection:", error);
@@ -602,6 +633,73 @@ export class UserService {
       return data;
     } catch (error) {
       console.error("Error fetching collection member:", error);
+      throw error;
+    }
+  }
+
+  static async getCollectionMembers(
+    collectionId: string
+  ): Promise<CollectionMember[]> {
+    try {
+      // First get the collection to ensure it exists and get owner info
+      const collection = await this.getCollectionById(collectionId);
+      if (!collection) {
+        throw new Error("Collection not found");
+      }
+
+      const { data, error } = await supabase
+        .from("collection_members")
+        .select(`
+          *,
+          users!collection_members_user_id_fkey(
+            username,
+            display_name,
+            avatar_emoji
+          )
+        `)
+        .eq("collection_id", collectionId)
+        .order("rank", { ascending: true })
+        .order("total_pnl", { ascending: false });
+
+      if (error) throw error;
+
+      let members = data || [];
+
+      // If no members found, ensure the owner is included
+      if (members.length === 0 && collection.owner_id) {
+        console.log("⚠️ No members found, ensuring owner is included");
+        
+        // Get owner user details
+        const ownerUser = await this.getUserById(collection.owner_id);
+        if (ownerUser) {
+          // Create a virtual member entry for the owner
+          const ownerMember = {
+            id: `owner-${collection.owner_id}`,
+            collection_id: collectionId,
+            user_id: collection.owner_id,
+            role: "OWNER" as const,
+            starting_balance: collection.starting_balance || "100000.00",
+            current_balance: collection.starting_balance || "100000.00",
+            total_pnl: "0",
+            total_pnl_percentage: "0",
+            total_trades: 0,
+            win_rate: "0",
+            rank: 1,
+            joined_at: collection.created_at,
+            created_at: collection.created_at,
+            users: {
+              username: ownerUser.username,
+              display_name: ownerUser.display_name,
+              avatar_emoji: ownerUser.avatar_emoji,
+            },
+          };
+          members = [ownerMember];
+        }
+      }
+
+      return members;
+    } catch (error) {
+      console.error("Error fetching collection members:", error);
       throw error;
     }
   }

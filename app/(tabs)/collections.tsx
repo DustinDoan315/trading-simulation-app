@@ -1,11 +1,11 @@
-import CollectionItem from "@/components/collections/CollectionItem";
-import EmptyState from "@/components/collections/EmptyState";
-import React, { useCallback, useEffect, useState } from "react";
-import { CollectionData, useCollectionsData } from "@/hooks/useCollectionsData";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { router, useFocusEffect } from "expo-router";
-import { useUser } from "@/context/UserContext";
+import CollectionItem from '@/components/collections/CollectionItem';
+import EmptyState from '@/components/collections/EmptyState';
+import React, { useCallback, useEffect, useState } from 'react';
+import { CollectionData, useCollectionsData } from '@/hooks/useCollectionsData';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useFocusEffect } from 'expo-router';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const CollectionsScreen = () => {
   const [activeTab, setActiveTab] = useState<"my" | "joined">("my");
@@ -54,7 +55,14 @@ const CollectionsScreen = () => {
   // Note: Code scanning is now handled by the invite-code-scanner screen
 
   const handleCollectionPress = useCallback((collection: CollectionData) => {
-    router.push("/(modals)/collections");
+    router.push({
+      pathname: "/(modals)/collection-detail" as any,
+      params: {
+        id: collection.id,
+        name: collection.name,
+        isOwner: collection.isOwner.toString(),
+      },
+    });
   }, []);
 
   const handleCollectionLongPress = useCallback(
@@ -64,7 +72,15 @@ const CollectionsScreen = () => {
           { text: "Cancel", style: "cancel" },
           {
             text: "Edit",
-            onPress: () => router.push("/(modals)/collections"),
+            onPress: () =>
+              router.push({
+                pathname: "/(modals)/collection-detail" as any,
+                params: {
+                  id: collection.id,
+                  name: collection.name,
+                  isOwner: collection.isOwner.toString(),
+                },
+              }),
           },
           {
             text: "Delete",

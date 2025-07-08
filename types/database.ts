@@ -254,6 +254,7 @@ export interface CollectionWithDetails extends Collection {
     display_name?: string;
   };
   member_list?: CollectionMember[];
+  collection_members?: CollectionMember[];
 }
 
 export interface UserWithStats extends User {

@@ -1,3 +1,4 @@
+import * as Linking from 'expo-linking';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RealTimeDataService from '@/services/RealTimeDataService';
@@ -46,6 +47,9 @@ export default function RootLayout() {
         // Check if user exists and initialize if needed
         await initializeUser();
 
+        // Set up deep link handling
+        setupDeepLinking();
+
         return () => {
           scheduler.clear();
           // Stop real-time data service when app is unmounted
@@ -55,6 +59,42 @@ export default function RootLayout() {
     };
     initializeApp();
   }, [loaded]);
+
+  const setupDeepLinking = () => {
+    // Handle deep links when app is already running
+    const subscription = Linking.addEventListener("url", (event) => {
+      handleDeepLink(event.url);
+    });
+
+    // Handle deep links when app is opened from a link
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink(url);
+      }
+    });
+
+    return () => subscription?.remove();
+  };
+
+  const handleDeepLink = (url: string) => {
+    try {
+      const parsed = Linking.parse(url);
+
+      if (parsed.hostname === "join-collection") {
+        const { code, name } = parsed.queryParams || {};
+        if (code) {
+          // Navigate to join collection modal with parameters
+          const router = require("expo-router").router;
+          router.push({
+            pathname: "/(modals)/join-collection",
+            params: { code, name },
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error handling deep link:", error);
+    }
+  };
 
   const initializeUser = async () => {
     try {

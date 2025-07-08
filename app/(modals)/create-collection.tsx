@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import { useCollectionsData } from "@/hooks/useCollectionsData";
-import { useUser } from "@/context/UserContext";
+import InviteCodeQR from '@/components/collections/InviteCodeQR';
+import React, { useCallback, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useCollectionsData } from '@/hooks/useCollectionsData';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -17,10 +18,16 @@ import {
   View,
 } from "react-native";
 
+
 const CreateCollectionScreen = () => {
   const { user } = useUser();
   const { createNewCollection } = useCollectionsData();
   const [loading, setLoading] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [createdCollection, setCreatedCollection] = useState<{
+    name: string;
+    inviteCode: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -56,7 +63,7 @@ const CreateCollectionScreen = () => {
     try {
       const inviteCode = generateInviteCode();
 
-      await createNewCollection({
+      const collection = await createNewCollection({
         name: formData.name.trim(),
         description: formData.description.trim(),
         invite_code: inviteCode,
@@ -68,9 +75,14 @@ const CreateCollectionScreen = () => {
         rules: {},
       });
 
-      Alert.alert("Success", "Collection created successfully!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      // Store the created collection info for QR modal
+      setCreatedCollection({
+        name: formData.name.trim(),
+        inviteCode: inviteCode,
+      });
+
+      // Show QR code modal instead of just alert
+      setShowQRModal(true);
     } catch (error) {
       console.error("Error creating collection:", error);
       Alert.alert("Error", "Failed to create collection. Please try again.");
@@ -78,6 +90,12 @@ const CreateCollectionScreen = () => {
       setLoading(false);
     }
   }, [formData, user?.id, createNewCollection]);
+
+  const handleQRModalClose = useCallback(() => {
+    setShowQRModal(false);
+    setCreatedCollection(null);
+    router.back();
+  }, []);
 
   const updateFormData = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -246,6 +264,15 @@ const CreateCollectionScreen = () => {
           </LinearGradient>
         </TouchableOpacity>
       </View>
+
+      {showQRModal && createdCollection && (
+        <InviteCodeQR
+          visible={showQRModal}
+          collectionName={createdCollection.name}
+          inviteCode={createdCollection.inviteCode}
+          onClose={handleQRModalClose}
+        />
+      )}
     </SafeAreaView>
   );
 };
