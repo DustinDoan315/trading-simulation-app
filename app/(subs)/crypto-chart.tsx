@@ -2,26 +2,26 @@ import Chart from '@/components/crypto/Chart';
 import colors from '@/styles/colors';
 import OrderBook from '@/components/trading/OrderBook';
 import OrderEntry from '@/components/trading/OrderEntry';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import SymbolHeader from '@/components/crypto/SymbolHeader';
 import TimeframeSelector from '@/components/crypto/TimeframeSelector';
+import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
 import useCryptoAPI from '@/hooks/useCryptoAPI';
 import useHistoricalData from '@/hooks/useHistoricalData';
 import useOrderBook from '@/hooks/useOrderBook';
 import UUIDService from '@/services/UUIDService';
 import { ChartType, Order, TimeframeOption } from '../../types/crypto';
+import { handleOrderSubmission } from '@/utils/helper';
+import { OrderDispatchContext, OrderValidationContext } from '@/utils/helper';
 import { RootState } from '@/store';
+import { updateCollectionHolding } from '@/features/dualBalanceSlice';
 import { useDispatch, useSelector } from 'react-redux';
+import { useDualBalance } from '@/hooks/useDualBalance';
 import { useLanguage } from '@/context/LanguageContext';
 import { useLocalSearchParams } from 'expo-router';
 import { useNotification } from '@/components/ui/Notification';
 import { UserService } from '@/services/UserService';
 import { WebView } from 'react-native-webview';
-import {
-  OrderDispatchContext,
-  OrderValidationContext,
-  handleOrderSubmission,
-} from "@/utils/helper";
 import {
   SafeAreaView,
   ScrollView,
@@ -38,7 +38,8 @@ import {
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
-  const { id, symbol, name, image }: any = useLocalSearchParams();
+  const { id, symbol, name, image, collectionId, collectionName }: any =
+    useLocalSearchParams();
   const { balance } = useSelector((state: RootState) => state.balance);
   const dispatch = useDispatch();
   const webViewRef = useRef<WebView>(null);
@@ -48,10 +49,32 @@ const CryptoChartScreen = () => {
   const [chartType, setChartType] = useState<ChartType>("candlestick");
   const [showIndicators, setShowIndicators] = useState(false);
 
+  // Dual balance hook
+  const {
+    activeContext,
+    currentBalance,
+    currentHoldings,
+    currentUsdtBalance,
+    executeTradeInContext,
+    switchContext,
+    loadCollection,
+  } = useDualBalance();
+
   const { askOrders, bidOrders } = useOrderBook(id);
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
   const { currentPrice, priceChange } = useCryptoAPI(timeframe, id);
+
+  // Set collection context if collectionId is provided
+  useEffect(() => {
+    if (collectionId) {
+      switchContext({ type: "collection", collectionId });
+      loadCollection(collectionId);
+    } else {
+      switchContext({ type: "individual" });
+    }
+  }, [collectionId, switchContext, loadCollection]);
+
   const onMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
@@ -112,11 +135,82 @@ const CryptoChartScreen = () => {
       );
     }
   };
+
+  // Enhanced order submission with dual balance support
+  const submitOrder = async (order: Order) => {
+    try {
+      const validationContext: OrderValidationContext = {
+        getHoldings: () => currentHoldings, // Use current context holdings
+      };
+
+      const dispatchContext: OrderDispatchContext = {
+        addTradeHistory: (order) => dispatch(addTradeHistory(order)),
+        updateHolding: (payload) => {
+          // Use dual balance update instead of regular balance
+          if (activeContext.type === "individual") {
+            dispatch(updateHolding(payload));
+          } else if (activeContext.collectionId) {
+            dispatch(
+              updateCollectionHolding({
+                collectionId: activeContext.collectionId,
+                holding: payload,
+              })
+            );
+          }
+        },
+        updateTrade: (payload) => dispatch(updateTrade(payload)),
+        syncTransaction: async (order) => {
+          try {
+            const uuid = await UUIDService.getOrCreateUser();
+            await UserService.createTransaction({
+              user_id: uuid,
+              type: order.type.toUpperCase() as "BUY" | "SELL",
+              symbol: order.symbol,
+              quantity: (order.amount || 0).toString(),
+              price: (order.price || 0).toString(),
+              total_value: (order.total || 0).toString(),
+              fee: (order.fees || 0).toString(),
+              order_type: order.orderType.toUpperCase() as "MARKET" | "LIMIT",
+              status: order.status.toUpperCase() as
+                | "PENDING"
+                | "COMPLETED"
+                | "FAILED",
+              collection_id:
+                activeContext.type === "collection"
+                  ? activeContext.collectionId
+                  : undefined,
+              timestamp: new Date(order.timestamp).toISOString(),
+            });
+            console.log("✅ Transaction synced to cloud successfully");
+          } catch (error) {
+            console.error("❌ Failed to sync transaction to cloud:", error);
+          }
+        },
+      };
+
+      // Execute trade using dual balance system
+      await executeTradeInContext(order);
+
+      // Handle order submission with dual balance context
+      await handleOrderSubmission(
+        order,
+        image || "",
+        validationContext,
+        dispatchContext
+      );
+    } catch (error) {
+      console.error("Failed to submit order:", error);
+      throw error;
+    }
+  };
+
   console.log("====================================");
   console.log("Current Price:", currentPrice);
   console.log("Price Change:", priceChange);
   console.log("Symbol:", id);
-  console.log("balance:", balance);
+  console.log("Active Context:", activeContext);
+  console.log("Current Balance:", currentBalance);
+  console.log("Current Holdings:", currentHoldings);
   console.log("====================================");
 
   return (
@@ -126,6 +220,12 @@ const CryptoChartScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}>
+        {/* Trading Context Indicator */}
+        <TradingContextIndicator
+          collectionName={collectionName}
+          showSwitchButton={true}
+        />
+
         {/* Symbol Header */}
         <SymbolHeader
           symbol={symbol}
@@ -164,55 +264,8 @@ const CryptoChartScreen = () => {
             name={name}
             orderType={orderType}
             currentPrice={currentPrice ? Number(currentPrice) : undefined}
-            onSubmitOrder={async (order) => {
-              const validationContext: OrderValidationContext = {
-                getHoldings: () => balance.holdings,
-              };
-
-              const dispatchContext: OrderDispatchContext = {
-                addTradeHistory: (order) => dispatch(addTradeHistory(order)),
-                updateHolding: (payload) => dispatch(updateHolding(payload)),
-                updateTrade: (payload) => dispatch(updateTrade(payload)),
-                syncTransaction: async (order) => {
-                  try {
-                    const uuid = await UUIDService.getOrCreateUser();
-                    await UserService.createTransaction({
-                      user_id: uuid,
-                      type: order.type.toUpperCase() as "BUY" | "SELL",
-                      symbol: order.symbol,
-                      quantity: (order.amount || 0).toString(),
-                      price: (order.price || 0).toString(),
-                      total_value: (order.total || 0).toString(),
-                      fee: (order.fees || 0).toString(),
-                      order_type: order.orderType.toUpperCase() as
-                        | "MARKET"
-                        | "LIMIT",
-                      status: order.status.toUpperCase() as
-                        | "PENDING"
-                        | "COMPLETED"
-                        | "FAILED",
-                      timestamp: new Date(order.timestamp).toISOString(),
-                    });
-                    console.log("✅ Transaction synced to cloud successfully");
-                  } catch (error) {
-                    console.error(
-                      "❌ Failed to sync transaction to cloud:",
-                      error
-                    );
-                    // Don't throw - local order succeeded, cloud sync can be retried later
-                  }
-                },
-              };
-
-              return handleOrderSubmission(
-                order,
-                image,
-                validationContext,
-                dispatchContext
-              );
-            }}
-            maxAmount={currentPrice ? 100000 / Number(currentPrice) : 0}
-            availableBalance={balance.holdings.USDT?.amount || 0}
+            availableBalance={currentUsdtBalance} // Use current context balance
+            onSubmitOrder={submitOrder}
           />
 
           <OrderBook

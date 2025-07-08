@@ -37,6 +37,97 @@ export interface Portfolio {
   updated_at: string; // TIMESTAMP
 }
 
+// Enhanced Collection Member with separate balance tracking
+export interface CollectionMember {
+  id: string; // UUID
+  collection_id: string; // UUID
+  user_id: string; // UUID
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  starting_balance: string; // DECIMAL(30,10) - Starting balance for this collection
+  current_balance: string; // DECIMAL(30,10) - Current USDT balance in collection
+  total_portfolio_value: string; // DECIMAL(30,10) - Total portfolio value in collection
+  total_pnl: string; // DECIMAL(30,10) - Total PnL in collection
+  total_pnl_percentage: string; // DECIMAL(10,4) - PnL percentage in collection
+  total_trades: number; // Number of trades in collection
+  win_rate: string; // DECIMAL(5,2) - Win rate in collection
+  rank?: number; // Rank within collection
+  best_trade_pnl: string; // DECIMAL(30,10) - Best single trade PnL
+  worst_trade_pnl: string; // DECIMAL(30,10) - Worst single trade PnL
+  joined_at: string; // TIMESTAMP
+  last_trade_at?: string; // TIMESTAMP
+  created_at: string; // TIMESTAMP
+}
+
+// New: Collection Portfolio for separate holdings tracking
+export interface CollectionPortfolio {
+  id: string; // UUID
+  collection_id: string; // UUID
+  user_id: string; // UUID
+  symbol: string;
+  quantity: string; // DECIMAL(20,8)
+  avg_cost: string; // DECIMAL(20,8)
+  current_price: string; // DECIMAL(20,8)
+  total_value: string; // DECIMAL(20,8)
+  profit_loss: string; // DECIMAL(20,8)
+  profit_loss_percent: string; // DECIMAL(10,4)
+  image_url?: string;
+  last_updated: string; // TIMESTAMP
+  created_at: string; // TIMESTAMP
+  updated_at: string; // TIMESTAMP
+}
+
+// Trading Context Types
+export type TradingContextType = 'individual' | 'collection';
+
+export interface TradingContext {
+  type: TradingContextType;
+  collectionId?: string;
+}
+
+// Enhanced Balance Types
+export interface IndividualBalance {
+  usdtBalance: number;
+  totalPortfolioValue: number;
+  holdings: Record<string, any>;
+  totalPnL: number;
+  totalPnLPercentage: number;
+  initialBalance: number;
+}
+
+export interface CollectionBalance {
+  usdtBalance: number;
+  totalPortfolioValue: number;
+  holdings: Record<string, any>;
+  totalPnL: number;
+  totalPnLPercentage: number;
+  startingBalance: number;
+  collectionId: string;
+}
+
+export interface DualBalanceState {
+  individual: IndividualBalance;
+  collections: Record<string, CollectionBalance>;
+  activeContext: TradingContext;
+}
+
+// PnL Calculation Results
+export interface PnLResult {
+  totalPnL: number;
+  totalPnLPercentage: number;
+  context: TradingContextType;
+  collectionId?: string;
+  startingBalance: number;
+  currentValue: number;
+}
+
+export interface CombinedPnLResult {
+  individual: PnLResult;
+  collections: PnLResult[];
+  totalCombinedPnL: number;
+  totalCombinedPnLPercentage: number;
+}
+
+// Enhanced Transaction with Context
 export interface Transaction {
   id: string; // UUID
   user_id: string; // UUID
@@ -48,7 +139,10 @@ export interface Transaction {
   fee: string; // DECIMAL(20,8)
   order_type: "MARKET" | "LIMIT";
   status: "PENDING" | "COMPLETED" | "CANCELLED" | "FAILED";
-  collection_id?: string; // UUID
+  collection_id?: string; // UUID - for collection trading
+  context_type?: TradingContextType; // 'individual' or 'collection'
+  usdt_balance_before?: string; // DECIMAL(30,10)
+  usdt_balance_after?: string; // DECIMAL(30,10)
   timestamp: string; // TIMESTAMP
   created_at: string; // TIMESTAMP
 }
@@ -78,18 +172,6 @@ export interface Collection {
   end_date?: string; // TIMESTAMP
   created_at: string; // TIMESTAMP
   updated_at: string; // TIMESTAMP
-}
-
-export interface CollectionMember {
-  id: string; // UUID
-  collection_id: string; // UUID
-  user_id: string; // UUID
-  role: "OWNER" | "ADMIN" | "MEMBER";
-  balance: string; // DECIMAL(20,8)
-  total_pnl: string; // DECIMAL(20,8)
-  rank?: number;
-  joined_at: string; // TIMESTAMP
-  created_at: string; // TIMESTAMP
 }
 
 export interface Favorite {

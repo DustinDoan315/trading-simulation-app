@@ -1,16 +1,18 @@
 import InviteCodeQR from '@/components/collections/InviteCodeQR';
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState
-  } from 'react';
+    useCallback,
+    useEffect,
+    useMemo,
+    useState
+    } from 'react';
+import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RootState } from '@/store';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCollectionDetail } from '@/hooks/useCollectionDetail';
 import { useCollectionsData } from '@/hooks/useCollectionsData';
+import { useDualBalance } from '@/hooks/useDualBalance';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/context/UserContext';
 import {
@@ -30,6 +32,8 @@ import {
 const CollectionDetailScreen = () => {
   const { user } = useUser();
   const { leaveCollection } = useCollectionsData();
+  const { switchContext, loadCollection, currentBalance, currentPnL } =
+    useDualBalance();
   const [loading, setLoading] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
 
@@ -99,6 +103,14 @@ const CollectionDetailScreen = () => {
   const collection = cloudCollection || fallbackCollection;
   const members = cloudMembers || [];
 
+  // Set collection trading context when component mounts
+  useEffect(() => {
+    if (collectionId && user?.id) {
+      switchContext({ type: "collection", collectionId });
+      loadCollection(collectionId);
+    }
+  }, [collectionId, user?.id, switchContext, loadCollection]);
+
   const handleShareInvite = useCallback(() => {
     setShowQRModal(true);
   }, []);
@@ -159,6 +171,17 @@ const CollectionDetailScreen = () => {
       ]
     );
   }, [collection.name]);
+
+  const handleStartTrading = useCallback(() => {
+    // Navigate to trading screen with collection context
+    router.push({
+      pathname: "/(subs)/crypto-chart" as any,
+      params: {
+        collectionId: collectionId,
+        collectionName: collection.name,
+      },
+    });
+  }, [collectionId, collection.name]);
 
   const formatCurrency = (value: string | number) => {
     return new Intl.NumberFormat("en-US", {
@@ -247,6 +270,12 @@ const CollectionDetailScreen = () => {
           />
         }>
         <View style={styles.content}>
+          {/* Trading Context Indicator */}
+          <TradingContextIndicator
+            collectionName={collection.name}
+            showSwitchButton={false}
+          />
+
           {/* Loading State */}
           {cloudLoading && (
             <View style={styles.loadingContainer}>
@@ -387,13 +416,7 @@ const CollectionDetailScreen = () => {
 
                   <TouchableOpacity
                     style={styles.actionButton}
-                    onPress={() => {
-                      // TODO: Navigate to trading screen
-                      Alert.alert(
-                        "Trading",
-                        "Trading functionality coming soon!"
-                      );
-                    }}>
+                    onPress={handleStartTrading}>
                     <LinearGradient
                       colors={["#10B981", "#059669"]}
                       style={styles.actionButtonGradient}
@@ -418,6 +441,57 @@ const CollectionDetailScreen = () => {
                   </Text>
                 </View>
               </View>
+
+              {/* Your Collection Performance */}
+              <LinearGradient
+                colors={["#1A1D2F", "#2A2D3F"]}
+                style={styles.performanceCard}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}>
+                <View style={styles.performanceHeader}>
+                  <Ionicons name="trophy" size={20} color="#FFD700" />
+                  <Text style={styles.sectionTitle}>Your Performance</Text>
+                </View>
+
+                <View style={styles.performanceStats}>
+                  <View style={styles.performanceStat}>
+                    <Text style={styles.performanceLabel}>Current Balance</Text>
+                    <Text style={styles.performanceValue}>
+                      {formatCurrency(currentBalance.usdtBalance)}
+                    </Text>
+                  </View>
+                  <View style={styles.performanceStat}>
+                    <Text style={styles.performanceLabel}>Total P&L</Text>
+                    <Text
+                      style={[
+                        styles.performanceValue,
+                        {
+                          color:
+                            currentPnL.totalPnL >= 0 ? "#10B981" : "#EF4444",
+                        },
+                      ]}>
+                      {currentPnL.totalPnL >= 0 ? "+" : ""}
+                      {formatCurrency(currentPnL.totalPnL)}
+                    </Text>
+                  </View>
+                  <View style={styles.performanceStat}>
+                    <Text style={styles.performanceLabel}>P&L %</Text>
+                    <Text
+                      style={[
+                        styles.performanceValue,
+                        {
+                          color:
+                            currentPnL.totalPnLPercentage >= 0
+                              ? "#10B981"
+                              : "#EF4444",
+                        },
+                      ]}>
+                      {currentPnL.totalPnLPercentage >= 0 ? "+" : ""}
+                      {currentPnL.totalPnLPercentage.toFixed(2)}%
+                    </Text>
+                  </View>
+                </View>
+              </LinearGradient>
 
               {/* Members List */}
               <LinearGradient
@@ -840,6 +914,37 @@ const styles = StyleSheet.create({
     color: "#9DA3B4",
     flex: 1,
     lineHeight: 16,
+  },
+  performanceCard: {
+    backgroundColor: "#1A1D2F",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#2A2D3F",
+  },
+  performanceHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  performanceLabel: {
+    fontSize: 12,
+    color: "#9DA3B4",
+    marginBottom: 4,
+  },
+  performanceValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  performanceStats: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 16,
+  },
+  performanceStat: {
+    alignItems: "center",
   },
   membersCard: {
     backgroundColor: "#1A1D2F",

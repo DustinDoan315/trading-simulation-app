@@ -1,14 +1,15 @@
-import balanceReducer from "@/features/balanceSlice";
-import cryptoPricesReducer from "@/features/cryptoPricesSlice";
-import favoritesReducer from "@/features/favoritesSlice";
-import languageReducer from "@/features/languageSlice";
-import searchHistoryReducer from "@/features/searchHistorySlice";
-import storage from "@react-native-async-storage/async-storage";
-import userReducer from "@/features/userSlice";
-import { combineReducers } from "redux";
-import { configureStore } from "@reduxjs/toolkit";
-import { persistReducer, persistStore } from "redux-persist";
-import { useDispatch, useSelector } from "react-redux";
+import balanceReducer from '@/features/balanceSlice';
+import cryptoPricesReducer from '@/features/cryptoPricesSlice';
+import dualBalanceReducer from '@/features/dualBalanceSlice';
+import favoritesReducer from '@/features/favoritesSlice';
+import languageReducer from '@/features/languageSlice';
+import searchHistoryReducer from '@/features/searchHistorySlice';
+import storage from '@react-native-async-storage/async-storage';
+import userReducer from '@/features/userSlice';
+import { combineReducers } from 'redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { persistReducer, persistStore } from 'redux-persist';
+import { useDispatch, useSelector } from 'react-redux';
 
 import type { TypedUseSelectorHook } from "react-redux";
 
@@ -19,6 +20,7 @@ const persistConfig = {
     "favorites",
     "searchHistory",
     "balance",
+    "dualBalance",
     "cryptoPrices",
     "language",
     "user",
@@ -29,6 +31,7 @@ const rootReducer = combineReducers({
   cryptoPrices: cryptoPricesReducer,
   favorites: favoritesReducer,
   balance: balanceReducer,
+  dualBalance: dualBalanceReducer,
   searchHistory: searchHistoryReducer,
   language: languageReducer,
   user: userReducer,
