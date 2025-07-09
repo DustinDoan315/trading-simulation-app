@@ -1,16 +1,16 @@
-import AssetItem from '@/components/portfolio/AssetItem';
-import BalanceCard from '@/components/portfolio/BalanceCard';
-import PortfolioHeader from '@/components/portfolio/PortfolioHeader';
-import React, { useCallback, useMemo } from 'react';
-import { Asset } from '@/types/crypto';
-import { navigateToCryptoChart } from '@/utils/navigation';
-import { OthersButton } from '@/components/portfolio/OthersButton';
-import { styles } from '@/components/portfolio/styles';
-import { useLanguage } from '@/context/LanguageContext';
-import { usePortfolioData } from '@/hooks/usePortfolioData';
-import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUser } from '@/context/UserContext';
+import AssetItem from "@/components/portfolio/AssetItem";
+import BalanceCard from "@/components/portfolio/BalanceCard";
+import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
+import React, { useCallback, useMemo } from "react";
+import { Asset } from "@/types/crypto";
+import { navigateToCryptoChart } from "@/utils/navigation";
+import { OthersButton } from "@/components/portfolio/OthersButton";
+import { styles } from "@/components/portfolio/styles";
+import { useLanguage } from "@/context/LanguageContext";
+import { usePortfolioData } from "@/hooks/usePortfolioData";
+import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useUser } from "@/context/UserContext";
 import {
   ActivityIndicator,
   FlatList,
@@ -19,7 +19,6 @@ import {
   Text,
   View,
 } from "react-native";
-
 
 const PortfolioScreen = () => {
   const insets = useSafeAreaInsets();
@@ -121,12 +120,7 @@ const PortfolioScreen = () => {
                 <Text style={styles.statLabel}>Total Trades</Text>
                 <Text style={styles.statValue}>{user.total_trades}</Text>
               </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Win Rate</Text>
-                <Text style={styles.statValue}>
-                  {parseFloat(user.win_rate).toFixed(1)}%
-                </Text>
-              </View>
+
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>Global Rank</Text>
                 <Text style={styles.statValue}>
