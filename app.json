@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "CryptoSim Pro",
-    "slug": "cryptosim-pro",
+    "name": "trading-simulation-app",
+    "slug": "trading-simulation-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/rocket.png",
@@ -9,7 +9,16 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "description": "Master cryptocurrency trading with our realistic simulation platform. Practice trading strategies, compete with friends, and learn without financial risk.",
-    "keywords": ["crypto", "trading", "simulation", "education", "investment", "portfolio", "bitcoin", "ethereum"],
+    "keywords": [
+      "crypto",
+      "trading",
+      "simulation",
+      "education",
+      "investment",
+      "portfolio",
+      "bitcoin",
+      "ethereum"
+    ],
     "privacy": "public",
     "ios": {
       "supportsTablet": true,

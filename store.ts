@@ -1,16 +1,29 @@
-import balanceReducer from "@/features/balanceSlice";
-import cryptoPricesReducer from "@/features/cryptoPricesSlice";
-import favoritesReducer from "@/features/favoritesSlice";
-import languageReducer from "@/features/languageSlice";
-import searchHistoryReducer from "@/features/searchHistorySlice";
-import storage from "@react-native-async-storage/async-storage";
-import userReducer from "@/features/userSlice";
-import { combineReducers } from "redux";
-import { configureStore } from "@reduxjs/toolkit";
-import { persistReducer, persistStore } from "redux-persist";
-import { useDispatch, useSelector } from "react-redux";
+import balanceReducer from '@/features/balanceSlice';
+import cryptoPricesReducer from '@/features/cryptoPricesSlice';
+import favoritesReducer from '@/features/favoritesSlice';
+import languageReducer from '@/features/languageSlice';
+import searchHistoryReducer from '@/features/searchHistorySlice';
+import storage from '@react-native-async-storage/async-storage';
+import userReducer from '@/features/userSlice';
+import { combineReducers } from 'redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { persistReducer, persistStore } from 'redux-persist';
+import { useDispatch, useSelector } from 'react-redux';
 
 import type { TypedUseSelectorHook } from "react-redux";
+
+// Migration function to handle old state structure
+const migrateState = (inboundState: any) => {
+  // Remove the "dualBalance" key if it exists
+  if (inboundState && typeof inboundState === 'object') {
+    const { dualBalance, ...cleanState } = inboundState;
+    if (dualBalance !== undefined) {
+      console.log('Migrated: Removed old "dualBalance" key from persisted state');
+    }
+    return cleanState;
+  }
+  return inboundState;
+};
 
 const persistConfig = {
   key: "root",
@@ -23,6 +36,7 @@ const persistConfig = {
     "language",
     "user",
   ],
+  migrate: migrateState,
 };
 
 const rootReducer = combineReducers({
