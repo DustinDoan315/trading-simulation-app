@@ -1,13 +1,14 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import colors from '@/styles/colors';
-import React, { useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { updateUser } from '@/features/userSlice';
-import { useAppDispatch } from '@/store';
-import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
-import { UserService } from '@/services/UserService';
-import { useUser } from '@/context/UserContext';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import colors from "@/styles/colors";
+import React, { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { updateUser } from "@/features/userSlice";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
+import { UserService } from "@/services/UserService";
+import { useTransactionCount } from "@/hooks/useTransactionCount";
+import { useUser } from "@/context/UserContext";
 import {
   ActivityIndicator,
   Alert,
@@ -22,7 +23,6 @@ import {
   View,
 } from "react-native";
 
-
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
   const { user, userStats, loading, error, refreshUser } = useUser();
@@ -35,9 +35,14 @@ const ProfileScreen = () => {
     formattedTotalBalance,
     formattedTotalPnL,
     formattedTotalPnLPercentage,
+    userRank,
     isLoading: realTimeLoading,
     refresh: refreshRealTimeData,
   } = useRealTimeBalance();
+
+  // Get actual transaction count from database
+  const { transactionCount, loading: transactionCountLoading } =
+    useTransactionCount(user?.id);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -98,13 +103,6 @@ const ProfileScreen = () => {
     setEditModalVisible(false);
   };
 
-  const handleRefresh = async () => {
-    if (user) {
-      await refreshUser(user.id);
-    }
-    await refreshRealTimeData();
-  };
-
   const SettingItem = ({
     icon,
     title,
@@ -150,7 +148,7 @@ const ProfileScreen = () => {
     </View>
   );
 
-  if (loading || realTimeLoading) {
+  if (loading || realTimeLoading || transactionCountLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -209,33 +207,6 @@ const ProfileScreen = () => {
           <Text style={styles.joinDate}>
             Member since {new Date(user.join_date).toLocaleDateString()}
           </Text>
-
-          <View style={styles.profileActions}>
-            <TouchableOpacity
-              style={styles.editProfileButton}
-              onPress={handleEditProfile}>
-              <Ionicons name="create-outline" size={16} color="#6674CC" />
-              <Text style={styles.editProfileText}>Edit Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.refreshButton}
-              onPress={handleRefresh}
-              disabled={realTimeLoading}>
-              <Ionicons
-                name="refresh"
-                size={16}
-                color={realTimeLoading ? "#9DA3B4" : "#6674CC"}
-              />
-              <Text
-                style={[
-                  styles.refreshButtonText,
-                  { color: realTimeLoading ? "#9DA3B4" : "#6674CC" },
-                ]}>
-                {realTimeLoading ? "Updating..." : "Refresh"}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Enhanced Stats Grid */}
@@ -244,18 +215,12 @@ const ProfileScreen = () => {
           <View style={styles.statsGrid}>
             <StatsCard
               title="Total Trades"
-              value={user.total_trades}
+              value={transactionCount}
               subtitle="trades"
               color="#6674CC"
               icon="trending-up"
             />
-            <StatsCard
-              title="Win Rate"
-              value={`${parseFloat(user.win_rate).toFixed(1)}%`}
-              subtitle="success rate"
-              color="#10BA68"
-              icon="trophy"
-            />
+
             <StatsCard
               title="Total P&L"
               value={formattedTotalPnL}
@@ -265,7 +230,7 @@ const ProfileScreen = () => {
             />
             <StatsCard
               title="Global Rank"
-              value={user.global_rank ? `#${user.global_rank}` : "N/A"}
+              value={userRank ? `#${userRank}` : "N/A"}
               subtitle="position"
               color="#FF9500"
               icon="star"
@@ -456,27 +421,7 @@ const styles = StyleSheet.create({
     color: "#6674CC",
     marginLeft: 6,
   },
-  profileActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginTop: 16,
-  },
-  refreshButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: "#1A1D2F",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#6674CC",
-  },
-  refreshButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginLeft: 6,
-  },
+
   statsContainer: {
     paddingHorizontal: 20,
     marginBottom: 24,

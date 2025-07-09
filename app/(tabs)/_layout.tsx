@@ -57,7 +57,6 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
     if (
       route.name === "index" ||
       route.name === "portfolio" ||
-      route.name === "collections" ||
       route.name === "leaderboard" ||
       route.name === "profile"
     ) {
@@ -66,13 +65,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   });
 
   orderedRoutes.sort((a, b) => {
-    const order: RouteName[] = [
-      "index",
-      "portfolio",
-      "collections",
-      "leaderboard",
-      "profile",
-    ];
+    const order: RouteName[] = ["index", "portfolio", "leaderboard", "profile"];
     return (
       order.indexOf(a.name as RouteName) - order.indexOf(b.name as RouteName)
     );
@@ -141,13 +134,6 @@ export default function TabLayout() {
         name="portfolio"
         options={{
           title: "Portfolio",
-        }}
-      />
-
-      <Tabs.Screen
-        name="collections"
-        options={{
-          title: "Collections",
         }}
       />
 

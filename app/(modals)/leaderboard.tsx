@@ -20,25 +20,8 @@ const LeaderboardModal = () => {
   const [activeTab, setActiveTab] = useState<
     "global" | "friends" | "collections"
   >("global");
-  const [timePeriod, setTimePeriod] = useState<
-    "weekly" | "monthly" | "allTime"
-  >("weekly");
 
   const { showNotification } = useNotification();
-
-  // Convert time period to API format
-  const getApiTimePeriod = (period: string) => {
-    switch (period) {
-      case "weekly":
-        return "WEEKLY";
-      case "monthly":
-        return "MONTHLY";
-      case "allTime":
-        return "ALL_TIME";
-      default:
-        return "WEEKLY";
-    }
-  };
 
   // Initialize leaderboard data with real-time updates
   const {
@@ -49,17 +32,17 @@ const LeaderboardModal = () => {
     error,
     lastUpdated,
   } = useLeaderboardData({
-    period: getApiTimePeriod(timePeriod),
+    period: "ALL_TIME",
     limit: 50,
   });
 
-  // Update filters when time period changes
+  // Update filters when needed
   useEffect(() => {
     updateFilters({
-      period: getApiTimePeriod(timePeriod),
+      period: "ALL_TIME",
       limit: 50,
     });
-  }, [timePeriod, updateFilters]);
+  }, [updateFilters]);
 
   // Show error notification if there's an error
   useEffect(() => {
@@ -81,7 +64,6 @@ const LeaderboardModal = () => {
           name: item.name || "Unknown Collection",
           members: item.member_count || 0,
           totalValue: parseFloat(item.total_value || "0"),
-          avgPnl: parseFloat(item.avg_pnl_percentage || "0"),
           isMyCollection: item.is_my_collection || false,
         };
       } else {
@@ -158,20 +140,12 @@ const LeaderboardModal = () => {
 
         <View style={styles.statsContainer}>
           {type === "collections" ? (
-            <>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  ${item.totalValue.toLocaleString()}
-                </Text>
-                <Text style={styles.statLabel}>Total Value</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: "#10BA68" }]}>
-                  +{item.avgPnl}%
-                </Text>
-                <Text style={styles.statLabel}>Avg P&L</Text>
-              </View>
-            </>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                ${item.totalValue.toLocaleString()}
+              </Text>
+              <Text style={styles.statLabel}>Total Value</Text>
+            </View>
           ) : (
             <>
               <View style={styles.statItem}>
@@ -228,54 +202,6 @@ const LeaderboardModal = () => {
         <TouchableOpacity style={styles.filterButton}>
           <Ionicons name="filter" size={20} color="#FFFFFF" />
         </TouchableOpacity>
-      </View>
-
-      {/* Time Period Filter */}
-      <View style={styles.timeFilterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <TouchableOpacity
-            style={[
-              styles.timeButton,
-              timePeriod === "weekly" && styles.activeTimeButton,
-            ]}
-            onPress={() => setTimePeriod("weekly")}>
-            <Text
-              style={[
-                styles.timeButtonText,
-                timePeriod === "weekly" && styles.activeTimeButtonText,
-              ]}>
-              Weekly
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.timeButton,
-              timePeriod === "monthly" && styles.activeTimeButton,
-            ]}
-            onPress={() => setTimePeriod("monthly")}>
-            <Text
-              style={[
-                styles.timeButtonText,
-                timePeriod === "monthly" && styles.activeTimeButtonText,
-              ]}>
-              Monthly
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.timeButton,
-              timePeriod === "allTime" && styles.activeTimeButton,
-            ]}
-            onPress={() => setTimePeriod("allTime")}>
-            <Text
-              style={[
-                styles.timeButtonText,
-                timePeriod === "allTime" && styles.activeTimeButtonText,
-              ]}>
-              All Time
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
       </View>
 
       {/* Tab Navigation */}
@@ -385,31 +311,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  timeFilterContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  timeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#1A1D2F",
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#2A2E42",
-  },
-  activeTimeButton: {
-    backgroundColor: "#6674CC",
-    borderColor: "#6674CC",
-  },
-  timeButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#9DA3B4",
-  },
-  activeTimeButtonText: {
-    color: "#FFFFFF",
-  },
+
   tabContainer: {
     flexDirection: "row",
     paddingHorizontal: 20,

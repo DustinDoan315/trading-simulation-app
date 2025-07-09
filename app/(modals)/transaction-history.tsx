@@ -1,182 +1,156 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  FlatList,
-  TextInput,
-} from "react-native";
+import colors from "@/styles/colors";
+import React, { useEffect, useState } from "react";
+import { fetchTransactions } from "@/features/userSlice";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import colors from "@/styles/colors";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { useUser } from "@/context/UserContext";
+import {
+  ActivityIndicator,
+  FlatList,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const TransactionHistoryScreen = () => {
+  const dispatch = useAppDispatch();
+  const { user } = useUser();
+  const { transactions, loading } = useAppSelector((state) => state.user);
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<'all' | 'buy' | 'sell'>('all');
-  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'pnl'>('date');
+  const [filterType, setFilterType] = useState<"all" | "buy" | "sell">("all");
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "pnl">("date");
 
-  const transactions = [
-    {
-      id: '1',
-      type: 'buy',
-      symbol: 'BTC',
-      name: 'Bitcoin',
-      amount: 0.5,
-      price: 91200,
-      total: 45600,
-      date: '2024-01-15T10:30:00Z',
-      pnl: 1356,
-      pnlPercent: 2.97,
-    },
-    {
-      id: '2',
-      type: 'sell',
-      symbol: 'ETH',
-      name: 'Ethereum',
-      amount: 10,
-      price: 1850,
-      total: 18500,
-      date: '2024-01-14T14:45:00Z',
-      pnl: -250,
-      pnlPercent: -1.35,
-    },
-    {
-      id: '3',
-      type: 'buy',
-      symbol: 'SOL',
-      name: 'Solana',
-      amount: 100,
-      price: 145,
-      total: 14500,
-      date: '2024-01-13T09:15:00Z',
-      pnl: 352,
-      pnlPercent: 2.43,
-    },
-    {
-      id: '4',
-      type: 'sell',
-      symbol: 'BNB',
-      name: 'BNB',
-      amount: 25,
-      price: 620,
-      total: 15500,
-      date: '2024-01-12T16:20:00Z',
-      pnl: -1150,
-      pnlPercent: -7.42,
-    },
-    {
-      id: '5',
-      type: 'buy',
-      symbol: 'ADA',
-      name: 'Cardano',
-      amount: 1000,
-      price: 1.05,
-      total: 1050,
-      date: '2024-01-11T11:30:00Z',
-      pnl: 30,
-      pnlPercent: 2.86,
-    },
-  ];
+  useEffect(() => {
+    if (user?.id) {
+      dispatch(fetchTransactions({ userId: user.id, limit: 100 }));
+    }
+  }, [dispatch, user?.id]);
 
-  const filteredTransactions = transactions.filter(tx => {
-    const matchesSearch = !searchQuery || 
-      tx.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredTransactions = transactions.filter((tx) => {
+    const matchesSearch =
+      !searchQuery ||
       tx.symbol.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesType = filterType === 'all' || tx.type === filterType;
-    
+
+    const matchesType =
+      filterType === "all" || tx.type.toLowerCase() === filterType;
+
     return matchesSearch && matchesType;
   });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  const TransactionItem = ({ item }: any) => (
-    <View style={styles.transactionItem}>
-      <View style={styles.transactionLeft}>
-        <View style={[
-          styles.transactionType,
-          { backgroundColor: item.type === 'buy' ? colors.action.buyLight : colors.action.sellLight }
-        ]}>
-          <Ionicons 
-            name={item.type === 'buy' ? 'arrow-down' : 'arrow-up'}
-            size={16}
-            color={item.type === 'buy' ? colors.action.buy : colors.action.sell}
-          />
+  const TransactionItem = ({ item }: any) => {
+    const price = parseFloat(item.price);
+    const quantity = parseFloat(item.quantity);
+    const totalValue = parseFloat(item.total_value);
+    const fee = parseFloat(item.fee || "0");
+
+    return (
+      <View style={styles.transactionItem}>
+        <View style={styles.transactionLeft}>
+          <View
+            style={[
+              styles.transactionType,
+              {
+                backgroundColor:
+                  item.type === "BUY"
+                    ? colors.action.buyLight
+                    : colors.action.sellLight,
+              },
+            ]}>
+            <Ionicons
+              name={item.type === "BUY" ? "arrow-down" : "arrow-up"}
+              size={16}
+              color={
+                item.type === "BUY" ? colors.action.buy : colors.action.sell
+              }
+            />
+          </View>
+          <View style={styles.transactionInfo}>
+            <Text style={styles.transactionTitle}>
+              {item.type === "BUY" ? "Bought" : "Sold"} {item.symbol}
+            </Text>
+            <Text style={styles.transactionSubtitle}>
+              {quantity.toFixed(8)} {item.symbol} at ${price.toLocaleString()}
+            </Text>
+            <Text style={styles.transactionDate}>
+              {formatDate(item.timestamp)}
+            </Text>
+          </View>
         </View>
-        <View style={styles.transactionInfo}>
-          <Text style={styles.transactionTitle}>
-            {item.type === 'buy' ? 'Bought' : 'Sold'} {item.symbol}
+        <View style={styles.transactionRight}>
+          <Text style={styles.transactionTotal}>
+            ${totalValue.toLocaleString()}
           </Text>
-          <Text style={styles.transactionSubtitle}>
-            {item.amount} {item.symbol} at ${item.price.toLocaleString()}
-          </Text>
-          <Text style={styles.transactionDate}>
-            {formatDate(item.date)}
-          </Text>
+          {fee > 0 && (
+            <Text style={styles.feeText}>Fee: ${fee.toFixed(2)}</Text>
+          )}
         </View>
       </View>
-      <View style={styles.transactionRight}>
-        <Text style={styles.transactionTotal}>
-          ${item.total.toLocaleString()}
-        </Text>
-        <View style={styles.pnlContainer}>
-          <Text style={[
-            styles.pnlText,
-            { color: item.pnl >= 0 ? colors.action.buy : colors.action.sell }
-          ]}>
-            {item.pnl >= 0 ? '+' : ''}${Math.abs(item.pnl).toFixed(0)}
-          </Text>
-          <Text style={[
-            styles.pnlPercent,
-            { color: item.pnl >= 0 ? colors.action.buy : colors.action.sell }
-          ]}>
-            ({item.pnl >= 0 ? '+' : ''}{item.pnlPercent.toFixed(1)}%)
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const FilterButton = ({ type, label }: any) => (
     <TouchableOpacity
       style={[
         styles.filterButton,
-        filterType === type && styles.activeFilterButton
+        filterType === type && styles.activeFilterButton,
       ]}
-      onPress={() => setFilterType(type)}
-    >
-      <Text style={[
-        styles.filterButtonText,
-        filterType === type && styles.activeFilterButtonText
-      ]}>
+      onPress={() => setFilterType(type)}>
+      <Text
+        style={[
+          styles.filterButtonText,
+          filterType === type && styles.activeFilterButtonText,
+        ]}>
         {label}
       </Text>
     </TouchableOpacity>
   );
 
-  const getTotalPnL = () => {
-    return filteredTransactions.reduce((sum, tx) => sum + tx.pnl, 0);
+  const getTotalValue = () => {
+    return filteredTransactions.reduce(
+      (sum, tx) => sum + parseFloat(tx.total_value),
+      0
+    );
   };
 
-  const getTotalValue = () => {
-    return filteredTransactions.reduce((sum, tx) => sum + tx.total, 0);
+  const getTotalFees = () => {
+    return filteredTransactions.reduce(
+      (sum, tx) => sum + parseFloat(tx.fee || "0"),
+      0
+    );
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#131523" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.ui.highlight} />
+          <Text style={styles.loadingText}>Loading transactions...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#131523" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
@@ -217,19 +191,12 @@ const TransactionHistoryScreen = () => {
           </Text>
         </View>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Total P&L</Text>
-          <Text style={[
-            styles.summaryValue,
-            { color: getTotalPnL() >= 0 ? colors.action.buy : colors.action.sell }
-          ]}>
-            {getTotalPnL() >= 0 ? '+' : ''}${getTotalPnL().toFixed(0)}
-          </Text>
+          <Text style={styles.summaryLabel}>Total Fees</Text>
+          <Text style={styles.summaryValue}>${getTotalFees().toFixed(2)}</Text>
         </View>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Transactions</Text>
-          <Text style={styles.summaryValue}>
-            {filteredTransactions.length}
-          </Text>
+          <Text style={styles.summaryValue}>{filteredTransactions.length}</Text>
         </View>
       </View>
 
@@ -243,10 +210,16 @@ const TransactionHistoryScreen = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Ionicons name="receipt-outline" size={48} color={colors.text.tertiary} />
+            <Ionicons
+              name="receipt-outline"
+              size={48}
+              color={colors.text.tertiary}
+            />
             <Text style={styles.emptyText}>No transactions found</Text>
             <Text style={styles.emptySubtext}>
-              {searchQuery ? 'Try different search terms' : 'Start trading to see your history'}
+              {searchQuery
+                ? "Try different search terms"
+                : "Start trading to see your history"}
             </Text>
           </View>
         )}
@@ -261,9 +234,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -271,7 +244,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text.primary,
   },
   searchContainer: {
@@ -279,8 +252,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.background.secondary,
     borderRadius: 8,
     paddingHorizontal: 12,
@@ -295,7 +268,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   filterContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 20,
     marginBottom: 16,
     gap: 8,
@@ -315,13 +288,13 @@ const styles = StyleSheet.create({
   filterButtonText: {
     fontSize: 14,
     color: colors.text.secondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   activeFilterButtonText: {
     color: colors.text.primary,
   },
   summaryContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 20,
     marginBottom: 16,
     gap: 16,
@@ -331,7 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.secondary,
     borderRadius: 8,
     padding: 12,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border.light,
   },
@@ -342,7 +315,7 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text.primary,
   },
   list: {
@@ -352,8 +325,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.background.secondary,
     borderRadius: 8,
     padding: 16,
@@ -363,15 +336,15 @@ const styles = StyleSheet.create({
   },
   transactionLeft: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   transactionType: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   transactionInfo: {
@@ -379,7 +352,7 @@ const styles = StyleSheet.create({
   },
   transactionTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text.primary,
   },
   transactionSubtitle: {
@@ -393,34 +366,39 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   transactionRight: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   transactionTotal: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text.primary,
   },
   pnlContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     marginTop: 2,
   },
   pnlText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   pnlPercent: {
     fontSize: 10,
-    fontWeight: '400',
+    fontWeight: "400",
+  },
+  feeText: {
+    fontSize: 10,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   emptyText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text.primary,
     marginTop: 16,
   },
@@ -428,7 +406,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.secondary,
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.text.primary,
+    marginTop: 16,
   },
 });
 

@@ -1,33 +1,31 @@
-import * as Linking from 'expo-linking';
-import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import LeaderboardService from '@/services/LeaderboardService';
-import RealTimeDataService from '@/services/RealTimeDataService';
-import scheduler from '@/utils/scheduler';
-import Toast from 'react-native-toast-message';
-import { createUser, fetchUser } from '@/features/userSlice';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { NotificationProvider } from '@/components/ui/Notification';
-import { Provider } from 'react-redux';
-import { SafeAreaView } from 'react-native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { store } from '../store';
-import { updateDailyBalance } from '@/utils/balanceUpdater';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useEffect } from 'react';
-import { useFonts } from 'expo-font';
-import { UserProvider } from '@/context/UserContext';
-import { UserService } from '@/services/UserService';
-import 'react-native-reanimated';
-
+import * as Linking from "expo-linking";
+import * as SplashScreen from "expo-splash-screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import LeaderboardService from "@/services/LeaderboardService";
+import RealTimeDataService from "@/services/RealTimeDataService";
+import scheduler from "@/utils/scheduler";
+import Toast from "react-native-toast-message";
+import { createUser, fetchUser } from "@/features/userSlice";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { NotificationProvider } from "@/components/ui/Notification";
+import { Provider } from "react-redux";
+import { SafeAreaView } from "react-native";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { store } from "../store";
+import { updateDailyBalance } from "@/utils/balanceUpdater";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useEffect } from "react";
+import { useFonts } from "expo-font";
+import { UserProvider } from "@/context/UserContext";
+import { UserService } from "@/services/UserService";
+import "react-native-reanimated";
 
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-
 
 SplashScreen.preventAutoHideAsync();
 
@@ -168,10 +166,7 @@ export default function RootLayout() {
               <SafeAreaView
                 style={{
                   flex: 1,
-                  backgroundColor:
-                    colorScheme === "dark"
-                      ? DarkTheme.colors.background
-                      : DefaultTheme.colors.background,
+                  backgroundColor: DarkTheme.colors.background,
                 }}>
                 <Stack>
                   <Stack.Screen

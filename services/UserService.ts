@@ -1,4 +1,4 @@
-import { supabase } from './SupabaseService';
+import { supabase } from "./SupabaseService";
 import {
   Collection,
   CollectionMember,
@@ -21,7 +21,6 @@ import {
   User,
   UserWithStats,
 } from "../types/database";
-
 
 export class UserService {
   // User Operations
@@ -649,14 +648,16 @@ export class UserService {
 
       const { data, error } = await supabase
         .from("collection_members")
-        .select(`
+        .select(
+          `
           *,
           users!collection_members_user_id_fkey(
             username,
             display_name,
             avatar_emoji
           )
-        `)
+        `
+        )
         .eq("collection_id", collectionId)
         .order("rank", { ascending: true })
         .order("total_pnl", { ascending: false });
@@ -668,7 +669,7 @@ export class UserService {
       // If no members found, ensure the owner is included
       if (members.length === 0 && collection.owner_id) {
         console.log("⚠️ No members found, ensuring owner is included");
-        
+
         // Get owner user details
         const ownerUser = await this.getUserById(collection.owner_id);
         if (ownerUser) {
@@ -887,18 +888,22 @@ export class UserService {
       // Get user's current portfolio and stats
       const portfolio = await this.getPortfolio(userId);
       const user = await this.getUserById(userId);
-      
+
       if (!user) return;
 
       // Check if user has made any trades (has portfolio items other than USDT)
-      const hasTraded = portfolio.some(asset => 
-        asset.symbol.toUpperCase() !== "USDT" && parseFloat(asset.quantity || "0") > 0
+      const hasTraded = portfolio.some(
+        (asset) =>
+          asset.symbol.toUpperCase() !== "USDT" &&
+          parseFloat(asset.quantity || "0") > 0
       );
 
       // If user hasn't traded yet, remove them from leaderboard rankings
       if (!hasTraded) {
         await this.removeUserFromLeaderboard(userId);
-        console.log(`✅ Removed user ${userId} from leaderboard (no trades yet)`);
+        console.log(
+          `✅ Removed user ${userId} from leaderboard (no trades yet)`
+        );
         return;
       }
 
@@ -907,20 +912,31 @@ export class UserService {
         (sum, asset) => sum + parseFloat(asset.profit_loss || "0"),
         0
       );
-      
-      const totalPortfolioValue = portfolio.reduce(
-        (sum, asset) => sum + parseFloat(asset.total_value || "0"),
-        0
-      ) + parseFloat(user.usdt_balance || "0");
 
-      const totalPnLPercentage = totalPortfolioValue > 0 ? (totalPnL / totalPortfolioValue) * 100 : 0;
+      const totalPortfolioValue =
+        portfolio.reduce(
+          (sum, asset) => sum + parseFloat(asset.total_value || "0"),
+          0
+        ) + parseFloat(user.usdt_balance || "0");
+
+      const totalPnLPercentage =
+        totalPortfolioValue > 0 ? (totalPnL / totalPortfolioValue) * 100 : 0;
 
       // Update or create leaderboard rankings for all periods with calculated ranks
-      const periods: ("WEEKLY" | "MONTHLY" | "ALL_TIME")[] = ["WEEKLY", "MONTHLY", "ALL_TIME"];
-      
+      const periods: ("WEEKLY" | "MONTHLY" | "ALL_TIME")[] = [
+        "WEEKLY",
+        "MONTHLY",
+        "ALL_TIME",
+      ];
+
       for (const period of periods) {
-        const calculatedRank = await this.calculateUserRank(userId, period, totalPnL, totalPortfolioValue);
-        
+        const calculatedRank = await this.calculateUserRank(
+          userId,
+          period,
+          totalPnL,
+          totalPortfolioValue
+        );
+
         await this.upsertLeaderboardRanking({
           user_id: userId,
           period,
@@ -935,7 +951,17 @@ export class UserService {
       // Recalculate all ranks for this period to ensure consistency
       await this.recalculateAllRanks();
 
-      console.log(`✅ Updated leaderboard rankings for user ${userId} with calculated ranks`);
+      // Update user's global rank in the users table
+      const allTimeRank = await this.getUserRank(userId, "ALL_TIME");
+      if (allTimeRank !== null) {
+        await this.updateUser(userId, {
+          global_rank: allTimeRank,
+        } as any);
+      }
+
+      console.log(
+        `✅ Updated leaderboard rankings for user ${userId} with calculated ranks`
+      );
     } catch (error) {
       console.error("Error updating leaderboard rankings:", error);
       throw error;
@@ -944,7 +970,7 @@ export class UserService {
 
   // Calculate user's rank based on performance
   private static async calculateUserRank(
-    userId: string, 
+    userId: string,
     period: "WEEKLY" | "MONTHLY" | "ALL_TIME",
     userTotalPnL: number,
     userPortfolioValue: number
@@ -961,8 +987,8 @@ export class UserService {
 
       // Add current user's data if not already in rankings
       const rankings = allRankings || [];
-      const userExists = rankings.some(r => r.user_id === userId);
-      
+      const userExists = rankings.some((r) => r.user_id === userId);
+
       if (!userExists) {
         rankings.push({
           user_id: userId,
@@ -975,11 +1001,11 @@ export class UserService {
       rankings.sort((a, b) => {
         const pnlA = parseFloat(a.total_pnl || "0");
         const pnlB = parseFloat(b.total_pnl || "0");
-        
+
         if (pnlA !== pnlB) {
           return pnlB - pnlA; // Higher P&L first
         }
-        
+
         // If P&L is equal, sort by portfolio value
         const portfolioA = parseFloat(a.portfolio_value || "0");
         const portfolioB = parseFloat(b.portfolio_value || "0");
@@ -987,8 +1013,8 @@ export class UserService {
       });
 
       // Find user's position (1-based rank)
-      const userRank = rankings.findIndex(r => r.user_id === userId) + 1;
-      
+      const userRank = rankings.findIndex((r) => r.user_id === userId) + 1;
+
       return userRank > 0 ? userRank : 1; // Ensure rank is at least 1
     } catch (error) {
       console.error("Error calculating user rank:", error);
@@ -999,8 +1025,12 @@ export class UserService {
   // Recalculate all ranks for consistency
   private static async recalculateAllRanks(): Promise<void> {
     try {
-      const periods: ("WEEKLY" | "MONTHLY" | "ALL_TIME")[] = ["WEEKLY", "MONTHLY", "ALL_TIME"];
-      
+      const periods: ("WEEKLY" | "MONTHLY" | "ALL_TIME")[] = [
+        "WEEKLY",
+        "MONTHLY",
+        "ALL_TIME",
+      ];
+
       for (const period of periods) {
         // Get all rankings for this period, sorted by performance
         const { data: rankings, error } = await supabase
@@ -1017,7 +1047,7 @@ export class UserService {
         for (let i = 0; i < (rankings || []).length; i++) {
           const ranking = rankings![i];
           const newRank = i + 1;
-          
+
           await supabase
             .from("leaderboard_rankings")
             .update({ rank: newRank })
@@ -1030,7 +1060,9 @@ export class UserService {
   }
 
   // Remove user from leaderboard when they haven't traded
-  private static async removeUserFromLeaderboard(userId: string): Promise<void> {
+  private static async removeUserFromLeaderboard(
+    userId: string
+  ): Promise<void> {
     try {
       const { error } = await supabase
         .from("leaderboard_rankings")
@@ -1049,18 +1081,22 @@ export class UserService {
     try {
       const portfolio = await this.getPortfolio(userId);
       const user = await this.getUserById(userId);
-      
+
       if (!user) return;
 
       // Check if user has made any trades (has portfolio items other than USDT)
-      const hasTraded = portfolio.some(asset => 
-        asset.symbol.toUpperCase() !== "USDT" && parseFloat(asset.quantity || "0") > 0
+      const hasTraded = portfolio.some(
+        (asset) =>
+          asset.symbol.toUpperCase() !== "USDT" &&
+          parseFloat(asset.quantity || "0") > 0
       );
 
       if (hasTraded) {
         // User has traded, add them to leaderboard
         await this.updateLeaderboardRankings(userId);
-        console.log(`✅ Added user ${userId} to leaderboard (first trade detected)`);
+        console.log(
+          `✅ Added user ${userId} to leaderboard (first trade detected)`
+        );
       }
     } catch (error) {
       console.error("Error checking user leaderboard status:", error);
@@ -1070,7 +1106,7 @@ export class UserService {
 
   // Get user's current rank for a specific period
   static async getUserRank(
-    userId: string, 
+    userId: string,
     period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"
   ): Promise<number | null> {
     try {
@@ -1094,7 +1130,7 @@ export class UserService {
   static async initializeLeaderboardRankings(): Promise<void> {
     try {
       console.log("🔄 Initializing leaderboard rankings for all users...");
-      
+
       // Get all users
       const { data: users, error: usersError } = await supabase
         .from("users")
@@ -1117,7 +1153,9 @@ export class UserService {
         }
       }
 
-      console.log(`✅ Leaderboard rankings initialized for ${users.length} users`);
+      console.log(
+        `✅ Leaderboard rankings initialized for ${users.length} users`
+      );
     } catch (error) {
       console.error("Error initializing leaderboard rankings:", error);
       throw error;
@@ -1125,7 +1163,9 @@ export class UserService {
   }
 
   // Get leaderboard statistics
-  static async getLeaderboardStats(period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"): Promise<{
+  static async getLeaderboardStats(
+    period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"
+  ): Promise<{
     totalUsers: number;
     topPerformer: { userId: string; rank: number; pnl: string } | null;
     averagePnL: number;
@@ -1142,16 +1182,23 @@ export class UserService {
 
       const rankingsList = rankings || [];
       const totalUsers = rankingsList.length;
-      
-      const topPerformer = totalUsers > 0 ? {
-        userId: rankingsList[0].user_id,
-        rank: rankingsList[0].rank,
-        pnl: rankingsList[0].total_pnl,
-      } : null;
 
-      const averagePnL = totalUsers > 0 
-        ? rankingsList.reduce((sum, r) => sum + parseFloat(r.total_pnl || "0"), 0) / totalUsers
-        : 0;
+      const topPerformer =
+        totalUsers > 0
+          ? {
+              userId: rankingsList[0].user_id,
+              rank: rankingsList[0].rank,
+              pnl: rankingsList[0].total_pnl,
+            }
+          : null;
+
+      const averagePnL =
+        totalUsers > 0
+          ? rankingsList.reduce(
+              (sum, r) => sum + parseFloat(r.total_pnl || "0"),
+              0
+            ) / totalUsers
+          : 0;
 
       return {
         totalUsers,
@@ -1180,19 +1227,24 @@ export class UserService {
     try {
       const { data, error } = await supabase
         .from("leaderboard_rankings")
-        .upsert([{
-          user_id: params.user_id,
-          collection_id: null, // Explicitly set to null for global rankings
-          period: params.period,
-          total_pnl: params.total_pnl,
-          percentage_return: params.total_pnl_percentage, // Map to correct column name
-          portfolio_value: params.total_portfolio_value, // Map to correct column name
-          trade_count: params.total_trades, // Map to correct column name
-          rank: params.rank,
-          updated_at: new Date().toISOString(), // Use updated_at for consistency
-        }], {
-          onConflict: "user_id,collection_id,period",
-        });
+        .upsert(
+          [
+            {
+              user_id: params.user_id,
+              collection_id: null, // Explicitly set to null for global rankings
+              period: params.period,
+              total_pnl: params.total_pnl,
+              percentage_return: params.total_pnl_percentage, // Map to correct column name
+              portfolio_value: params.total_portfolio_value, // Map to correct column name
+              trade_count: params.total_trades, // Map to correct column name
+              rank: params.rank,
+              updated_at: new Date().toISOString(), // Use updated_at for consistency
+            },
+          ],
+          {
+            onConflict: "user_id,collection_id,period",
+          }
+        );
 
       if (error) throw error;
     } catch (error) {

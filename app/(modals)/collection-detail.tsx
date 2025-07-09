@@ -1,20 +1,15 @@
-import InviteCodeQR from '@/components/collections/InviteCodeQR';
-import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useState
-    } from 'react';
-import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { RootState } from '@/store';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useCollectionDetail } from '@/hooks/useCollectionDetail';
-import { useCollectionsData } from '@/hooks/useCollectionsData';
-import { useDualBalance } from '@/hooks/useDualBalance';
-import { useSelector } from 'react-redux';
-import { useUser } from '@/context/UserContext';
+import InviteCodeQR from "@/components/collections/InviteCodeQR";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import TradingContextIndicator from "@/components/trading/TradingContextIndicator";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { RootState } from "@/store";
+import { router, useLocalSearchParams } from "expo-router";
+import { useCollectionDetail } from "@/hooks/useCollectionDetail";
+import { useCollectionsData } from "@/hooks/useCollectionsData";
+import { useDualBalance } from "@/hooks/useDualBalance";
+import { useSelector } from "react-redux";
+import { useUser } from "@/context/UserContext";
 import {
   ActivityIndicator,
   Alert,
@@ -27,7 +22,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 
 const CollectionDetailScreen = () => {
   const { user } = useUser();
@@ -470,8 +464,8 @@ const CollectionDetailScreen = () => {
                             currentPnL.totalPnL >= 0 ? "#10B981" : "#EF4444",
                         },
                       ]}>
-                      {currentPnL.totalPnL >= 0 ? "+" : ""}
-                      {formatCurrency(currentPnL.totalPnL)}
+                      {currentPnL.totalPnL >= 0 ? "+" : "-"}
+                      {formatCurrency(Math.abs(currentPnL.totalPnL))}
                     </Text>
                   </View>
                   <View style={styles.performanceStat}>
@@ -486,8 +480,8 @@ const CollectionDetailScreen = () => {
                               : "#EF4444",
                         },
                       ]}>
-                      {currentPnL.totalPnLPercentage >= 0 ? "+" : ""}
-                      {currentPnL.totalPnLPercentage.toFixed(2)}%
+                      {currentPnL.totalPnLPercentage >= 0 ? "+" : "-"}
+                      {Math.abs(currentPnL.totalPnLPercentage).toFixed(2)}%
                     </Text>
                   </View>
                 </View>
@@ -565,8 +559,10 @@ const CollectionDetailScreen = () => {
                                     : "#EF4444",
                               },
                             ]}>
-                            {Number(members[0].totalPnl) >= 0 ? "+" : ""}
-                            {formatCurrency(members[0].totalPnl)}
+                            {Number(members[0].totalPnl) >= 0 ? "+" : "-"}
+                            {formatCurrency(
+                              Math.abs(Number(members[0].totalPnl))
+                            )}
                           </Text>
                         </View>
                       </View>
@@ -621,8 +617,8 @@ const CollectionDetailScreen = () => {
                                   : "#EF4444",
                             },
                           ]}>
-                          {Number(member.totalPnl) >= 0 ? "+" : ""}
-                          {formatCurrency(member.totalPnl)}
+                          {Number(member.totalPnl) >= 0 ? "+" : "-"}
+                          {formatCurrency(Math.abs(Number(member.totalPnl)))}
                         </Text>
                       </View>
                     </View>

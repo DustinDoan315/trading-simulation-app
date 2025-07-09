@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 import { useLeaderboardRanking } from "@/hooks/useLeaderboardRanking";
 import { useNotification } from "@/components/ui/Notification";
+import { useUser } from "@/context/UserContext";
 import {
   FlatList,
   RefreshControl,
@@ -17,28 +18,10 @@ import {
 } from "react-native";
 
 const LeaderboardScreen = () => {
-  const [activeTab, setActiveTab] = useState<
-    "global" | "friends" | "collections"
-  >("global");
-  const [timePeriod, setTimePeriod] = useState<
-    "weekly" | "monthly" | "allTime"
-  >("weekly");
+  const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
 
   const { showNotification } = useNotification();
-
-  // Convert time period to API format
-  const getApiTimePeriod = (period: string) => {
-    switch (period) {
-      case "weekly":
-        return "WEEKLY";
-      case "monthly":
-        return "MONTHLY";
-      case "allTime":
-        return "ALL_TIME";
-      default:
-        return "WEEKLY";
-    }
-  };
+  const { user } = useUser();
 
   // Initialize leaderboard data with real-time updates
   const {
@@ -49,7 +32,7 @@ const LeaderboardScreen = () => {
     error,
     lastUpdated,
   } = useLeaderboardData({
-    period: getApiTimePeriod(timePeriod),
+    period: "ALL_TIME",
     limit: 50,
   });
 
@@ -60,20 +43,15 @@ const LeaderboardScreen = () => {
     isLoading: rankLoading,
     error: rankError,
     refreshRank,
-    initializeRankings,
-    recalculateAllRanks,
-  } = useLeaderboardRanking(
-    "BF83BF2B-E330-4A48-B07F-2354E7D364B0",
-    getApiTimePeriod(timePeriod)
-  ); // TODO: Get actual user ID
+  } = useLeaderboardRanking(user?.id || "", "ALL_TIME");
 
   // Update filters when time period changes
   useEffect(() => {
     updateFilters({
-      period: getApiTimePeriod(timePeriod),
+      period: "ALL_TIME",
       limit: 50,
     });
-  }, [timePeriod, updateFilters]);
+  }, [updateFilters]);
 
   // Show error notification if there's an error
   useEffect(() => {
@@ -95,7 +73,6 @@ const LeaderboardScreen = () => {
           name: item.name || "Unknown Collection",
           members: item.member_count || 0,
           totalValue: parseFloat(item.total_value || "0"),
-          avgPnl: parseFloat(item.avg_pnl_percentage || "0"),
           isMyCollection: item.is_my_collection || false,
         };
       } else {
@@ -179,12 +156,6 @@ const LeaderboardScreen = () => {
                 </Text>
                 <Text style={styles.statLabel}>Total Value</Text>
               </View>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: "#10BA68" }]}>
-                  +{item.avgPnl}%
-                </Text>
-                <Text style={styles.statLabel}>Avg P&L</Text>
-              </View>
             </>
           ) : (
             <>
@@ -219,7 +190,7 @@ const LeaderboardScreen = () => {
   const getCurrentData = () => {
     if (activeTab === "global") return globalRankings;
     if (activeTab === "friends") return friendsRankings;
-    return collectionRankings;
+    return globalRankings; // fallback to global
   };
 
   const handleRefresh = async () => {
@@ -231,13 +202,20 @@ const LeaderboardScreen = () => {
   const LeaderboardHeader = () => (
     <View style={styles.headerContainer}>
       <View style={styles.userRankSection}>
-        <Text style={styles.headerTitle}>Your Ranking</Text>
         <View style={styles.rankDisplay}>
-          <Text style={styles.rankNumber}>
-            {currentRank ? `#${currentRank}` : "Unranked"}
-          </Text>
+          <View style={styles.rankBadgeContainer}>
+            <Text style={styles.rankNumber}>
+              {currentRank ? `#${currentRank}` : "—"}
+            </Text>
+            <Ionicons
+              name="trophy"
+              size={24}
+              color="#FFD700"
+              style={styles.trophyIcon}
+            />
+          </View>
           <Text style={styles.rankLabel}>
-            {currentRank ? "Current Rank" : "Start trading to get ranked"}
+            {currentRank ? "Your Current Rank" : "Start trading to get ranked"}
           </Text>
         </View>
       </View>
@@ -245,42 +223,39 @@ const LeaderboardScreen = () => {
       {stats && (
         <View style={styles.statsSection}>
           <View style={styles.statCard}>
+            <Ionicons
+              name="people"
+              size={20}
+              color="#6674CC"
+              style={styles.statIcon}
+            />
             <Text style={styles.statNumber}>{stats.totalUsers}</Text>
             <Text style={styles.statLabel}>Total Traders</Text>
           </View>
           <View style={styles.statCard}>
+            <Ionicons
+              name="star"
+              size={20}
+              color="#FFD700"
+              style={styles.statIcon}
+            />
             <Text style={styles.statNumber}>
-              {stats.topPerformer ? `#${stats.topPerformer.rank}` : "N/A"}
+              {stats.topPerformer ? `#${stats.topPerformer.rank}` : "—"}
             </Text>
             <Text style={styles.statLabel}>Top Performer</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>
-              ${stats.averagePnL.toLocaleString()}
-            </Text>
-            <Text style={styles.statLabel}>Avg P&L</Text>
+            <Ionicons
+              name="trending-up"
+              size={20}
+              color="#10BA68"
+              style={styles.statIcon}
+            />
+            <Text style={styles.statNumber}>{stats.totalUsers}</Text>
+            <Text style={styles.statLabel}>Active Traders</Text>
           </View>
         </View>
       )}
-
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={initializeRankings}
-          disabled={rankLoading}>
-          <Text style={styles.actionButtonText}>
-            {rankLoading ? "Initializing..." : "Initialize Rankings"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={recalculateAllRanks}
-          disabled={rankLoading}>
-          <Text style={styles.actionButtonText}>
-            {rankLoading ? "Recalculating..." : "Recalculate All"}
-          </Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 
@@ -316,62 +291,6 @@ const LeaderboardScreen = () => {
               activeTab === "friends" && styles.activeTabText,
             ]}>
             Friends
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "collections" && styles.activeTab]}
-          onPress={() => setActiveTab("collections")}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "collections" && styles.activeTabText,
-            ]}>
-            Collections
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.periodContainer}>
-        <TouchableOpacity
-          style={[
-            styles.periodButton,
-            timePeriod === "weekly" && styles.activePeriod,
-          ]}
-          onPress={() => setTimePeriod("weekly")}>
-          <Text
-            style={[
-              styles.periodText,
-              timePeriod === "weekly" && styles.activePeriodText,
-            ]}>
-            Weekly
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.periodButton,
-            timePeriod === "monthly" && styles.activePeriod,
-          ]}
-          onPress={() => setTimePeriod("monthly")}>
-          <Text
-            style={[
-              styles.periodText,
-              timePeriod === "monthly" && styles.activePeriodText,
-            ]}>
-            Monthly
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.periodButton,
-            timePeriod === "allTime" && styles.activePeriod,
-          ]}
-          onPress={() => setTimePeriod("allTime")}>
-          <Text
-            style={[
-              styles.periodText,
-              timePeriod === "allTime" && styles.activePeriodText,
-            ]}>
-            All Time
           </Text>
         </TouchableOpacity>
       </View>
@@ -443,51 +362,39 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: "row",
     marginHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 20,
     backgroundColor: "#1A1D2F",
-    borderRadius: 12,
-    padding: 4,
+    borderRadius: 16,
+    padding: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: 12,
   },
   activeTab: {
     backgroundColor: "#6674CC",
+    shadowColor: "#6674CC",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   tabText: {
     color: "#9DA3B4",
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "600",
   },
   activeTabText: {
     color: "#FFFFFF",
   },
-  periodContainer: {
-    flexDirection: "row",
-    marginHorizontal: 20,
-    marginBottom: 16,
-    gap: 8,
-  },
-  periodButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "#1A1D2F",
-  },
-  activePeriod: {
-    backgroundColor: "#6674CC",
-  },
-  periodText: {
-    color: "#9DA3B4",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  activePeriodText: {
-    color: "#FFFFFF",
-  },
+
   list: {
     flex: 1,
   },
@@ -588,63 +495,60 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A1D2F",
     marginHorizontal: 20,
     marginBottom: 16,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   userRankSection: {
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    marginBottom: 8,
+    marginBottom: 20,
   },
   rankDisplay: {
     alignItems: "center",
   },
+  rankBadgeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   rankNumber: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "bold",
     color: "#6674CC",
-    marginBottom: 4,
+    marginRight: 8,
+  },
+  trophyIcon: {
+    marginLeft: 4,
   },
   rankLabel: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#9DA3B4",
+    textAlign: "center",
   },
   statsSection: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
+    gap: 12,
   },
   statCard: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: "#252A3D",
+    borderRadius: 12,
+  },
+  statIcon: {
+    marginBottom: 6,
   },
   statNumber: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 4,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  actionButton: {
-    flex: 1,
-    backgroundColor: "#6674CC",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  actionButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "500",
   },
 });
 
