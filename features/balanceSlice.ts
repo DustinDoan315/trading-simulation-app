@@ -3,6 +3,7 @@ import UserRepository from '../services/UserRepository';
 import UUIDService from '../services/UUIDService';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
+import { UserService } from '../services/UserService';
 
 
 export interface UserBalance {
@@ -78,6 +79,17 @@ const calculateTotalPortfolioValue = (
   });
 
   return totalValue;
+};
+
+// Helper function to update leaderboard rankings
+const updateLeaderboardRankings = async (uuid: string) => {
+  try {
+    await UserService.updateLeaderboardRankings(uuid);
+    console.log("✅ Leaderboard rankings updated successfully");
+  } catch (error) {
+    console.error("❌ Error updating leaderboard rankings:", error);
+    // Don't throw error to avoid breaking the main flow
+  }
 };
 
 const initialState: BalanceState = {
@@ -290,6 +302,9 @@ export const balanceSlice = createSlice({
           totalPnL
         );
         UserRepository.updatePortfolio(uuid, state.balance.holdings);
+        
+        // Check if user should be added to leaderboard (first trade)
+        UserService.checkAndAddUserToLeaderboard(uuid);
       });
     },
     resetBalance: (state) => {
@@ -473,6 +488,9 @@ export const balanceSlice = createSlice({
             // Update portfolio holdings in the same operation
             await UserRepository.updatePortfolio(uuid, holdingsCopy);
             
+            // Check if user should be added to leaderboard (first trade)
+            await UserService.checkAndAddUserToLeaderboard(uuid);
+            
             console.log("✅ All database updates completed successfully");
           })
           .catch((error) => {
@@ -512,6 +530,9 @@ export const balanceSlice = createSlice({
           totalPnL
         );
         UserRepository.updatePortfolio(uuid, action.payload.holdings);
+        
+        // Check if user should be added to leaderboard (first trade)
+        UserService.checkAndAddUserToLeaderboard(uuid);
       });
     },
     updateCurrentPrice: (
@@ -534,8 +555,11 @@ export const balanceSlice = createSlice({
         );
 
         // Update database with new values
-        UUIDService.getOrCreateUser().then((uuid) => {
-          UserRepository.updatePortfolio(uuid, state.balance.holdings);
+        UUIDService.getOrCreateUser().then(async (uuid) => {
+          await UserRepository.updatePortfolio(uuid, state.balance.holdings);
+          
+          // Check if user should be added to leaderboard (first trade)
+          await UserService.checkAndAddUserToLeaderboard(uuid);
         });
       }
     },
@@ -674,6 +698,9 @@ export const balanceSlice = createSlice({
             );
             
             await UserRepository.updatePortfolio(uuid, holdingsCopy);
+            
+            // Check if user should be added to leaderboard (first trade)
+            await UserService.checkAndAddUserToLeaderboard(uuid);
             
             console.log("✅ Trade database updates completed successfully");
           })

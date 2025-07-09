@@ -880,4 +880,324 @@ export class UserService {
       throw error;
     }
   }
+
+  // Leaderboard Update Methods
+  static async updateLeaderboardRankings(userId: string): Promise<void> {
+    try {
+      // Get user's current portfolio and stats
+      const portfolio = await this.getPortfolio(userId);
+      const user = await this.getUserById(userId);
+      
+      if (!user) return;
+
+      // Check if user has made any trades (has portfolio items other than USDT)
+      const hasTraded = portfolio.some(asset => 
+        asset.symbol.toUpperCase() !== "USDT" && parseFloat(asset.quantity || "0") > 0
+      );
+
+      // If user hasn't traded yet, remove them from leaderboard rankings
+      if (!hasTraded) {
+        await this.removeUserFromLeaderboard(userId);
+        console.log(`✅ Removed user ${userId} from leaderboard (no trades yet)`);
+        return;
+      }
+
+      // Calculate total P&L and portfolio value
+      const totalPnL = portfolio.reduce(
+        (sum, asset) => sum + parseFloat(asset.profit_loss || "0"),
+        0
+      );
+      
+      const totalPortfolioValue = portfolio.reduce(
+        (sum, asset) => sum + parseFloat(asset.total_value || "0"),
+        0
+      ) + parseFloat(user.usdt_balance || "0");
+
+      const totalPnLPercentage = totalPortfolioValue > 0 ? (totalPnL / totalPortfolioValue) * 100 : 0;
+
+      // Update or create leaderboard rankings for all periods with calculated ranks
+      const periods: ("WEEKLY" | "MONTHLY" | "ALL_TIME")[] = ["WEEKLY", "MONTHLY", "ALL_TIME"];
+      
+      for (const period of periods) {
+        const calculatedRank = await this.calculateUserRank(userId, period, totalPnL, totalPortfolioValue);
+        
+        await this.upsertLeaderboardRanking({
+          user_id: userId,
+          period,
+          total_pnl: totalPnL.toString(),
+          total_pnl_percentage: totalPnLPercentage.toString(),
+          total_portfolio_value: totalPortfolioValue.toString(),
+          total_trades: portfolio.length,
+          rank: calculatedRank,
+        });
+      }
+
+      // Recalculate all ranks for this period to ensure consistency
+      await this.recalculateAllRanks();
+
+      console.log(`✅ Updated leaderboard rankings for user ${userId} with calculated ranks`);
+    } catch (error) {
+      console.error("Error updating leaderboard rankings:", error);
+      throw error;
+    }
+  }
+
+  // Calculate user's rank based on performance
+  private static async calculateUserRank(
+    userId: string, 
+    period: "WEEKLY" | "MONTHLY" | "ALL_TIME",
+    userTotalPnL: number,
+    userPortfolioValue: number
+  ): Promise<number> {
+    try {
+      // Get all users with their P&L and portfolio values for this period
+      const { data: allRankings, error } = await supabase
+        .from("leaderboard_rankings")
+        .select("user_id, total_pnl, portfolio_value")
+        .eq("period", period)
+        .is("collection_id", null);
+
+      if (error) throw error;
+
+      // Add current user's data if not already in rankings
+      const rankings = allRankings || [];
+      const userExists = rankings.some(r => r.user_id === userId);
+      
+      if (!userExists) {
+        rankings.push({
+          user_id: userId,
+          total_pnl: userTotalPnL.toString(),
+          portfolio_value: userPortfolioValue.toString(),
+        });
+      }
+
+      // Sort by total P&L (descending), then by portfolio value (descending)
+      rankings.sort((a, b) => {
+        const pnlA = parseFloat(a.total_pnl || "0");
+        const pnlB = parseFloat(b.total_pnl || "0");
+        
+        if (pnlA !== pnlB) {
+          return pnlB - pnlA; // Higher P&L first
+        }
+        
+        // If P&L is equal, sort by portfolio value
+        const portfolioA = parseFloat(a.portfolio_value || "0");
+        const portfolioB = parseFloat(b.portfolio_value || "0");
+        return portfolioB - portfolioA; // Higher portfolio value first
+      });
+
+      // Find user's position (1-based rank)
+      const userRank = rankings.findIndex(r => r.user_id === userId) + 1;
+      
+      return userRank > 0 ? userRank : 1; // Ensure rank is at least 1
+    } catch (error) {
+      console.error("Error calculating user rank:", error);
+      return 1; // Default to rank 1 if calculation fails
+    }
+  }
+
+  // Recalculate all ranks for consistency
+  private static async recalculateAllRanks(): Promise<void> {
+    try {
+      const periods: ("WEEKLY" | "MONTHLY" | "ALL_TIME")[] = ["WEEKLY", "MONTHLY", "ALL_TIME"];
+      
+      for (const period of periods) {
+        // Get all rankings for this period, sorted by performance
+        const { data: rankings, error } = await supabase
+          .from("leaderboard_rankings")
+          .select("id, total_pnl, portfolio_value")
+          .eq("period", period)
+          .is("collection_id", null)
+          .order("total_pnl", { ascending: false })
+          .order("portfolio_value", { ascending: false });
+
+        if (error) throw error;
+
+        // Update ranks based on sorted order
+        for (let i = 0; i < (rankings || []).length; i++) {
+          const ranking = rankings![i];
+          const newRank = i + 1;
+          
+          await supabase
+            .from("leaderboard_rankings")
+            .update({ rank: newRank })
+            .eq("id", ranking.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error recalculating all ranks:", error);
+    }
+  }
+
+  // Remove user from leaderboard when they haven't traded
+  private static async removeUserFromLeaderboard(userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from("leaderboard_rankings")
+        .delete()
+        .eq("user_id", userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error removing user from leaderboard:", error);
+      throw error;
+    }
+  }
+
+  // Check if user should be added to leaderboard (first trade)
+  static async checkAndAddUserToLeaderboard(userId: string): Promise<void> {
+    try {
+      const portfolio = await this.getPortfolio(userId);
+      const user = await this.getUserById(userId);
+      
+      if (!user) return;
+
+      // Check if user has made any trades (has portfolio items other than USDT)
+      const hasTraded = portfolio.some(asset => 
+        asset.symbol.toUpperCase() !== "USDT" && parseFloat(asset.quantity || "0") > 0
+      );
+
+      if (hasTraded) {
+        // User has traded, add them to leaderboard
+        await this.updateLeaderboardRankings(userId);
+        console.log(`✅ Added user ${userId} to leaderboard (first trade detected)`);
+      }
+    } catch (error) {
+      console.error("Error checking user leaderboard status:", error);
+      throw error;
+    }
+  }
+
+  // Get user's current rank for a specific period
+  static async getUserRank(
+    userId: string, 
+    period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"
+  ): Promise<number | null> {
+    try {
+      const { data, error } = await supabase
+        .from("leaderboard_rankings")
+        .select("rank")
+        .eq("user_id", userId)
+        .eq("period", period)
+        .is("collection_id", null)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows returned
+      return data?.rank || null;
+    } catch (error) {
+      console.error("Error getting user rank:", error);
+      return null;
+    }
+  }
+
+  // Initialize leaderboard rankings for all users (run once to set up initial rankings)
+  static async initializeLeaderboardRankings(): Promise<void> {
+    try {
+      console.log("🔄 Initializing leaderboard rankings for all users...");
+      
+      // Get all users
+      const { data: users, error: usersError } = await supabase
+        .from("users")
+        .select("id");
+
+      if (usersError) throw usersError;
+
+      if (!users || users.length === 0) {
+        console.log("No users found for leaderboard initialization");
+        return;
+      }
+
+      // Update rankings for each user
+      for (const user of users) {
+        try {
+          await this.updateLeaderboardRankings(user.id);
+        } catch (error) {
+          console.error(`Error updating rankings for user ${user.id}:`, error);
+          // Continue with other users even if one fails
+        }
+      }
+
+      console.log(`✅ Leaderboard rankings initialized for ${users.length} users`);
+    } catch (error) {
+      console.error("Error initializing leaderboard rankings:", error);
+      throw error;
+    }
+  }
+
+  // Get leaderboard statistics
+  static async getLeaderboardStats(period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"): Promise<{
+    totalUsers: number;
+    topPerformer: { userId: string; rank: number; pnl: string } | null;
+    averagePnL: number;
+  }> {
+    try {
+      const { data: rankings, error } = await supabase
+        .from("leaderboard_rankings")
+        .select("user_id, rank, total_pnl")
+        .eq("period", period)
+        .is("collection_id", null)
+        .order("rank", { ascending: true });
+
+      if (error) throw error;
+
+      const rankingsList = rankings || [];
+      const totalUsers = rankingsList.length;
+      
+      const topPerformer = totalUsers > 0 ? {
+        userId: rankingsList[0].user_id,
+        rank: rankingsList[0].rank,
+        pnl: rankingsList[0].total_pnl,
+      } : null;
+
+      const averagePnL = totalUsers > 0 
+        ? rankingsList.reduce((sum, r) => sum + parseFloat(r.total_pnl || "0"), 0) / totalUsers
+        : 0;
+
+      return {
+        totalUsers,
+        topPerformer,
+        averagePnL,
+      };
+    } catch (error) {
+      console.error("Error getting leaderboard stats:", error);
+      return {
+        totalUsers: 0,
+        topPerformer: null,
+        averagePnL: 0,
+      };
+    }
+  }
+
+  private static async upsertLeaderboardRanking(params: {
+    user_id: string;
+    period: "WEEKLY" | "MONTHLY" | "ALL_TIME";
+    total_pnl: string;
+    total_pnl_percentage: string;
+    total_portfolio_value: string;
+    total_trades: number;
+    rank: number;
+  }): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from("leaderboard_rankings")
+        .upsert([{
+          user_id: params.user_id,
+          collection_id: null, // Explicitly set to null for global rankings
+          period: params.period,
+          total_pnl: params.total_pnl,
+          percentage_return: params.total_pnl_percentage, // Map to correct column name
+          portfolio_value: params.total_portfolio_value, // Map to correct column name
+          trade_count: params.total_trades, // Map to correct column name
+          rank: params.rank,
+          updated_at: new Date().toISOString(), // Use updated_at for consistency
+        }], {
+          onConflict: "user_id,collection_id,period",
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error upserting leaderboard ranking:", error);
+      throw error;
+    }
+  }
 }

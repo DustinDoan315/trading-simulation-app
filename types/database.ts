@@ -196,6 +196,7 @@ export interface LeaderboardRanking {
   win_rate: string; // DECIMAL(5,2)
   calculated_at: string; // TIMESTAMP
   created_at: string; // TIMESTAMP
+  updated_at: string; // TIMESTAMP
 }
 
 // Database operation types

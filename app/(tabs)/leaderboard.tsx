@@ -1,157 +1,182 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  FlatList,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import colors from "@/styles/colors";
+import React, { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
+import { useLeaderboardRanking } from "@/hooks/useLeaderboardRanking";
+import { useNotification } from "@/components/ui/Notification";
+import {
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const LeaderboardScreen = () => {
-  const [activeTab, setActiveTab] = useState<'global' | 'friends' | 'collections'>('global');
-  const [timePeriod, setTimePeriod] = useState<'weekly' | 'monthly' | 'allTime'>('weekly');
+  const [activeTab, setActiveTab] = useState<
+    "global" | "friends" | "collections"
+  >("global");
+  const [timePeriod, setTimePeriod] = useState<
+    "weekly" | "monthly" | "allTime"
+  >("weekly");
 
-  const globalRankings = [
-    {
-      id: '1',
-      rank: 1,
-      name: 'CryptoKing',
-      avatar: '👑',
-      pnl: 45000,
-      percentage: 23.5,
-      portfolio: 236000,
-    },
-    {
-      id: '2',
-      rank: 2,
-      name: 'TradeQueen',
-      avatar: '⭐',
-      pnl: 38000,
-      percentage: 19.2,
-      portfolio: 198000,
-    },
-    {
-      id: '3',
-      rank: 3,
-      name: 'DeFiWizard',
-      avatar: '🔮',
-      pnl: 32000,
-      percentage: 16.8,
-      portfolio: 190000,
-    },
-    {
-      id: '4',
-      rank: 4,
-      name: 'You',
-      avatar: '🚀',
-      pnl: 28000,
-      percentage: 15.2,
-      portfolio: 184000,
-      isCurrentUser: true,
-    },
-  ];
+  const { showNotification } = useNotification();
 
-  const friendsRankings = [
-    {
-      id: '1',
-      rank: 1,
-      name: 'You',
-      avatar: '🚀',
-      pnl: 28000,
-      percentage: 15.2,
-      portfolio: 184000,
-      isCurrentUser: true,
-    },
-    {
-      id: '2',
-      rank: 2,
-      name: 'Alex',
-      avatar: '💎',
-      pnl: 22000,
-      percentage: 12.8,
-      portfolio: 172000,
-    },
-    {
-      id: '3',
-      rank: 3,
-      name: 'Sarah',
-      avatar: '🌟',
-      pnl: 18000,
-      percentage: 10.5,
-      portfolio: 171000,
-    },
-  ];
+  // Convert time period to API format
+  const getApiTimePeriod = (period: string) => {
+    switch (period) {
+      case "weekly":
+        return "WEEKLY";
+      case "monthly":
+        return "MONTHLY";
+      case "allTime":
+        return "ALL_TIME";
+      default:
+        return "WEEKLY";
+    }
+  };
 
-  const collectionRankings = [
-    {
-      id: '1',
-      rank: 1,
-      name: 'Crypto Masters',
-      members: 12,
-      totalValue: 2400000,
-      avgPnl: 15.8,
-      isMyCollection: true,
-    },
-    {
-      id: '2',
-      rank: 2,
-      name: 'DeFi Legends',
-      members: 8,
-      totalValue: 1900000,
-      avgPnl: 14.2,
-      isMyCollection: false,
-    },
-    {
-      id: '3',
-      rank: 3,
-      name: 'Moonshot Hunters',
-      members: 45,
-      totalValue: 8900000,
-      avgPnl: 12.9,
-      isMyCollection: false,
-    },
-  ];
+  // Initialize leaderboard data with real-time updates
+  const {
+    data: leaderboardData,
+    refresh,
+    updateFilters,
+    isLoading,
+    error,
+    lastUpdated,
+  } = useLeaderboardData({
+    period: getApiTimePeriod(timePeriod),
+    limit: 50,
+  });
+
+  // Get current user's rank and leaderboard stats
+  const {
+    currentRank,
+    stats,
+    isLoading: rankLoading,
+    error: rankError,
+    refreshRank,
+    initializeRankings,
+    recalculateAllRanks,
+  } = useLeaderboardRanking(
+    "BF83BF2B-E330-4A48-B07F-2354E7D364B0",
+    getApiTimePeriod(timePeriod)
+  ); // TODO: Get actual user ID
+
+  // Update filters when time period changes
+  useEffect(() => {
+    updateFilters({
+      period: getApiTimePeriod(timePeriod),
+      limit: 50,
+    });
+  }, [timePeriod, updateFilters]);
+
+  // Show error notification if there's an error
+  useEffect(() => {
+    if (error) {
+      showNotification({
+        type: "error",
+        message: `Failed to load leaderboard: ${error}`,
+      });
+    }
+  }, [error, showNotification]);
+
+  // Transform real-time data for display
+  const transformLeaderboardData = (data: any[], type: string) => {
+    return data.map((item, index) => {
+      if (type === "collections") {
+        return {
+          id: item.id || `collection-${index}`,
+          rank: item.rank || index + 1,
+          name: item.name || "Unknown Collection",
+          members: item.member_count || 0,
+          totalValue: parseFloat(item.total_value || "0"),
+          avgPnl: parseFloat(item.avg_pnl_percentage || "0"),
+          isMyCollection: item.is_my_collection || false,
+        };
+      } else {
+        return {
+          id: item.id || `user-${index}`,
+          rank: item.rank || index + 1,
+          name:
+            item.users?.display_name || item.users?.username || "Unknown User",
+          avatar: item.users?.avatar_emoji || "👤",
+          pnl: parseFloat(item.total_pnl || "0"),
+          percentage: parseFloat(item.percentage_return || "0"), // Use correct column name
+          portfolio: parseFloat(item.portfolio_value || "0"), // Use correct column name
+          isCurrentUser: item.is_current_user || false,
+        };
+      }
+    });
+  };
+
+  const globalRankings = transformLeaderboardData(
+    leaderboardData.global,
+    "global"
+  );
+  const friendsRankings = transformLeaderboardData(
+    leaderboardData.friends,
+    "friends"
+  );
+  const collectionRankings = transformLeaderboardData(
+    leaderboardData.collections,
+    "collections"
+  );
 
   const getRankColor = (rank: number) => {
-    if (rank === 1) return '#FFD700';
-    if (rank === 2) return '#C0C0C0';
-    if (rank === 3) return '#CD7F32';
+    if (rank === 1) return "#FFD700";
+    if (rank === 2) return "#C0C0C0";
+    if (rank === 3) return "#CD7F32";
     return colors.text.secondary;
   };
 
   const RankedItem = ({ item, type }: any) => (
-    <View style={[styles.rankedItem, item.isCurrentUser && styles.currentUserItem]}>
+    <View
+      style={[styles.rankedItem, item.isCurrentUser && styles.currentUserItem]}>
       <View style={styles.rankSection}>
-        <View style={[styles.rankBadge, { backgroundColor: getRankColor(item.rank) }]}>
-          <Text style={[styles.rankText, { color: item.rank <= 3 ? '#000' : '#fff' }]}>
+        <View
+          style={[
+            styles.rankBadge,
+            { backgroundColor: getRankColor(item.rank) },
+          ]}>
+          <Text
+            style={[
+              styles.rankText,
+              { color: item.rank <= 3 ? "#000" : "#fff" },
+            ]}>
             {item.rank}
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.infoSection}>
         <View style={styles.userInfo}>
           <Text style={styles.avatar}>{item.avatar}</Text>
           <View style={styles.nameContainer}>
-            <Text style={[styles.name, item.isCurrentUser && styles.currentUserName]}>
+            <Text
+              style={[
+                styles.name,
+                item.isCurrentUser && styles.currentUserName,
+              ]}>
               {item.name}
             </Text>
-            {type === 'collections' && (
+            {type === "collections" && (
               <Text style={styles.members}>{item.members} members</Text>
             )}
           </View>
         </View>
-        
+
         <View style={styles.statsContainer}>
-          {type === 'collections' ? (
+          {type === "collections" ? (
             <>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>${item.totalValue.toLocaleString()}</Text>
+                <Text style={styles.statValue}>
+                  ${item.totalValue.toLocaleString()}
+                </Text>
                 <Text style={styles.statLabel}>Total Value</Text>
               </View>
               <View style={styles.statItem}>
@@ -164,14 +189,23 @@ const LeaderboardScreen = () => {
           ) : (
             <>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: item.pnl >= 0 ? "#10BA68" : "#F9335D" }]}>
-                  {item.pnl >= 0 ? '+' : ''}${item.pnl.toLocaleString()}
+                <Text
+                  style={[
+                    styles.statValue,
+                    { color: item.pnl >= 0 ? "#10BA68" : "#F9335D" },
+                  ]}>
+                  {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
                 </Text>
                 <Text style={styles.statLabel}>P&L</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: item.percentage >= 0 ? "#10BA68" : "#F9335D" }]}>
-                  {item.percentage >= 0 ? '+' : ''}{item.percentage}%
+                <Text
+                  style={[
+                    styles.statValue,
+                    { color: item.percentage >= 0 ? "#10BA68" : "#F9335D" },
+                  ]}>
+                  {item.percentage >= 0 ? "+" : ""}
+                  {item.percentage}%
                 </Text>
                 <Text style={styles.statLabel}>Return</Text>
               </View>
@@ -183,15 +217,77 @@ const LeaderboardScreen = () => {
   );
 
   const getCurrentData = () => {
-    if (activeTab === 'global') return globalRankings;
-    if (activeTab === 'friends') return friendsRankings;
+    if (activeTab === "global") return globalRankings;
+    if (activeTab === "friends") return friendsRankings;
     return collectionRankings;
   };
+
+  const handleRefresh = async () => {
+    await refresh();
+    await refreshRank();
+  };
+
+  // Header component showing current user's rank and stats
+  const LeaderboardHeader = () => (
+    <View style={styles.headerContainer}>
+      <View style={styles.userRankSection}>
+        <Text style={styles.headerTitle}>Your Ranking</Text>
+        <View style={styles.rankDisplay}>
+          <Text style={styles.rankNumber}>
+            {currentRank ? `#${currentRank}` : "Unranked"}
+          </Text>
+          <Text style={styles.rankLabel}>
+            {currentRank ? "Current Rank" : "Start trading to get ranked"}
+          </Text>
+        </View>
+      </View>
+
+      {stats && (
+        <View style={styles.statsSection}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{stats.totalUsers}</Text>
+            <Text style={styles.statLabel}>Total Traders</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {stats.topPerformer ? `#${stats.topPerformer.rank}` : "N/A"}
+            </Text>
+            <Text style={styles.statLabel}>Top Performer</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              ${stats.averagePnL.toLocaleString()}
+            </Text>
+            <Text style={styles.statLabel}>Avg P&L</Text>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={initializeRankings}
+          disabled={rankLoading}>
+          <Text style={styles.actionButtonText}>
+            {rankLoading ? "Initializing..." : "Initialize Rankings"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={recalculateAllRanks}
+          disabled={rankLoading}>
+          <Text style={styles.actionButtonText}>
+            {rankLoading ? "Recalculating..." : "Recalculate All"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#121212" />
-      
+
       <View style={styles.header}>
         <Text style={styles.title}>Leaderboards</Text>
         <TouchableOpacity style={styles.filterButton}>
@@ -201,26 +297,35 @@ const LeaderboardScreen = () => {
 
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'global' && styles.activeTab]}
-          onPress={() => setActiveTab('global')}
-        >
-          <Text style={[styles.tabText, activeTab === 'global' && styles.activeTabText]}>
+          style={[styles.tab, activeTab === "global" && styles.activeTab]}
+          onPress={() => setActiveTab("global")}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "global" && styles.activeTabText,
+            ]}>
             Global
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'friends' && styles.activeTab]}
-          onPress={() => setActiveTab('friends')}
-        >
-          <Text style={[styles.tabText, activeTab === 'friends' && styles.activeTabText]}>
+          style={[styles.tab, activeTab === "friends" && styles.activeTab]}
+          onPress={() => setActiveTab("friends")}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "friends" && styles.activeTabText,
+            ]}>
             Friends
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'collections' && styles.activeTab]}
-          onPress={() => setActiveTab('collections')}
-        >
-          <Text style={[styles.tabText, activeTab === 'collections' && styles.activeTabText]}>
+          style={[styles.tab, activeTab === "collections" && styles.activeTab]}
+          onPress={() => setActiveTab("collections")}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "collections" && styles.activeTabText,
+            ]}>
             Collections
           </Text>
         </TouchableOpacity>
@@ -228,26 +333,44 @@ const LeaderboardScreen = () => {
 
       <View style={styles.periodContainer}>
         <TouchableOpacity
-          style={[styles.periodButton, timePeriod === 'weekly' && styles.activePeriod]}
-          onPress={() => setTimePeriod('weekly')}
-        >
-          <Text style={[styles.periodText, timePeriod === 'weekly' && styles.activePeriodText]}>
+          style={[
+            styles.periodButton,
+            timePeriod === "weekly" && styles.activePeriod,
+          ]}
+          onPress={() => setTimePeriod("weekly")}>
+          <Text
+            style={[
+              styles.periodText,
+              timePeriod === "weekly" && styles.activePeriodText,
+            ]}>
             Weekly
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.periodButton, timePeriod === 'monthly' && styles.activePeriod]}
-          onPress={() => setTimePeriod('monthly')}
-        >
-          <Text style={[styles.periodText, timePeriod === 'monthly' && styles.activePeriodText]}>
+          style={[
+            styles.periodButton,
+            timePeriod === "monthly" && styles.activePeriod,
+          ]}
+          onPress={() => setTimePeriod("monthly")}>
+          <Text
+            style={[
+              styles.periodText,
+              timePeriod === "monthly" && styles.activePeriodText,
+            ]}>
             Monthly
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.periodButton, timePeriod === 'allTime' && styles.activePeriod]}
-          onPress={() => setTimePeriod('allTime')}
-        >
-          <Text style={[styles.periodText, timePeriod === 'allTime' && styles.activePeriodText]}>
+          style={[
+            styles.periodButton,
+            timePeriod === "allTime" && styles.activePeriod,
+          ]}
+          onPress={() => setTimePeriod("allTime")}>
+          <Text
+            style={[
+              styles.periodText,
+              timePeriod === "allTime" && styles.activePeriodText,
+            ]}>
             All Time
           </Text>
         </TouchableOpacity>
@@ -260,7 +383,34 @@ const LeaderboardScreen = () => {
         style={styles.list}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading || rankLoading}
+            onRefresh={handleRefresh}
+            tintColor="#6674CC"
+            colors={["#6674CC"]}
+          />
+        }
+        ListHeaderComponent={<LeaderboardHeader />}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              {isLoading
+                ? "Loading leaderboard..."
+                : "No rankings available yet"}
+            </Text>
+          </View>
+        }
       />
+
+      {/* Last Updated Indicator */}
+      {lastUpdated && (
+        <View style={styles.lastUpdatedContainer}>
+          <Text style={styles.lastUpdatedText}>
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -271,15 +421,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#131523",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: "#FFFFFF",
   },
   filterButton: {
@@ -287,11 +437,11 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: "#1A1D2F",
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   tabContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: 20,
     marginBottom: 16,
     backgroundColor: "#1A1D2F",
@@ -301,7 +451,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 8,
   },
   activeTab: {
@@ -310,13 +460,13 @@ const styles = StyleSheet.create({
   tabText: {
     color: "#9DA3B4",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   activeTabText: {
     color: "#FFFFFF",
   },
   periodContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: 20,
     marginBottom: 16,
     gap: 8,
@@ -333,7 +483,7 @@ const styles = StyleSheet.create({
   periodText: {
     color: "#9DA3B4",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   activePeriodText: {
     color: "#FFFFFF",
@@ -345,7 +495,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   rankedItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: "#1A1D2F",
     borderRadius: 12,
     padding: 16,
@@ -362,19 +512,19 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   rankText: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   infoSection: {
     flex: 1,
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   avatar: {
@@ -386,7 +536,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: "#FFFFFF",
   },
   currentUserName: {
@@ -397,21 +547,104 @@ const styles = StyleSheet.create({
     color: "#9DA3B4",
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   statItem: {
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   statValue: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: "#FFFFFF",
   },
   statLabel: {
     fontSize: 10,
     color: "#9DA3B4",
     marginTop: 2,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: "#9DA3B4",
+    textAlign: "center",
+  },
+  lastUpdatedContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  lastUpdatedText: {
+    fontSize: 12,
+    color: "#9DA3B4",
+  },
+  // New styles for leaderboard header
+  headerContainer: {
+    backgroundColor: "#1A1D2F",
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 16,
+  },
+  userRankSection: {
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginBottom: 8,
+  },
+  rankDisplay: {
+    alignItems: "center",
+  },
+  rankNumber: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#6674CC",
+    marginBottom: 4,
+  },
+  rankLabel: {
+    fontSize: 14,
+    color: "#9DA3B4",
+  },
+  statsSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  statCard: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: "#6674CC",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  actionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
 

@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS leaderboard_rankings (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     collection_id UUID REFERENCES collections(id) ON DELETE SET NULL,
     period VARCHAR(20) NOT NULL CHECK (period IN ('DAILY', 'WEEKLY', 'MONTHLY', 'ALL_TIME')),
-    rank INTEGER NOT NULL CHECK (rank > 0),
+    rank INTEGER NOT NULL CHECK (rank >= 0),
     total_pnl DECIMAL(30,10) NOT NULL,
     percentage_return DECIMAL(10,4) NOT NULL,
     portfolio_value DECIMAL(30,10) NOT NULL,
@@ -147,6 +147,7 @@ CREATE TABLE IF NOT EXISTS leaderboard_rankings (
     max_drawdown DECIMAL(10,4),
     calculated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(user_id, collection_id, period)
 );
 
@@ -196,6 +197,62 @@ RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update leaderboard rankings
+CREATE OR REPLACE FUNCTION update_leaderboard_rankings()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Update global rankings (no collection_id)
+    UPDATE leaderboard_rankings 
+    SET rank = subquery.new_rank
+    FROM (
+        SELECT 
+            id,
+            ROW_NUMBER() OVER (
+                PARTITION BY period 
+                ORDER BY total_pnl DESC, portfolio_value DESC
+            ) as new_rank
+        FROM leaderboard_rankings 
+        WHERE collection_id IS NULL
+    ) subquery
+    WHERE leaderboard_rankings.id = subquery.id;
+    
+    -- Update collection-specific rankings
+    UPDATE leaderboard_rankings 
+    SET rank = subquery.new_rank
+    FROM (
+        SELECT 
+            id,
+            ROW_NUMBER() OVER (
+                PARTITION BY collection_id, period 
+                ORDER BY total_pnl DESC, portfolio_value DESC
+            ) as new_rank
+        FROM leaderboard_rankings 
+        WHERE collection_id IS NOT NULL
+    ) subquery
+    WHERE leaderboard_rankings.id = subquery.id;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to check if user should be ranked (has made trades)
+CREATE OR REPLACE FUNCTION should_user_be_ranked(user_uuid UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+    has_trades BOOLEAN;
+BEGIN
+    -- Check if user has any portfolio items other than USDT with quantity > 0
+    SELECT EXISTS(
+        SELECT 1 FROM portfolio 
+        WHERE user_id = user_uuid 
+        AND symbol != 'USDT' 
+        AND quantity > 0
+    ) INTO has_trades;
+    
+    RETURN has_trades;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -266,6 +323,15 @@ CREATE TRIGGER update_portfolio_timestamp
 
 CREATE TRIGGER update_collections_timestamp 
     BEFORE UPDATE ON collections 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger to update leaderboard rankings when data changes
+CREATE TRIGGER update_leaderboard_rankings_trigger 
+    AFTER INSERT OR UPDATE OR DELETE ON leaderboard_rankings 
+    FOR EACH ROW EXECUTE FUNCTION update_leaderboard_rankings();
+
+CREATE TRIGGER update_leaderboard_rankings_timestamp 
+    BEFORE UPDATE ON leaderboard_rankings 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Enable Row Level Security (RLS)

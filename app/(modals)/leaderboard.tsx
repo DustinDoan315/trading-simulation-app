@@ -1,9 +1,12 @@
-import colors from '@/styles/colors';
-import React, { useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import colors from "@/styles/colors";
+import React, { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
+import { useNotification } from "@/components/ui/Notification";
 import {
   FlatList,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -13,7 +16,6 @@ import {
   View,
 } from "react-native";
 
-
 const LeaderboardModal = () => {
   const [activeTab, setActiveTab] = useState<
     "global" | "friends" | "collections"
@@ -22,106 +24,94 @@ const LeaderboardModal = () => {
     "weekly" | "monthly" | "allTime"
   >("weekly");
 
-  const globalRankings = [
-    {
-      id: "1",
-      rank: 1,
-      name: "CryptoKing",
-      avatar: "👑",
-      pnl: 45000,
-      percentage: 23.5,
-      portfolio: 236000,
-    },
-    {
-      id: "2",
-      rank: 2,
-      name: "TradeQueen",
-      avatar: "⭐",
-      pnl: 38000,
-      percentage: 19.2,
-      portfolio: 198000,
-    },
-    {
-      id: "3",
-      rank: 3,
-      name: "DeFiWizard",
-      avatar: "🔮",
-      pnl: 32000,
-      percentage: 16.8,
-      portfolio: 190000,
-    },
-    {
-      id: "4",
-      rank: 4,
-      name: "You",
-      avatar: "🚀",
-      pnl: 28000,
-      percentage: 15.2,
-      portfolio: 184000,
-      isCurrentUser: true,
-    },
-  ];
+  const { showNotification } = useNotification();
 
-  const friendsRankings = [
-    {
-      id: "1",
-      rank: 1,
-      name: "You",
-      avatar: "🚀",
-      pnl: 28000,
-      percentage: 15.2,
-      portfolio: 184000,
-      isCurrentUser: true,
-    },
-    {
-      id: "2",
-      rank: 2,
-      name: "Alex",
-      avatar: "💎",
-      pnl: 22000,
-      percentage: 12.8,
-      portfolio: 172000,
-    },
-    {
-      id: "3",
-      rank: 3,
-      name: "Sarah",
-      avatar: "🌟",
-      pnl: 18000,
-      percentage: 10.5,
-      portfolio: 171000,
-    },
-  ];
+  // Convert time period to API format
+  const getApiTimePeriod = (period: string) => {
+    switch (period) {
+      case "weekly":
+        return "WEEKLY";
+      case "monthly":
+        return "MONTHLY";
+      case "allTime":
+        return "ALL_TIME";
+      default:
+        return "WEEKLY";
+    }
+  };
 
-  const collectionRankings = [
-    {
-      id: "1",
-      rank: 1,
-      name: "Crypto Masters",
-      members: 12,
-      totalValue: 2400000,
-      avgPnl: 15.8,
-      isMyCollection: true,
-    },
-    {
-      id: "2",
-      rank: 2,
-      name: "DeFi Legends",
-      members: 8,
-      totalValue: 1900000,
-      avgPnl: 14.2,
-      isMyCollection: false,
-    },
-    {
-      id: "3",
-      rank: 3,
-      name: "Moonshot Hunters",
-      members: 45,
-      totalValue: 8900000,
-      avgPnl: 12.9,
-      isMyCollection: false,
-    },
-  ];
+  // Initialize leaderboard data with real-time updates
+  const {
+    data: leaderboardData,
+    refresh,
+    updateFilters,
+    isLoading,
+    error,
+    lastUpdated,
+  } = useLeaderboardData({
+    period: getApiTimePeriod(timePeriod),
+    limit: 50,
+  });
+
+  // Update filters when time period changes
+  useEffect(() => {
+    updateFilters({
+      period: getApiTimePeriod(timePeriod),
+      limit: 50,
+    });
+  }, [timePeriod, updateFilters]);
+
+  // Show error notification if there's an error
+  useEffect(() => {
+    if (error) {
+      showNotification({
+        type: "error",
+        message: `Failed to load leaderboard: ${error}`,
+      });
+    }
+  }, [error, showNotification]);
+
+  // Transform real-time data for display
+  const transformLeaderboardData = (data: any[], type: string) => {
+    return data.map((item, index) => {
+      if (type === "collections") {
+        return {
+          id: item.id || `collection-${index}`,
+          rank: item.rank || index + 1,
+          name: item.name || "Unknown Collection",
+          members: item.member_count || 0,
+          totalValue: parseFloat(item.total_value || "0"),
+          avgPnl: parseFloat(item.avg_pnl_percentage || "0"),
+          isMyCollection: item.is_my_collection || false,
+        };
+      } else {
+        return {
+          id: item.id || `user-${index}`,
+          rank: item.rank || index + 1,
+          name:
+            item.users?.display_name || item.users?.username || "Unknown User",
+          avatar: item.users?.avatar_emoji || "👤",
+          pnl: parseFloat(item.total_pnl || "0"),
+          percentage: parseFloat(item.total_pnl_percentage || "0"),
+          portfolio: parseFloat(item.total_portfolio_value || "0"),
+          isCurrentUser: item.is_current_user || false,
+        };
+      }
+    });
+  };
+
+  const globalRankings = transformLeaderboardData(
+    leaderboardData.global,
+    "global"
+  );
+  const friendsRankings = transformLeaderboardData(
+    leaderboardData.friends,
+    "friends"
+  );
+  const collectionRankings = transformLeaderboardData(
+    leaderboardData.collections,
+    "collections"
+  );
 
   const getRankColor = (rank: number) => {
     if (rank === 1) return "#FFD700";
@@ -333,7 +323,31 @@ const LeaderboardModal = () => {
         style={styles.rankingsList}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.rankingsListContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={refresh}
+            tintColor="#6674CC"
+            colors={["#6674CC"]}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              {isLoading ? "Loading leaderboard..." : "No data available"}
+            </Text>
+          </View>
+        }
       />
+
+      {/* Last Updated Indicator */}
+      {lastUpdated && (
+        <View style={styles.lastUpdatedContainer}>
+          <Text style={styles.lastUpdatedText}>
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -505,6 +519,26 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#9DA3B4",
     textTransform: "uppercase",
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: "#9DA3B4",
+    textAlign: "center",
+  },
+  lastUpdatedContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  lastUpdatedText: {
+    fontSize: 12,
+    color: "#9DA3B4",
   },
 });
 

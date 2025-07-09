@@ -1,6 +1,7 @@
 import * as Linking from 'expo-linking';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LeaderboardService from '@/services/LeaderboardService';
 import RealTimeDataService from '@/services/RealTimeDataService';
 import scheduler from '@/utils/scheduler';
 import Toast from 'react-native-toast-message';
@@ -52,8 +53,9 @@ export default function RootLayout() {
 
         return () => {
           scheduler.clear();
-          // Stop real-time data service when app is unmounted
+          // Stop real-time data services when app is unmounted
           RealTimeDataService.getInstance().stopUpdates();
+          LeaderboardService.getInstance().cleanup();
         };
       }
     };

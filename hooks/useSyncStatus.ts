@@ -8,6 +8,11 @@ export interface SyncStatus {
   syncStatus: Record<string, { status: string; lastError?: string; lastSyncAt: string }>;
   hasPendingOperations: boolean;
   isLoading: boolean;
+  leaderboardStatus?: {
+    lastUpdated: string | null;
+    isConnected: boolean;
+    error?: string;
+  };
 }
 
 export const useSyncStatus = () => {
@@ -31,7 +36,7 @@ export const useSyncStatus = () => {
   }, []);
 
   const checkForSyncIssues = useCallback(() => {
-    const { syncStatus: statusData, hasPendingOperations } = syncStatus;
+    const { syncStatus: statusData, hasPendingOperations, leaderboardStatus } = syncStatus;
     
     // Check for failed syncs
     const failedSyncs = Object.entries(statusData).filter(([_, data]) => data.status === 'failed');
@@ -49,6 +54,14 @@ export const useSyncStatus = () => {
       showNotification({
         type: 'info',
         message: 'Some operations are queued for sync when connection is restored.',
+      });
+    }
+
+    // Check for leaderboard connection issues
+    if (leaderboardStatus?.error) {
+      showNotification({
+        type: 'info',
+        message: `Leaderboard connection issue: ${leaderboardStatus.error}. Rankings may not be up to date.`,
       });
     }
   }, [syncStatus, showNotification]);
