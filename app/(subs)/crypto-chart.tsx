@@ -1,27 +1,27 @@
-import Chart from '@/components/crypto/Chart';
-import colors from '@/styles/colors';
-import OrderBook from '@/components/trading/OrderBook';
-import OrderEntry from '@/components/trading/OrderEntry';
-import React, { useEffect, useRef, useState } from 'react';
-import SymbolHeader from '@/components/crypto/SymbolHeader';
-import TimeframeSelector from '@/components/crypto/TimeframeSelector';
-import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
-import useCryptoAPI from '@/hooks/useCryptoAPI';
-import useHistoricalData from '@/hooks/useHistoricalData';
-import useOrderBook from '@/hooks/useOrderBook';
-import UUIDService from '@/services/UUIDService';
-import { ChartType, Order, TimeframeOption } from '../../types/crypto';
-import { handleOrderSubmission } from '@/utils/helper';
-import { OrderDispatchContext, OrderValidationContext } from '@/utils/helper';
-import { RootState } from '@/store';
-import { updateCollectionHolding } from '@/features/dualBalanceSlice';
-import { useDispatch, useSelector } from 'react-redux';
-import { useDualBalance } from '@/hooks/useDualBalance';
-import { useLanguage } from '@/context/LanguageContext';
-import { useLocalSearchParams } from 'expo-router';
-import { useNotification } from '@/components/ui/Notification';
-import { UserService } from '@/services/UserService';
-import { WebView } from 'react-native-webview';
+import Chart from "@/components/crypto/Chart";
+import colors from "@/styles/colors";
+import OrderBook from "@/components/trading/OrderBook";
+import OrderEntry from "@/components/trading/OrderEntry";
+import React, { useEffect, useRef, useState } from "react";
+import SymbolHeader from "@/components/crypto/SymbolHeader";
+import TimeframeSelector from "@/components/crypto/TimeframeSelector";
+import TradingContextIndicator from "@/components/trading/TradingContextIndicator";
+import useCryptoAPI from "@/hooks/useCryptoAPI";
+import useHistoricalData from "@/hooks/useHistoricalData";
+import useOrderBook from "@/hooks/useOrderBook";
+import UUIDService from "@/services/UUIDService";
+import { ChartType, Order, TimeframeOption } from "../../types/crypto";
+import { handleOrderSubmission } from "@/utils/helper";
+import { OrderDispatchContext, OrderValidationContext } from "@/utils/helper";
+import { RootState } from "@/store";
+import { updateCollectionHolding } from "@/features/dualBalanceSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { useDualBalance } from "@/hooks/useDualBalance";
+import { useLanguage } from "@/context/LanguageContext";
+import { useLocalSearchParams } from "expo-router";
+import { useNotification } from "@/components/ui/Notification";
+import { UserService } from "@/services/UserService";
+import { WebView } from "react-native-webview";
 import {
   SafeAreaView,
   ScrollView,
@@ -34,7 +34,6 @@ import {
   updateHolding,
   updateTrade,
 } from "@/features/balanceSlice";
-
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
@@ -160,31 +159,9 @@ const CryptoChartScreen = () => {
         },
         updateTrade: (payload) => dispatch(updateTrade(payload)),
         syncTransaction: async (order) => {
-          try {
-            const uuid = await UUIDService.getOrCreateUser();
-            await UserService.createTransaction({
-              user_id: uuid,
-              type: order.type.toUpperCase() as "BUY" | "SELL",
-              symbol: order.symbol,
-              quantity: (order.amount || 0).toString(),
-              price: (order.price || 0).toString(),
-              total_value: (order.total || 0).toString(),
-              fee: (order.fees || 0).toString(),
-              order_type: order.orderType.toUpperCase() as "MARKET" | "LIMIT",
-              status: order.status.toUpperCase() as
-                | "PENDING"
-                | "COMPLETED"
-                | "FAILED",
-              collection_id:
-                activeContext.type === "collection"
-                  ? activeContext.collectionId
-                  : undefined,
-              timestamp: new Date(order.timestamp).toISOString(),
-            });
-            console.log("✅ Transaction synced to cloud successfully");
-          } catch (error) {
-            console.error("❌ Failed to sync transaction to cloud:", error);
-          }
+          // Transaction is already created in DualBalanceService.executeTrade()
+          // No need to create another transaction here
+          console.log("✅ Transaction already created in executeTrade");
         },
       };
 
