@@ -1,13 +1,13 @@
 import UUIDService from './UUIDService';
 import {
-    CollectionBalance,
-    CollectionPortfolio,
-    CombinedPnLResult,
-    IndividualBalance,
-    PnLResult,
-    TradingContext,
-    Transaction
-    } from '../types/database';
+  CollectionBalance,
+  CollectionPortfolio,
+  CombinedPnLResult,
+  IndividualBalance,
+  PnLResult,
+  TradingContext,
+  Transaction
+  } from '../types/database';
 import { Holding } from '../types/crypto';
 import { supabase } from './SupabaseService';
 
@@ -206,7 +206,6 @@ export class DualBalanceService {
         order_type: order.orderType?.toUpperCase() as 'MARKET' | 'LIMIT',
         status: 'COMPLETED' as const,
         collection_id: context.type === 'collection' ? context.collectionId : null,
-        context_type: context.type,
         usdt_balance_before: balanceBefore.toString(),
         usdt_balance_after: balanceAfter.toString(),
         timestamp: new Date().toISOString(),

@@ -140,7 +140,6 @@ export interface Transaction {
   order_type: "MARKET" | "LIMIT";
   status: "PENDING" | "COMPLETED" | "CANCELLED" | "FAILED";
   collection_id?: string; // UUID - for collection trading
-  context_type?: TradingContextType; // 'individual' or 'collection'
   usdt_balance_before?: string; // DECIMAL(30,10)
   usdt_balance_after?: string; // DECIMAL(30,10)
   timestamp: string; // TIMESTAMP
