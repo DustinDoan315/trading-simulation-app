@@ -1,19 +1,19 @@
 import {
-    calculateCollectionPnL,
-    calculateCombinedPnL,
-    calculateIndividualPnL,
-    executeTrade,
-    loadCollectionBalance,
-    loadIndividualBalance,
-    setTradingContext,
-    updateCollectionCurrentPrice,
-    updateCollectionHolding,
-    updateIndividualCurrentPrice,
-    updateIndividualHolding
-    } from '@/features/dualBalanceSlice';
+  calculateCollectionPnL,
+  calculateCombinedPnL,
+  calculateIndividualPnL,
+  executeTrade,
+  loadCollectionBalance,
+  loadIndividualBalance,
+  setTradingContext,
+  updateCollectionCurrentPrice,
+  updateCollectionHolding,
+  updateIndividualCurrentPrice,
+  updateIndividualHolding
+  } from '@/features/dualBalanceSlice';
 import { CollectionBalance, IndividualBalance, TradingContext } from '@/types/database';
 import { HoldingUpdatePayload } from '@/types/crypto';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useUser } from '@/context/UserContext';
 
@@ -27,7 +27,7 @@ export const useDualBalance = () => {
     individual,
     collections,
     activeContext
-  } = useAppSelector(state => state.dualBalance);
+  } = useAppSelector((state: RootState) => state.dualBalance);
 
   // Get current balance based on active context
   const currentBalance = useMemo(() => {
