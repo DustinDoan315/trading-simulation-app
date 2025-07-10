@@ -9,6 +9,7 @@ import {
   Transaction
   } from '../types/database';
 import { Holding } from '../types/crypto';
+import { logger } from '@/utils/logger';
 import { supabase } from './SupabaseService';
 
 
@@ -77,7 +78,7 @@ export class DualBalanceService {
         initialBalance,
       };
     } catch (error) {
-      console.error('Error getting individual balance:', error);
+      logger.error("Error getting individual balance", "DualBalanceService", error);
       throw error;
     }
   }
@@ -153,7 +154,7 @@ export class DualBalanceService {
         collectionId,
       };
     } catch (error) {
-      console.error('Error getting collection balance:', error);
+      logger.error("Error getting collection balance", "DualBalanceService", error);
       throw error;
     }
   }
@@ -221,7 +222,7 @@ export class DualBalanceService {
 
       return data;
     } catch (error) {
-      console.error('Error executing trade:', error);
+      logger.error("Error executing trade", "DualBalanceService", error);
       throw error;
     }
   }

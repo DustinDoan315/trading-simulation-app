@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchTransactions } from '@/features/userSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
 import { router } from 'expo-router';
 import { Transaction } from '@/types/database';
 import { useAppDispatch } from '@/store';
@@ -38,14 +39,18 @@ const TradingHistoryModal = () => {
     }
   }, [user?.id, dispatch]);
 
-  const onRefresh = async () => {
+  const handleRefresh = async () => {
     if (!user?.id) return;
 
-    setRefreshing(true);
     try {
+      setRefreshing(true);
       await refreshUserData(user.id);
     } catch (error) {
-      console.error("Failed to refresh trading history:", error);
+      logger.error(
+        "Failed to refresh trading history",
+        "TradingHistory",
+        error
+      );
     } finally {
       setRefreshing(false);
     }
@@ -404,7 +409,7 @@ const TradingHistoryModal = () => {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={onRefresh}
+            onRefresh={handleRefresh}
             tintColor="#6674CC"
             colors={["#6674CC"]}
           />

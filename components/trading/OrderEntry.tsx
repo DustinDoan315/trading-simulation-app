@@ -1,15 +1,16 @@
-import ActionButton from "./ActionButton";
-import AmountPercentButton from "../common/AmountPercentButton";
-import Dimensions from "@/styles/dimensions";
-import PriceInput from "../common/PriceInput";
-import React, { useEffect, useRef, useState } from "react";
-import TabSelector from "./TableSelector";
-import { DEFAULT_CRYPTO, DEFAULT_CURRENCY } from "@/utils/constant";
-import { formatAmount } from "@/utils/formatters";
-import { RootState } from "@/store";
-import { StyleSheet, View } from "react-native";
-import { useLanguage } from "@/context/LanguageContext";
-import { useSelector } from "react-redux";
+import ActionButton from './ActionButton';
+import AmountPercentButton from '../common/AmountPercentButton';
+import Dimensions from '@/styles/dimensions';
+import PriceInput from '../common/PriceInput';
+import React, { useEffect, useRef, useState } from 'react';
+import TabSelector from './TableSelector';
+import { DEFAULT_CRYPTO, DEFAULT_CURRENCY } from '@/utils/constant';
+import { formatAmount } from '@/utils/formatters';
+import { RootState } from '@/store';
+import { StyleSheet, View } from 'react-native';
+import { useLanguage } from '@/context/LanguageContext';
+import { useSelector } from 'react-redux';
+
 
 interface OrderEntryProps {
   name?: string;
@@ -52,14 +53,6 @@ const OrderEntry = ({
       Object.values(holdings).find(
         (h: any) => h.symbol.toUpperCase() === symbol.toUpperCase()
       );
-
-    // Debug logging
-    console.log(`🔍 Token balance lookup for ${symbol}:`, {
-      symbol,
-      holdingsKeys: Object.keys(holdings),
-      foundHolding: holding,
-      balance: holding ? holding.amount : 0,
-    });
 
     return holding ? holding.amount : 0;
   });

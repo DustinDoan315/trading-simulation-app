@@ -1,10 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import Colors from "@/styles/colors";
-import Dimensions from "@/styles/dimensions";
-import Typography from "@/styles/typography";
-import { formatAmount } from "@/utils/formatters";
-import { useLanguage } from "@/context/LanguageContext";
+import Colors from '@/styles/colors';
+import Dimensions from '@/styles/dimensions';
+import React, { useEffect, useState } from 'react';
+import Typography from '@/styles/typography';
+import { formatAmount } from '@/utils/formatters';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+  } from 'react-native';
+import { useLanguage } from '@/context/LanguageContext';
+
 
 interface AmountPercentButtonProps {
   currentPosition: number;
@@ -19,7 +25,7 @@ interface AmountPercentButtonProps {
   resetTrigger?: any; // New prop to trigger reset from parent
 }
 
-  const AmountPercentButton = ({
+const AmountPercentButton = ({
   currentPosition = 0,
   setCurrentPosition,
   onChange,
@@ -33,14 +39,12 @@ interface AmountPercentButtonProps {
   const { t } = useLanguage();
   useEffect(() => {
     if (resetTrigger !== undefined) {
-      console.log("Resetting position due to external trigger");
       setCurrentPosition(0);
       onChange(0);
     }
   }, [resetTrigger]);
 
   const handleCirclePress = (pos: number) => {
-    console.log(`Setting position to ${pos}%`);
     setCurrentPosition(pos);
     let amount = 0;
     if (tradeType === "buy" && balanceType === "usdt") {
@@ -49,7 +53,6 @@ interface AmountPercentButtonProps {
       amount = availableAmount * (pos / 100);
     }
     if (onChange) {
-      console.log(`Calling onChange with amount: ${amount}`);
       onChange(amount);
     }
   };

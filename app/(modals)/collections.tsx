@@ -60,13 +60,14 @@ const CollectionsModal = () => {
   };
 
   const handleJoinCollection = () => {
-    // TODO: Implement join collection functionality
-    console.log("Join collection pressed");
+    router.push("/(modals)/join-collection");
   };
 
   const handleCollectionPress = (collection: any) => {
-    // TODO: Implement collection detail view
-    console.log("Collection pressed:", collection.id);
+    router.push({
+      pathname: "/(modals)/collection-detail",
+      params: { id: collection.id.toString() },
+    });
   };
 
   const CollectionItem = ({ collection, isOwner = false }: any) => (

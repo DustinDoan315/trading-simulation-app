@@ -1,6 +1,13 @@
-import React, { createContext, ReactNode, useContext, useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { User } from "@/types/database";
+import { logger } from '@/utils/logger';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { User } from '@/types/database';
+import React, {
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+} from "react";
 import {
   clearUser,
   fetchFavorites,
@@ -9,6 +16,7 @@ import {
   fetchUser,
   fetchUserStats,
 } from "@/features/userSlice";
+
 
 interface UserContextType {
   user: User | null;
@@ -37,28 +45,34 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     error,
   } = useAppSelector((state) => state.user);
 
-  const refreshUser = async (userId: string) => {
-    try {
-      await dispatch(fetchUser(userId)).unwrap();
-    } catch (error) {
-      console.error("Failed to refresh user:", error);
-    }
-  };
+  const refreshUser = useCallback(
+    async (userId: string) => {
+      try {
+        await dispatch(fetchUser(userId)).unwrap();
+      } catch (error) {
+        logger.error("Failed to refresh user", "UserContext", error);
+      }
+    },
+    [dispatch]
+  );
 
-  const refreshUserData = async (userId: string) => {
-    try {
-      // Fetch all user-related data in parallel
-      await Promise.all([
-        dispatch(fetchUser(userId)),
-        dispatch(fetchUserStats(userId)),
-        dispatch(fetchPortfolio(userId)),
-        dispatch(fetchTransactions({ userId, limit: 50 })),
-        dispatch(fetchFavorites(userId)),
-      ]);
-    } catch (error) {
-      console.error("Failed to refresh user data:", error);
-    }
-  };
+  const refreshUserData = useCallback(
+    async (userId: string) => {
+      try {
+        // Fetch all user-related data in parallel
+        await Promise.all([
+          dispatch(fetchUser(userId)),
+          dispatch(fetchUserStats(userId)),
+          dispatch(fetchPortfolio(userId)),
+          dispatch(fetchTransactions({ userId, limit: 50 })),
+          dispatch(fetchFavorites(userId)),
+        ]);
+      } catch (error) {
+        logger.error("Failed to refresh user data", "UserContext", error);
+      }
+    },
+    [dispatch]
+  );
 
   const logout = () => {
     dispatch(clearUser());

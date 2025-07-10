@@ -45,6 +45,7 @@ export interface Asset {
   id: string;
   name: string;
   symbol: string;
+  cryptoId?: string; // Add crypto ID for API calls
   amount: string;
   value: string;
   changePercentage?: number;
@@ -69,6 +70,7 @@ export interface Holding {
   valueInUSD: number;
   symbol: string;
   name: string;
+  cryptoId?: string; // Add crypto ID for API calls
   image_url?: string;
   averageBuyPrice: number;
   currentPrice: number;

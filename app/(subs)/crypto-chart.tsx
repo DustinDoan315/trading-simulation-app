@@ -1,27 +1,28 @@
-import Chart from "@/components/crypto/Chart";
-import colors from "@/styles/colors";
-import OrderBook from "@/components/trading/OrderBook";
-import OrderEntry from "@/components/trading/OrderEntry";
-import React, { useEffect, useRef, useState } from "react";
-import SymbolHeader from "@/components/crypto/SymbolHeader";
-import TimeframeSelector from "@/components/crypto/TimeframeSelector";
-import TradingContextIndicator from "@/components/trading/TradingContextIndicator";
-import useCryptoAPI from "@/hooks/useCryptoAPI";
-import useHistoricalData from "@/hooks/useHistoricalData";
-import useOrderBook from "@/hooks/useOrderBook";
-import UUIDService from "@/services/UUIDService";
-import { ChartType, Order, TimeframeOption } from "../../types/crypto";
-import { handleOrderSubmission } from "@/utils/helper";
-import { OrderDispatchContext, OrderValidationContext } from "@/utils/helper";
-import { RootState } from "@/store";
-import { updateCollectionHolding } from "@/features/dualBalanceSlice";
-import { useDispatch, useSelector } from "react-redux";
-import { useDualBalance } from "@/hooks/useDualBalance";
-import { useLanguage } from "@/context/LanguageContext";
-import { useLocalSearchParams } from "expo-router";
-import { useNotification } from "@/components/ui/Notification";
-import { UserService } from "@/services/UserService";
-import { WebView } from "react-native-webview";
+import Chart from '@/components/crypto/Chart';
+import colors from '@/styles/colors';
+import OrderBook from '@/components/trading/OrderBook';
+import OrderEntry from '@/components/trading/OrderEntry';
+import React, { useEffect, useRef, useState } from 'react';
+import SymbolHeader from '@/components/crypto/SymbolHeader';
+import TimeframeSelector from '@/components/crypto/TimeframeSelector';
+import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
+import useCryptoAPI from '@/hooks/useCryptoAPI';
+import useHistoricalData from '@/hooks/useHistoricalData';
+import useOrderBook from '@/hooks/useOrderBook';
+import UUIDService from '@/services/UUIDService';
+import { ChartType, Order, TimeframeOption } from '../../types/crypto';
+import { handleOrderSubmission } from '@/utils/helper';
+import { logger } from '@/utils/logger';
+import { OrderDispatchContext, OrderValidationContext } from '@/utils/helper';
+import { RootState } from '@/store';
+import { updateCollectionHolding } from '@/features/dualBalanceSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { useDualBalance } from '@/hooks/useDualBalance';
+import { useLanguage } from '@/context/LanguageContext';
+import { useLocalSearchParams } from 'expo-router';
+import { useNotification } from '@/components/ui/Notification';
+import { UserService } from '@/services/UserService';
+import { WebView } from 'react-native-webview';
 import {
   SafeAreaView,
   ScrollView,
@@ -34,6 +35,7 @@ import {
   updateHolding,
   updateTrade,
 } from "@/features/balanceSlice";
+
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
@@ -77,19 +79,18 @@ const CryptoChartScreen = () => {
   const onMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      console.log("WebView message:", data);
       if (data.type === "ready") {
         setIsReady(true);
         fetchHistoricalData(timeframe, webViewRef, true, chartType, symbol);
       } else if (data.type === "error") {
         setError(data.message);
       } else if (data.type === "priceSelected") {
-        console.log("Price Selected", data.price);
+        // Price selection handled silently
       } else if (data.type === "chartInteraction") {
-        console.log("Chart Interaction", data.action);
+        // Chart interaction handled silently
       }
     } catch (e: any) {
-      console.error("Error parsing WebView message:", e);
+      logger.error("Error parsing WebView message", "CryptoChart", e);
       setError(t("chart.errorParsingMessage"));
     }
   };
@@ -161,7 +162,6 @@ const CryptoChartScreen = () => {
         syncTransaction: async (order) => {
           // Transaction is already created in DualBalanceService.executeTrade()
           // No need to create another transaction here
-          console.log("✅ Transaction already created in executeTrade");
         },
       };
 
@@ -176,19 +176,10 @@ const CryptoChartScreen = () => {
         dispatchContext
       );
     } catch (error) {
-      console.error("Failed to submit order:", error);
+      logger.error("Failed to submit order", "CryptoChart", error);
       throw error;
     }
   };
-
-  console.log("====================================");
-  console.log("Current Price:", currentPrice);
-  console.log("Price Change:", priceChange);
-  console.log("Symbol:", id);
-  console.log("Active Context:", activeContext);
-  console.log("Current Balance:", currentBalance);
-  console.log("Current Holdings:", currentHoldings);
-  console.log("====================================");
 
   return (
     <SafeAreaView style={styles.container}>

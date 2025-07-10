@@ -4,6 +4,7 @@ import NetInfo from '@react-native-community/netinfo';
 import UUIDService from './UUIDService';
 import { AsyncStorageService } from './AsyncStorageService';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { logger } from '@/utils/logger';
 
 
 //SupabaseService.ts
@@ -66,41 +67,37 @@ class SupabaseConfig {
 
 // Initialize Supabase with proper configuration
 const initializeSupabase = (): SupabaseClient => {
-  try {
-    const { url, key } = SupabaseConfig.getConfig();
+  const config = SupabaseConfig.getConfig();
+  
+  logger.info("Initializing Supabase", "SupabaseService", {
+    url: config.url,
+    hasKey: !!config.key,
+  });
 
-    console.log("Initializing Supabase:", {
-      url: url.substring(0, 30) + "...",
-      keyLength: key.length,
-      timestamp: new Date().toISOString(),
-    });
+  const supabase = createClient(config.url, config.key, {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+    global: {
+      headers: {
+        "x-client-info": "react-native-app",
+      },
+    },
+    // Add retry logic at client level
+    db: {
+      schema: "public",
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
+  });
 
-    return createClient(url, key, {
-      auth: {
-        storage: AsyncStorage,
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      },
-      global: {
-        headers: {
-          "x-client-info": "react-native-app",
-        },
-      },
-      // Add retry logic at client level
-      db: {
-        schema: "public",
-      },
-      realtime: {
-        params: {
-          eventsPerSecond: 10,
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Failed to initialize Supabase:", error);
-    throw error;
-  }
+  return supabase;
 };
 
 export const supabase = initializeSupabase();
@@ -142,11 +139,8 @@ class NetworkUtils {
 
 // Utility function to handle PGRST116 errors (no rows returned)
 export const handleSupabaseError = (error: any, context: string): any => {
-  if (error?.code === "PGRST116") {
-    console.log(`${context}: No rows found (PGRST116)`);
-    return null;
-  }
-  throw error;
+  logger.error(`Supabase error in ${context}`, "SupabaseService", error);
+  return error;
 };
 
 // Offline queue management
@@ -159,35 +153,31 @@ class OfflineQueue {
   ): Promise<void> {
     try {
       const queue = await this.getQueue();
-
-      if (queue.length >= this.MAX_QUEUE_SIZE) {
-        // Remove oldest operations if queue is full
-        queue.splice(0, queue.length - this.MAX_QUEUE_SIZE + 1);
-      }
-
-      const queuedOp: QueuedOperation = {
+      const newOperation: QueuedOperation = {
         ...operation,
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: Math.random().toString(36).substr(2, 9),
         retryCount: 0,
       };
 
-      queue.push(queuedOp);
-      await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
+      queue.push(newOperation);
 
-      console.log(
-        `Added operation to queue: ${queuedOp.type} (Queue size: ${queue.length})`
-      );
+      if (queue.length > this.MAX_QUEUE_SIZE) {
+        queue.shift();
+      }
+
+      await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
+      logger.info(`Added operation to queue: ${operation.type}`, "OfflineQueue");
     } catch (error) {
-      console.error("Failed to add operation to queue:", error);
+      logger.error("Failed to add operation to queue", "OfflineQueue", error);
     }
   }
 
   static async getQueue(): Promise<QueuedOperation[]> {
     try {
-      const queueData = await AsyncStorage.getItem(this.QUEUE_KEY);
-      return queueData ? JSON.parse(queueData) : [];
+      const queueStr = await AsyncStorage.getItem(this.QUEUE_KEY);
+      return queueStr ? JSON.parse(queueStr) : [];
     } catch (error) {
-      console.error("Failed to get queue:", error);
+      logger.error("Failed to get queue", "OfflineQueue", error);
       return [];
     }
   }
@@ -198,7 +188,7 @@ class OfflineQueue {
       const filteredQueue = queue.filter((op) => op.id !== operationId);
       await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(filteredQueue));
     } catch (error) {
-      console.error("Failed to remove operation from queue:", error);
+      logger.error("Failed to remove operation from queue", "OfflineQueue", error);
     }
   }
 
@@ -206,7 +196,7 @@ class OfflineQueue {
     try {
       await AsyncStorage.removeItem(this.QUEUE_KEY);
     } catch (error) {
-      console.error("Failed to clear queue:", error);
+      logger.error("Failed to clear queue", "OfflineQueue", error);
     }
   }
 }
@@ -280,8 +270,8 @@ export class SyncService {
   // Test Supabase connection
   static async testConnection(): Promise<SyncResult<boolean>> {
     try {
-      console.log("Testing Supabase connection...");
-
+      logger.info("Testing Supabase connection", "SyncService");
+      
       const networkStatus = await NetworkUtils.getNetworkStatus();
       if (!networkStatus.isConnected) {
         return {
@@ -293,27 +283,22 @@ export class SyncService {
 
       const { data, error } = await supabase
         .from("users")
-        .select("count")
+        .select("id")
         .limit(1);
 
       if (error) {
-        return {
-          success: false,
-          error: `Connection test failed: ${error.message}`,
-          timestamp: new Date().toISOString(),
-        };
+        throw new Error(error.message);
       }
 
-      console.log("Supabase connection successful");
+      logger.info("Supabase connection successful", "SyncService");
       return {
         success: true,
         data: true,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error("Connection test failed:", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      logger.error("Connection test failed", "SyncService", errorMessage);
       return {
         success: false,
         error: errorMessage,
@@ -329,37 +314,30 @@ export class SyncService {
     customRetries?: number
   ): Promise<T> {
     const maxRetries = customRetries || this.RETRY_CONFIG.maxRetries;
-    let lastError;
+    let attempt = 1;
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    while (attempt <= maxRetries) {
       try {
-        // Check network before each attempt
-        const networkStatus = await NetworkUtils.getNetworkStatus();
-        if (!networkStatus.isConnected) {
-          throw new Error("No network connection available");
-        }
-
-        console.log(`${context} - Attempt ${attempt}/${maxRetries}`);
-        return await operation();
+        logger.info(`${context} - Attempt ${attempt}/${maxRetries}`, "SyncService");
+        
+        const result = await operation();
+        
+        logger.info(`${context} completed successfully`, "SyncService");
+        return result;
       } catch (error) {
-        lastError = error as Error;
-        console.log(
-          `${context} failed (attempt ${attempt}):`,
-          lastError.message
-        );
-
-        if (attempt < maxRetries) {
-          const delay = Math.min(
-            this.RETRY_CONFIG.baseDelay * Math.pow(2, attempt - 1),
-            this.RETRY_CONFIG.maxDelay
-          );
-          console.log(`Retrying ${context} in ${delay}ms...`);
-          await new Promise((resolve) => setTimeout(resolve, delay));
+        if (attempt === maxRetries) {
+          throw error;
         }
+
+        const delay = this.RETRY_CONFIG.baseDelay * Math.pow(2, attempt - 1);
+        logger.info(`Retrying ${context} in ${delay}ms`, "SyncService");
+        
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        attempt++;
       }
     }
 
-    throw lastError;
+    throw new Error(`${context} failed after ${maxRetries} attempts`);
   }
 
   // Update sync status
@@ -370,22 +348,17 @@ export class SyncService {
   ): Promise<void> {
     try {
       const syncStatus = {
-        [operation]: {
-          lastSyncAt: new Date().toISOString(),
-          status,
-          ...(error && { lastError: error }),
-        },
+        lastSyncAt: Math.floor(new Date().getTime() / 1000),
+        status,
+        ...(error && { lastError: error }),
       };
 
-      const existingStatus = await AsyncStorage.getItem(this.SYNC_STATUS_KEY);
-      const currentStatus = existingStatus ? JSON.parse(existingStatus) : {};
-
       await AsyncStorage.setItem(
-        this.SYNC_STATUS_KEY,
-        JSON.stringify({ ...currentStatus, ...syncStatus })
+        `${this.SYNC_STATUS_KEY}_${operation}`,
+        JSON.stringify(syncStatus)
       );
     } catch (error) {
-      console.error("Failed to update sync status:", error);
+      logger.error("Failed to update sync status", "SyncService", error);
     }
   }
 
@@ -691,26 +664,20 @@ export class SyncService {
     uuid: string,
     portfolio: any[]
   ): Promise<SyncResult> {
-    console.log("====================================");
-    console.log("SyncService.syncPortfolio called");
-    console.log("UUID:", uuid);
-    console.log("Portfolio data:", JSON.stringify(portfolio, null, 2));
-    console.log("Portfolio length:", portfolio.length);
-    console.log("====================================");
+    logger.info("Starting portfolio sync", "SyncService", {
+      uuid,
+      portfolioLength: portfolio.length,
+    });
 
     try {
       await this.updateSyncStatus("portfolioSync", "pending");
-      console.log("✅ Sync status set to pending");
 
       const result = await this.executeWithRetry(async () => {
-        console.log("🔄 Executing syncPortfolioToCloud...");
         await this.syncPortfolioToCloud(uuid, portfolio);
-        console.log("✅ syncPortfolioToCloud completed successfully");
         return portfolio;
       }, "Portfolio Sync");
 
       await this.updateSyncStatus("portfolioSync", "synced");
-      console.log("✅ Sync status set to synced");
 
       const successResult = {
         success: true,
@@ -718,27 +685,21 @@ export class SyncService {
         timestamp: new Date().toISOString(),
       };
 
-      console.log(
-        "✅ syncPortfolio returning success:",
-        JSON.stringify(successResult, null, 2)
-      );
+      logger.info("Portfolio sync completed successfully", "SyncService", successResult);
       return successResult;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error("❌ Portfolio sync failed:", errorMessage);
-      console.error("❌ Error details:", error);
-      console.error(
-        "❌ Error stack:",
-        error instanceof Error ? error.stack : "No stack trace"
-      );
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      logger.error("Portfolio sync failed", "SyncService", {
+        error: errorMessage,
+        details: error,
+      });
 
       // Add to offline queue if network related
       if (
         errorMessage.includes("Network") ||
         errorMessage.includes("network")
       ) {
-        console.log("📱 Adding to offline queue due to network error");
+        logger.info("Adding to offline queue due to network error", "SyncService");
         await OfflineQueue.addToQueue({
           type: "portfolio_sync",
           payload: { uuid, portfolio },
@@ -748,7 +709,6 @@ export class SyncService {
       }
 
       await this.updateSyncStatus("portfolioSync", "failed", errorMessage);
-      console.log("❌ Sync status set to failed");
 
       const errorResult = {
         success: false,
@@ -756,10 +716,6 @@ export class SyncService {
         timestamp: new Date().toISOString(),
       };
 
-      console.log(
-        "❌ syncPortfolio returning error:",
-        JSON.stringify(errorResult, null, 2)
-      );
       return errorResult;
     }
   }
@@ -767,12 +723,10 @@ export class SyncService {
   // DEPRECATED: Clear existing portfolio data for a user
   // This method is deprecated as we now use MERGE strategy instead of clearing
   static async clearUserPortfolio(uuid: string): Promise<SyncResult> {
-    console.warn(
-      "⚠️ clearUserPortfolio is deprecated. Use MERGE strategy instead."
-    );
+    logger.warn("clearUserPortfolio is deprecated. Use MERGE strategy instead.", "SyncService");
 
     try {
-      console.log("🗑️ Clearing portfolio data for user:", uuid);
+      logger.info("Clearing portfolio data for user", "SyncService", { uuid });
 
       const { error } = await supabase
         .from("portfolio")
@@ -780,7 +734,7 @@ export class SyncService {
         .eq("user_id", uuid);
 
       if (error) {
-        console.error("❌ Failed to clear portfolio:", error);
+        logger.error("Failed to clear portfolio", "SyncService", error);
         return {
           success: false,
           error: error.message,
@@ -788,16 +742,15 @@ export class SyncService {
         };
       }
 
-      console.log("✅ Portfolio cleared successfully");
+      logger.info("Portfolio cleared successfully", "SyncService");
       return {
         success: true,
         data: { message: "Portfolio cleared" },
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error("❌ Error clearing portfolio:", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      logger.error("Error clearing portfolio", "SyncService", errorMessage);
       return {
         success: false,
         error: errorMessage,
@@ -844,9 +797,8 @@ export class SyncService {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error("Collections sync failed:", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      logger.error("Collections sync failed", "SyncService", errorMessage);
       await this.updateSyncStatus("collectionsSync", "failed", errorMessage);
 
       return {
@@ -880,7 +832,7 @@ export class SyncService {
         rules: c.rules,
       }));
     } catch (error) {
-      console.error("Failed to sync collections from cloud:", error);
+      logger.error("Failed to sync collections from cloud", "SyncService", error);
       return [];
     }
   }
@@ -888,39 +840,31 @@ export class SyncService {
   // Process offline queue when connection is restored
   static async processOfflineQueue(): Promise<SyncResult> {
     try {
-      const networkStatus = await NetworkUtils.getNetworkStatus();
-      if (!networkStatus.isConnected) {
-        return {
-          success: false,
-          error: "No network connection to process queue",
-          timestamp: new Date().toISOString(),
-        };
-      }
-
       const queue = await OfflineQueue.getQueue();
+      
       if (queue.length === 0) {
         return {
           success: true,
-          data: { processed: 0 },
+          data: { message: "No queued operations" },
           timestamp: new Date().toISOString(),
         };
       }
 
-      console.log(`Processing ${queue.length} queued operations`);
-      let processedCount = 0;
-      const failedOps: string[] = [];
+      logger.info(`Processing ${queue.length} queued operations`, "SyncService");
 
+      const results = [];
       for (const operation of queue) {
         try {
+          let result;
           switch (operation.type) {
             case "user_sync":
               if (this.isUserSyncPayload(operation.payload)) {
-                await this.syncUserData(operation.payload.uuid);
+                result = await this.syncUserData(operation.payload.uuid);
               }
               break;
             case "portfolio_sync":
               if (this.isPortfolioSyncPayload(operation.payload)) {
-                await this.syncPortfolioToCloud(
+                result = await this.syncPortfolio(
                   operation.payload.uuid,
                   operation.payload.portfolio
                 );
@@ -928,46 +872,62 @@ export class SyncService {
               break;
             case "collection_sync":
               if (this.isCollectionSyncPayload(operation.payload)) {
-                await this.syncCollectionsToCloud(
+                result = await this.syncCollectionsToCloud(
                   operation.payload.collections
                 );
               }
               break;
           }
 
-          await OfflineQueue.removeFromQueue(operation.id);
-          processedCount++;
+          if (result?.success) {
+            await OfflineQueue.removeFromQueue(operation.id);
+            results.push({ operation: operation.type, success: true });
+          } else {
+            operation.retryCount++;
+            if (operation.retryCount >= operation.maxRetries) {
+              await OfflineQueue.removeFromQueue(operation.id);
+              results.push({
+                operation: operation.type,
+                success: false,
+                error: "Max retries exceeded",
+              });
+            } else {
+              results.push({
+                operation: operation.type,
+                success: false,
+                error: "Retry scheduled",
+              });
+            }
+          }
         } catch (error) {
-          console.error(
-            `Failed to process queued operation ${operation.id}:`,
+          logger.error(
+            `Failed to process operation ${operation.type}`,
+            "SyncService",
             error
           );
-          failedOps.push(operation.id);
-
-          // Update retry count
-          operation.retryCount++;
-          if (operation.retryCount >= operation.maxRetries) {
-            console.log(
-              `Removing failed operation ${operation.id} after ${operation.retryCount} retries`
-            );
-            await OfflineQueue.removeFromQueue(operation.id);
-          }
+          results.push({
+            operation: operation.type,
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
         }
       }
 
+      const successCount = results.filter((r) => r.success).length;
+      logger.info(
+        `Offline queue processing completed: ${successCount}/${results.length} successful`,
+        "SyncService",
+        { results }
+      );
+
       return {
         success: true,
-        data: {
-          processed: processedCount,
-          failed: failedOps.length,
-          remaining: queue.length - processedCount,
-        },
+        data: { results },
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error("Failed to process offline queue:", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      logger.error("Failed to process offline queue", "SyncService", errorMessage);
       return {
         success: false,
         error: errorMessage,
@@ -979,11 +939,11 @@ export class SyncService {
   // Get sync status for monitoring
   static async getSyncStatus(): Promise<any> {
     try {
-      const statusData = await AsyncStorage.getItem(this.SYNC_STATUS_KEY);
-      return statusData ? JSON.parse(statusData) : {};
+      const status = await AsyncStorage.getItem(this.SYNC_STATUS_KEY);
+      return status ? JSON.parse(status) : null;
     } catch (error) {
-      console.error("Failed to get sync status:", error);
-      return {};
+      logger.error("Failed to get sync status", "SyncService", error);
+      return null;
     }
   }
 
@@ -993,16 +953,19 @@ export class SyncService {
     newBalance: number
   ): Promise<void> {
     try {
-      await supabase
+      const { error } = await supabase
         .from("users")
         .update({ usdt_balance: newBalance.toString() })
         .eq("id", userId);
 
-      console.log(`✅ User USDT balance updated in Supabase: ${newBalance}`);
-    } catch (error: any) {
-      throw new Error(
-        `Failed to update user balance in Supabase: ${error.message}`
-      );
+      if (error) {
+        throw error;
+      }
+
+      logger.info(`User USDT balance updated in Supabase: ${newBalance}`, "SyncService");
+    } catch (error) {
+      logger.error("Supabase update error", "SyncService", error);
+      throw error;
     }
   }
 
@@ -1015,46 +978,29 @@ export class SyncService {
     totalPnLPercentage: number
   ): Promise<void> {
     try {
-      // First, ensure user exists in Supabase
-      const userExists = await UUIDService.ensureUserInSupabase(userId);
-      if (!userExists) {
-        throw new Error("User does not exist in Supabase");
-      }
-
-      // Update user data with proper error handling
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("users")
-        .update({ 
+        .update({
           usdt_balance: usdtBalance.toString(),
           total_portfolio_value: totalPortfolioValue.toString(),
           total_pnl: totalPnL.toString(),
           total_pnl_percentage: totalPnLPercentage.toString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq("id", userId)
-        .select()
-        .single();
+        .eq("id", userId);
 
       if (error) {
-        console.error("Supabase update error:", error);
-        throw new Error(`Failed to update user in Supabase: ${error.message}`);
+        throw error;
       }
 
-      if (!data) {
-        throw new Error("No data returned from user update");
-      }
-
-      console.log(`✅ User balance and portfolio value updated in Supabase:
-        User ID: ${userId}
-        USDT Balance: ${usdtBalance}
-        Total Portfolio Value: ${totalPortfolioValue}
-        Total PnL: ${totalPnL}
-        PnL Percentage: ${totalPnLPercentage}%`);
-    } catch (error: any) {
-      console.error("Error in updateUserBalanceAndPortfolioValue:", error);
-      throw new Error(
-        `Failed to update user balance and portfolio value in Supabase: ${error.message}`
+      logger.info(
+        "User balance and portfolio value updated in Supabase",
+        "SyncService",
+        { usdtBalance, totalPortfolioValue, totalPnL, totalPnLPercentage }
       );
+    } catch (error) {
+      logger.error("Error in updateUserBalanceAndPortfolioValue", "SyncService", error);
+      throw error;
     }
   }
 
@@ -1065,17 +1011,17 @@ export class SyncService {
     error?: string
   ): Promise<void> {
     try {
-      const status = success ? "synced" : "failed";
-      await this.updateSyncStatus(operation, status, error);
-
-      // Log sync status for debugging
-      console.log(`Sync ${operation}: ${status}${error ? ` - ${error}` : ""}`);
-
-      // TODO: Add user notification here if needed
-      // You can integrate with your notification system to show sync status to users
-      // Example: showToast(success ? 'success' : 'error', 'Sync Status', message);
+      const status = success ? "completed" : "failed";
+      logger.info(`Sync ${operation}: ${status}${error ? ` - ${error}` : ""}`, "SyncService");
+      
+      // TODO: Implement notification system
+      // await NotificationService.show({
+      //   title: `Sync ${status}`,
+      //   message: `${operation} sync ${status}${error ? `: ${error}` : ""}`,
+      //   type: success ? "success" : "error",
+      // });
     } catch (notificationError) {
-      console.error("Failed to notify sync status:", notificationError);
+      logger.error("Failed to notify sync status", "SyncService", notificationError);
     }
   }
 
@@ -1089,21 +1035,33 @@ export class SyncService {
     hasPendingOperations: boolean;
   }> {
     try {
-      const [statusData, queue] = await Promise.all([
-        AsyncStorage.getItem(this.SYNC_STATUS_KEY),
-        OfflineQueue.getQueue(),
-      ]);
+      const operations = ["userSync", "portfolioSync", "collectionsSync"];
+      const syncStatus: Record<string, any> = {};
+      let hasPendingOperations = false;
 
-      const syncStatus = statusData ? JSON.parse(statusData) : {};
-      const lastSyncAt = await AsyncStorage.getItem("last_sync");
+      for (const operation of operations) {
+        const statusStr = await AsyncStorage.getItem(
+          `${this.SYNC_STATUS_KEY}_${operation}`
+        );
+        if (statusStr) {
+          const status = JSON.parse(statusStr);
+          syncStatus[operation] = status;
+          if (status.status === "pending") {
+            hasPendingOperations = true;
+          }
+        }
+      }
+
+      const lastSyncAt = await AsyncStorage.getItem(this.SYNC_STATUS_KEY);
+      const lastSync = lastSyncAt ? JSON.parse(lastSyncAt) : null;
 
       return {
-        lastSyncAt,
+        lastSyncAt: lastSync?.lastSyncAt || null,
         syncStatus,
-        hasPendingOperations: queue.length > 0,
+        hasPendingOperations,
       };
     } catch (error) {
-      console.error("Failed to get detailed sync status:", error);
+      logger.error("Failed to get detailed sync status", "SyncService", error);
       return {
         lastSyncAt: null,
         syncStatus: {},

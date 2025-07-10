@@ -1,25 +1,27 @@
-import React, { useState, useEffect, useCallback } from "react";
+import colors from '@/styles/colors';
+import React, { useCallback, useEffect, useState } from 'react';
+import { CryptoCurrency, getMarketData } from '@/services/CryptoService';
+import { Ionicons } from '@expo/vector-icons';
+import { logger } from '@/utils/logger';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
   ActivityIndicator,
-  SafeAreaView,
-  StatusBar,
   Dimensions,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { CryptoCurrency, getMarketData } from "@/services/CryptoService";
 import {
   formatCurrency,
-  formatPercentage,
   formatLargeNumber,
+  formatPercentage,
 } from "@/utils/formatters";
-import { router, useLocalSearchParams } from "expo-router";
-import colors from "@/styles/colors";
+
 
 // Mock price history data - in a real app, this would come from an API
 const MOCK_PRICE_HISTORY = [
@@ -29,7 +31,7 @@ const MOCK_PRICE_HISTORY = [
 
 const CryptoDetailScreen: React.FC = () => {
   const { id, name } = useLocalSearchParams();
-  console.log({ id, name });
+  logger.debug("Crypto detail params", "CryptoDetailScreen", { id, name });
 
   const [cryptoData, setCryptoData] = useState<CryptoCurrency | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -50,18 +52,37 @@ const CryptoDetailScreen: React.FC = () => {
         setCryptoData(crypto);
       } else {
         // Handle not found case
-        console.error(`Cryptocurrency with ID ${id} not found`);
+        logger.error(`Cryptocurrency with ID ${id} not found`, "CryptoDetail");
       }
     } catch (error) {
-      console.error("Error fetching crypto details:", error);
+      logger.error("Error fetching crypto details", "CryptoDetail", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [id]);
 
   useEffect(() => {
-    fetchCryptoData();
-  }, [fetchCryptoData]);
+    const fetchCryptoDetails = async () => {
+      try {
+        const cryptoList = await getMarketData();
+        const crypto = cryptoList.find((c) => c.id === id);
+        if (crypto) {
+          setCryptoData(crypto);
+        } else {
+          logger.error(
+            `Cryptocurrency with ID ${id} not found`,
+            "CryptoDetail"
+          );
+        }
+      } catch (error) {
+        logger.error("Error fetching crypto details", "CryptoDetail", error);
+      }
+    };
+
+    if (id) {
+      fetchCryptoDetails();
+    }
+  }, [id]);
 
   // Chart dimensions
   const screenWidth = Dimensions.get("window").width;

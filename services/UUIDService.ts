@@ -1,8 +1,10 @@
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { getDeviceUUID } from "@/utils/deviceUtils";
-import { UserSyncService } from "./UserSyncService";
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorageService } from './AsyncStorageService';
+import { getDeviceUUID } from '@/utils/deviceUtils';
+import { logger } from '@/utils/logger';
+import { UserSyncService } from './UserSyncService';
+
 
 // Enhanced UUIDService.ts
 
@@ -13,9 +15,8 @@ const SYNC_STATUS_KEY = "sync_status";
 class UUIDService {
   static async getOrCreateUser() {
     let uuid = await SecureStore.getItemAsync(USER_UUID_KEY);
-    console.log("====================================");
-    console.log("Fetching or creating user UUID...", uuid);
-    console.log("====================================");
+    logger.info("Fetching or creating user UUID", "UUIDService", { uuid: uuid ? "exists" : "new" });
+    
     if (!uuid) {
       uuid = await getDeviceUUID();
       await SecureStore.setItemAsync(USER_UUID_KEY, uuid);
@@ -43,30 +44,25 @@ class UUIDService {
       // Save to AsyncStorage (cache)
       await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(userProfile));
 
-      console.log("====================================");
-      console.log("Created new user UUID:", uuid);
+      logger.info("Created new user UUID", "UUIDService", { uuid });
+      
       // Save to cloud with retry logic
       let retries = 3;
       while (retries > 0) {
         try {
-          console.log("====================================");
-          console.log("Syncing user to cloud:", userProfile);
-          console.log("====================================");
+          logger.info("Syncing user to cloud", "UUIDService", { userProfile });
           const syncResult = await UserSyncService.syncUserToCloud(userProfile);
           if (syncResult.success) {
-            console.log("✅ User successfully synced to cloud");
+            logger.info("User successfully synced to cloud", "UUIDService");
             break;
           } else {
             throw new Error(syncResult.error);
           }
         } catch (error) {
           retries--;
-          console.error(`User sync attempt ${4 - retries} failed:`, error);
+          logger.error(`User sync attempt ${4 - retries} failed`, "UUIDService", error);
           if (retries === 0) {
-            console.error(
-              "Failed to sync user to cloud after 3 attempts:",
-              error
-            );
+            logger.error("Failed to sync user to cloud after 3 attempts", "UUIDService", error);
             // Don't throw here - user can still use the app locally
           } else {
             await new Promise((resolve) =>
@@ -85,14 +81,14 @@ class UUIDService {
           const { exists, error } = await UserSyncService.checkUserExists(uuid);
 
           if (error) {
-            console.warn("Error checking user existence:", error);
+            logger.warn("Error checking user existence", "UUIDService", error);
           } else if (!exists) {
-            console.log("User not found in Supabase, syncing...");
+            logger.info("User not found in Supabase, syncing", "UUIDService");
             await UserSyncService.syncUserToCloud(userProfile);
           }
         }
       } catch (error) {
-        console.warn("Failed to verify user sync status:", error);
+        logger.warn("Failed to verify user sync status", "UUIDService", error);
       }
     }
 
@@ -142,7 +138,7 @@ class UUIDService {
         return syncResult.success;
       }
     } catch (error) {
-      console.error("Failed to ensure user in Supabase:", error);
+      logger.error("Failed to ensure user in Supabase", "UUIDService", error);
       return false;
     }
   }
@@ -179,15 +175,12 @@ export async function initializeUserProfile() {
     // Step 3: Ensure user exists in Supabase
     const result = await UserSyncService.syncUserToCloud(userProfile);
     if (result.success) {
-      console.log("User profile initialized in Supabase.");
+      logger.info("User profile initialized in Supabase", "UUIDService");
     } else {
-      console.warn(
-        "User profile could not be synced to Supabase:",
-        result.error
-      );
+      logger.warn("User profile could not be synced to Supabase", "UUIDService", result.error);
     }
   } catch (err) {
-    console.error("Failed to initialize user profile:", err);
+    logger.error("Failed to initialize user profile", "UUIDService", err);
   }
 }
 

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import UserRepository from '../services/UserRepository';
 import UUIDService from '../services/UUIDService';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { getCryptoIdFromSymbol } from '../utils/cryptoMapping';
 import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
 import { UserService } from '../services/UserService';
 
@@ -226,11 +227,15 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
       const profitLoss = valueInUSD - (quantity * avgCost);
       const profitLossPercentage = avgCost > 0 ? (profitLoss / (quantity * avgCost)) * 100 : 0;
       
-      holdings[item.symbol.toUpperCase()] = {
+      const symbol = item.symbol.toUpperCase();
+      const cryptoId = getCryptoIdFromSymbol(symbol);
+      
+      holdings[symbol] = {
         amount: quantity,
         valueInUSD: valueInUSD,
-        symbol: item.symbol.toUpperCase(),
+        symbol: symbol,
         name: item.symbol,
+        cryptoId: cryptoId || undefined,
         image_url:
           item.image_url || item.image ||
           `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,

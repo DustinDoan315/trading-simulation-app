@@ -1,24 +1,25 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { logger } from '@/utils/logger';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
   ActivityIndicator,
-  SafeAreaView,
-  StatusBar,
   Dimensions,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-
 import {
   formatCurrency,
-  formatPercentage,
   formatLargeNumber,
+  formatPercentage,
 } from "@/utils/formatters";
+
 
 // Type definitions for route params
 type CryptoDetailRouteParams = {
@@ -74,18 +75,39 @@ const CryptoDetailScreen: React.FC = () => {
         setCryptoData(crypto);
       } else {
         // Handle not found case
-        console.error(`Cryptocurrency with ID ${cryptoId} not found`);
+        logger.error(
+          `Cryptocurrency with ID ${cryptoId} not found`,
+          "TokenDetail"
+        );
       }
     } catch (error) {
-      console.error("Error fetching crypto details:", error);
+      logger.error("Error fetching crypto details", "TokenDetail", error);
     } finally {
       setLoading(false);
     }
   }, [cryptoId]);
 
   useEffect(() => {
-    fetchCryptoData();
-  }, [fetchCryptoData]);
+    const fetchCryptoDetails = async () => {
+      try {
+        const crypto = await getCryptoDetails(cryptoId);
+        if (crypto) {
+          setCryptoData(crypto);
+        } else {
+          logger.error(
+            `Cryptocurrency with ID ${cryptoId} not found`,
+            "TokenDetail"
+          );
+        }
+      } catch (error) {
+        logger.error("Error fetching crypto details", "TokenDetail", error);
+      }
+    };
+
+    if (cryptoId) {
+      fetchCryptoDetails();
+    }
+  }, [cryptoId]);
 
   // Chart dimensions
   const screenWidth = Dimensions.get("window").width;

@@ -1,9 +1,10 @@
-import React from "react";
-import { chartHtml } from "@/utils/chartHtml";
-import { ChartProps as BaseChartProps } from "../../types/components";
-import { ChartType } from "../../types/crypto";
-import { Ionicons } from "@expo/vector-icons";
-import { WebView } from "react-native-webview";
+import React from 'react';
+import { chartHtml } from '@/utils/chartHtml';
+import { ChartProps as BaseChartProps } from '../../types/components';
+import { ChartType } from '../../types/crypto';
+import { Ionicons } from '@expo/vector-icons';
+import { logger } from '@/utils/logger';
+import { WebView } from 'react-native-webview';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -11,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 interface ChartProps extends BaseChartProps {
   webViewRef: React.RefObject<WebView | null>;
@@ -45,13 +47,11 @@ const Chart = ({
         ref={webViewRef}
         source={{ html: chartHtml }}
         style={styles.webView}
-        onMessage={onMessage}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        originWhitelist={["*"]}
-        onLoadStart={() => console.log("WebView loading started")}
+        onLoadStart={() => {
+          // WebView loading started
+        }}
         onLoad={() => {
-          console.log("WebView loaded");
+          // WebView loaded successfully
           if (webViewRef.current) {
             webViewRef.current.postMessage(
               JSON.stringify({
@@ -69,9 +69,18 @@ const Chart = ({
           }
         }}
         onError={(syntheticEvent) => {
-          const desc = syntheticEvent.nativeEvent.description;
-          console.log("WebView error:", desc);
+          const { nativeEvent } = syntheticEvent;
+          logger.error("WebView error", "Chart", nativeEvent);
         }}
+        onMessage={onMessage}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        startInLoadingState={true}
+        scalesPageToFit={true}
+        bounces={false}
+        scrollEnabled={false}
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
       />
 
       {/* Chart Controls Overlay */}

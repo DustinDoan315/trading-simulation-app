@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo } from "react";
-import { AddButton } from "@/components/home/AddButton";
-import { BalanceSection } from "@/components/home/BalanceSection";
-import { loadBalance } from "@/features/balanceSlice";
-import { navigateToCryptoChart } from "@/utils/navigation";
-import { RootState, useAppDispatch } from "@/store";
-import { router } from "expo-router";
-import { useHomeData } from "@/hooks/useHomeData";
-import { useSelector } from "react-redux";
-import { useUser } from "@/context/UserContext";
-import { WatchListSection } from "@/components/home/WatchlistSection";
+import React, { useEffect, useMemo } from 'react';
+import { AddButton } from '@/components/home/AddButton';
+import { BalanceSection } from '@/components/home/BalanceSection';
+import { loadBalance } from '@/features/balanceSlice';
+import { navigateToCryptoChart } from '@/utils/navigation';
+import { RootState, useAppDispatch } from '@/store';
+import { router } from 'expo-router';
+import { useHomeData } from '@/hooks/useHomeData';
+import { useSelector } from 'react-redux';
+import { useUser } from '@/context/UserContext';
+import { WatchListSection } from '@/components/home/WatchlistSection';
 import {
   RefreshControl,
   SafeAreaView,
@@ -24,6 +24,7 @@ import {
   formatPortfolioValue,
   getPnLColor,
 } from "@/utils/helper";
+
 
 const HomeScreen = () => {
   const dispatch = useAppDispatch();
@@ -45,7 +46,7 @@ const HomeScreen = () => {
   };
 
   const handleAddButtonPress = () => {
-    console.log("Add button pressed");
+    router.push("/(subs)/crypto-search");
   };
 
   const handleRefresh = async () => {

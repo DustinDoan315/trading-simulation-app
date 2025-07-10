@@ -1,18 +1,19 @@
-import React, { useState } from "react";
-import { clearSearchHistory } from "@/features/searchHistorySlice";
-import { formatAmount } from "@/utils/formatters";
-import { height } from "@/utils/response";
-import { Ionicons } from "@expo/vector-icons";
-import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
-import { LinearGradient } from "expo-linear-gradient";
-import { persistor } from "@/store";
-import { resetBalance } from "@/features/balanceSlice";
-import { resetFavorites } from "@/features/favoritesSlice";
-import { ResetService } from "@/services/ResetService";
-import { router } from "expo-router";
-import { useAppDispatch } from "@/store";
-import { useLanguage } from "@/context/LanguageContext";
-import { UserBalance } from "@/services/CryptoService";
+import React, { useState } from 'react';
+import { clearSearchHistory } from '@/features/searchHistorySlice';
+import { formatAmount } from '@/utils/formatters';
+import { height } from '@/utils/response';
+import { Ionicons } from '@expo/vector-icons';
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
+import { persistor } from '@/store';
+import { resetBalance } from '@/features/balanceSlice';
+import { resetFavorites } from '@/features/favoritesSlice';
+import { ResetService } from '@/services/ResetService';
+import { router } from 'expo-router';
+import { useAppDispatch } from '@/store';
+import { useLanguage } from '@/context/LanguageContext';
+import { UserBalance } from '@/services/CryptoService';
 import {
   Alert,
   Modal,
@@ -21,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 // components/home/BalanceSection.tsx
 
@@ -50,7 +52,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
   const confirmReset = async () => {
     setIsResetting(true);
     try {
-      console.log("🔄 Starting comprehensive reset...");
+      logger.info("Starting comprehensive reset", "BalanceSection");
 
       // Step 1: Reset Redux state
       dispatch(resetBalance());
@@ -61,12 +63,14 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
       await persistor.purge();
 
       // Step 3: Comprehensive data reset using ResetService
-      const resetResult = await ResetService.resetAllData();
+      const resetResult = await ResetService.comprehensiveReset();
 
       if (resetResult.success) {
-        console.log("✅ Comprehensive reset completed successfully");
-        console.log("Reset details:", resetResult.details);
-
+        logger.info(
+          "Comprehensive reset completed successfully",
+          "BalanceSection",
+          resetResult.details
+        );
         // Call the callback if provided
         onResetBalance?.();
 
@@ -87,14 +91,14 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
           successMessage
         );
       } else {
-        console.error("❌ Reset failed:", resetResult.error);
+        logger.error("Reset failed", "BalanceSection", resetResult.error);
         Alert.alert(
           t("balance.resetError") || "Reset Failed",
           resetResult.error || "An error occurred during reset"
         );
       }
     } catch (error) {
-      console.error("Error during comprehensive reset:", error);
+      logger.error("Error during comprehensive reset", "BalanceSection", error);
       Alert.alert(
         t("balance.resetError") || "Reset Failed",
         t("balance.resetErrorMessage") ||

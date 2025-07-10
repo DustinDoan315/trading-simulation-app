@@ -1,14 +1,15 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import colors from "@/styles/colors";
-import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { updateUser } from "@/features/userSlice";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
-import { UserService } from "@/services/UserService";
-import { useTransactionCount } from "@/hooks/useTransactionCount";
-import { useUser } from "@/context/UserContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import colors from '@/styles/colors';
+import React, { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { logger } from '@/utils/logger';
+import { router } from 'expo-router';
+import { updateUser } from '@/features/userSlice';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
+import { UserService } from '@/services/UserService';
+import { useTransactionCount } from '@/hooks/useTransactionCount';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +23,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
@@ -88,7 +90,7 @@ const ProfileScreen = () => {
       setEditModalVisible(false);
       Alert.alert("Success", "Profile updated successfully!");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      logger.error("Error updating profile", "Profile", error);
       Alert.alert("Error", "Failed to update profile. Please try again.");
     } finally {
       setEditLoading(false);
@@ -173,7 +175,7 @@ const ProfileScreen = () => {
                   await refreshUser(userId);
                 }
               } catch (error) {
-                console.error("Failed to reload user:", error);
+                logger.error("Failed to reload user", "Profile", error);
               }
             }}>
             <Text style={styles.retryButtonText}>Retry</Text>

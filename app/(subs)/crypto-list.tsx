@@ -1,4 +1,13 @@
-import React, { useState, useEffect } from "react";
+import colors from '@/styles/colors';
+import CryptoListItem from '@/components/crypto/CryptoListItem';
+import React, { useEffect, useState } from 'react';
+import SortToggle from '@/components/crypto/SortToggle';
+import TabBar from '@/components/crypto/TabBar';
+import { Ionicons } from '@expo/vector-icons';
+import { logger } from '@/utils/logger';
+import { useAppSelector } from '@/store';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   StyleSheet,
@@ -12,14 +21,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import CryptoListItem from "@/components/crypto/CryptoListItem";
-import TabBar from "@/components/crypto/TabBar";
-import SortToggle from "@/components/crypto/SortToggle";
 import { getMarketData, type CryptoCurrency } from "@/services/CryptoService";
-import colors from "@/styles/colors";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppSelector } from "@/store";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -32,6 +34,7 @@ const CryptoMarketScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     loadCryptoData();
@@ -91,8 +94,19 @@ const CryptoMarketScreen: React.FC = () => {
     setSelectedTab(tab);
   };
 
-  const handleCryptoPress = (symbol: string) => {
-    console.log(`Selected crypto: ${symbol}`);
+  const handleCryptoPress = (id: string) => {
+    const crypto = cryptoData.find((c) => c.id === id);
+    if (crypto) {
+      logger.info("Selected crypto", "CryptoList", { symbol: crypto.symbol });
+      router.push({
+        pathname: "/(subs)/crypto-detail",
+        params: { id },
+      });
+    }
+  };
+
+  const handleSortToggle = (direction: any) => {
+    // Sort functionality handled silently
   };
 
   const renderListHeader = () => (
@@ -101,7 +115,7 @@ const CryptoMarketScreen: React.FC = () => {
       <View style={styles.priceHeaderContainer}>
         <SortToggle
           label="Giá"
-          onToggle={(direction) => console.log("Sort direction:", direction)}
+          onToggle={(direction) => handleSortToggle(direction)}
         />
       </View>
     </View>

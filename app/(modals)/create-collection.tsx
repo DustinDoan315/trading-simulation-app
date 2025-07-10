@@ -2,6 +2,7 @@ import InviteCodeQR from '@/components/collections/InviteCodeQR';
 import React, { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
 import { router } from 'expo-router';
 import { useCollectionsData } from '@/hooks/useCollectionsData';
 import { useUser } from '@/context/UserContext';
@@ -84,7 +85,7 @@ const CreateCollectionScreen = () => {
       // Show QR code modal instead of just alert
       setShowQRModal(true);
     } catch (error) {
-      console.error("Error creating collection:", error);
+      logger.error("Error creating collection", "CreateCollection", error);
       Alert.alert("Error", "Failed to create collection. Please try again.");
     } finally {
       setLoading(false);

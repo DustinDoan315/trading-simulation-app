@@ -1,11 +1,12 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import colors from "@/styles/colors";
-import GradientText from "@/components/GradientText";
-import React, { useCallback, useRef, useState } from "react";
-import { createUser } from "@/features/userSlice";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import { useAppDispatch } from "@/store";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import colors from '@/styles/colors';
+import GradientText from '@/components/GradientText';
+import React, { useCallback, useRef, useState } from 'react';
+import { createUser } from '@/features/userSlice';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
+import { router } from 'expo-router';
+import { useAppDispatch } from '@/store';
 import {
   Alert,
   Dimensions,
@@ -16,6 +17,7 @@ import {
   Text,
   View,
 } from "react-native";
+
 
 const { width } = Dimensions.get("window");
 
@@ -114,13 +116,15 @@ const OnboardingScreen = () => {
       if (newUser) {
         // Store the user ID for future use
         await AsyncStorage.setItem("@user_id", newUser.id);
-        console.log("✅ New user created successfully:", newUser.username);
+        logger.info("New user created successfully", "Onboarding", {
+          username: newUser.username,
+        });
 
         // Navigate to main app
         router.replace("/(tabs)");
       }
     } catch (error) {
-      console.error("❌ Error creating user:", error);
+      logger.error("Error creating user", "Onboarding", error);
       Alert.alert("Error", "Failed to create account. Please try again.", [
         { text: "OK" },
       ]);

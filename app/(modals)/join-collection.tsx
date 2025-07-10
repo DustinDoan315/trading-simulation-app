@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCollectionsData } from '@/hooks/useCollectionsData';
 import { useUser } from '@/context/UserContext';
@@ -55,7 +56,7 @@ const JoinCollectionModal = () => {
         ]
       );
     } catch (error) {
-      console.error("Error joining collection:", error);
+      logger.error("Error joining collection", "JoinCollection", error);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to join collection";
       Alert.alert("Error", errorMessage);

@@ -1,5 +1,6 @@
-import { Asset } from "@/types/crypto";
-import { router } from "expo-router";
+import { Asset } from '@/types/crypto';
+import { getCryptoIdFromSymbol } from './cryptoMapping';
+import { router } from 'expo-router';
 
 export const navigateToCryptoChart = (asset?: Asset) => {
   if (!asset || !asset.id) {
@@ -14,10 +15,13 @@ export const navigateToCryptoChart = (asset?: Asset) => {
       },
     });
   } else {
+    // Use crypto ID if available, otherwise fallback to symbol mapping
+    const cryptoId = asset.cryptoId || getCryptoIdFromSymbol(asset.symbol) || asset.id;
+    
     router.push({
       pathname: "/(subs)/crypto-chart",
       params: {
-        id: asset.id,
+        id: cryptoId,
         symbol: asset.symbol
           ? `${asset.symbol.toUpperCase()}/USDT`
           : "BTC/USDT",

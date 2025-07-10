@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
 
 import {
   Alert,
@@ -46,7 +47,7 @@ const InviteCodeQR: React.FC<InviteCodeQRProps> = ({
     if (visible) {
       const timer = setTimeout(() => {
         setQrReady(true);
-        console.log("QR Code marked as ready");
+        handleQRReady();
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -117,6 +118,14 @@ const InviteCodeQR: React.FC<InviteCodeQRProps> = ({
     }
   };
 
+  const handleQRReady = () => {
+    logger.info("QR Code marked as ready", "InviteCodeQR");
+  };
+
+  const handleQRGenerationError = (error: any) => {
+    logger.error("QR Code generation error", "InviteCodeQR", error);
+  };
+
   return (
     <Modal
       visible={visible}
@@ -170,9 +179,7 @@ const InviteCodeQR: React.FC<InviteCodeQRProps> = ({
                   quietZone={15}
                   enableLinearGradient={false}
                   ref={qrRef}
-                  onError={(error: any) =>
-                    console.error("QR Code generation error:", error)
-                  }
+                  onError={(error: any) => handleQRGenerationError(error)}
                 />
               </View>
               <Text style={styles.qrText}>Point camera at QR code to join</Text>

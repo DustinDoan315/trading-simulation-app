@@ -1,31 +1,35 @@
-import * as Linking from "expo-linking";
-import * as SplashScreen from "expo-splash-screen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import LeaderboardService from "@/services/LeaderboardService";
-import RealTimeDataService from "@/services/RealTimeDataService";
-import scheduler from "@/utils/scheduler";
-import Toast from "react-native-toast-message";
-import { createUser, fetchUser } from "@/features/userSlice";
-import { LanguageProvider } from "@/context/LanguageContext";
-import { NotificationProvider } from "@/components/ui/Notification";
-import { Provider } from "react-redux";
-import { SafeAreaView } from "react-native";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { store } from "../store";
-import { updateDailyBalance } from "@/utils/balanceUpdater";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { useEffect } from "react";
-import { useFonts } from "expo-font";
-import { UserProvider } from "@/context/UserContext";
-import { UserService } from "@/services/UserService";
-import "react-native-reanimated";
+import * as Linking from 'expo-linking';
+import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LeaderboardService from '@/services/LeaderboardService';
+import RealTimeDataService from '@/services/RealTimeDataService';
+import scheduler from '@/utils/scheduler';
+import Toast from 'react-native-toast-message';
+import UUIDService from '@/services/UUIDService';
+import { createUser, fetchUser } from '@/features/userSlice';
+import { LanguageProvider } from '@/context/LanguageContext';
+import { logger } from '@/utils/logger';
+import { NotificationProvider } from '@/components/ui/Notification';
+import { Provider } from 'react-redux';
+import { SafeAreaView } from 'react-native';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { store } from '../store';
+import { updateDailyBalance } from '@/utils/balanceUpdater';
+import { useCallback, useEffect } from 'react';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useFonts } from 'expo-font';
+import { UserProvider } from '@/context/UserContext';
+import { UserService } from '@/services/UserService';
+import 'react-native-reanimated';
+
 
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,7 +48,8 @@ export default function RootLayout() {
         scheduler.addDailyTask("daily-balance-update", updateDailyBalance, 0);
 
         // Check if user exists and initialize if needed
-        await initializeUser();
+        const userId = await UUIDService.getOrCreateUser();
+        await initializeUser(userId);
 
         // Set up deep link handling
         setupDeepLinking();
@@ -76,53 +81,33 @@ export default function RootLayout() {
     return () => subscription?.remove();
   };
 
-  const handleDeepLink = (url: string) => {
+  const handleDeepLink = useCallback((url: string) => {
     try {
-      const parsed = Linking.parse(url);
+      // Handle deep link logic here
+      logger.info("Deep link handled", "AppLayout", { url });
+    } catch (error) {
+      logger.error("Error handling deep link", "AppLayout", error);
+    }
+  }, []);
 
-      if (parsed.hostname === "join-collection") {
-        const { code, name } = parsed.queryParams || {};
-        if (code) {
-          // Navigate to join collection modal with parameters
-          const router = require("expo-router").router;
-          router.push({
-            pathname: "/(modals)/join-collection",
-            params: { code, name },
-          });
-        }
+  const initializeUser = useCallback(async (userId: string) => {
+    try {
+      logger.info("Initializing user with ID", "AppLayout", { userId });
+
+      // Load user data from Redux store
+      const userData = store.getState().user;
+
+      if (userData) {
+        logger.info("User data loaded successfully from Redux", "AppLayout");
+      } else {
+        logger.warn("No user data found in Redux store", "AppLayout");
+        // Initialize user data if not found
+        await UUIDService.getOrCreateUser();
       }
     } catch (error) {
-      console.error("Error handling deep link:", error);
+      logger.error("Error initializing user", "AppLayout", error);
     }
-  };
-
-  const initializeUser = async () => {
-    try {
-      // Use UUIDService to get or create user
-      const { default: UUIDService } = await import("@/services/UUIDService");
-      const userId = await UUIDService.getOrCreateUser();
-
-      console.log("🔄 Initializing user with ID:", userId);
-
-      // Store the user ID for Redux compatibility
-      await AsyncStorage.setItem("@user_id", userId);
-
-      // Try to fetch user data from Redux store
-      try {
-        await store.dispatch(fetchUser(userId)).unwrap();
-        console.log("✅ User data loaded successfully from Redux");
-      } catch (error) {
-        console.warn(
-          "⚠️ Failed to load user from Redux, user may not exist in database yet:",
-          error
-        );
-        // This is okay - the user exists in UUIDService but may not be in the Redux database yet
-        // The app can still function with the UUIDService user
-      }
-    } catch (error) {
-      console.error("❌ Error initializing user:", error);
-    }
-  };
+  }, []);
 
   const generateUsername = () => {
     const adjectives = [

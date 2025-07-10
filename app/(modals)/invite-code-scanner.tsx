@@ -6,6 +6,7 @@ import React, {
   } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
 import { router } from 'expo-router';
 import {
   ActivityIndicator,
@@ -434,7 +435,11 @@ const InviteCodeScreen: React.FC = () => {
                 }}
                 onBarcodeScanned={handleBarcodeScanned}
                 onMountError={(error: any) => {
-                  console.error("Camera mount error:", error);
+                  logger.error(
+                    "Camera mount error",
+                    "InviteCodeScanner",
+                    error
+                  );
                   Alert.alert(
                     "Camera Error",
                     "Failed to start camera. Please try manual input instead."

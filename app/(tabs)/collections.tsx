@@ -4,7 +4,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { CollectionData, useCollectionsData } from '@/hooks/useCollectionsData';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
 import { router, useFocusEffect } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
@@ -25,6 +27,7 @@ const CollectionsScreen = () => {
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(Date.now());
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
   const { user } = useUser();
+  const { t } = useTranslation();
 
   const {
     myCollections,
@@ -106,30 +109,26 @@ const CollectionsScreen = () => {
     []
   );
 
-  const handleDeleteCollection = useCallback(
-    async (collection: CollectionData) => {
-      Alert.alert(
-        "Delete Collection",
-        `Are you sure you want to delete "${collection.name}"? This action cannot be undone.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                // TODO: Implement delete collection
-                console.log("Delete collection:", collection.id);
-              } catch (error) {
-                Alert.alert("Error", "Failed to delete collection");
-              }
-            },
+  const handleDeleteCollection = (collection: CollectionData) => {
+    Alert.alert(
+      t("collections.deleteTitle") || "Delete Collection",
+      t("collections.deleteMessage") ||
+        "Are you sure you want to delete this collection?",
+      [
+        { text: t("common.cancel") || "Cancel", style: "cancel" },
+        {
+          text: t("common.delete") || "Delete",
+          style: "destructive",
+          onPress: () => {
+            logger.info("Delete collection", "CollectionsTab", {
+              collectionId: collection.id,
+            });
+            // TODO: Implement delete functionality
           },
-        ]
-      );
-    },
-    []
-  );
+        },
+      ]
+    );
+  };
 
   const handleLeaveCollection = useCallback(
     async (collection: CollectionData) => {
@@ -146,27 +145,29 @@ const CollectionsScreen = () => {
   // Refresh data when screen comes into focus (e.g., after creating a collection)
   useFocusEffect(
     useCallback(() => {
-      if (user?.id) {
-        const now = Date.now();
-        const timeSinceLastRefresh = now - lastRefreshTime;
+      const now = Date.now();
+      const timeSinceLastRefresh = now - lastRefreshTime;
 
-        // Only refresh if it's been more than 2 seconds since last refresh
-        // This prevents excessive refreshes while still ensuring fresh data
-        if (timeSinceLastRefresh > 2000) {
-          console.log("🔄 Collections screen focused - refreshing data");
-          setLastRefreshTime(now);
-          forceRefresh();
-        } else {
-          console.log("⏭️ Skipping refresh - too soon since last refresh");
-        }
+      if (timeSinceLastRefresh > 2000) {
+        logger.info(
+          "Collections screen focused - refreshing data",
+          "CollectionsTab"
+        );
+        setLastRefreshTime(now);
+        forceRefresh();
+      } else {
+        logger.info(
+          "Skipping refresh - too soon since last refresh",
+          "CollectionsTab"
+        );
       }
-    }, [user?.id, forceRefresh, lastRefreshTime])
+    }, [lastRefreshTime, forceRefresh])
   );
 
   // Additional refresh trigger for immediate updates
   const handleImmediateRefresh = useCallback(() => {
     if (user?.id) {
-      console.log("🔄 Immediate refresh triggered");
+      logger.info("Immediate refresh triggered", "CollectionsTab");
       setLastRefreshTime(Date.now());
       forceRefresh().then(() => {
         // Show success message briefly

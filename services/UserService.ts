@@ -1,4 +1,5 @@
-import { supabase } from "./SupabaseService";
+import { logger } from '@/utils/logger';
+import { supabase } from './SupabaseService';
 import {
   Collection,
   CollectionMember,
@@ -22,6 +23,7 @@ import {
   UserWithStats,
 } from "../types/database";
 
+
 export class UserService {
   // User Operations
   static async createUser(params: CreateUserParams): Promise<User | null> {
@@ -41,7 +43,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error creating user:", error);
+      logger.error("Error creating user", "UserService", error);
       throw error;
     }
   }
@@ -57,7 +59,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error fetching user:", error);
+      logger.error("Error fetching user", "UserService", error);
       throw error;
     }
   }
@@ -73,7 +75,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error fetching user by username:", error);
+      logger.error("Error fetching user by username", "UserService", error);
       throw error;
     }
   }
@@ -98,7 +100,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error updating user:", error);
+      logger.error("Error updating user", "UserService", error);
       throw error;
     }
   }
@@ -118,7 +120,7 @@ export class UserService {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error updating user balance:", error);
+      logger.error("Error updating user balance", "UserService", error);
       throw error;
     }
   }
@@ -135,7 +137,7 @@ export class UserService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error("Error fetching portfolio:", error);
+      logger.error("Error fetching portfolio", "UserService", error);
       throw error;
     }
   }
@@ -155,7 +157,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error fetching portfolio asset:", error);
+      logger.error("Error fetching portfolio asset", "UserService", error);
       throw error;
     }
   }
@@ -185,7 +187,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error creating portfolio asset:", error);
+      logger.error("Error creating portfolio asset", "UserService", error);
       throw error;
     }
   }
@@ -211,7 +213,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error updating portfolio asset:", error);
+      logger.error("Error updating portfolio asset", "UserService", error);
       throw error;
     }
   }
@@ -222,7 +224,7 @@ export class UserService {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error deleting portfolio asset:", error);
+      logger.error("Error deleting portfolio asset", "UserService", error);
       throw error;
     }
   }
@@ -243,7 +245,7 @@ export class UserService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error("Error fetching transactions:", error);
+      logger.error("Error fetching transactions", "UserService", error);
       throw error;
     }
   }
@@ -271,7 +273,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error creating transaction:", error);
+      logger.error("Error creating transaction", "UserService", error);
       throw error;
     }
   }
@@ -300,7 +302,7 @@ export class UserService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error("Error fetching collections:", error);
+      logger.error("Error fetching collections", "UserService", error);
       throw error;
     }
   }
@@ -338,7 +340,7 @@ export class UserService {
 
       return data || [];
     } catch (error) {
-      console.error("Error fetching public collections:", error);
+      logger.error("Error fetching public collections", "UserService", error);
       throw error;
     }
   }
@@ -377,7 +379,7 @@ export class UserService {
 
       return data || [];
     } catch (error) {
-      console.error("Error searching collections:", error);
+      logger.error("Error searching collections", "UserService", error);
       throw error;
     }
   }
@@ -392,7 +394,7 @@ export class UserService {
       if (error) throw error;
       return (data || []).map((member) => member.collection_id);
     } catch (error) {
-      console.error("Error fetching user collection IDs:", error);
+      logger.error("Error fetching user collection IDs", "UserService", error);
       return [];
     }
   }
@@ -419,7 +421,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error fetching collection:", error);
+      logger.error("Error fetching collection", "UserService", error);
       throw error;
     }
   }
@@ -477,16 +479,16 @@ export class UserService {
           .insert([ownerMemberData]);
 
         if (memberError) {
-          console.error("Error adding owner as member:", memberError);
+          logger.error("Error adding owner as member", "UserService", memberError);
           // Don't throw error here as collection was created successfully
         } else {
-          console.log("✅ Owner automatically added as collection member");
+          logger.info("Owner automatically added as collection member", "UserService");
         }
       }
 
       return data;
     } catch (error) {
-      console.error("Error creating collection:", error);
+      logger.error("Error creating collection", "UserService", error);
       throw error;
     }
   }
@@ -511,7 +513,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error updating collection:", error);
+      logger.error("Error updating collection", "UserService", error);
       throw error;
     }
   }
@@ -568,7 +570,7 @@ export class UserService {
 
       return data;
     } catch (error) {
-      console.error("Error joining collection:", error);
+      logger.error("Error joining collection", "UserService", error);
       throw error;
     }
   }
@@ -611,7 +613,7 @@ export class UserService {
         balance: collection.starting_balance,
       });
     } catch (error) {
-      console.error("Error joining collection by invite code:", error);
+      logger.error("Error joining collection by invite code", "UserService", error);
       throw error;
     }
   }
@@ -631,7 +633,7 @@ export class UserService {
       if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows returned
       return data;
     } catch (error) {
-      console.error("Error fetching collection member:", error);
+      logger.error("Error fetching collection member", "UserService", error);
       throw error;
     }
   }
@@ -668,7 +670,7 @@ export class UserService {
 
       // If no members found, ensure the owner is included
       if (members.length === 0 && collection.owner_id) {
-        console.log("⚠️ No members found, ensuring owner is included");
+        logger.warn("No members found, ensuring owner is included", "UserService");
 
         // Get owner user details
         const ownerUser = await this.getUserById(collection.owner_id);
@@ -700,7 +702,7 @@ export class UserService {
 
       return members;
     } catch (error) {
-      console.error("Error fetching collection members:", error);
+      logger.error("Error fetching collection members", "UserService", error);
       throw error;
     }
   }
@@ -725,7 +727,7 @@ export class UserService {
 
       if (updateError) throw updateError;
     } catch (error) {
-      console.error("Error updating collection member count:", error);
+      logger.error("Error updating collection member count", "UserService", error);
       throw error;
     }
   }
@@ -743,7 +745,7 @@ export class UserService {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error leaving collection:", error);
+      logger.error("Error leaving collection", "UserService", error);
       throw error;
     }
   }
@@ -760,7 +762,7 @@ export class UserService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error("Error fetching favorites:", error);
+      logger.error("Error fetching favorites", "UserService", error);
       throw error;
     }
   }
@@ -783,7 +785,7 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error adding favorite:", error);
+      logger.error("Error adding favorite", "UserService", error);
       throw error;
     }
   }
@@ -798,7 +800,7 @@ export class UserService {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error removing favorite:", error);
+      logger.error("Error removing favorite", "UserService", error);
       throw error;
     }
   }
@@ -833,7 +835,7 @@ export class UserService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error("Error fetching leaderboard:", error);
+      logger.error("Error fetching leaderboard", "UserService", error);
       throw error;
     }
   }
@@ -877,7 +879,7 @@ export class UserService {
 
       return stats;
     } catch (error) {
-      console.error("Error fetching user stats:", error);
+      logger.error("Error fetching user stats", "UserService", error);
       throw error;
     }
   }
@@ -901,8 +903,9 @@ export class UserService {
       // If user hasn't traded yet, remove them from leaderboard rankings
       if (!hasTraded) {
         await this.removeUserFromLeaderboard(userId);
-        console.log(
-          `✅ Removed user ${userId} from leaderboard (no trades yet)`
+        logger.info(
+          `Removed user ${userId} from leaderboard (no trades yet)`,
+          "UserService"
         );
         return;
       }
@@ -959,11 +962,12 @@ export class UserService {
         } as any);
       }
 
-      console.log(
-        `✅ Updated leaderboard rankings for user ${userId} with calculated ranks`
+      logger.info(
+        `Updated leaderboard rankings for user ${userId} with calculated ranks`,
+        "UserService"
       );
     } catch (error) {
-      console.error("Error updating leaderboard rankings:", error);
+      logger.error("Error updating leaderboard rankings", "UserService", error);
       throw error;
     }
   }
@@ -1017,7 +1021,7 @@ export class UserService {
 
       return userRank > 0 ? userRank : 1; // Ensure rank is at least 1
     } catch (error) {
-      console.error("Error calculating user rank:", error);
+      logger.error("Error calculating user rank", "UserService", error);
       return 1; // Default to rank 1 if calculation fails
     }
   }
@@ -1055,7 +1059,7 @@ export class UserService {
         }
       }
     } catch (error) {
-      console.error("Error recalculating all ranks:", error);
+      logger.error("Error recalculating all ranks", "UserService", error);
     }
   }
 
@@ -1071,7 +1075,7 @@ export class UserService {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error removing user from leaderboard:", error);
+      logger.error("Error removing user from leaderboard", "UserService", error);
       throw error;
     }
   }
@@ -1094,12 +1098,13 @@ export class UserService {
       if (hasTraded) {
         // User has traded, add them to leaderboard
         await this.updateLeaderboardRankings(userId);
-        console.log(
-          `✅ Added user ${userId} to leaderboard (first trade detected)`
+        logger.info(
+          `Added user ${userId} to leaderboard (first trade detected)`,
+          "UserService"
         );
       }
     } catch (error) {
-      console.error("Error checking user leaderboard status:", error);
+      logger.error("Error checking user leaderboard status", "UserService", error);
       throw error;
     }
   }
@@ -1121,7 +1126,7 @@ export class UserService {
       if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows returned
       return data?.rank || null;
     } catch (error) {
-      console.error("Error getting user rank:", error);
+      logger.error("Error getting user rank", "UserService", error);
       return null;
     }
   }
@@ -1129,7 +1134,7 @@ export class UserService {
   // Initialize leaderboard rankings for all users (run once to set up initial rankings)
   static async initializeLeaderboardRankings(): Promise<void> {
     try {
-      console.log("🔄 Initializing leaderboard rankings for all users...");
+      logger.info("Initializing leaderboard rankings for all users...", "UserService");
 
       // Get all users
       const { data: users, error: usersError } = await supabase
@@ -1139,7 +1144,7 @@ export class UserService {
       if (usersError) throw usersError;
 
       if (!users || users.length === 0) {
-        console.log("No users found for leaderboard initialization");
+        logger.info("No users found for leaderboard initialization", "UserService");
         return;
       }
 
@@ -1148,16 +1153,17 @@ export class UserService {
         try {
           await this.updateLeaderboardRankings(user.id);
         } catch (error) {
-          console.error(`Error updating rankings for user ${user.id}:`, error);
+          logger.error(`Error updating rankings for user ${user.id}`, "UserService", error);
           // Continue with other users even if one fails
         }
       }
 
-      console.log(
-        `✅ Leaderboard rankings initialized for ${users.length} users`
+      logger.info(
+        `Leaderboard rankings initialized for ${users.length} users`,
+        "UserService"
       );
     } catch (error) {
-      console.error("Error initializing leaderboard rankings:", error);
+      logger.error("Error initializing leaderboard rankings", "UserService", error);
       throw error;
     }
   }
@@ -1206,7 +1212,7 @@ export class UserService {
         averagePnL,
       };
     } catch (error) {
-      console.error("Error getting leaderboard stats:", error);
+      logger.error("Error getting leaderboard stats", "UserService", error);
       return {
         totalUsers: 0,
         topPerformer: null,
@@ -1248,7 +1254,7 @@ export class UserService {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error upserting leaderboard ranking:", error);
+      logger.error("Error upserting leaderboard ranking", "UserService", error);
       throw error;
     }
   }

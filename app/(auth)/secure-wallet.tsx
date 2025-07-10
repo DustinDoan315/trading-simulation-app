@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from "react";
+import HeaderProgressBar from '@/components/ui/HeaderProgressBar';
+import React, { useEffect, useState } from 'react';
+import { generateSeedPhrase } from '@/utils/helper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { width } from '@/utils/response';
 import {
-  View,
-  Text,
-  Pressable,
-  Image,
-  StyleSheet,
   Alert,
   AppState,
   FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 
-import { generateSeedPhrase } from "@/utils/helper";
-import HeaderProgressBar from "@/components/ui/HeaderProgressBar";
-import { width } from "@/utils/response";
-import { router } from "expo-router";
 
 const SecureWalletScreen = () => {
   const [appState, setAppState] = useState<string>("active");
@@ -38,13 +38,13 @@ const SecureWalletScreen = () => {
     const seedPhrase = await generateSeedPhrase();
 
     if (seedPhrase) {
-      console.log("Your seed phrase:", seedPhrase.split(" "));
       setSeedPhases(seedPhrase.split(" "));
     }
   };
 
-  const handleStartPress = () => {
-    router.navigate("/wallet-info");
+  const handleContinue = () => {
+    // Navigate to next step
+    router.push("/(auth)/validate-seed-phrase");
   };
 
   const _renderSeedPhrases = ({ item, index }: any) => {
@@ -115,7 +115,7 @@ const SecureWalletScreen = () => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               locations={[0, 0.22, 0.54, 0.85, 1]}>
-              <Pressable onPress={handleStartPress} style={styles.createBtn}>
+              <Pressable onPress={handleContinue} style={styles.createBtn}>
                 <Text style={styles.buttonText}>Start</Text>
               </Pressable>
             </LinearGradient>

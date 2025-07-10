@@ -1,18 +1,16 @@
-import React, { useRef, useState } from "react";
-import { Feather, Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useAppDispatch, useAppSelector } from "../../store";
-import { useLanguage } from "../../context/LanguageContext";
+import colors from '@/styles/colors';
+import CryptoListItem from '@/components/crypto/CryptoListItem';
+import React, { useRef, useState } from 'react';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { logger } from '@/utils/logger';
+import { navigateToCryptoChart } from '@/utils/navigation';
+import { router } from 'expo-router';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { useLanguage } from '../../context/LanguageContext';
 import {
-  addSearchHistory,
-  clearSearchHistory,
-  removeSearchHistoryItem,
-} from "@/features/searchHistorySlice";
-import {
-  searchCryptocurrencies,
   CryptoCurrency,
+  searchCryptocurrencies,
 } from "@/services/CryptoService";
-import CryptoListItem from "@/components/crypto/CryptoListItem";
 import {
   Platform,
   SafeAreaView,
@@ -24,8 +22,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import colors from "@/styles/colors";
-import { navigateToCryptoChart } from "@/utils/navigation";
+import {
+  addSearchHistory,
+  clearSearchHistory,
+  removeSearchHistoryItem,
+} from "@/features/searchHistorySlice";
+import {
+  getCryptoIdFromSymbol,
+  isSupportedSymbol,
+} from "@/utils/cryptoMapping";
+
 
 interface SearchHistoryItem {
   id: string;
@@ -49,20 +55,27 @@ export default function CryptoSearch() {
 
   const { t } = useLanguage();
 
-  const handleSearch = async () => {
-    if (!searchText.trim()) return;
-
-    setIsSearching(true);
-    setSearchError("");
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) return;
 
     try {
-      const results = await searchCryptocurrencies(searchText);
+      setIsSearching(true);
+      setSearchError("");
+      setShowSuggestions(false);
+
+      // Check if the query is a supported symbol and get the crypto ID
+      const normalizedQuery = query.toUpperCase().trim();
+      const cryptoId = getCryptoIdFromSymbol(normalizedQuery);
+
+      // If it's a supported symbol, search by the crypto ID for better results
+      const searchQuery = cryptoId || query;
+      const results = await searchCryptocurrencies(searchQuery);
       setSearchResults(results);
 
       if (results.length > 0) {
         const newItem = {
           id: Date.now().toString(),
-          text: searchText,
+          text: query,
           timestamp: Date.now(),
         };
         dispatch(addSearchHistory(newItem));
@@ -70,16 +83,17 @@ export default function CryptoSearch() {
         setSearchError(t("cryptoSearch.noResults"));
       }
     } catch (error) {
-      console.error("Search failed:", error);
+      logger.error("Search failed", "CryptoSearch", error);
+      setSearchResults([]);
       setSearchError(t("cryptoSearch.searchFailed"));
     } finally {
       setIsSearching(false);
-      setSearchText("");
     }
   };
 
   const handleHistoryItemPress = (item: SearchHistoryItem) => {
-    // navigateToCryptoChart(item);
+    setSearchText(item.text);
+    handleSearch(item.text);
   };
 
   const handleCancel = () => {
@@ -133,7 +147,7 @@ export default function CryptoSearch() {
             placeholderTextColor="#777"
             autoCapitalize="none"
             returnKeyType="search"
-            onSubmitEditing={handleSearch}
+            onSubmitEditing={() => handleSearch(searchText)}
           />
         </View>
         <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
@@ -187,8 +201,8 @@ export default function CryptoSearch() {
                   key={crypto.id}
                   crypto={crypto}
                   onPress={() => {
-                    setShowSuggestions(false);
-                    goToChart(crypto);
+                    setSearchText(crypto.symbol);
+                    handleSearch(crypto.symbol);
                   }}
                 />
               ))}
