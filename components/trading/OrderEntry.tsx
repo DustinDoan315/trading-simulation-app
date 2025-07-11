@@ -32,6 +32,7 @@ interface OrderEntryProps {
   maxAmount?: number;
   availableBalance?: number;
   image?: string;
+  disabled?: boolean;
 }
 
 const OrderEntry = ({
@@ -41,6 +42,7 @@ const OrderEntry = ({
   currentPrice = 0,
   onSubmitOrder,
   availableBalance = 0,
+  disabled = false,
 }: OrderEntryProps) => {
   const { t } = useLanguage();
   // Get token balance from store
@@ -188,7 +190,8 @@ const OrderEntry = ({
         type={selectedTab}
         onPress={handleSubmitOrder}
         cryptoSymbol={symbol}
-        disabled={!canSell}
+        disabled={!canSell || disabled}
+        loading={disabled}
       />
     </View>
   );

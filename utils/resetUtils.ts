@@ -1,9 +1,88 @@
-import { Alert } from "react-native";
-import { ResetService } from "@/services/ResetService";
+import { Alert } from 'react-native';
+import { logger } from '@/utils/logger';
+import { ResetService } from '@/services/ResetService';
+import { UserService } from '@/services/UserService';
 
 /**
  * Utility functions for resetting the app cache and creating new users
  */
+
+/**
+ * Force refresh all local data after reset
+ * This ensures the UI shows the updated data from the database
+ */
+export const forceRefreshAllData = async (
+  userId: string,
+  dispatch: any,
+  refreshUserData?: (userId: string) => Promise<void>
+): Promise<void> => {
+  try {
+    logger.info("Force refreshing all local data after reset", "resetUtils");
+
+    // Wait a moment for database operations to complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Clear Redux state first
+    if (dispatch) {
+      dispatch({ type: 'user/clearUser' });
+      dispatch({ type: 'balance/resetBalance' });
+      dispatch({ type: 'favorites/resetFavorites' });
+      dispatch({ type: 'searchHistory/clearSearchHistory' });
+      dispatch({ type: 'dualBalance/resetAllBalances' });
+    }
+
+    // Wait a moment for Redux state to clear
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Force reload balance from database
+    if (dispatch) {
+      dispatch({ type: 'balance/loadBalance' });
+    }
+
+    // Refresh user context data to ensure all data is loaded from database
+    if (refreshUserData) {
+      await refreshUserData(userId);
+    }
+
+    // Also force refresh portfolio data from database
+    if (dispatch) {
+      dispatch({ type: 'user/fetchPortfolio', payload: userId });
+    }
+
+    // Clear any cached data in AsyncStorage
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      await AsyncStorage.multiRemove([
+        'user_balance',
+        'user_portfolio',
+        'user_transactions',
+        'user_favorites',
+        'portfolio_cache',
+        'balance_cache',
+        'portfolio_data', // Main portfolio cache key used by AsyncStorageService
+        'transactions_data', // Main transactions cache key used by AsyncStorageService
+        'user_profile' // User profile cache key
+      ]);
+      logger.info("Cleared cached data from AsyncStorage", "resetUtils");
+    } catch (storageError) {
+      logger.warn("Error clearing AsyncStorage cache", "resetUtils", storageError);
+    }
+
+    // Also clear user-specific data using AsyncStorageService
+    try {
+      const { AsyncStorageService } = await import('../services/AsyncStorageService');
+      await AsyncStorageService.clearUserData(userId);
+      logger.info("Cleared user-specific data from AsyncStorageService", "resetUtils");
+    } catch (serviceError) {
+      logger.warn("Error clearing AsyncStorageService data", "resetUtils", serviceError);
+    }
+
+    logger.info("All local data refreshed successfully", "resetUtils");
+  } catch (error) {
+    logger.error("Error force refreshing data", "resetUtils", error);
+    throw error;
+  }
+};
 
 /**
  * Reset the app completely and create a new user
@@ -30,21 +109,89 @@ export const resetAppAndCreateNewUser = async (): Promise<boolean> => {
 };
 
 /**
- * Reset only portfolio data (keeps user but clears portfolio)
+ * Reset user data to default values while keeping the same user ID
+ */
+export const resetUserDataToDefault = async (userId: string): Promise<{
+  success: boolean;
+  error?: string;
+  details: {
+    portfolio: boolean;
+    transactions: boolean;
+    favorites: boolean;
+    leaderboard: boolean;
+    userProfile: boolean;
+  };
+}> => {
+  try {
+    console.log("🔄 Starting user data reset...");
+    
+    const result = await UserService.resetUserDataToDefault(userId);
+    
+    if (result.success) {
+      console.log("✅ User data reset completed successfully");
+      console.log("📊 Reset details:", result.details);
+    } else {
+      console.error("❌ User data reset failed:", result.error);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("❌ Error during user data reset:", error);
+    return {
+      success: false,
+      error: `Reset failed: ${error}`,
+      details: {
+        portfolio: false,
+        transactions: false,
+        favorites: false,
+        leaderboard: false,
+        userProfile: false,
+      },
+    };
+  }
+};
+
+/**
+ * Reset portfolio data only
  */
 export const resetPortfolioData = async (): Promise<boolean> => {
   try {
     console.log("🔄 Starting portfolio reset...");
 
-    const result = await ResetService.resetPortfolioData();
+    // Get current user UUID
+    const UUIDService = require('@/services/UUIDService').default;
+    const uuid = await UUIDService.getOrCreateUser();
 
-    if (result.success) {
-      console.log("✅ Portfolio reset completed successfully");
-      return true;
-    } else {
-      console.error("❌ Portfolio reset failed:", result.error);
+    // Clear portfolio data from Supabase
+    const { error } = await require('@/services/SupabaseService').supabase
+      .from("portfolio")
+      .delete()
+      .eq("user_id", uuid);
+
+    if (error) {
+      console.error("❌ Failed to clear portfolio:", error);
       return false;
     }
+
+    // Reset user balance to default
+    const { error: userError } = await require('@/services/SupabaseService').supabase
+      .from("users")
+      .update({ 
+        usdt_balance: "100000.00",
+        total_portfolio_value: "100000.00",
+        total_pnl: "0.00",
+        total_trades: 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", uuid);
+
+    if (userError) {
+      console.error("❌ Failed to reset user balance:", userError);
+      return false;
+    }
+
+    console.log("✅ Portfolio reset completed successfully");
+    return true;
   } catch (error) {
     console.error("❌ Error during portfolio reset:", error);
     return false;

@@ -1,10 +1,10 @@
-import colors from "@/styles/colors";
-import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { useLeaderboardData } from "@/hooks/useLeaderboardData";
-import { useLeaderboardRanking } from "@/hooks/useLeaderboardRanking";
-import { useNotification } from "@/components/ui/Notification";
-import { useUser } from "@/context/UserContext";
+import colors from '@/styles/colors';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useLeaderboardData } from '@/hooks/useLeaderboardData';
+import { useLeaderboardRanking } from '@/hooks/useLeaderboardRanking';
+import { useNotification } from '@/components/ui/Notification';
+import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 import {
   FlatList,
   RefreshControl,
@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const LeaderboardScreen = () => {
   const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
@@ -53,6 +54,24 @@ const LeaderboardScreen = () => {
     });
   }, [updateFilters]);
 
+  // Initialize leaderboard rankings if needed
+  useEffect(() => {
+    const initializeRankings = async () => {
+      try {
+        console.log("🔄 Initializing leaderboard rankings...");
+        await UserService.initializeLeaderboardRankings();
+        console.log("✅ Leaderboard rankings initialized");
+      } catch (error) {
+        console.error("❌ Error initializing leaderboard rankings:", error);
+      }
+    };
+
+    // Only initialize if we have a user and no data yet
+    if (user?.id && leaderboardData.global.length === 0) {
+      initializeRankings();
+    }
+  }, [user?.id, leaderboardData.global.length]);
+
   // Show error notification if there's an error
   useEffect(() => {
     if (error) {
@@ -65,6 +84,16 @@ const LeaderboardScreen = () => {
 
   // Transform real-time data for display
   const transformLeaderboardData = (data: any[], type: string) => {
+    console.log(`🔄 Transforming ${type} data:`, data.length, "items");
+
+    // Debug: Log the first item to see the actual data structure
+    if (data.length > 0) {
+      console.log(
+        `🔍 Sample ${type} data item:`,
+        JSON.stringify(data[0], null, 2)
+      );
+    }
+
     return data.map((item, index) => {
       if (type === "collections") {
         return {
@@ -76,33 +105,57 @@ const LeaderboardScreen = () => {
           isMyCollection: item.is_my_collection || false,
         };
       } else {
+        // Get P&L data from user's actual data, not from leaderboard rankings
+        const pnl = parseFloat(item.users?.total_pnl || "0");
+        const percentage = parseFloat(item.users?.total_pnl_percentage || "0");
+        const portfolio = parseFloat(item.users?.total_portfolio_value || "0");
+
+        console.log(
+          `📊 User ${
+            item.users?.display_name || item.users?.username
+          }: P&L=${pnl}, Return=${percentage}%, Portfolio=${portfolio}`
+        );
+
         return {
           id: item.id || `user-${index}`,
           rank: item.rank || index + 1,
           name:
             item.users?.display_name || item.users?.username || "Unknown User",
           avatar: item.users?.avatar_emoji || "👤",
-          pnl: parseFloat(item.total_pnl || "0"),
-          percentage: parseFloat(item.percentage_return || "0"), // Use correct column name
-          portfolio: parseFloat(item.portfolio_value || "0"), // Use correct column name
+          pnl: pnl,
+          percentage: percentage,
+          portfolio: portfolio,
           isCurrentUser: item.is_current_user || false,
         };
       }
     });
   };
 
-  const globalRankings = transformLeaderboardData(
-    leaderboardData.global,
-    "global"
+  // Use useMemo to recalculate rankings when data changes
+  const globalRankings = React.useMemo(
+    () => transformLeaderboardData(leaderboardData.global, "global"),
+    [leaderboardData.global]
   );
-  const friendsRankings = transformLeaderboardData(
-    leaderboardData.friends,
-    "friends"
+
+  const friendsRankings = React.useMemo(
+    () => transformLeaderboardData(leaderboardData.friends, "friends"),
+    [leaderboardData.friends]
   );
-  const collectionRankings = transformLeaderboardData(
-    leaderboardData.collections,
-    "collections"
+
+  const collectionRankings = React.useMemo(
+    () => transformLeaderboardData(leaderboardData.collections, "collections"),
+    [leaderboardData.collections]
   );
+
+  // Debug: Log when data changes
+  useEffect(() => {
+    console.log("🔄 Leaderboard data updated:", {
+      global: leaderboardData.global.length,
+      friends: leaderboardData.friends.length,
+      collections: leaderboardData.collections.length,
+      lastUpdated: lastUpdated?.toISOString(),
+    });
+  }, [leaderboardData, lastUpdated]);
 
   const getRankColor = (rank: number) => {
     if (rank === 1) return "#FFD700";
@@ -111,87 +164,99 @@ const LeaderboardScreen = () => {
     return colors.text.secondary;
   };
 
-  const RankedItem = ({ item, type }: any) => (
-    <View
-      style={[styles.rankedItem, item.isCurrentUser && styles.currentUserItem]}>
-      <View style={styles.rankSection}>
-        <View
-          style={[
-            styles.rankBadge,
-            { backgroundColor: getRankColor(item.rank) },
-          ]}>
-          <Text
-            style={[
-              styles.rankText,
-              { color: item.rank <= 3 ? "#000" : "#fff" },
-            ]}>
-            {item.rank}
-          </Text>
-        </View>
-      </View>
+  const RankedItem = React.memo(({ item, type }: any) => {
+    console.log(
+      `📊 Rendering RankedItem:`,
+      item.name,
+      "Rank:",
+      item.rank,
+      "P&L:",
+      item.pnl
+    );
 
-      <View style={styles.infoSection}>
-        <View style={styles.userInfo}>
-          <Text style={styles.avatar}>{item.avatar}</Text>
-          <View style={styles.nameContainer}>
+    return (
+      <View
+        style={[
+          styles.rankedItem,
+          item.isCurrentUser && styles.currentUserItem,
+        ]}>
+        <View style={styles.rankSection}>
+          <View
+            style={[
+              styles.rankBadge,
+              { backgroundColor: getRankColor(item.rank) },
+            ]}>
             <Text
               style={[
-                styles.name,
-                item.isCurrentUser && styles.currentUserName,
+                styles.rankText,
+                { color: item.rank <= 3 ? "#000" : "#fff" },
               ]}>
-              {item.name}
+              {item.rank}
             </Text>
-            {type === "collections" && (
-              <Text style={styles.members}>{item.members} members</Text>
-            )}
           </View>
         </View>
 
-        <View style={styles.statsContainer}>
-          {type === "collections" ? (
-            <>
+        <View style={styles.infoSection}>
+          <View style={styles.userInfo}>
+            <Text style={styles.avatar}>{item.avatar}</Text>
+            <View style={styles.nameContainer}>
+              <Text
+                style={[
+                  styles.name,
+                  item.isCurrentUser && styles.currentUserName,
+                ]}>
+                {item.name}
+              </Text>
+              {type === "collections" && (
+                <Text style={styles.members}>{item.members} members</Text>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.statsContainer}>
+            {type === "collections" ? (
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>
                   ${item.totalValue.toLocaleString()}
                 </Text>
                 <Text style={styles.statLabel}>Total Value</Text>
               </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.statItem}>
-                <Text
-                  style={[
-                    styles.statValue,
-                    { color: item.pnl >= 0 ? "#10BA68" : "#F9335D" },
-                  ]}>
-                  {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
-                </Text>
-                <Text style={styles.statLabel}>P&L</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text
-                  style={[
-                    styles.statValue,
-                    { color: item.percentage >= 0 ? "#10BA68" : "#F9335D" },
-                  ]}>
-                  {item.percentage >= 0 ? "+" : ""}
-                  {item.percentage}%
-                </Text>
-                <Text style={styles.statLabel}>Return</Text>
-              </View>
-            </>
-          )}
+            ) : (
+              <>
+                <View style={styles.statItem}>
+                  <Text
+                    style={[
+                      styles.statValue,
+                      { color: item.pnl >= 0 ? "#10BA68" : "#F9335D" },
+                    ]}>
+                    {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
+                  </Text>
+                  <Text style={styles.statLabel}>P&L</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text
+                    style={[
+                      styles.statValue,
+                      { color: item.percentage >= 0 ? "#10BA68" : "#F9335D" },
+                    ]}>
+                    {item.percentage >= 0 ? "+" : ""}
+                    {item.percentage}%
+                  </Text>
+                  <Text style={styles.statLabel}>Return</Text>
+                </View>
+              </>
+            )}
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  });
 
-  const getCurrentData = () => {
+  const getCurrentData = useMemo(() => {
     if (activeTab === "global") return globalRankings;
     if (activeTab === "friends") return friendsRankings;
     return globalRankings; // fallback to global
-  };
+  }, [activeTab, globalRankings, friendsRankings]);
 
   const handleRefresh = async () => {
     await refresh();
@@ -207,12 +272,6 @@ const LeaderboardScreen = () => {
             <Text style={styles.rankNumber}>
               {currentRank ? `#${currentRank}` : "—"}
             </Text>
-            <Ionicons
-              name="trophy"
-              size={24}
-              color="#FFD700"
-              style={styles.trophyIcon}
-            />
           </View>
           <Text style={styles.rankLabel}>
             {currentRank ? "Your Current Rank" : "Start trading to get ranked"}
@@ -223,34 +282,16 @@ const LeaderboardScreen = () => {
       {stats && (
         <View style={styles.statsSection}>
           <View style={styles.statCard}>
-            <Ionicons
-              name="people"
-              size={20}
-              color="#6674CC"
-              style={styles.statIcon}
-            />
             <Text style={styles.statNumber}>{stats.totalUsers}</Text>
             <Text style={styles.statLabel}>Total Traders</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons
-              name="star"
-              size={20}
-              color="#FFD700"
-              style={styles.statIcon}
-            />
             <Text style={styles.statNumber}>
               {stats.topPerformer ? `#${stats.topPerformer.rank}` : "—"}
             </Text>
             <Text style={styles.statLabel}>Top Performer</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons
-              name="trending-up"
-              size={20}
-              color="#10BA68"
-              style={styles.statIcon}
-            />
             <Text style={styles.statNumber}>{stats.totalUsers}</Text>
             <Text style={styles.statLabel}>Active Traders</Text>
           </View>
@@ -265,9 +306,6 @@ const LeaderboardScreen = () => {
 
       <View style={styles.header}>
         <Text style={styles.title}>Leaderboards</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.tabContainer}>
@@ -296,7 +334,7 @@ const LeaderboardScreen = () => {
       </View>
 
       <FlatList
-        data={getCurrentData()}
+        data={getCurrentData}
         renderItem={({ item }) => <RankedItem item={item} type={activeTab} />}
         keyExtractor={(item) => item.id}
         style={styles.list}
@@ -320,6 +358,8 @@ const LeaderboardScreen = () => {
             </Text>
           </View>
         }
+        key={`${activeTab}-${lastUpdated?.getTime() || Date.now()}`}
+        extraData={lastUpdated}
       />
 
       {/* Last Updated Indicator */}
@@ -350,14 +390,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: "#FFFFFF",
-  },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1A1D2F",
-    justifyContent: "center",
-    alignItems: "center",
   },
   tabContainer: {
     flexDirection: "row",
@@ -520,9 +552,6 @@ const styles = StyleSheet.create({
     color: "#6674CC",
     marginRight: 8,
   },
-  trophyIcon: {
-    marginLeft: 4,
-  },
   rankLabel: {
     fontSize: 16,
     color: "#9DA3B4",
@@ -540,9 +569,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     backgroundColor: "#252A3D",
     borderRadius: 12,
-  },
-  statIcon: {
-    marginBottom: 6,
   },
   statNumber: {
     fontSize: 20,

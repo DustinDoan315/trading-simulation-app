@@ -101,6 +101,7 @@ export const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginTop: 16,
+    marginBottom: 6,
   },
   statRow: {
     flexDirection: "row",

@@ -817,7 +817,14 @@ export class UserService {
         .select(
           `
           *,
-          users(username, display_name, avatar_emoji)
+          users!leaderboard_rankings_user_id_fkey(
+            username, 
+            display_name, 
+            avatar_emoji,
+            total_pnl,
+            total_pnl_percentage,
+            total_portfolio_value
+          )
         `
         )
         .eq("period", period)
@@ -954,13 +961,14 @@ export class UserService {
       // Recalculate all ranks for this period to ensure consistency
       await this.recalculateAllRanks();
 
-      // Update user's global rank in the users table
+      // Update user's P&L data and global rank in the users table
       const allTimeRank = await this.getUserRank(userId, "ALL_TIME");
-      if (allTimeRank !== null) {
-        await this.updateUser(userId, {
-          global_rank: allTimeRank,
-        } as any);
-      }
+      await this.updateUser(userId, {
+        total_pnl: totalPnL.toString(),
+        total_pnl_percentage: totalPnLPercentage.toString(),
+        total_portfolio_value: totalPortfolioValue.toString(),
+        global_rank: allTimeRank,
+      } as any);
 
       logger.info(
         `Updated leaderboard rankings for user ${userId} with calculated ranks`,
@@ -1229,33 +1237,201 @@ export class UserService {
     total_portfolio_value: string;
     total_trades: number;
     rank: number;
+    collection_id?: string | null;
   }): Promise<void> {
     try {
-      const { data, error } = await supabase
+      // Use upsert to avoid duplicate entries for the same user, period, and collection
+      const { error } = await supabase
         .from("leaderboard_rankings")
-        .upsert(
-          [
-            {
-              user_id: params.user_id,
-              collection_id: null, // Explicitly set to null for global rankings
-              period: params.period,
-              total_pnl: params.total_pnl,
-              percentage_return: params.total_pnl_percentage, // Map to correct column name
-              portfolio_value: params.total_portfolio_value, // Map to correct column name
-              trade_count: params.total_trades, // Map to correct column name
-              rank: params.rank,
-              updated_at: new Date().toISOString(), // Use updated_at for consistency
-            },
-          ],
+        .upsert([
           {
-            onConflict: "user_id,collection_id,period",
-          }
-        );
-
+            user_id: params.user_id,
+            period: params.period,
+            total_pnl: params.total_pnl,
+            percentage_return: params.total_pnl_percentage, // Use percentage_return to match database schema
+            portfolio_value: params.total_portfolio_value, // Use portfolio_value to match database schema
+            trade_count: params.total_trades, // Use trade_count to match database schema
+            rank: params.rank,
+            collection_id: params.collection_id || null,
+          },
+        ], { onConflict: "user_id,period,collection_id" });
       if (error) throw error;
     } catch (error) {
       logger.error("Error upserting leaderboard ranking", "UserService", error);
       throw error;
+    }
+  }
+
+  // Reset user data to default values while keeping the same user ID
+  static async resetUserDataToDefault(userId: string): Promise<{
+    success: boolean;
+    error?: string;
+    details: {
+      portfolio: boolean;
+      transactions: boolean;
+      favorites: boolean;
+      leaderboard: boolean;
+      userProfile: boolean;
+    };
+  }> {
+    const result: {
+      success: boolean;
+      error?: string;
+      details: {
+        portfolio: boolean;
+        transactions: boolean;
+        favorites: boolean;
+        leaderboard: boolean;
+        userProfile: boolean;
+      };
+    } = {
+      success: true,
+      details: {
+        portfolio: false,
+        transactions: false,
+        favorites: false,
+        leaderboard: false,
+        userProfile: false,
+      },
+    };
+
+    try {
+      logger.info(`Starting user data reset for user: ${userId}`, "UserService");
+
+      // Step 1: Clear portfolio data
+      try {
+        const { error: portfolioError } = await supabase
+          .from("portfolio")
+          .delete()
+          .eq("user_id", userId);
+
+        if (portfolioError) {
+          logger.error("Error clearing portfolio data", "UserService", portfolioError);
+          result.success = false;
+          result.error = `Portfolio clear failed: ${portfolioError.message}`;
+        } else {
+          result.details.portfolio = true;
+          logger.info("Portfolio data cleared successfully", "UserService");
+        }
+      } catch (error) {
+        logger.error("Error clearing portfolio data", "UserService", error);
+        result.success = false;
+        result.error = `Portfolio clear failed: ${error}`;
+      }
+
+      // Step 2: Clear transaction history
+      try {
+        const { error: transactionError } = await supabase
+          .from("transactions")
+          .delete()
+          .eq("user_id", userId);
+
+        if (transactionError) {
+          logger.error("Error clearing transaction data", "UserService", transactionError);
+          // Don't fail the entire reset if transactions fail
+          logger.warn("Transaction clear failed, but continuing with reset", "UserService");
+        } else {
+          result.details.transactions = true;
+          logger.info("Transaction data cleared successfully", "UserService");
+        }
+      } catch (error) {
+        logger.error("Error clearing transaction data", "UserService", error);
+        // Don't fail the entire reset if transactions fail
+        logger.warn("Transaction clear failed, but continuing with reset", "UserService");
+      }
+
+      // Step 3: Clear favorites
+      try {
+        const { error: favoritesError } = await supabase
+          .from("favorites")
+          .delete()
+          .eq("user_id", userId);
+
+        if (favoritesError) {
+          logger.error("Error clearing favorites data", "UserService", favoritesError);
+          // Don't fail the entire reset if favorites fail
+          logger.warn("Favorites clear failed, but continuing with reset", "UserService");
+        } else {
+          result.details.favorites = true;
+          logger.info("Favorites data cleared successfully", "UserService");
+        }
+      } catch (error) {
+        logger.error("Error clearing favorites data", "UserService", error);
+        // Don't fail the entire reset if favorites fail
+        logger.warn("Favorites clear failed, but continuing with reset", "UserService");
+      }
+
+      // Step 4: Remove from leaderboard rankings
+      try {
+        const { error: leaderboardError } = await supabase
+          .from("leaderboard_rankings")
+          .delete()
+          .eq("user_id", userId);
+
+        if (leaderboardError) {
+          logger.error("Error removing from leaderboard", "UserService", leaderboardError);
+          // Don't fail the entire reset if leaderboard fails
+          logger.warn("Leaderboard removal failed, but continuing with reset", "UserService");
+        } else {
+          result.details.leaderboard = true;
+          logger.info("User removed from leaderboard successfully", "UserService");
+        }
+      } catch (error) {
+        logger.error("Error removing from leaderboard", "UserService", error);
+        // Don't fail the entire reset if leaderboard fails
+        logger.warn("Leaderboard removal failed, but continuing with reset", "UserService");
+      }
+
+      // Step 5: Reset user profile to default values
+      try {
+        const defaultUserData = {
+          usdt_balance: "100000.00",
+          total_portfolio_value: "100000.00",
+          initial_balance: "100000.00",
+          total_pnl: "0.00",
+          total_pnl_percentage: "0.00",
+          total_trades: 0,
+          total_buy_volume: "0.00",
+          total_sell_volume: "0.00",
+          win_rate: "0.00",
+          global_rank: null,
+          last_trade_at: null,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error: userError } = await supabase
+          .from("users")
+          .update(defaultUserData)
+          .eq("id", userId);
+
+        if (userError) {
+          logger.error("Error resetting user profile", "UserService", userError);
+          result.success = false;
+          result.error = `User profile reset failed: ${userError.message}`;
+        } else {
+          result.details.userProfile = true;
+          logger.info("User profile reset to default successfully", "UserService");
+        }
+      } catch (error) {
+        logger.error("Error resetting user profile", "UserService", error);
+        result.success = false;
+        result.error = `User profile reset failed: ${error}`;
+      }
+
+      if (result.success) {
+        logger.info(`User data reset completed successfully for user: ${userId}`, "UserService", result.details);
+      } else {
+        logger.error(`User data reset failed for user: ${userId}`, "UserService", result.error);
+      }
+
+      return result;
+    } catch (error) {
+      logger.error("Error during user data reset", "UserService", error);
+      return {
+        success: false,
+        error: `Reset failed: ${error}`,
+        details: result.details,
+      };
     }
   }
 }

@@ -381,14 +381,38 @@ const TradingHistoryModal = () => {
           <Text style={styles.statLabel}>Total Trades</Text>
           <Text style={styles.statValue}>{filteredHistory.length}</Text>
         </LinearGradient>
-        <LinearGradient colors={["#1A1D2F", "#2A2E42"]} style={styles.statCard}>
-          <Text style={styles.statLabel}>Buy Orders</Text>
-          <Text style={styles.statValue}>{buyCount}</Text>
-        </LinearGradient>
-        <LinearGradient colors={["#1A1D2F", "#2A2E42"]} style={styles.statCard}>
-          <Text style={styles.statLabel}>Sell Orders</Text>
-          <Text style={styles.statValue}>{sellCount}</Text>
-        </LinearGradient>
+        {activeFilter === "all" && (
+          <>
+            <LinearGradient
+              colors={["#1A1D2F", "#2A2E42"]}
+              style={styles.statCard}>
+              <Text style={styles.statLabel}>Buy Orders</Text>
+              <Text style={styles.statValue}>{buyCount}</Text>
+            </LinearGradient>
+            <LinearGradient
+              colors={["#1A1D2F", "#2A2E42"]}
+              style={styles.statCard}>
+              <Text style={styles.statLabel}>Sell Orders</Text>
+              <Text style={styles.statValue}>{sellCount}</Text>
+            </LinearGradient>
+          </>
+        )}
+        {activeFilter === "buy" && (
+          <LinearGradient
+            colors={["#1A1D2F", "#2A2E42"]}
+            style={styles.statCard}>
+            <Text style={styles.statLabel}>Buy Orders</Text>
+            <Text style={styles.statValue}>{buyCount}</Text>
+          </LinearGradient>
+        )}
+        {activeFilter === "sell" && (
+          <LinearGradient
+            colors={["#1A1D2F", "#2A2E42"]}
+            style={styles.statCard}>
+            <Text style={styles.statLabel}>Sell Orders</Text>
+            <Text style={styles.statValue}>{sellCount}</Text>
+          </LinearGradient>
+        )}
       </View>
 
       {error && (

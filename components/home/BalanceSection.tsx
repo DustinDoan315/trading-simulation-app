@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { clearSearchHistory } from '@/features/searchHistorySlice';
+import { forceRefreshAllData } from '@/utils/resetUtils';
 import { formatAmount } from '@/utils/formatters';
 import { height } from '@/utils/response';
 import { Ionicons } from '@expo/vector-icons';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { LinearGradient } from 'expo-linear-gradient';
+import { loadBalance, resetBalance } from '@/features/balanceSlice';
 import { logger } from '@/utils/logger';
 import { persistor } from '@/store';
-import { resetBalance } from '@/features/balanceSlice';
 import { resetFavorites } from '@/features/favoritesSlice';
-import { ResetService } from '@/services/ResetService';
 import { useAppDispatch } from '@/store';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserBalance } from '@/services/CryptoService';
+import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 import {
   Alert,
   Modal,
@@ -39,6 +41,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
   onResetBalance,
 }) => {
   const { t } = useLanguage();
+  const { user, refreshUserData } = useUser();
   const [showResetModal, setShowResetModal] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
@@ -51,7 +54,11 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
   const confirmReset = async () => {
     setIsResetting(true);
     try {
-      logger.info("Starting comprehensive reset", "BalanceSection");
+      logger.info("Starting user data reset", "BalanceSection");
+
+      if (!user?.id) {
+        throw new Error("No user ID available for reset");
+      }
 
       // Step 1: Reset Redux state
       dispatch(resetBalance());
@@ -61,15 +68,28 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
       // Step 2: Clear Redux persist storage
       await persistor.purge();
 
-      // Step 3: Comprehensive data reset using ResetService
-      const resetResult = await ResetService.resetAppAndCreateNewUser();
+      // Step 3: Reset user data to default using UserService
+      const resetResult = await UserService.resetUserDataToDefault(user.id);
 
       if (resetResult.success) {
         logger.info(
-          "Comprehensive reset completed successfully",
+          "User data reset completed successfully",
           "BalanceSection",
           resetResult.details
         );
+
+        // Step 4: Force refresh all local data to ensure UI shows updated data
+        try {
+          await forceRefreshAllData(user.id, dispatch, refreshUserData);
+        } catch (refreshError) {
+          logger.warn(
+            "Error refreshing data after reset",
+            "BalanceSection",
+            refreshError
+          );
+          // Don't fail the reset if refresh fails
+        }
+
         // Call the callback if provided
         onResetBalance?.();
 
@@ -77,12 +97,17 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
 
         // Show success message with details
         const successMessage =
-          `Details:\n` +
-          `• Local storage: ${
-            resetResult.details.localStorage ? "✅" : "❌"
+          `Reset Details:\n` +
+          `• Portfolio: ${resetResult.details.portfolio ? "✅" : "❌"}\n` +
+          `• Transactions: ${
+            resetResult.details.transactions ? "✅" : "❌"
           }\n` +
-          `• Cloud data: ${resetResult.details.cloudData ? "✅" : "⚠️"}\n` +
-          `• User profile: ${resetResult.details.userProfile ? "✅" : "❌"}`;
+          `• Favorites: ${resetResult.details.favorites ? "✅" : "❌"}\n` +
+          `• Leaderboard: ${resetResult.details.leaderboard ? "✅" : "❌"}\n` +
+          `• User Profile: ${
+            resetResult.details.userProfile ? "✅" : "❌"
+          }\n\n` +
+          `Local data has been refreshed.`;
 
         Alert.alert(
           t("balance.resetSuccess") || "Reset Successful",
@@ -96,7 +121,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
         );
       }
     } catch (error) {
-      logger.error("Error during comprehensive reset", "BalanceSection", error);
+      logger.error("Error during user data reset", "BalanceSection", error);
       Alert.alert(
         t("balance.resetError") || "Reset Failed",
         t("balance.resetErrorMessage") ||

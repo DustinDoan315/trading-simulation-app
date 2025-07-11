@@ -1,10 +1,10 @@
-import colors from "@/styles/colors";
-import React, { useEffect, useState } from "react";
-import { fetchTransactions } from "@/features/userSlice";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { useUser } from "@/context/UserContext";
+import colors from '@/styles/colors';
+import React, { useEffect, useState } from 'react';
+import { fetchTransactions } from '@/features/userSlice';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   FlatList,
@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const TransactionHistoryScreen = () => {
   const dispatch = useAppDispatch();

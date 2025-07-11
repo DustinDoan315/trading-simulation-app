@@ -21,6 +21,7 @@ class LeaderboardService {
   private static instance: LeaderboardService;
   private subscribers: Set<(data: LeaderboardData) => void> = new Set();
   private channels: Map<string, any> = new Map();
+  private currentFilters: LeaderboardFilters | null = null;
   private currentData: LeaderboardData = {
     global: [],
     friends: [],
@@ -53,11 +54,19 @@ class LeaderboardService {
 
   // Notify all subscribers
   private notifySubscribers(): void {
+    console.log(`🔄 Notifying ${this.subscribers.size} subscribers of data update`);
     this.subscribers.forEach(callback => callback(this.currentData));
   }
 
   // Update data and notify subscribers
   private updateData(updates: Partial<LeaderboardData>): void {
+    console.log('🔄 Updating leaderboard data:', {
+      globalCount: updates.global?.length || this.currentData.global.length,
+      friendsCount: updates.friends?.length || this.currentData.friends.length,
+      collectionsCount: updates.collections?.length || this.currentData.collections.length,
+      lastUpdated: updates.lastUpdated?.toISOString(),
+    });
+    
     this.currentData = { ...this.currentData, ...updates };
     this.notifySubscribers();
   }
@@ -71,6 +80,9 @@ class LeaderboardService {
   async loadLeaderboardData(filters: LeaderboardFilters): Promise<void> {
     try {
       this.updateData({ isLoading: true, error: null });
+      
+      // Store current filters for real-time updates
+      this.currentFilters = filters;
 
       const [globalData, friendsData, collectionsData] = await Promise.all([
         this.fetchGlobalLeaderboard(filters),
@@ -152,7 +164,7 @@ class LeaderboardService {
           filter: `period=eq.${filters.period}`,
         },
         (payload) => {
-          console.log('Leaderboard real-time update:', payload);
+          console.log('🔄 Leaderboard real-time update:', payload);
           this.handleLeaderboardUpdate(payload, filters);
         }
       )
@@ -171,7 +183,7 @@ class LeaderboardService {
           table: 'portfolio',
         },
         (payload) => {
-          console.log('Portfolio real-time update:', payload);
+          console.log('🔄 Portfolio real-time update:', payload);
           this.handlePortfolioUpdate(payload, filters);
         }
       )
@@ -190,7 +202,7 @@ class LeaderboardService {
           table: 'users',
         },
         (payload) => {
-          console.log('User real-time update:', payload);
+          console.log('🔄 User real-time update:', payload);
           this.handleUserUpdate(payload, filters);
         }
       )
@@ -202,14 +214,17 @@ class LeaderboardService {
   // Handle leaderboard ranking updates
   private async handleLeaderboardUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
     try {
+      // Use current filters if available, otherwise use passed filters
+      const currentFilters = this.currentFilters || filters;
+      
       // Refresh the appropriate leaderboard data
       if (payload.new?.collection_id) {
         // Collection-specific leaderboard
-        const collectionsData = await this.fetchCollectionsLeaderboard(filters);
+        const collectionsData = await this.fetchCollectionsLeaderboard(currentFilters);
         this.updateData({ collections: collectionsData });
       } else {
         // Global leaderboard
-        const globalData = await this.fetchGlobalLeaderboard(filters);
+        const globalData = await this.fetchGlobalLeaderboard(currentFilters);
         this.updateData({ global: globalData });
       }
     } catch (error) {
@@ -220,11 +235,14 @@ class LeaderboardService {
   // Handle portfolio updates
   private async handlePortfolioUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
     try {
+      // Use current filters if available, otherwise use passed filters
+      const currentFilters = this.currentFilters || filters;
+      
       // Portfolio changes affect user rankings, so refresh all leaderboards
       const [globalData, friendsData, collectionsData] = await Promise.all([
-        this.fetchGlobalLeaderboard(filters),
-        this.fetchFriendsLeaderboard(filters),
-        this.fetchCollectionsLeaderboard(filters),
+        this.fetchGlobalLeaderboard(currentFilters),
+        this.fetchFriendsLeaderboard(currentFilters),
+        this.fetchCollectionsLeaderboard(currentFilters),
       ]);
 
       this.updateData({
@@ -241,11 +259,14 @@ class LeaderboardService {
   // Handle user updates
   private async handleUserUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
     try {
+      // Use current filters if available, otherwise use passed filters
+      const currentFilters = this.currentFilters || filters;
+      
       // User changes affect rankings, so refresh all leaderboards
       const [globalData, friendsData, collectionsData] = await Promise.all([
-        this.fetchGlobalLeaderboard(filters),
-        this.fetchFriendsLeaderboard(filters),
-        this.fetchCollectionsLeaderboard(filters),
+        this.fetchGlobalLeaderboard(currentFilters),
+        this.fetchFriendsLeaderboard(currentFilters),
+        this.fetchCollectionsLeaderboard(currentFilters),
       ]);
 
       this.updateData({

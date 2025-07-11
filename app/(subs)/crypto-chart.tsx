@@ -24,10 +24,14 @@ import { UserService } from '@/services/UserService';
 import { useUser } from '@/context/UserContext';
 import { WebView } from 'react-native-webview';
 import {
+  ActivityIndicator,
+  Animated,
+  Modal,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 import {
@@ -55,6 +59,13 @@ const CryptoChartScreen = () => {
   const [chartType, setChartType] = useState<ChartType>("candlestick");
   const [showIndicators, setShowIndicators] = useState(false);
 
+  // Order submission loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<string>("");
+  const [submissionProgress, setSubmissionProgress] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
   // Dual balance hook
   const {
     activeContext,
@@ -80,6 +91,54 @@ const CryptoChartScreen = () => {
       switchContext({ type: "individual" });
     }
   }, [collectionId, switchContext, loadCollection]);
+
+  // Animate loading modal
+  useEffect(() => {
+    if (isSubmitting) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 100,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.8,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [isSubmitting, fadeAnim, scaleAnim]);
+
+  // Simulate submission progress
+  useEffect(() => {
+    if (isSubmitting) {
+      const progressInterval = setInterval(() => {
+        setSubmissionProgress((prev) => {
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 15;
+        });
+      }, 500);
+
+      return () => clearInterval(progressInterval);
+    } else {
+      setSubmissionProgress(0);
+    }
+  }, [isSubmitting]);
 
   const onMessage = (event: any) => {
     try {
@@ -141,8 +200,12 @@ const CryptoChartScreen = () => {
     }
   };
 
-  // Enhanced order submission with dual balance support
+  // Enhanced order submission with dual balance support and loading states
   const submitOrder = async (order: Order): Promise<void> => {
+    setIsSubmitting(true);
+    setSubmissionStatus("Validating order...");
+    setSubmissionProgress(10);
+
     try {
       const validationContext: OrderValidationContext = {
         getHoldings: () => currentHoldings, // Use current context holdings
@@ -170,8 +233,14 @@ const CryptoChartScreen = () => {
         },
       };
 
+      setSubmissionStatus("Executing trade...");
+      setSubmissionProgress(30);
+
       // Execute trade using dual balance system
       await executeTradeInContext(order);
+
+      setSubmissionStatus("Processing transaction...");
+      setSubmissionProgress(60);
 
       // Handle order submission with dual balance context
       await handleOrderSubmission(
@@ -180,15 +249,94 @@ const CryptoChartScreen = () => {
         validationContext,
         dispatchContext
       );
+
+      setSubmissionStatus("Finalizing...");
+      setSubmissionProgress(90);
+
+      // Simulate final processing
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      setSubmissionStatus("Order completed successfully!");
+      setSubmissionProgress(100);
+
+      // Show success for a moment before hiding
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error: any) {
       logger.error("Failed to submit order", "CryptoChart", error);
+      setSubmissionStatus("Error occurred. Retrying...");
 
       // Handle authentication errors using utility function
       await handleUserReinitialization(error, reinitializeUser, () =>
         submitOrder(order)
       );
+    } finally {
+      setIsSubmitting(false);
+      setSubmissionStatus("");
+      setSubmissionProgress(0);
     }
   };
+
+  // Loading Modal Component
+  const LoadingModal = () => (
+    <Modal
+      visible={isSubmitting}
+      transparent={true}
+      animationType="none"
+      onRequestClose={() => {}}>
+      <Animated.View
+        style={[
+          styles.loadingOverlay,
+          {
+            opacity: fadeAnim,
+          },
+        ]}>
+        <Animated.View
+          style={[
+            styles.loadingContainer,
+            {
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}>
+          {/* Loading Icon */}
+          <View style={styles.loadingIconContainer}>
+            <ActivityIndicator size="large" color="#6674CC" />
+            <View style={styles.loadingIconGlow} />
+          </View>
+
+          {/* Status Text */}
+          <Text style={styles.loadingTitle}>Processing Order</Text>
+          <Text style={styles.loadingStatus}>{submissionStatus}</Text>
+
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${submissionProgress}%`,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.progressText}>
+              {Math.round(submissionProgress)}%
+            </Text>
+          </View>
+
+          {/* Context Info */}
+          <View style={styles.contextInfo}>
+            <Text style={styles.contextLabel}>
+              {activeContext.type === "collection"
+                ? "Collection Trade"
+                : "Individual Trade"}
+            </Text>
+            <Text style={styles.contextSymbol}>{symbol}</Text>
+          </View>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -198,10 +346,6 @@ const CryptoChartScreen = () => {
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}>
         {/* Trading Context Indicator */}
-        <TradingContextIndicator
-          collectionName={collectionName}
-          showSwitchButton={true}
-        />
 
         {/* Symbol Header */}
         <SymbolHeader
@@ -243,6 +387,7 @@ const CryptoChartScreen = () => {
             currentPrice={currentPrice ? Number(currentPrice) : undefined}
             availableBalance={currentUsdtBalance} // Use current context balance
             onSubmitOrder={submitOrder}
+            disabled={isSubmitting}
           />
 
           <OrderBook
@@ -254,6 +399,9 @@ const CryptoChartScreen = () => {
           />
         </View>
       </ScrollView>
+
+      {/* Loading Modal */}
+      <LoadingModal />
     </SafeAreaView>
   );
 };
@@ -271,6 +419,93 @@ const styles = StyleSheet.create({
     marginTop: 12,
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  // Loading Modal Styles
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContainer: {
+    backgroundColor: "#1A1D2F",
+    borderRadius: 20,
+    padding: 30,
+    alignItems: "center",
+    minWidth: 280,
+    shadowColor: "#6674CC",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  loadingIconContainer: {
+    position: "relative",
+    marginBottom: 20,
+  },
+  loadingIconGlow: {
+    position: "absolute",
+    top: -10,
+    left: -10,
+    right: -10,
+    bottom: -10,
+    borderRadius: 30,
+    backgroundColor: "#6674CC",
+    opacity: 0.2,
+  },
+  loadingTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 8,
+  },
+  loadingStatus: {
+    fontSize: 14,
+    color: "#9DA3B4",
+    textAlign: "center",
+    marginBottom: 20,
+    minHeight: 20,
+  },
+  progressContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: "#2A2D3E",
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#6674CC",
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    color: "#9DA3B4",
+    textAlign: "center",
+  },
+  contextInfo: {
+    alignItems: "center",
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#2A2D3E",
+    width: "100%",
+  },
+  contextLabel: {
+    fontSize: 12,
+    color: "#9DA3B4",
+    marginBottom: 4,
+  },
+  contextSymbol: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#6674CC",
   },
 });
 

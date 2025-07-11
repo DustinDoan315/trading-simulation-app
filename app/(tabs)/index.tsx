@@ -107,14 +107,23 @@ const HomeScreen = () => {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }>
         {/* User Welcome Section */}
-        {user && (
-          <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeText}>
-              Welcome back, {user.display_name || user.username}! 👋
-            </Text>
-            <Text style={styles.userStats}>{user.total_trades} trades</Text>
-          </View>
-        )}
+        <View style={styles.welcomeSection}>
+          {user ? (
+            <>
+              <Text style={styles.welcomeText}>
+                Welcome back, {user.display_name || user.username}! 👋
+              </Text>
+              <Text style={styles.userStats}>{user.total_trades} trades</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.welcomeText}>
+                Welcome to Trading Simulator! 👋
+              </Text>
+              <Text style={styles.userStats}>Start your trading journey</Text>
+            </>
+          )}
+        </View>
 
         <BalanceSection
           balance={balanceForDisplay}
@@ -123,35 +132,33 @@ const HomeScreen = () => {
         />
 
         {/* Portfolio Summary */}
-        {user && (
-          <View style={styles.portfolioSection}>
-            <Text style={styles.sectionTitle}>Portfolio Summary</Text>
-            <View style={styles.portfolioStats}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  {formatPortfolioValue(portfolioMetrics.totalValue)}
-                </Text>
-                <Text style={styles.statLabel}>Total Value</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  {portfolioMetrics.totalAssets}
-                </Text>
-                <Text style={styles.statLabel}>Assets</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text
-                  style={[
-                    styles.statValue,
-                    { color: getPnLColor(portfolioMetrics.totalPnL) },
-                  ]}>
-                  {formatPnL(portfolioMetrics.totalPnL)}
-                </Text>
-                <Text style={styles.statLabel}>Total P&L</Text>
-              </View>
+        <View style={styles.portfolioSection}>
+          <Text style={styles.sectionTitle}>Portfolio Summary</Text>
+          <View style={styles.portfolioStats}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                {formatPortfolioValue(portfolioMetrics.totalValue)}
+              </Text>
+              <Text style={styles.statLabel}>Total Value</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                {portfolioMetrics.totalAssets}
+              </Text>
+              <Text style={styles.statLabel}>Assets</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text
+                style={[
+                  styles.statValue,
+                  { color: getPnLColor(portfolioMetrics.totalPnL) },
+                ]}>
+                {formatPnL(portfolioMetrics.totalPnL)}
+              </Text>
+              <Text style={styles.statLabel}>Total P&L</Text>
             </View>
           </View>
-        )}
+        </View>
 
         <WatchListSection
           cryptoList={trending}

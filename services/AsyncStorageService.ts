@@ -343,6 +343,34 @@ export class AsyncStorageService {
     }
   }
 
+  // Clear user-specific data (for user reset)
+  static async clearUserData(userId: string): Promise<void> {
+    try {
+      // Get existing data and remove user-specific entries
+      const portfolioData = await AsyncStorage.getItem(PORTFOLIO_KEY);
+      if (portfolioData) {
+        const portfolio = JSON.parse(portfolioData) as PortfolioData[];
+        const filteredPortfolio = portfolio.filter(item => item.user_id !== userId);
+        await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(filteredPortfolio));
+      }
+
+      const transactionsData = await AsyncStorage.getItem(TRANSACTIONS_KEY);
+      if (transactionsData) {
+        const transactions = JSON.parse(transactionsData) as TransactionData[];
+        const filteredTransactions = transactions.filter(item => item.user_id !== userId);
+        await AsyncStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(filteredTransactions));
+      }
+
+      // Clear user profile
+      await AsyncStorage.removeItem(USER_KEY);
+      
+      console.log("✅ User-specific AsyncStorage data cleared for user:", userId);
+    } catch (error) {
+      console.error("❌ Failed to clear user AsyncStorage data:", error);
+      throw error;
+    }
+  }
+
   // Recreate user data if corrupted or missing
   static async recreateUserData(userId: string, balance: number = 100000): Promise<UserData> {
     try {

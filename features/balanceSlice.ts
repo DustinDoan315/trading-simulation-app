@@ -171,7 +171,8 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   let usdtBalance = user ? parseFloat(user.usdt_balance) : 100000;
   console.log("Loading balance - Initial USDT balance from user data:", usdtBalance);
   
-  const portfolio = (await UserRepository.getPortfolio(uuid)) as PortfolioItem[];
+  // Fetch portfolio from database instead of local cache
+  const portfolio = (await UserService.getPortfolio(uuid)) as PortfolioItem[];
 
   console.log("Loading balance - Portfolio:", portfolio);
   console.log("Loading balance - User USDT balance:", usdtBalance);
