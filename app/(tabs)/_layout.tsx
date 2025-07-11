@@ -1,8 +1,8 @@
-import colors from "@/styles/colors";
-import React from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { router, Tabs } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import colors from '@/styles/colors';
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { router, Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Platform,
   StyleSheet,
@@ -11,11 +11,13 @@ import {
   View,
 } from "react-native";
 
+
 type RouteName =
   | "index"
   | "portfolio"
   | "collections"
   | "leaderboard"
+  | "friends"
   | "profile";
 
 type IconMapping = {
@@ -42,6 +44,10 @@ const ICON_MAP: IconMapping = {
     inactive: "trophy-outline",
     active: "trophy",
   },
+  friends: {
+    inactive: "people-circle-outline",
+    active: "people-circle",
+  },
   profile: {
     inactive: "person-outline",
     active: "person",
@@ -58,6 +64,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
       route.name === "index" ||
       route.name === "portfolio" ||
       route.name === "leaderboard" ||
+      route.name === "friends" ||
       route.name === "profile"
     ) {
       orderedRoutes.push(route);
@@ -65,7 +72,13 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   });
 
   orderedRoutes.sort((a, b) => {
-    const order: RouteName[] = ["index", "portfolio", "leaderboard", "profile"];
+    const order: RouteName[] = [
+      "index",
+      "portfolio",
+      "leaderboard",
+      "friends",
+      "profile",
+    ];
     return (
       order.indexOf(a.name as RouteName) - order.indexOf(b.name as RouteName)
     );
@@ -141,6 +154,13 @@ export default function TabLayout() {
         name="leaderboard"
         options={{
           title: "Leaderboard",
+        }}
+      />
+
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: "Friends",
         }}
       />
 

@@ -428,3 +428,73 @@ export interface SyncResult<T = any> {
   error?: string;
   timestamp: string;
 }
+
+// Friends-related interfaces
+export interface Friend {
+  id: string; // UUID
+  user_id: string; // UUID
+  friend_id: string; // UUID
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "BLOCKED";
+  invited_by?: string; // UUID
+  invite_code?: string;
+  message?: string;
+  created_at: string; // TIMESTAMP
+  updated_at: string; // TIMESTAMP
+  accepted_at?: string; // TIMESTAMP
+}
+
+export interface FriendInvitation {
+  id: string; // UUID
+  invite_code: string;
+  created_by: string; // UUID
+  max_uses: number;
+  current_uses: number;
+  expires_at?: string; // TIMESTAMP
+  is_active: boolean;
+  created_at: string; // TIMESTAMP
+  updated_at: string; // TIMESTAMP
+}
+
+export interface FriendWithDetails extends Friend {
+  // Additional fields for UI display
+  friend?: {
+    id: string;
+    username: string;
+    display_name?: string;
+    avatar_emoji?: string;
+    total_pnl: string;
+    total_pnl_percentage: string;
+    total_portfolio_value: string;
+    global_rank?: number;
+    last_active: string;
+  };
+  user?: {
+    id: string;
+    username: string;
+    display_name?: string;
+    avatar_emoji?: string;
+  };
+}
+
+export interface CreateFriendInvitationParams {
+  created_by: string;
+  max_uses?: number;
+  expires_at?: string;
+}
+
+export interface AcceptFriendInvitationParams {
+  invite_code: string;
+  user_id: string;
+}
+
+export interface SendFriendRequestParams {
+  user_id: string;
+  friend_id: string;
+  message?: string;
+}
+
+export interface UpdateFriendStatusParams {
+  user_id: string;
+  friend_id: string;
+  status: "ACCEPTED" | "REJECTED" | "BLOCKED";
+}

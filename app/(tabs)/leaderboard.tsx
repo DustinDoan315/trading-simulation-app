@@ -1,3 +1,16 @@
+import colors from '@/styles/colors';
+import LeaderboardService from '@/services/LeaderboardService';
+import React, {
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+    } from 'react';
+import { useLeaderboardData } from '@/hooks/useLeaderboardData';
+import { useLeaderboardRanking } from '@/hooks/useLeaderboardRanking';
+import { useNotification } from '@/components/ui/Notification';
+import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 import {
   FlatList,
   RefreshControl,
@@ -9,15 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useEffect, useMemo, useRef, useState } from "react";
 
-import LeaderboardService from "@/services/LeaderboardService";
-import { UserService } from "@/services/UserService";
-import colors from "@/styles/colors";
-import { useLeaderboardData } from "@/hooks/useLeaderboardData";
-import { useLeaderboardRanking } from "@/hooks/useLeaderboardRanking";
-import { useNotification } from "@/components/ui/Notification";
-import { useUser } from "@/context/UserContext";
 
 const LeaderboardScreen = () => {
   const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
@@ -47,6 +52,37 @@ const LeaderboardScreen = () => {
     error: rankError,
     refreshRank,
   } = useLeaderboardRanking(user?.id || "", "ALL_TIME");
+
+  // Get friends leaderboard data when on friends tab
+  const [friendsData, setFriendsData] = useState<any[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+
+  const loadFriendsData = async () => {
+    if (!user?.id || activeTab !== "friends") return;
+
+    try {
+      setFriendsLoading(true);
+      const leaderboardService = LeaderboardService.getInstance();
+      const data = await leaderboardService.fetchFriendsLeaderboardWithUser(
+        user.id,
+        {
+          period: "ALL_TIME",
+          limit: 50,
+        }
+      );
+      setFriendsData(data);
+    } catch (error) {
+      console.error("Error loading friends data:", error);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "friends") {
+      loadFriendsData();
+    }
+  }, [activeTab, user?.id]);
 
   // Update filters when time period changes
   useEffect(() => {
@@ -262,29 +298,28 @@ const LeaderboardScreen = () => {
   const getCurrentData = useMemo(() => {
     if (activeTab === "global") return globalRankings;
     if (activeTab === "friends") {
-      // For friends tab, show the current user's position if they have a rank
-      if (currentRank && user?.id) {
-        // Find the current user in global rankings by checking multiple conditions
-        const currentUserInGlobal = globalRankings.find(
-          (item) =>
-            item.isCurrentUser ||
-            item.name === (user.display_name || user.username) ||
-            item.name === user.username ||
-            (user.display_name && item.name === user.display_name)
-        );
-
-        if (currentUserInGlobal) {
-          return [currentUserInGlobal];
-        }
-      }
-      return [];
+      // Transform friends data for display
+      return friendsData.map((item: any) => ({
+        id: item.id || `friend-${item.user_id}`,
+        rank: item.rank || 0,
+        name:
+          item.users?.display_name || item.users?.username || "Unknown User",
+        avatar: item.users?.avatar_emoji || "👤",
+        pnl: parseFloat(item.total_pnl || "0"),
+        percentage: parseFloat(item.percentage_return || "0"),
+        portfolio: parseFloat(item.portfolio_value || "0"),
+        isCurrentUser: item.user_id === user?.id,
+      }));
     }
     return globalRankings; // fallback to global
-  }, [activeTab, globalRankings, friendsRankings, currentRank, user]);
+  }, [activeTab, globalRankings, friendsData, user?.id]);
 
   const handleRefresh = async () => {
     await refresh();
     await refreshRank();
+    if (activeTab === "friends") {
+      await loadFriendsData();
+    }
   };
 
   const handleCleanupAndRefresh = async () => {
@@ -408,33 +443,22 @@ const LeaderboardScreen = () => {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading || rankLoading}
+            refreshing={isLoading || rankLoading || friendsLoading}
             onRefresh={handleRefresh}
             tintColor="#6674CC"
             colors={["#6674CC"]}
           />
         }
-        ListHeaderComponent={
-          <>
-            {activeTab === "friends" && currentRank && (
-              <View style={styles.friendsInfoContainer}>
-                <Text style={styles.friendsInfoText}>
-                  📊 Showing your global position (Friends feature coming soon!)
-                </Text>
-              </View>
-            )}
-            <LeaderboardHeader />
-          </>
-        }
+        ListHeaderComponent={<LeaderboardHeader />}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-              {isLoading
+              {isLoading || friendsLoading
                 ? "Loading leaderboard..."
                 : activeTab === "friends"
-                ? currentRank
-                  ? "You're not ranked yet. Start trading to appear in the leaderboard!"
-                  : "Friends feature coming soon! For now, you can see your global position here."
+                ? friendsData.length === 0
+                  ? "No friends found. Add some friends to see them on the leaderboard!"
+                  : "No friends with rankings yet. Start trading to appear on the leaderboard!"
                 : "No rankings available yet"}
             </Text>
           </View>

@@ -1,3 +1,4 @@
+import { FriendsService } from './FriendsService';
 import { LeaderboardRanking } from '../types/database';
 import { supabase } from './SupabaseService';
 import { UserService } from './UserService';
@@ -123,12 +124,45 @@ class LeaderboardService {
     }
   }
 
-  // Fetch friends leaderboard (for now, return empty array - implement when friends feature is added)
+  // Fetch friends leaderboard using FriendsService
   private async fetchFriendsLeaderboard(filters: LeaderboardFilters): Promise<LeaderboardRanking[]> {
     try {
-      // TODO: Implement friends leaderboard when friends feature is added
-      // For now, return empty array
+      // For now, return empty array - the actual user ID will be passed from the hook
+      // This will be handled in the useLeaderboardData hook
       return [];
+    } catch (error) {
+      console.error('Error fetching friends leaderboard:', error);
+      return [];
+    }
+  }
+
+  // New method to fetch friends leaderboard with user ID
+  async fetchFriendsLeaderboardWithUser(userId: string, filters: LeaderboardFilters): Promise<LeaderboardRanking[]> {
+    try {
+      // Use FriendsService to get friends leaderboard
+      const friendsData = await FriendsService.getFriendsLeaderboard(
+        userId,
+        filters.period,
+        filters.limit || 50
+      );
+
+      // Transform the data to match LeaderboardRanking format
+      return friendsData.map((item: any) => ({
+        id: item.id,
+        user_id: item.user_id,
+        collection_id: item.collection_id,
+        period: item.period,
+        rank: item.rank,
+        total_pnl: item.total_pnl,
+        percentage_return: item.percentage_return,
+        portfolio_value: item.portfolio_value,
+        trade_count: item.trade_count,
+        win_rate: item.win_rate,
+        calculated_at: item.calculated_at,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        users: item.users, // Include user details for display
+      }));
     } catch (error) {
       console.error('Error fetching friends leaderboard:', error);
       return [];
