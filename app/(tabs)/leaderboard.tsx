@@ -1,10 +1,3 @@
-import colors from '@/styles/colors';
-import React, { useEffect, useMemo, useState } from 'react';
-import { useLeaderboardData } from '@/hooks/useLeaderboardData';
-import { useLeaderboardRanking } from '@/hooks/useLeaderboardRanking';
-import { useNotification } from '@/components/ui/Notification';
-import { UserService } from '@/services/UserService';
-import { useUser } from '@/context/UserContext';
 import {
   FlatList,
   RefreshControl,
@@ -16,10 +9,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
+import LeaderboardService from "@/services/LeaderboardService";
+import { UserService } from "@/services/UserService";
+import colors from "@/styles/colors";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
+import { useLeaderboardRanking } from "@/hooks/useLeaderboardRanking";
+import { useNotification } from "@/components/ui/Notification";
+import { useUser } from "@/context/UserContext";
 
 const LeaderboardScreen = () => {
   const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
+  const hasInitialized = useRef(false);
 
   const { showNotification } = useNotification();
   const { user } = useUser();
@@ -54,7 +56,7 @@ const LeaderboardScreen = () => {
     });
   }, [updateFilters]);
 
-  // Initialize leaderboard rankings if needed
+  // Initialize leaderboard rankings if needed (only once)
   useEffect(() => {
     const initializeRankings = async () => {
       try {
@@ -66,8 +68,13 @@ const LeaderboardScreen = () => {
       }
     };
 
-    // Only initialize if we have a user and no data yet
-    if (user?.id && leaderboardData.global.length === 0) {
+    // Only initialize if we have a user and no data yet, and only once per session
+    if (
+      user?.id &&
+      leaderboardData.global.length === 0 &&
+      !hasInitialized.current
+    ) {
+      hasInitialized.current = true;
       initializeRankings();
     }
   }, [user?.id, leaderboardData.global.length]);
@@ -254,13 +261,57 @@ const LeaderboardScreen = () => {
 
   const getCurrentData = useMemo(() => {
     if (activeTab === "global") return globalRankings;
-    if (activeTab === "friends") return friendsRankings;
+    if (activeTab === "friends") {
+      // For friends tab, show the current user's position if they have a rank
+      if (currentRank && user?.id) {
+        // Find the current user in global rankings by checking multiple conditions
+        const currentUserInGlobal = globalRankings.find(
+          (item) =>
+            item.isCurrentUser ||
+            item.name === (user.display_name || user.username) ||
+            item.name === user.username ||
+            (user.display_name && item.name === user.display_name)
+        );
+
+        if (currentUserInGlobal) {
+          return [currentUserInGlobal];
+        }
+      }
+      return [];
+    }
     return globalRankings; // fallback to global
-  }, [activeTab, globalRankings, friendsRankings]);
+  }, [activeTab, globalRankings, friendsRankings, currentRank, user]);
 
   const handleRefresh = async () => {
     await refresh();
     await refreshRank();
+  };
+
+  const handleCleanupAndRefresh = async () => {
+    try {
+      showNotification({
+        type: "info",
+        message: "Cleaning up leaderboard data...",
+      });
+
+      const leaderboardService = LeaderboardService.getInstance();
+      await leaderboardService.cleanupAndRefresh({
+        period: "ALL_TIME",
+        limit: 50,
+      });
+      await refreshRank();
+
+      showNotification({
+        type: "success",
+        message: "Leaderboard cleaned up and refreshed successfully!",
+      });
+    } catch (error) {
+      console.error("Error during cleanup and refresh:", error);
+      showNotification({
+        type: "error",
+        message: "Failed to cleanup and refresh leaderboard",
+      });
+    }
   };
 
   // Header component showing current user's rank and stats
@@ -274,7 +325,13 @@ const LeaderboardScreen = () => {
             </Text>
           </View>
           <Text style={styles.rankLabel}>
-            {currentRank ? "Your Current Rank" : "Start trading to get ranked"}
+            {activeTab === "friends"
+              ? currentRank
+                ? "Your Global Position"
+                : "Start trading to get ranked"
+              : currentRank
+              ? "Your Current Rank"
+              : "Start trading to get ranked"}
           </Text>
         </View>
       </View>
@@ -283,7 +340,9 @@ const LeaderboardScreen = () => {
         <View style={styles.statsSection}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stats.totalUsers}</Text>
-            <Text style={styles.statLabel}>Total Traders</Text>
+            <Text style={styles.statLabel}>
+              {activeTab === "friends" ? "Global Traders" : "Total Traders"}
+            </Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
@@ -293,7 +352,9 @@ const LeaderboardScreen = () => {
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stats.totalUsers}</Text>
-            <Text style={styles.statLabel}>Active Traders</Text>
+            <Text style={styles.statLabel}>
+              {activeTab === "friends" ? "Active Global" : "Active Traders"}
+            </Text>
           </View>
         </View>
       )}
@@ -306,6 +367,11 @@ const LeaderboardScreen = () => {
 
       <View style={styles.header}>
         <Text style={styles.title}>Leaderboards</Text>
+        <TouchableOpacity
+          style={styles.cleanupButton}
+          onPress={handleCleanupAndRefresh}>
+          <Text style={styles.cleanupButtonText}>🧹</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.tabContainer}>
@@ -348,12 +414,27 @@ const LeaderboardScreen = () => {
             colors={["#6674CC"]}
           />
         }
-        ListHeaderComponent={<LeaderboardHeader />}
+        ListHeaderComponent={
+          <>
+            {activeTab === "friends" && currentRank && (
+              <View style={styles.friendsInfoContainer}>
+                <Text style={styles.friendsInfoText}>
+                  📊 Showing your global position (Friends feature coming soon!)
+                </Text>
+              </View>
+            )}
+            <LeaderboardHeader />
+          </>
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
               {isLoading
                 ? "Loading leaderboard..."
+                : activeTab === "friends"
+                ? currentRank
+                  ? "You're not ranked yet. Start trading to appear in the leaderboard!"
+                  : "Friends feature coming soon! For now, you can see your global position here."
                 : "No rankings available yet"}
             </Text>
           </View>
@@ -390,6 +471,15 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: "#FFFFFF",
+  },
+  cleanupButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: "#6674CC",
+    marginLeft: 10,
+  },
+  cleanupButtonText: {
+    fontSize: 20,
   },
   tabContainer: {
     flexDirection: "row",
@@ -575,6 +665,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 4,
+  },
+  friendsInfoContainer: {
+    backgroundColor: "#252A3D",
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  friendsInfoText: {
+    fontSize: 14,
+    color: "#9DA3B4",
+    textAlign: "center",
   },
 });
 

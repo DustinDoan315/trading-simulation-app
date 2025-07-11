@@ -309,8 +309,8 @@ export const balanceSlice = createSlice({
         );
         UserRepository.updatePortfolio(uuid, state.balance.holdings);
         
-        // Check if user should be added to leaderboard (first trade)
-        UserService.checkAndAddUserToLeaderboard(uuid);
+        // Update leaderboard rankings after balance changes
+        UserService.updateLeaderboardRankings(uuid);
       });
     },
     resetBalance: (state) => {
@@ -494,8 +494,8 @@ export const balanceSlice = createSlice({
             // Update portfolio holdings in the same operation
             await UserRepository.updatePortfolio(uuid, holdingsCopy);
             
-            // Check if user should be added to leaderboard (first trade)
-            await UserService.checkAndAddUserToLeaderboard(uuid);
+            // Update leaderboard rankings after balance changes
+            await UserService.updateLeaderboardRankings(uuid);
             
             console.log("✅ All database updates completed successfully");
           })
@@ -537,8 +537,8 @@ export const balanceSlice = createSlice({
         );
         UserRepository.updatePortfolio(uuid, action.payload.holdings);
         
-        // Check if user should be added to leaderboard (first trade)
-        UserService.checkAndAddUserToLeaderboard(uuid);
+        // Update leaderboard rankings after balance changes
+        UserService.updateLeaderboardRankings(uuid);
       });
     },
     updateCurrentPrice: (
@@ -564,8 +564,8 @@ export const balanceSlice = createSlice({
         UUIDService.getOrCreateUser().then(async (uuid) => {
           await UserRepository.updatePortfolio(uuid, state.balance.holdings);
           
-          // Check if user should be added to leaderboard (first trade)
-          await UserService.checkAndAddUserToLeaderboard(uuid);
+          // Update leaderboard rankings after balance changes
+          await UserService.updateLeaderboardRankings(uuid);
         });
       }
     },
@@ -705,8 +705,8 @@ export const balanceSlice = createSlice({
             
             await UserRepository.updatePortfolio(uuid, holdingsCopy);
             
-            // Check if user should be added to leaderboard (first trade)
-            await UserService.checkAndAddUserToLeaderboard(uuid);
+            // Update leaderboard rankings after every trade
+            await UserService.updateLeaderboardRankings(uuid);
             
             console.log("✅ Trade database updates completed successfully");
           })

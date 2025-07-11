@@ -163,7 +163,7 @@ class LeaderboardService {
           table: 'leaderboard_rankings',
           filter: `period=eq.${filters.period}`,
         },
-        (payload) => {
+        (payload: any) => {
           console.log('🔄 Leaderboard real-time update:', payload);
           this.handleLeaderboardUpdate(payload, filters);
         }
@@ -182,7 +182,7 @@ class LeaderboardService {
           schema: 'public',
           table: 'portfolio',
         },
-        (payload) => {
+        (payload: any) => {
           console.log('🔄 Portfolio real-time update:', payload);
           this.handlePortfolioUpdate(payload, filters);
         }
@@ -201,7 +201,7 @@ class LeaderboardService {
           schema: 'public',
           table: 'users',
         },
-        (payload) => {
+        (payload: any) => {
           console.log('🔄 User real-time update:', payload);
           this.handleUserUpdate(payload, filters);
         }
@@ -299,6 +299,27 @@ class LeaderboardService {
     await this.loadLeaderboardData(filters);
   }
 
+  // Clean up and refresh leaderboard data
+  async cleanupAndRefresh(filters: LeaderboardFilters): Promise<void> {
+    try {
+      console.log('🧹 Cleaning up and refreshing leaderboard data...');
+      
+      // Clean up duplicate entries
+      await UserService.cleanupLeaderboardRankings();
+      
+      // Recalculate all ranks
+      await UserService.recalculateAllRanks();
+      
+      // Load fresh data
+      await this.loadLeaderboardData(filters);
+      
+      console.log('✅ Leaderboard cleanup and refresh completed');
+    } catch (error) {
+      console.error('Error during leaderboard cleanup and refresh:', error);
+      throw error;
+    }
+  }
+
   // Trigger rank recalculation for all users
   async recalculateAllRanks(): Promise<void> {
     try {
@@ -368,6 +389,15 @@ class LeaderboardService {
   cleanup(): void {
     this.cleanupChannels();
     this.subscribers.clear();
+  }
+
+  // Static method to cleanup and refresh leaderboard data
+  static async cleanupAndRefreshData(): Promise<void> {
+    const instance = LeaderboardService.getInstance();
+    await instance.cleanupAndRefresh({
+      period: "ALL_TIME",
+      limit: 50,
+    });
   }
 }
 

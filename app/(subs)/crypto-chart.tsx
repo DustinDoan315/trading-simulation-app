@@ -64,7 +64,6 @@ const CryptoChartScreen = () => {
   const [submissionStatus, setSubmissionStatus] = useState<string>("");
   const [submissionProgress, setSubmissionProgress] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   // Dual balance hook
   const {
@@ -101,12 +100,6 @@ const CryptoChartScreen = () => {
           duration: 300,
           useNativeDriver: true,
         }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 100,
-          friction: 8,
-          useNativeDriver: true,
-        }),
       ]).start();
     } else {
       Animated.parallel([
@@ -115,14 +108,9 @@ const CryptoChartScreen = () => {
           duration: 200,
           useNativeDriver: true,
         }),
-        Animated.timing(scaleAnim, {
-          toValue: 0.8,
-          duration: 200,
-          useNativeDriver: true,
-        }),
       ]).start();
     }
-  }, [isSubmitting, fadeAnim, scaleAnim]);
+  }, [isSubmitting, fadeAnim]);
 
   // Simulate submission progress
   useEffect(() => {
@@ -290,13 +278,7 @@ const CryptoChartScreen = () => {
             opacity: fadeAnim,
           },
         ]}>
-        <Animated.View
-          style={[
-            styles.loadingContainer,
-            {
-              transform: [{ scale: scaleAnim }],
-            },
-          ]}>
+        <Animated.View style={[styles.loadingContainer]}>
           {/* Loading Icon */}
           <View style={styles.loadingIconContainer}>
             <ActivityIndicator size="large" color="#6674CC" />

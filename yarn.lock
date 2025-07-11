@@ -1119,15 +1119,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@expo/cli@npm:0.24.19":
-  version: 0.24.19
-  resolution: "@expo/cli@npm:0.24.19"
+"@expo/cli@npm:0.24.20":
+  version: 0.24.20
+  resolution: "@expo/cli@npm:0.24.20"
   dependencies:
     "@0no-co/graphql.web": ^1.0.8
     "@babel/runtime": ^7.20.0
     "@expo/code-signing-certificates": ^0.0.5
-    "@expo/config": ~11.0.12
-    "@expo/config-plugins": ~10.1.1
+    "@expo/config": ~11.0.13
+    "@expo/config-plugins": ~10.1.2
     "@expo/devcert": ^1.1.2
     "@expo/env": ~1.0.7
     "@expo/image-utils": ^0.7.6
@@ -1136,7 +1136,7 @@ __metadata:
     "@expo/osascript": ^2.2.5
     "@expo/package-manager": ^1.8.6
     "@expo/plist": ^0.3.5
-    "@expo/prebuild-config": ^9.0.10
+    "@expo/prebuild-config": ^9.0.11
     "@expo/spawn-async": ^1.7.2
     "@expo/ws-tunnel": ^1.0.1
     "@expo/xcpretty": ^4.3.0
@@ -1186,7 +1186,7 @@ __metadata:
     ws: ^8.12.1
   bin:
     expo-internal: build/bin/cli
-  checksum: 30cc14a649c7f2b6fa368d154fa516a713cf2f5e48dc308b30952c4215d8ea0910df1ce86671b4552a1982abef0bf0a6f13de47025d242cb5d2821ea5001f1f1
+  checksum: 5891e7c7c545b3c3e19ba8f41d0378330de2472904949d53ce5e12e18b12a7f1cb83f657ce05c1752d68d742fe2bcab58e20519b89358de3713bab016fc74b62
   languageName: node
   linkType: hard
 
@@ -1394,7 +1394,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@expo/prebuild-config@npm:^9.0.10":
+"@expo/prebuild-config@npm:^9.0.10, @expo/prebuild-config@npm:^9.0.11":
   version: 9.0.11
   resolution: "@expo/prebuild-config@npm:9.0.11"
   dependencies:
@@ -5241,14 +5241,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo@npm:53.0.18":
-  version: 53.0.18
-  resolution: "expo@npm:53.0.18"
+"expo@npm:53.0.19":
+  version: 53.0.19
+  resolution: "expo@npm:53.0.19"
   dependencies:
     "@babel/runtime": ^7.20.0
-    "@expo/cli": 0.24.19
-    "@expo/config": ~11.0.12
-    "@expo/config-plugins": ~10.1.1
+    "@expo/cli": 0.24.20
+    "@expo/config": ~11.0.13
+    "@expo/config-plugins": ~10.1.2
     "@expo/fingerprint": 0.13.4
     "@expo/metro-config": 0.20.17
     "@expo/vector-icons": ^14.0.0
@@ -5279,7 +5279,7 @@ __metadata:
     expo: bin/cli
     expo-modules-autolinking: bin/autolinking
     fingerprint: bin/fingerprint
-  checksum: 02e1dc9e08f30edbe24c12ebd06c9fb08c964db2371db5d18c7647210831528ffe568e29a24958198748aa9a508832522acfe5185f47b5ec45d56236378b2e13
+  checksum: 40281e12e9e8d65c33cc0f4ec8313508ea47fce145ee26d6b670f33d301eb55169a246b714688d3fad7f89abf24d7bc25ae59aba47c77ca8d98aa0776498af98
   languageName: node
   linkType: hard
 
@@ -10207,7 +10207,7 @@ __metadata:
     date-fns-tz: ^3.2.0
     depcheck: ^1.4.7
     dotenv: ^17.0.1
-    expo: 53.0.18
+    expo: 53.0.19
     expo-application: ^6.1.5
     expo-blur: ~14.1.5
     expo-camera: ~16.1.10

@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -49,6 +50,8 @@ const ProfileScreen = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [editForm, setEditForm] = useState({
     display_name: "",
     avatar_emoji: "",
@@ -60,8 +63,34 @@ const ProfileScreen = () => {
         display_name: user.display_name || "",
         avatar_emoji: user.avatar_emoji || "🚀",
       });
+      // Set initial last updated timestamp
+      if (!lastUpdated) {
+        setLastUpdated(new Date());
+      }
     }
   }, [user]);
+
+  const handleRefresh = async () => {
+    if (!user?.id) return;
+
+    setRefreshing(true);
+    try {
+      // Refresh real-time data including user rank
+      await refreshRealTimeData();
+
+      // Also refresh user data
+      await refreshUser(user.id);
+
+      // Set the last updated timestamp
+      setLastUpdated(new Date());
+
+      logger.info("Profile data refreshed successfully", "Profile");
+    } catch (error) {
+      logger.error("Error refreshing profile data", "Profile", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleEditProfile = () => {
     setEditModalVisible(true);
@@ -139,13 +168,22 @@ const ProfileScreen = () => {
     subtitle,
     color = colors.text.primary,
     icon,
+    isLoading = false,
   }: any) => (
     <View style={styles.statCard}>
       <View style={styles.statHeader}>
         <Ionicons name={icon} size={16} color={color} />
         <Text style={[styles.statTitle, { color }]}>{title}</Text>
       </View>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      {isLoading ? (
+        <ActivityIndicator
+          size="small"
+          color={color}
+          style={styles.statLoading}
+        />
+      ) : (
+        <Text style={[styles.statValue, { color }]}>{value}</Text>
+      )}
       {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
     </View>
   );
@@ -191,7 +229,15 @@ const ProfileScreen = () => {
 
       <ScrollView
         style={styles.scrollView}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#6674CC"
+            colors={["#6674CC"]}
+          />
+        }>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
@@ -213,7 +259,19 @@ const ProfileScreen = () => {
 
         {/* Enhanced Stats Grid */}
         <View style={styles.statsContainer}>
-          <Text style={styles.statsSectionTitle}>Trading Statistics</Text>
+          <View style={styles.statsHeader}>
+            <Text style={styles.statsSectionTitle}>Trading Statistics</Text>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={handleRefresh}
+              disabled={refreshing}>
+              <Ionicons
+                name="refresh"
+                size={20}
+                color={refreshing ? "#8F95B2" : "#6674CC"}
+              />
+            </TouchableOpacity>
+          </View>
           <View style={styles.statsGrid}>
             <StatsCard
               title="Total Trades"
@@ -236,8 +294,14 @@ const ProfileScreen = () => {
               subtitle="position"
               color="#FF9500"
               icon="star"
+              isLoading={refreshing}
             />
           </View>
+          {lastUpdated && (
+            <Text style={styles.lastUpdatedText}>
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </Text>
+          )}
         </View>
 
         {/* Portfolio Value */}
@@ -428,11 +492,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 24,
   },
+  statsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   statsSectionTitle: {
     fontSize: 20,
     fontWeight: "600",
     color: "#FFFFFF",
-    marginBottom: 16,
+  },
+  refreshButton: {
+    padding: 8,
   },
   statsGrid: {
     flexDirection: "row",
@@ -668,6 +740,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#FFFFFF",
+  },
+  statLoading: {
+    marginTop: 8,
+  },
+  lastUpdatedText: {
+    fontSize: 12,
+    color: "#8F95B2",
+    textAlign: "center",
+    marginTop: 12,
   },
 });
 

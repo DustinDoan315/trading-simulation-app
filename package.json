@@ -28,7 +28,7 @@
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.0.1",
-    "expo": "53.0.18",
+    "expo": "53.0.19",
     "expo-application": "^6.1.5",
     "expo-blur": "~14.1.5",
     "expo-camera": "~16.1.10",

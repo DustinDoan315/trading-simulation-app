@@ -1,8 +1,14 @@
-import RealTimeDataService from "@/services/RealTimeDataService";
-import { RootState } from "@/store";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserService } from "@/services/UserService";
-import { useSelector } from "react-redux";
+import RealTimeDataService from '@/services/RealTimeDataService';
+import { RootState } from '@/store';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+  } from 'react';
+import { UserService } from '@/services/UserService';
+import { useSelector } from 'react-redux';
+
 
 interface RealTimeBalanceData {
   totalBalance: number;
@@ -44,7 +50,7 @@ export const useRealTimeBalance = (): RealTimeBalanceData => {
     };
   }, []);
 
-  // Fetch user rank when user changes
+  // Fetch user rank when user changes or balance changes significantly
   useEffect(() => {
     const fetchUserRank = async () => {
       if (user?.id) {
@@ -58,7 +64,7 @@ export const useRealTimeBalance = (): RealTimeBalanceData => {
     };
 
     fetchUserRank();
-  }, [user?.id]);
+  }, [user?.id, balance?.totalPortfolioValue]); // Add balance.totalPortfolioValue as dependency
 
   // Calculate real-time metrics
   const metrics = useMemo(() => {
@@ -120,7 +126,9 @@ export const useRealTimeBalance = (): RealTimeBalanceData => {
     // Also refresh user rank
     if (user?.id) {
       try {
+        // Update leaderboard rankings first
         await UserService.updateLeaderboardRankings(user.id);
+        // Then fetch the updated rank
         const rank = await UserService.getUserRank(user.id, "ALL_TIME");
         setUserRank(rank);
       } catch (error) {

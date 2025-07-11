@@ -917,46 +917,33 @@ export class UserService {
         return;
       }
 
-      // Calculate total P&L and portfolio value
-      const totalPnL = portfolio.reduce(
-        (sum, asset) => sum + parseFloat(asset.profit_loss || "0"),
-        0
+      // Use user's actual P&L data from the users table, not calculated from portfolio
+      const totalPnL = parseFloat(user.total_pnl || "0");
+      const totalPortfolioValue = parseFloat(user.total_portfolio_value || "0");
+      const totalPnLPercentage = parseFloat(user.total_pnl_percentage || "0");
+
+      logger.info(
+        `Updating leaderboard for user ${userId}: P&L=${totalPnL}, Portfolio=${totalPortfolioValue}, Return=${totalPnLPercentage}%`,
+        "UserService"
       );
 
-      const totalPortfolioValue =
-        portfolio.reduce(
-          (sum, asset) => sum + parseFloat(asset.total_value || "0"),
-          0
-        ) + parseFloat(user.usdt_balance || "0");
-
-      const totalPnLPercentage =
-        totalPortfolioValue > 0 ? (totalPnL / totalPortfolioValue) * 100 : 0;
-
-      // Update or create leaderboard rankings for all periods with calculated ranks
-      const periods: ("WEEKLY" | "MONTHLY" | "ALL_TIME")[] = [
-        "WEEKLY",
-        "MONTHLY",
+      // Update or create leaderboard rankings for ALL_TIME period only
+      const calculatedRank = await this.calculateUserRank(
+        userId,
         "ALL_TIME",
-      ];
+        totalPnL,
+        totalPortfolioValue
+      );
 
-      for (const period of periods) {
-        const calculatedRank = await this.calculateUserRank(
-          userId,
-          period,
-          totalPnL,
-          totalPortfolioValue
-        );
-
-        await this.upsertLeaderboardRanking({
-          user_id: userId,
-          period,
-          total_pnl: totalPnL.toString(),
-          total_pnl_percentage: totalPnLPercentage.toString(),
-          total_portfolio_value: totalPortfolioValue.toString(),
-          total_trades: portfolio.length,
-          rank: calculatedRank,
-        });
-      }
+      await this.upsertLeaderboardRanking({
+        user_id: userId,
+        period: "ALL_TIME",
+        total_pnl: totalPnL.toString(),
+        total_pnl_percentage: totalPnLPercentage.toString(),
+        total_portfolio_value: totalPortfolioValue.toString(),
+        total_trades: portfolio.length,
+        rank: calculatedRank,
+      });
 
       // Recalculate all ranks for this period to ensure consistency
       await this.recalculateAllRanks();
@@ -1034,37 +1021,29 @@ export class UserService {
     }
   }
 
-  // Recalculate all ranks for consistency
-  private static async recalculateAllRanks(): Promise<void> {
+  // Recalculate all ranks for consistency (ALL_TIME period only)
+  static async recalculateAllRanks(): Promise<void> {
     try {
-      const periods: ("WEEKLY" | "MONTHLY" | "ALL_TIME")[] = [
-        "WEEKLY",
-        "MONTHLY",
-        "ALL_TIME",
-      ];
+      // Get all rankings for ALL_TIME period, sorted by performance
+      const { data: rankings, error } = await supabase
+        .from("leaderboard_rankings")
+        .select("id, total_pnl, portfolio_value")
+        .eq("period", "ALL_TIME")
+        .is("collection_id", null)
+        .order("total_pnl", { ascending: false })
+        .order("portfolio_value", { ascending: false });
 
-      for (const period of periods) {
-        // Get all rankings for this period, sorted by performance
-        const { data: rankings, error } = await supabase
+      if (error) throw error;
+
+      // Update ranks based on sorted order
+      for (let i = 0; i < (rankings || []).length; i++) {
+        const ranking = rankings![i];
+        const newRank = i + 1;
+
+        await supabase
           .from("leaderboard_rankings")
-          .select("id, total_pnl, portfolio_value")
-          .eq("period", period)
-          .is("collection_id", null)
-          .order("total_pnl", { ascending: false })
-          .order("portfolio_value", { ascending: false });
-
-        if (error) throw error;
-
-        // Update ranks based on sorted order
-        for (let i = 0; i < (rankings || []).length; i++) {
-          const ranking = rankings![i];
-          const newRank = i + 1;
-
-          await supabase
-            .from("leaderboard_rankings")
-            .update({ rank: newRank })
-            .eq("id", ranking.id);
-        }
+          .update({ rank: newRank })
+          .eq("id", ranking.id);
       }
     } catch (error) {
       logger.error("Error recalculating all ranks", "UserService", error);
@@ -1144,6 +1123,9 @@ export class UserService {
     try {
       logger.info("Initializing leaderboard rankings for all users...", "UserService");
 
+      // First, clean up any duplicate or old entries (remove WEEKLY and MONTHLY entries)
+      await this.cleanupLeaderboardRankings();
+
       // Get all users
       const { data: users, error: usersError } = await supabase
         .from("users")
@@ -1156,7 +1138,7 @@ export class UserService {
         return;
       }
 
-      // Update rankings for each user
+      // Update rankings for each user (ALL_TIME period only)
       for (const user of users) {
         try {
           await this.updateLeaderboardRankings(user.id);
@@ -1173,6 +1155,69 @@ export class UserService {
     } catch (error) {
       logger.error("Error initializing leaderboard rankings", "UserService", error);
       throw error;
+    }
+  }
+
+  // Clean up leaderboard rankings to remove duplicates and old periods
+  static async cleanupLeaderboardRankings(): Promise<void> {
+    try {
+      logger.info("Cleaning up leaderboard rankings...", "UserService");
+
+      // Remove WEEKLY and MONTHLY entries (keep only ALL_TIME)
+      const { error: deleteError } = await supabase
+        .from("leaderboard_rankings")
+        .delete()
+        .in("period", ["WEEKLY", "MONTHLY"]);
+
+      if (deleteError) {
+        logger.error("Error cleaning up leaderboard rankings", "UserService", deleteError);
+      } else {
+        logger.info("Cleaned up WEEKLY and MONTHLY leaderboard entries", "UserService");
+      }
+
+      // Remove duplicate entries for the same user (keep only the latest)
+      const { data: duplicates, error: duplicateError } = await supabase
+        .from("leaderboard_rankings")
+        .select("user_id, period, collection_id, created_at")
+        .eq("period", "ALL_TIME")
+        .is("collection_id", null)
+        .order("created_at", { ascending: false });
+
+      if (duplicateError) {
+        logger.error("Error finding duplicate entries", "UserService", duplicateError);
+        return;
+      }
+
+      if (duplicates) {
+        const seenUsers = new Set<string>();
+        const toDelete: string[] = [];
+
+        for (const entry of duplicates) {
+          const key = `${entry.user_id}-${entry.period}-${entry.collection_id}`;
+          if (seenUsers.has(key)) {
+            toDelete.push(entry.user_id);
+          } else {
+            seenUsers.add(key);
+          }
+        }
+
+        if (toDelete.length > 0) {
+          const { error: deleteDuplicatesError } = await supabase
+            .from("leaderboard_rankings")
+            .delete()
+            .in("user_id", toDelete)
+            .eq("period", "ALL_TIME")
+            .is("collection_id", null);
+
+          if (deleteDuplicatesError) {
+            logger.error("Error deleting duplicate entries", "UserService", deleteDuplicatesError);
+          } else {
+            logger.info(`Deleted ${toDelete.length} duplicate leaderboard entries`, "UserService");
+          }
+        }
+      }
+    } catch (error) {
+      logger.error("Error during leaderboard cleanup", "UserService", error);
     }
   }
 
