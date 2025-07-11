@@ -1,3 +1,4 @@
+import UUIDService from '@/services/UUIDService';
 import {
   calculateCollectionPnL,
   calculateCombinedPnL,
@@ -12,7 +13,9 @@ import {
   updateIndividualHolding
   } from '@/features/dualBalanceSlice';
 import { CollectionBalance, IndividualBalance, TradingContext } from '@/types/database';
+import { createUser, fetchUser } from '@/features/userSlice';
 import { HoldingUpdatePayload } from '@/types/crypto';
+import { logger } from '@/utils/logger';
 import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useUser } from '@/context/UserContext';
@@ -62,25 +65,64 @@ export const useDualBalance = () => {
     };
   }, [currentBalance]);
 
+  // Initialize or re-initialize user if needed
+  const initializeUserIfNeeded = useCallback(async () => {
+    if (!user?.id) {
+      try {
+        logger.info("User not authenticated, initializing user data", "useDualBalance");
+        
+        // Get or create user UUID
+        const userId = await UUIDService.getOrCreateUser();
+        
+        // Try to fetch existing user first
+        try {
+          await dispatch(fetchUser(userId)).unwrap();
+          logger.info("Existing user fetched successfully", "useDualBalance");
+        } catch (error) {
+          // If user doesn't exist, create a new one
+          logger.info("User not found, creating new user", "useDualBalance");
+          const username = `user_${userId.slice(0, 8)}`;
+          await dispatch(createUser({
+            username,
+            display_name: username,
+            avatar_emoji: "🚀",
+            usdt_balance: "100000.00",
+          })).unwrap();
+        }
+      } catch (error) {
+        logger.error("Failed to initialize user", "useDualBalance", error);
+        throw new Error("Failed to initialize user authentication");
+      }
+    }
+  }, [user?.id, dispatch]);
+
   // Load individual balance
   const loadIndividual = useCallback(async () => {
-    if (!user?.id) return;
     try {
+      // Ensure user is authenticated first
+      await initializeUserIfNeeded();
+      
+      const userId = await UUIDService.getOrCreateUser();
       await dispatch(loadIndividualBalance()).unwrap();
     } catch (error) {
       console.error('Failed to load individual balance:', error);
+      throw error;
     }
-  }, [dispatch, user?.id]);
+  }, [dispatch, initializeUserIfNeeded]);
 
   // Load collection balance
   const loadCollection = useCallback(async (collectionId: string) => {
-    if (!user?.id) return;
     try {
+      // Ensure user is authenticated first
+      await initializeUserIfNeeded();
+      
+      const userId = await UUIDService.getOrCreateUser();
       await dispatch(loadCollectionBalance(collectionId)).unwrap();
     } catch (error) {
       console.error('Failed to load collection balance:', error);
+      throw error;
     }
-  }, [dispatch, user?.id]);
+  }, [dispatch, initializeUserIfNeeded]);
 
   // Switch trading context
   const switchContext = useCallback((context: TradingContext) => {
@@ -89,9 +131,12 @@ export const useDualBalance = () => {
 
   // Execute trade in current context
   const executeTradeInContext = useCallback(async (order: any) => {
-    if (!user?.id) throw new Error('User not authenticated');
-    
     try {
+      // Ensure user is authenticated first
+      await initializeUserIfNeeded();
+      
+      const userId = await UUIDService.getOrCreateUser();
+      
       const result = await dispatch(executeTrade({ 
         order, 
         context: activeContext 
@@ -109,7 +154,7 @@ export const useDualBalance = () => {
       console.error('Failed to execute trade:', error);
       throw error;
     }
-  }, [dispatch, user?.id, activeContext, loadIndividual, loadCollection]);
+  }, [dispatch, activeContext, initializeUserIfNeeded, loadIndividual, loadCollection]);
 
   // Update holding in current context
   const updateHolding = useCallback((payload: HoldingUpdatePayload) => {
@@ -123,7 +168,7 @@ export const useDualBalance = () => {
     }
   }, [dispatch, activeContext]);
 
-  // Update current price in current context
+  // Update current price for individual holdings
   const updateCurrentPrice = useCallback((symbol: string, currentPrice: number) => {
     if (activeContext.type === 'individual') {
       dispatch(updateIndividualCurrentPrice({ symbol, currentPrice }));
@@ -136,49 +181,46 @@ export const useDualBalance = () => {
     }
   }, [dispatch, activeContext]);
 
-  // Calculate PnL for individual trading
+  // Calculate PnL for individual context
   const calculateIndividualPnLResult = useCallback(async () => {
-    if (!user?.id) return null;
     try {
-      const result = await dispatch(calculateIndividualPnL()).unwrap();
-      return result;
+      await initializeUserIfNeeded();
+      return await dispatch(calculateIndividualPnL()).unwrap();
     } catch (error) {
       console.error('Failed to calculate individual PnL:', error);
-      return null;
+      throw error;
     }
-  }, [dispatch, user?.id]);
+  }, [dispatch, initializeUserIfNeeded]);
 
-  // Calculate PnL for collection trading
+  // Calculate PnL for collection context
   const calculateCollectionPnLResult = useCallback(async (collectionId: string) => {
-    if (!user?.id) return null;
     try {
-      const result = await dispatch(calculateCollectionPnL(collectionId)).unwrap();
-      return result;
+      await initializeUserIfNeeded();
+      return await dispatch(calculateCollectionPnL(collectionId)).unwrap();
     } catch (error) {
       console.error('Failed to calculate collection PnL:', error);
-      return null;
+      throw error;
     }
-  }, [dispatch, user?.id]);
+  }, [dispatch, initializeUserIfNeeded]);
 
   // Calculate combined PnL
   const calculateCombinedPnLResult = useCallback(async () => {
-    if (!user?.id) return null;
     try {
-      const result = await dispatch(calculateCombinedPnL()).unwrap();
-      return result;
+      await initializeUserIfNeeded();
+      return await dispatch(calculateCombinedPnL()).unwrap();
     } catch (error) {
       console.error('Failed to calculate combined PnL:', error);
-      return null;
+      throw error;
     }
-  }, [dispatch, user?.id]);
+  }, [dispatch, initializeUserIfNeeded]);
 
   // Get all collection balances
-  const getAllCollectionBalances = useMemo(() => {
-    return Object.values(collections);
+  const getAllCollectionBalances = useCallback(() => {
+    return collections;
   }, [collections]);
 
   // Get specific collection balance
-  const getCollectionBalance = useCallback((collectionId: string): CollectionBalance | null => {
+  const getCollectionBalance = useCallback((collectionId: string) => {
     return collections[collectionId] || null;
   }, [collections]);
 
@@ -204,10 +246,17 @@ export const useDualBalance = () => {
 
   // Load initial data
   useEffect(() => {
-    if (user?.id) {
-      loadIndividual();
-    }
-  }, [user?.id, loadIndividual]);
+    const loadInitialData = async () => {
+      try {
+        await initializeUserIfNeeded();
+        await loadIndividual();
+      } catch (error) {
+        console.error('Failed to load initial data:', error);
+      }
+    };
+
+    loadInitialData();
+  }, [initializeUserIfNeeded, loadIndividual]);
 
   return {
     // State

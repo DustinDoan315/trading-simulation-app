@@ -1,13 +1,3 @@
-import CollectionItem from '@/components/collections/CollectionItem';
-import EmptyState from '@/components/collections/EmptyState';
-import React, { useCallback, useEffect, useState } from 'react';
-import { CollectionData, useCollectionsData } from '@/hooks/useCollectionsData';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { logger } from '@/utils/logger';
-import { router, useFocusEffect } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -20,14 +10,24 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { CollectionData, useCollectionsData } from "@/hooks/useCollectionsData";
+import React, { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
 
+import CollectionItem from "@/components/collections/CollectionItem";
+import EmptyState from "@/components/collections/EmptyState";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { logger } from "@/utils/logger";
+import { useLanguage } from "@/context/LanguageContext";
+import { useUser } from "@/context/UserContext";
 
 const CollectionsScreen = () => {
   const [activeTab, setActiveTab] = useState<"my" | "joined">("my");
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(Date.now());
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
   const { user } = useUser();
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   const {
     myCollections,

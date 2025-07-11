@@ -97,12 +97,33 @@ export default function RootLayout() {
       // Load user data from Redux store
       const userData = store.getState().user;
 
-      if (userData) {
+      if (userData?.currentUser) {
         logger.info("User data loaded successfully from Redux", "AppLayout");
       } else {
-        logger.warn("No user data found in Redux store", "AppLayout");
-        // Initialize user data if not found
-        await UUIDService.getOrCreateUser();
+        logger.warn(
+          "No user data found in Redux store, initializing user",
+          "AppLayout"
+        );
+
+        // Try to fetch existing user first
+        try {
+          await store.dispatch(fetchUser(userId)).unwrap();
+          logger.info("Existing user fetched successfully", "AppLayout");
+        } catch (error) {
+          // If user doesn't exist, create a new one
+          logger.info("User not found, creating new user", "AppLayout");
+          const username = `user_${userId.slice(0, 8)}`;
+          await store
+            .dispatch(
+              createUser({
+                username,
+                display_name: username,
+                avatar_emoji: "🚀",
+                usdt_balance: "100000.00",
+              })
+            )
+            .unwrap();
+        }
       }
     } catch (error) {
       logger.error("Error initializing user", "AppLayout", error);

@@ -10,7 +10,6 @@ import { persistor } from '@/store';
 import { resetBalance } from '@/features/balanceSlice';
 import { resetFavorites } from '@/features/favoritesSlice';
 import { ResetService } from '@/services/ResetService';
-import { router } from 'expo-router';
 import { useAppDispatch } from '@/store';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserBalance } from '@/services/CryptoService';
@@ -63,7 +62,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
       await persistor.purge();
 
       // Step 3: Comprehensive data reset using ResetService
-      const resetResult = await ResetService.comprehensiveReset();
+      const resetResult = await ResetService.resetAppAndCreateNewUser();
 
       if (resetResult.success) {
         logger.info(
@@ -78,12 +77,11 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
 
         // Show success message with details
         const successMessage =
-          `Reset completed successfully!\n\nDetails:\n` +
+          `Details:\n` +
           `• Local storage: ${
             resetResult.details.localStorage ? "✅" : "❌"
           }\n` +
           `• Cloud data: ${resetResult.details.cloudData ? "✅" : "⚠️"}\n` +
-          `• Database: ${resetResult.details.database ? "✅" : "⚠️"}\n` +
           `• User profile: ${resetResult.details.userProfile ? "✅" : "❌"}`;
 
         Alert.alert(

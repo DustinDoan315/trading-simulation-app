@@ -3,6 +3,7 @@ import * as bip39 from 'bip39';
 import * as Crypto from 'expo-crypto';
 import Toast from 'react-native-toast-message';
 import { Buffer } from 'buffer';
+import { logger } from '@/utils/logger';
 import { Order } from '@/types/crypto';
 import { Platform } from 'react-native';
 import { ToastPos, ToastType } from '@/types/common';
@@ -475,4 +476,38 @@ export const formatPnL = (value: number): string => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+};
+
+/**
+ * Utility function to handle user re-initialization when authentication is lost
+ * This can be used across the app to handle "User not authenticated" errors
+ */
+export const handleUserReinitialization = async <T>(
+  error: any,
+  reinitializeUser: () => Promise<void>,
+  retryFunction: () => Promise<T>
+): Promise<T> => {
+  // Check if this is an authentication error
+  if (
+    error.message?.includes("User not authenticated") ||
+    error.message?.includes("Failed to initialize user authentication") ||
+    error.message?.includes("User not found")
+  ) {
+    logger.info("Authentication error detected, attempting to re-initialize user", "helper");
+    
+    try {
+      // Try to re-initialize user data
+      await reinitializeUser();
+      
+      // Retry the original function
+      logger.info("User re-initialized, retrying operation", "helper");
+      return await retryFunction();
+    } catch (reinitError) {
+      logger.error("Failed to re-initialize user", "helper", reinitError);
+      throw new Error("Authentication failed. Please restart the app and try again.");
+    }
+  }
+  
+  // If it's not an authentication error, re-throw the original error
+  throw error;
 };

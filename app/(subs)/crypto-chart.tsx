@@ -11,7 +11,6 @@ import useHistoricalData from '@/hooks/useHistoricalData';
 import useOrderBook from '@/hooks/useOrderBook';
 import UUIDService from '@/services/UUIDService';
 import { ChartType, Order, TimeframeOption } from '../../types/crypto';
-import { handleOrderSubmission } from '@/utils/helper';
 import { logger } from '@/utils/logger';
 import { OrderDispatchContext, OrderValidationContext } from '@/utils/helper';
 import { RootState } from '@/store';
@@ -22,6 +21,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useLocalSearchParams } from 'expo-router';
 import { useNotification } from '@/components/ui/Notification';
 import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 import { WebView } from 'react-native-webview';
 import {
   SafeAreaView,
@@ -35,10 +35,15 @@ import {
   updateHolding,
   updateTrade,
 } from "@/features/balanceSlice";
+import {
+  handleOrderSubmission,
+  handleUserReinitialization,
+} from "@/utils/helper";
 
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
+  const { reinitializeUser } = useUser();
   const { id, symbol, name, image, collectionId, collectionName }: any =
     useLocalSearchParams();
   const { balance } = useSelector((state: RootState) => state.balance);
@@ -137,7 +142,7 @@ const CryptoChartScreen = () => {
   };
 
   // Enhanced order submission with dual balance support
-  const submitOrder = async (order: Order) => {
+  const submitOrder = async (order: Order): Promise<void> => {
     try {
       const validationContext: OrderValidationContext = {
         getHoldings: () => currentHoldings, // Use current context holdings
@@ -175,9 +180,13 @@ const CryptoChartScreen = () => {
         validationContext,
         dispatchContext
       );
-    } catch (error) {
+    } catch (error: any) {
       logger.error("Failed to submit order", "CryptoChart", error);
-      throw error;
+
+      // Handle authentication errors using utility function
+      await handleUserReinitialization(error, reinitializeUser, () =>
+        submitOrder(order)
+      );
     }
   };
 

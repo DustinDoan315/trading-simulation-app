@@ -1,3 +1,4 @@
+import UUIDService from '@/services/UUIDService';
 import { logger } from '@/utils/logger';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { User } from '@/types/database';
@@ -10,6 +11,7 @@ import React, {
 } from "react";
 import {
   clearUser,
+  createUser,
   fetchFavorites,
   fetchPortfolio,
   fetchTransactions,
@@ -28,6 +30,7 @@ interface UserContextType {
   error: string | null;
   refreshUser: (userId: string) => Promise<void>;
   refreshUserData: (userId: string) => Promise<void>;
+  reinitializeUser: () => Promise<void>;
   logout: () => void;
 }
 
@@ -74,6 +77,39 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     [dispatch]
   );
 
+  const reinitializeUser = useCallback(async () => {
+    try {
+      logger.info("Re-initializing user data", "UserContext");
+
+      // Get or create user UUID
+      const userId = await UUIDService.getOrCreateUser();
+
+      // Try to fetch existing user first
+      try {
+        await dispatch(fetchUser(userId)).unwrap();
+        logger.info("Existing user fetched successfully", "UserContext");
+
+        // Refresh all user data
+        await refreshUserData(userId);
+      } catch (error) {
+        // If user doesn't exist, create a new one
+        logger.info("User not found, creating new user", "UserContext");
+        const username = `user_${userId.slice(0, 8)}`;
+        await dispatch(
+          createUser({
+            username,
+            display_name: username,
+            avatar_emoji: "🚀",
+            usdt_balance: "100000.00",
+          })
+        ).unwrap();
+      }
+    } catch (error) {
+      logger.error("Failed to re-initialize user", "UserContext", error);
+      throw error;
+    }
+  }, [dispatch, refreshUserData]);
+
   const logout = () => {
     dispatch(clearUser());
   };
@@ -90,6 +126,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         error,
         refreshUser,
         refreshUserData,
+        reinitializeUser,
         logout,
       }}>
       {children}

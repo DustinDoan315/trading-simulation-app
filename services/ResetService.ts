@@ -6,6 +6,7 @@ import { clearUser } from '@/features/userSlice';
 import { getDeviceUUID } from '@/utils/deviceUtils';
 import { store } from '@/store';
 import { supabase } from './SupabaseService';
+import { UserSyncService } from './UserSyncService';
 
 
 export interface ResetResult {
@@ -14,7 +15,6 @@ export interface ResetResult {
   details: {
     localStorage: boolean;
     cloudData: boolean;
-    database: boolean;
     userProfile: boolean;
     newUserCreated: boolean;
   };
@@ -31,7 +31,6 @@ export class ResetService {
       details: {
         localStorage: false,
         cloudData: false,
-        database: false,
         userProfile: false,
         newUserCreated: false,
       },
@@ -182,7 +181,7 @@ export class ResetService {
       while (retries > 0) {
         try {
           console.log("Syncing new user to cloud:", userProfile);
-          const syncResult = await UUIDService.syncUserToCloud(userProfile);
+          const syncResult = await UserSyncService.syncUserToCloud(userProfile);
           if (syncResult.success) {
             console.log("✅ New user successfully synced to cloud");
             break;
@@ -215,7 +214,7 @@ export class ResetService {
   }
 
   /**
-   * Comprehensive reset that clears all user data from local storage, cloud, and database
+   * Comprehensive reset that clears all user data from local storage and cloud
    */
   static async resetAllData(): Promise<ResetResult> {
     const result: ResetResult = {
@@ -223,7 +222,6 @@ export class ResetService {
       details: {
         localStorage: false,
         cloudData: false,
-        database: false,
         userProfile: false,
         newUserCreated: false,
       },
@@ -410,17 +408,7 @@ export class ResetService {
         JSON.stringify(defaultProfile)
       );
 
-      // Save to local database
-      try {
-        // await LocalDatabaseService.createOrUpdateUser({
-        //   uuid,
-        //   balance: "100000",
-        //   createdAt: new Date(),
-        // });
-      } catch (dbError) {
-        console.warn("⚠️ Local database update failed:", dbError);
-        // Don't throw as this might be readonly in some environments
-      }
+      // Note: Local database operations removed - using AsyncStorage and Supabase only
 
       // Sync to cloud
       try {
@@ -458,7 +446,6 @@ export class ResetService {
       details: {
         localStorage: false,
         cloudData: false,
-        database: false,
         userProfile: false,
         newUserCreated: false,
       },
@@ -509,7 +496,6 @@ export class ResetService {
       details: {
         localStorage: false,
         cloudData: false,
-        database: false,
         userProfile: false,
         newUserCreated: false,
       },
