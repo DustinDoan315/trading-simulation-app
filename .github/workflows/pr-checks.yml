@@ -109,7 +109,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔍 Review Checklist:" >> $GITHUB_STEP_SUMMARY
           echo "- [ ] Code follows TypeScript best practices" >> $GITHUB_STEP_SUMMARY
-          echo "- [ ] No console.log statements in production code" >> $GITHUB_STEP_SUMMARY
           echo "- [ ] No hardcoded secrets or sensitive data" >> $GITHUB_STEP_SUMMARY
           echo "- [ ] Proper error handling implemented" >> $GITHUB_STEP_SUMMARY
           echo "- [ ] Tests cover new functionality" >> $GITHUB_STEP_SUMMARY
@@ -141,7 +140,6 @@ jobs:
 
             **Review Checklist:**
             - [ ] Code follows project conventions
-            - [ ] No console.log statements in production code
             - [ ] Proper error handling implemented
             - [ ] Tests cover new functionality
             - [ ] Documentation updated if needed
