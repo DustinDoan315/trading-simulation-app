@@ -1,4 +1,5 @@
 import { BackgroundDataSyncService } from './BackgroundDataSyncService';
+import { enhancedCryptoService } from './EnhancedCryptoService';
 import { getMarketData } from './CryptoService';
 import { store } from '@/store';
 import { updateCurrentPrice } from '@/features/balanceSlice';
@@ -76,8 +77,8 @@ class RealTimeDataService {
 
       console.log('RealTimeDataService: Fetching market data...');
       
-      // Fetch latest market data
-      const marketData = await getMarketData(true, 50);
+      // Use enhanced crypto service for better caching and rate limiting
+      const marketData = await enhancedCryptoService.getMarketData(false, 50, true);
       
       console.log('RealTimeDataService: Market data received:', marketData.length, 'coins');
       console.log('RealTimeDataService: Sample market data:', marketData.slice(0, 3).map(coin => ({

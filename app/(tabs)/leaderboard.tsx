@@ -467,7 +467,7 @@ const LeaderboardScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#121212" />
 
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <Text style={styles.title}>Leaderboards</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
@@ -478,7 +478,7 @@ const LeaderboardScreen = () => {
             <Text style={styles.syncButtonText}>⏸️</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
 
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: "row",
     marginHorizontal: 20,
-    marginBottom: 20,
+    marginVertical: 20,
     backgroundColor: "#1A1D2F",
     borderRadius: 16,
     padding: 6,

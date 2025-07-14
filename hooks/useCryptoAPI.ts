@@ -1,8 +1,10 @@
-import { formatPercentage } from "@/utils/formatters";
-import { getCoinMarketData, getPriceHistory } from "@/services/CryptoService";
-import { HistoricalDataResponse } from "../types/api";
-import { TimeframeOption } from "../types/crypto";
-import { useEffect, useState } from "react";
+import { enhancedCryptoService } from '@/services/EnhancedCryptoService';
+import { formatPercentage } from '@/utils/formatters';
+import { getCoinMarketData, getPriceHistory } from '@/services/CryptoService';
+import { HistoricalDataResponse } from '../types/api';
+import { TimeframeOption } from '../types/crypto';
+import { useEffect, useState } from 'react';
+
 
 const useCryptoAPI = (timeframe: TimeframeOption, id: string) => {
   const [currentPrice, setCurrentPrice] = useState<string | null>(null);
@@ -18,7 +20,7 @@ const useCryptoAPI = (timeframe: TimeframeOption, id: string) => {
       setIsLoading(true);
       setError(null);
       try {
-        const coinMarketData = await getCoinMarketData(id);
+        const coinMarketData = await enhancedCryptoService.getCryptoDetails(id);
 
         // Extract current price and price change from the response
         const marketData = coinMarketData?.market_data;
@@ -41,7 +43,7 @@ const useCryptoAPI = (timeframe: TimeframeOption, id: string) => {
             ? 3
             : 30;
 
-        const history = await getPriceHistory(id, days);
+        const history = await enhancedCryptoService.getPriceHistory(id, days);
         setHistoricalData(history?.prices || []);
       } catch (err: unknown) {
         const errorMessage =

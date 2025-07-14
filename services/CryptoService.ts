@@ -91,20 +91,130 @@ interface MarketData {
   market_cap_change_24h: number;
 }
 
-// Constants
-const CACHE_EXPIRY_MS = 1000 * 60 * 5; // 5 minutes
+// Enhanced caching and rate limiting constants
+const CACHE_EXPIRY_MS = 1000 * 60 * 15; // 15 minutes (increased from 5)
+const STALE_CACHE_EXPIRY_MS = 1000 * 60 * 60 * 2; // 2 hours for stale data
 const MARKET_DATA_CACHE_KEY = "@crypto_market_data";
 const USER_BALANCE_CACHE_KEY = "@user_balance";
 const PRICE_ALERTS_CACHE_KEY = "@price_alerts";
+const RATE_LIMIT_CACHE_KEY = "@rate_limit_info";
+
+// Rate limiting configuration
+const RATE_LIMIT_CONFIG = {
+  maxRequestsPerMinute: 50,
+  maxRequestsPerHour: 1000,
+  baseDelayMs: 1000,
+  maxDelayMs: 300000, // 5 minutes
+  exponentialBackoffFactor: 2,
+};
+
+// Request queue for preventing concurrent API calls
+let requestQueue: Promise<any> | null = null;
+let lastRequestTime = 0;
+let consecutiveErrors = 0;
+
+interface RateLimitInfo {
+  lastRequestTime: number;
+  requestCount: number;
+  windowStart: number;
+  consecutiveErrors: number;
+  currentDelay: number;
+}
+
+/**
+ * Get rate limit information from cache
+ */
+const getRateLimitInfo = async (): Promise<RateLimitInfo> => {
+  try {
+    const cached = await AsyncStorage.getItem(RATE_LIMIT_CACHE_KEY);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (error) {
+    console.error("Error reading rate limit info:", error);
+  }
+  
+  return {
+    lastRequestTime: 0,
+    requestCount: 0,
+    windowStart: Date.now(),
+    consecutiveErrors: 0,
+    currentDelay: RATE_LIMIT_CONFIG.baseDelayMs,
+  };
+};
+
+/**
+ * Update rate limit information
+ */
+const updateRateLimitInfo = async (info: RateLimitInfo): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(RATE_LIMIT_CACHE_KEY, JSON.stringify(info));
+  } catch (error) {
+    console.error("Error updating rate limit info:", error);
+  }
+};
+
+/**
+ * Check if we should delay the request due to rate limiting
+ */
+const shouldDelayRequest = async (): Promise<number> => {
+  const info = await getRateLimitInfo();
+  const now = Date.now();
+  
+  // Reset window if more than 1 minute has passed
+  if (now - info.windowStart > 60000) {
+    info.requestCount = 0;
+    info.windowStart = now;
+  }
+  
+  // Check if we're within rate limits
+  if (info.requestCount >= RATE_LIMIT_CONFIG.maxRequestsPerMinute) {
+    const timeToWait = 60000 - (now - info.windowStart);
+    return Math.max(timeToWait, info.currentDelay);
+  }
+  
+  // Apply exponential backoff if we have consecutive errors
+  if (info.consecutiveErrors > 0) {
+    return info.currentDelay;
+  }
+  
+  return 0;
+};
+
+/**
+ * Update rate limit info after request
+ */
+const updateRateLimitAfterRequest = async (success: boolean): Promise<void> => {
+  const info = await getRateLimitInfo();
+  const now = Date.now();
+  
+  info.lastRequestTime = now;
+  info.requestCount++;
+  
+  if (success) {
+    info.consecutiveErrors = 0;
+    info.currentDelay = RATE_LIMIT_CONFIG.baseDelayMs;
+  } else {
+    info.consecutiveErrors++;
+    info.currentDelay = Math.min(
+      info.currentDelay * RATE_LIMIT_CONFIG.exponentialBackoffFactor,
+      RATE_LIMIT_CONFIG.maxDelayMs
+    );
+  }
+  
+  await updateRateLimitInfo(info);
+};
 
 /**
  * Get cached market data if available and not expired
  *
  * @param ignoreExpiry - Whether to ignore cache expiry
+ * @param useStaleData - Whether to use stale data if fresh data is not available
  * @returns Promise with cached data or null
  */
 const getCachedMarketData = async (
-  ignoreExpiry = false
+  ignoreExpiry = false,
+  useStaleData = false
 ): Promise<CryptoCurrency[] | null> => {
   try {
     const cachedDataJson = await AsyncStorage.getItem(MARKET_DATA_CACHE_KEY);
@@ -118,6 +228,11 @@ const getCachedMarketData = async (
 
     // Check if cache is expired
     if (!ignoreExpiry && now - timestamp > CACHE_EXPIRY_MS) {
+      // If we can use stale data and it's within stale cache expiry, return it
+      if (useStaleData && now - timestamp <= STALE_CACHE_EXPIRY_MS) {
+        console.log("Using stale cached market data (within 2 hours)");
+        return data;
+      }
       return null;
     }
 
@@ -144,13 +259,52 @@ const cacheMarketData = async (data: CryptoCurrency[]): Promise<void> => {
       MARKET_DATA_CACHE_KEY,
       JSON.stringify(cacheData)
     );
+    
+    console.log("Market data cached successfully");
   } catch (error) {
     console.error("Error caching market data:", error);
   }
 };
 
 /**
- * Fetch cryptocurrency market data with caching
+ * Execute API request with rate limiting and queuing
+ */
+const executeApiRequest = async <T>(
+  requestFn: () => Promise<T>,
+  context: string
+): Promise<T> => {
+  // Check if there's already a pending request
+  if (requestQueue) {
+    console.log(`${context}: Waiting for pending request to complete`);
+    return requestQueue;
+  }
+
+  // Check rate limiting
+  const delayMs = await shouldDelayRequest();
+  if (delayMs > 0) {
+    console.log(`${context}: Rate limited, waiting ${delayMs}ms`);
+    await new Promise(resolve => setTimeout(resolve, delayMs));
+  }
+
+  // Create new request promise
+  requestQueue = (async () => {
+    try {
+      const result = await requestFn();
+      await updateRateLimitAfterRequest(true);
+      return result;
+    } catch (error) {
+      await updateRateLimitAfterRequest(false);
+      throw error;
+    } finally {
+      requestQueue = null;
+    }
+  })();
+
+  return requestQueue;
+};
+
+/**
+ * Fetch cryptocurrency market data with enhanced caching and rate limiting
  *
  * @param forceRefresh - Whether to bypass cache and force a refresh
  * @param limit - Number of cryptocurrencies to fetch
@@ -167,56 +321,67 @@ export const getMarketData = async (
     if (!forceRefresh) {
       const cachedData = await getCachedMarketData();
       if (cachedData) {
+        console.log("Using fresh cached market data");
         return cachedData;
       }
     }
 
-    // Fetch fresh data from API with request timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    // Execute API request with rate limiting
+    const data = await executeApiRequest(async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-    try {
-      const response = await fetch(
-        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`,
-        {
-          signal: controller.signal,
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
+      try {
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`,
+          {
+            signal: controller.signal,
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            console.warn("CoinGecko API rate limit exceeded");
+            throw new Error(`API rate limit exceeded (429)`);
+          }
+          throw new Error(`API request failed with status ${response.status}`);
         }
-      );
 
-      clearTimeout(timeoutId);
+        const data: CryptoCurrency[] = await response.json();
 
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        // Enhance with supply metrics if requested
+        const enhancedData = includeSupplyMetrics
+          ? enhanceSupplyMetrics(data)
+          : data;
+
+        // Cache the enhanced data
+        await cacheMarketData(enhancedData);
+
+        console.log(`Successfully fetched ${data.length} market data entries from API`);
+        return enhancedData;
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === "AbortError") {
+          throw new Error("Request timed out");
+        }
+        throw error;
       }
+    }, "getMarketData");
 
-      const data: CryptoCurrency[] = await response.json();
-
-      // Enhance with supply metrics if requested
-      const enhancedData = includeSupplyMetrics
-        ? enhanceSupplyMetrics(data)
-        : data;
-
-      // Cache the enhanced data
-      await cacheMarketData(enhancedData);
-
-      return enhancedData;
-    } catch (error: any) {
-      clearTimeout(timeoutId);
-      if (error.name === "AbortError") {
-        throw new Error("Request timed out");
-      }
-      throw error;
-    }
+    return data;
   } catch (error) {
     console.error("Error fetching market data:", error);
 
-    // If online fetch fails, try to return potentially stale cached data
-    const cachedData = await getCachedMarketData(true);
+    // If online fetch fails, try to return cached data (including stale)
+    const cachedData = await getCachedMarketData(true, true);
     if (cachedData) {
+      console.log("Using cached market data as fallback");
       return cachedData;
     }
 
@@ -232,15 +397,21 @@ export const getMarketData = async (
  */
 export const getCryptoDetails = async (id: string): Promise<any> => {
   try {
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`
-    );
+    return await executeApiRequest(async () => {
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`
+      );
 
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
+      if (!response.ok) {
+        if (response.status === 429) {
+          console.warn("CoinGecko API rate limit exceeded");
+          throw new Error(`API rate limit exceeded (429)`);
+        }
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
-    return await response.json();
+      return await response.json();
+    }, `getCryptoDetails-${id}`);
   } catch (error) {
     console.error(`Error fetching details for ${id}:`, error);
     throw error;
@@ -255,15 +426,21 @@ export const getCryptoDetails = async (id: string): Promise<any> => {
  */
 export const getCoinData = async (id: string): Promise<any> => {
   try {
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/coins/${id}`
-    );
+    return await executeApiRequest(async () => {
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/coins/${id}`
+      );
 
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
+      if (!response.ok) {
+        if (response.status === 429) {
+          console.warn("CoinGecko API rate limit exceeded");
+          throw new Error(`API rate limit exceeded (429)`);
+        }
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
-    return await response.json();
+      return await response.json();
+    }, `getCoinData-${id}`);
   } catch (error) {
     console.error(`Error fetching details for ${id}:`, error);
     throw error;
@@ -280,15 +457,21 @@ export const getCoinMarketData = async (id: string): Promise<any> => {
   console.log(`Fetching market data for ${id}`);
 
   try {
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/coins/${id}`
-    );
+    return await executeApiRequest(async () => {
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/coins/${id}`
+      );
 
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
+      if (!response.ok) {
+        if (response.status === 429) {
+          console.warn("CoinGecko API rate limit exceeded");
+          throw new Error(`API rate limit exceeded (429)`);
+        }
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
-    return await response.json();
+      return await response.json();
+    }, `getCoinMarketData-${id}`);
   } catch (error) {
     console.error(`Error fetching details for ${id}:`, error);
     throw error;
@@ -361,15 +544,21 @@ export const getPriceHistory = async (
   days = 7
 ): Promise<{ prices: [number, number][] }> => {
   try {
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`
-    );
+    return await executeApiRequest(async () => {
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`
+      );
 
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
+      if (!response.ok) {
+        if (response.status === 429) {
+          console.warn("CoinGecko API rate limit exceeded");
+          throw new Error(`API rate limit exceeded (429)`);
+        }
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
-    return await response.json();
+      return await response.json();
+    }, `getPriceHistory-${id}-${days}`);
   } catch (error) {
     console.error(`Error fetching price history for ${id}:`, error);
     throw error;
@@ -533,66 +722,78 @@ export const searchCryptocurrencies = async (
         return filteredData.slice(0, limit);
       }
     }
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(
-        query
-      )}`
-    );
 
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    const coins: CoinSearchResult[] = data.coins || [];
-
-    // Get market data for each coin to populate price information
-    const coinIds = coins
-      .slice(0, limit)
-      .map((coin: CoinSearchResult) => coin.id)
-      .join(",");
-    const marketResponse = await fetch(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinIds}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`
-    );
-
-    if (!marketResponse.ok) {
-      throw new Error(
-        `Market data API request failed with status ${marketResponse.status}`
+    return await executeApiRequest(async () => {
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(
+          query
+        )}`
       );
-    }
 
-    const marketData: MarketData[] = await marketResponse.json();
-    const marketDataMap = new Map(
-      marketData.map((item: MarketData) => [item.id, item])
-    );
+      if (!response.ok) {
+        if (response.status === 429) {
+          console.warn("CoinGecko API rate limit exceeded");
+          throw new Error(`API rate limit exceeded (429)`);
+        }
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
-    // Map to the same structure as our CryptoCurrency interface
-    return coins.slice(0, limit).map((coin: CoinSearchResult) => {
-      const marketInfo = marketDataMap.get(coin.id) as MarketData | undefined;
-      return {
-        id: coin.id,
-        symbol: coin.symbol,
-        name: coin.name,
-        image: coin.large,
-        current_price: marketInfo?.current_price || 0,
-        price_change_percentage_24h:
-          marketInfo?.price_change_percentage_24h || 0,
-        market_cap: marketInfo?.market_cap || 0,
-        total_volume: marketInfo?.total_volume || 0,
-        circulating_supply: marketInfo?.circulating_supply || 0,
-        total_supply: marketInfo?.total_supply || 0,
-        max_supply: marketInfo?.max_supply || null,
-        ath: marketInfo?.ath || 0,
-        ath_change_percentage: marketInfo?.ath_change_percentage || 0,
-        ath_date: marketInfo?.ath_date || "",
-        last_updated: marketInfo?.last_updated || "",
-        market_cap_rank: marketInfo?.market_cap_rank || 0,
-        market_cap_change_percentage_24h:
-          marketInfo?.market_cap_change_percentage_24h || 0,
-        market_cap_change_24h: marketInfo?.market_cap_change_24h || 0,
-        hot: false,
-      };
-    });
+      const data = await response.json();
+      const coins: CoinSearchResult[] = data.coins || [];
+
+      // Get market data for each coin to populate price information
+      const coinIds = coins
+        .slice(0, limit)
+        .map((coin: CoinSearchResult) => coin.id)
+        .join(",");
+      
+      const marketResponse = await fetch(
+        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinIds}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`
+      );
+
+      if (!marketResponse.ok) {
+        if (marketResponse.status === 429) {
+          console.warn("CoinGecko API rate limit exceeded");
+          throw new Error(`API rate limit exceeded (429)`);
+        }
+        throw new Error(
+          `Market data API request failed with status ${marketResponse.status}`
+        );
+      }
+
+      const marketData: MarketData[] = await marketResponse.json();
+      const marketDataMap = new Map(
+        marketData.map((item: MarketData) => [item.id, item])
+      );
+
+      // Map to the same structure as our CryptoCurrency interface
+      return coins.slice(0, limit).map((coin: CoinSearchResult) => {
+        const marketInfo = marketDataMap.get(coin.id) as MarketData | undefined;
+        return {
+          id: coin.id,
+          symbol: coin.symbol,
+          name: coin.name,
+          image: coin.large,
+          current_price: marketInfo?.current_price || 0,
+          price_change_percentage_24h:
+            marketInfo?.price_change_percentage_24h || 0,
+          market_cap: marketInfo?.market_cap || 0,
+          total_volume: marketInfo?.total_volume || 0,
+          circulating_supply: marketInfo?.circulating_supply || 0,
+          total_supply: marketInfo?.total_supply || 0,
+          max_supply: marketInfo?.max_supply || null,
+          ath: marketInfo?.ath || 0,
+          ath_change_percentage: marketInfo?.ath_change_percentage || 0,
+          ath_date: marketInfo?.ath_date || "",
+          last_updated: marketInfo?.last_updated || "",
+          market_cap_rank: marketInfo?.market_cap_rank || 0,
+          market_cap_change_percentage_24h:
+            marketInfo?.market_cap_change_percentage_24h || 0,
+          market_cap_change_24h: marketInfo?.market_cap_change_24h || 0,
+          hot: false,
+        };
+      });
+    }, `searchCryptocurrencies-${query}`);
   } catch (error) {
     console.error("Error searching cryptocurrencies:", error);
     return [];

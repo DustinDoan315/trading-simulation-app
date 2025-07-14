@@ -1,15 +1,15 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import colors from '@/styles/colors';
-import React, { useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { logger } from '@/utils/logger';
-import { router } from 'expo-router';
-import { updateUser } from '@/features/userSlice';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
-import { UserService } from '@/services/UserService';
-import { useTransactionCount } from '@/hooks/useTransactionCount';
-import { useUser } from '@/context/UserContext';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import colors from "@/styles/colors";
+import React, { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { logger } from "@/utils/logger";
+import { router } from "expo-router";
+import { updateUser } from "@/features/userSlice";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
+import { UserService } from "@/services/UserService";
+import { useTransactionCount } from "@/hooks/useTransactionCount";
+import { useUser } from "@/context/UserContext";
 import {
   ActivityIndicator,
   Alert,
@@ -24,7 +24,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
@@ -140,9 +139,15 @@ const ProfileScreen = () => {
     subtitle,
     onPress,
     showChevron = true,
+    isBottom = false,
   }: any) => (
     <TouchableOpacity
-      style={styles.settingItem}
+      style={[
+        styles.settingItem,
+        {
+          borderBottomWidth: isBottom ? 0 : 1,
+        },
+      ]}
       onPress={onPress}
       disabled={!onPress}>
       <View style={styles.settingLeft}>
@@ -169,8 +174,13 @@ const ProfileScreen = () => {
     color = colors.text.primary,
     icon,
     isLoading = false,
+    isCenter = false,
   }: any) => (
-    <View style={styles.statCard}>
+    <View
+      style={[
+        styles.statCard,
+        { alignItems: isCenter ? "center" : "flex-start" },
+      ]}>
       <View style={styles.statHeader}>
         <Ionicons name={icon} size={16} color={color} />
         <Text style={[styles.statTitle, { color }]}>{title}</Text>
@@ -280,14 +290,6 @@ const ProfileScreen = () => {
               color="#6674CC"
               icon="trending-up"
             />
-
-            <StatsCard
-              title="Total P&L"
-              value={formattedTotalPnL}
-              subtitle={formattedTotalPnLPercentage}
-              color={totalPnL >= 0 ? "#10BA68" : "#F9335D"}
-              icon="wallet"
-            />
             <StatsCard
               title="Global Rank"
               value={userRank ? `#${userRank}` : "N/A"}
@@ -296,12 +298,16 @@ const ProfileScreen = () => {
               icon="star"
               isLoading={refreshing}
             />
+
+            <StatsCard
+              title="Total P&L"
+              value={formattedTotalPnL}
+              subtitle={formattedTotalPnLPercentage}
+              color={totalPnL >= 0 ? "#10BA68" : "#F9335D"}
+              icon="wallet"
+              isCenter={true}
+            />
           </View>
-          {lastUpdated && (
-            <Text style={styles.lastUpdatedText}>
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </Text>
-          )}
         </View>
 
         {/* Portfolio Value */}
@@ -327,19 +333,25 @@ const ProfileScreen = () => {
               onPress={() => router.push("/trading-history" as any)}
             />
             <SettingItem
+              isBottom={true}
               icon="trophy-outline"
               title="Leaderboard"
               subtitle="See your ranking"
               onPress={() => router.push("/leaderboard" as any)}
             />
-            <SettingItem
+            {/* <SettingItem
               icon="people-outline"
               title="Collections"
               subtitle="Manage your trading groups"
               onPress={() => router.push("/collections" as any)}
-            />
+            /> */}
           </View>
         </View>
+        {lastUpdated && (
+          <Text style={styles.lastUpdatedText}>
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </Text>
+        )}
       </ScrollView>
 
       {/* Edit Profile Modal */}

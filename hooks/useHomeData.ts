@@ -1,3 +1,4 @@
+import { enhancedCryptoService } from '@/services/EnhancedCryptoService';
 import { loadBalance, resetBalance, updateCurrentPrice } from '@/features/balanceSlice';
 import { RootState, useAppDispatch } from '@/store';
 import { updatePrice } from '@/features/cryptoPricesSlice';
@@ -34,8 +35,8 @@ export function useHomeData() {
       // Load balance first
       dispatch(loadBalance());
       
-      // Fetch market data
-      const market = await getMarketData(true, 10);
+      // Fetch market data using enhanced service for better caching
+      const market = await enhancedCryptoService.getMarketData(false, 10, true);
 
       const sortMarket = market.sort(
         (a: CryptoCurrency, b: CryptoCurrency) =>

@@ -1,4 +1,5 @@
 import LeaderboardService from './LeaderboardService';
+import { enhancedCryptoService } from './EnhancedCryptoService';
 import { getMarketData } from './CryptoService';
 import { logger } from '@/utils/logger';
 import { supabase } from './SupabaseService';
@@ -155,14 +156,27 @@ export class BackgroundDataSyncService {
     try {
       logger.info('Fetching real-time market data from CoinGecko...', 'BackgroundDataSyncService');
       
-      // Fetch fresh market data from CoinGecko API
-      const marketData = await getMarketData(true, 100); // Get top 100 coins
+      // Use enhanced crypto service for better caching and rate limiting
+      const marketData = await enhancedCryptoService.getMarketData(false, 100, true); // Get top 100 coins
       
       logger.info(`Fetched ${marketData.length} market data entries`, 'BackgroundDataSyncService');
       
       return marketData;
     } catch (error) {
       logger.error('Error fetching real-time market data', 'BackgroundDataSyncService', error);
+      
+      // Try to get cached data as fallback
+      try {
+        logger.info('Attempting to use cached market data as fallback', 'BackgroundDataSyncService');
+        const cachedData = await enhancedCryptoService.getMarketData(false, 100, true);
+        if (cachedData && cachedData.length > 0) {
+          logger.info(`Using cached market data with ${cachedData.length} entries`, 'BackgroundDataSyncService');
+          return cachedData;
+        }
+      } catch (fallbackError) {
+        logger.error('Failed to get cached market data as fallback', 'BackgroundDataSyncService', fallbackError);
+      }
+      
       return [];
     }
   }
