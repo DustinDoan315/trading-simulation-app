@@ -8,6 +8,7 @@ import Toast from "react-native-toast-message";
 import UUIDService from "@/services/UUIDService";
 import { BackgroundDataSyncService } from "@/services/BackgroundDataSyncService";
 import { createUser, fetchUser } from "@/features/userSlice";
+import { initializeApp } from "@/utils/initializeApp";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { logger } from "@/utils/logger";
 import { NotificationProvider } from "@/components/ui/Notification";
@@ -39,9 +40,12 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    const initializeApp = async () => {
+    const initializeAppAsync = async () => {
       if (loaded) {
         SplashScreen.hideAsync();
+
+        // Initialize app configuration and services
+        await initializeApp();
 
         // Initialize daily balance update at midnight UTC
         scheduler.addDailyTask("daily-balance-update", updateDailyBalance, 0);
@@ -65,7 +69,7 @@ export default function RootLayout() {
         };
       }
     };
-    initializeApp();
+    initializeAppAsync();
   }, [loaded]);
 
   const setupDeepLinking = () => {
