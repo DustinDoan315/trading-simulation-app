@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState
   } from 'react';
 import { useSelector } from 'react-redux';
@@ -21,6 +22,7 @@ export function useHomeData() {
   const [refreshing, setRefreshing] = useState(false);
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [marketData, setMarketData] = useState<CryptoCurrency[]>([]);
+  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Get balance from Redux store
   const balance = useSelector((state: RootState) => state.balance.balance);
@@ -62,26 +64,40 @@ export function useHomeData() {
     }
   }, [dispatch]);
 
-  // Update portfolio prices with real-time market data
+  // Update portfolio prices with real-time market data (debounced)
   const updatePortfolioPrices = useCallback(() => {
     if (!balance || !balance.holdings || marketData.length === 0) return;
 
-    Object.keys(balance.holdings).forEach((symbol) => {
-      if (symbol === "USDT") return; // Skip USDT as it's always 1:1
+    // Clear existing timeout
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
 
-      const marketCoin = marketData.find(
-        (coin) => coin.symbol.toUpperCase() === symbol
-      );
+    // Debounce portfolio updates to prevent excessive leaderboard updates
+    updateTimeoutRef.current = setTimeout(() => {
+      Object.keys(balance.holdings).forEach((symbol) => {
+        if (symbol === "USDT") return; // Skip USDT as it's always 1:1
 
-      if (marketCoin) {
-        dispatch(
-          updateCurrentPrice({
-            cryptoId: symbol,
-            currentPrice: marketCoin.current_price,
-          })
+        const marketCoin = marketData.find(
+          (coin) => coin.symbol.toUpperCase() === symbol
         );
-      }
-    });
+
+        if (marketCoin) {
+          dispatch(
+            updateCurrentPrice({
+              cryptoId: symbol,
+              currentPrice: marketCoin.current_price,
+            })
+          );
+          
+          // The updateCurrentPrice action will automatically:
+          // 1. Update the portfolio with new prices
+          // 2. Recalculate P&L
+          // 3. Update the users table with real-time values
+          // 4. Trigger leaderboard updates
+        }
+      });
+    }, 3000); // 3 second debounce to prevent excessive updates
   }, [balance, marketData, dispatch]);
 
   // Update portfolio prices when market data changes
@@ -90,6 +106,15 @@ export function useHomeData() {
       updatePortfolioPrices();
     }
   }, [marketData, balance?.holdings, updatePortfolioPrices]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const trendingCoins = useMemo(() => {
     return [...marketData]

@@ -12,11 +12,19 @@ class UserRepository {
       const userData = {
         id: uuid,
         username: `user_${uuid.slice(0, 8)}`,
+        display_name: `User ${uuid.slice(0, 8)}`,
+        avatar_emoji: "🚀",
         usdt_balance: "100000",
         total_portfolio_value: "100000",
-        total_pnl: "0",
+        initial_balance: "100000",
+        total_pnl: "0.00",
+        total_pnl_percentage: "0.00",
         total_trades: 0,
-        win_rate: "0",
+        total_buy_volume: "0.00",
+        total_sell_volume: "0.00",
+        win_rate: "0.00",
+        global_rank: undefined,
+        last_trade_at: undefined,
         join_date: now,
         last_active: now,
         created_at: now,
@@ -42,35 +50,27 @@ class UserRepository {
     }
   }
 
-  static async getOrCreateUser() {
-    const uuid = await UUIDService.getOrCreateUser();
-    let user = await this.getUser(uuid);
+  static async updateUser(uuid: string, updates: any) {
+    try {
+      const user = await this.getUser(uuid);
+      if (!user) {
+        throw new Error("User not found");
+      }
 
-    return user;
+      const updatedUser = { ...user, ...updates, updated_at: new Date().toISOString() };
+      await AsyncStorageService.createOrUpdateUser(updatedUser);
+      console.log("✅ User updated successfully:", uuid);
+      return updatedUser;
+    } catch (error) {
+      console.error("Failed to update user:", error);
+      throw error;
+    }
   }
 
   static async updateUserBalance(uuid: string, newBalance: number) {
     try {
       await AsyncStorageService.updateUserBalance(uuid, newBalance);
-
-      console.log(
-        "Balance updated for user:",
-        uuid,
-        "New balance:",
-        newBalance
-      );
-
-      // Sync to Supabase
-      try {
-        await SyncService.updateUserBalance(uuid, newBalance);
-        console.log("✅ Balance synced to Supabase");
-      } catch (syncError) {
-        console.error("Failed to sync balance to Supabase:", syncError);
-        // Log sync failure but don't throw - local update succeeded
-        // The SyncService will handle offline queueing if needed
-      }
-
-      return { success: true };
+      console.log("✅ User balance updated successfully:", uuid, newBalance);
     } catch (error) {
       console.error("Failed to update user balance:", error);
       throw error;
@@ -78,73 +78,30 @@ class UserRepository {
   }
 
   static async updateUserBalanceAndPortfolioValue(
-    uuid: string, 
-    usdtBalance: number, 
+    uuid: string,
+    usdtBalance: number,
     totalPortfolioValue: number,
-    totalPnL: number = 0
+    totalPnL: number,
+    totalPnLPercentage: number
   ) {
     try {
-      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - Starting update...");
-      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - UUID:", uuid);
-      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - USDT Balance:", usdtBalance);
-      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - Total Portfolio Value:", totalPortfolioValue);
-      
-      // Calculate total PnL percentage based on initial balance (default 100000)
-      const initialBalance = 100000; // Default initial balance
-      const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
-
-      // Update local storage
-      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - Calling AsyncStorageService.updateUserBalance...");
-      await AsyncStorageService.updateUserBalance(uuid, usdtBalance);
-      console.log("🔄 UserRepository.updateUserBalanceAndPortfolioValue - AsyncStorageService.updateUserBalance completed");
-
-      console.log(
-        "User balance and portfolio value updated for user:",
-        uuid,
-        "USDT balance:",
-        usdtBalance,
-        "Total portfolio value:",
-        totalPortfolioValue,
-        "Total PnL:",
-        totalPnL,
-        "PnL percentage:",
-        totalPnLPercentage
-      );
-
-      // Sync to Supabase with better error handling
-      try {
-        console.log("🔄 Starting Supabase sync for user balance and portfolio value...");
-        
-        // Ensure user exists in Supabase first
-        const userExists = await UUIDService.ensureUserInSupabase(uuid);
-        if (!userExists) {
-          console.error("❌ Cannot sync: user does not exist in Supabase");
-          throw new Error("User does not exist in Supabase");
-        }
-
-        await SyncService.updateUserBalanceAndPortfolioValue(
-          uuid, 
-          usdtBalance, 
-          totalPortfolioValue, 
-          totalPnL, 
-          totalPnLPercentage
-        );
-        console.log("✅ User balance and portfolio value synced to Supabase");
-      } catch (syncError) {
-        console.error("❌ Failed to sync user balance and portfolio value to Supabase:", syncError);
-        console.error("Sync error details:", {
-          uuid,
-          usdtBalance,
-          totalPortfolioValue,
-          totalPnL,
-          error: syncError instanceof Error ? syncError.message : syncError
-        });
-        
-        // Log sync failure for manual retry
-        console.log("⚠️ Sync failed - will retry on next operation");
+      const user = await this.getUser(uuid);
+      if (!user) {
+        throw new Error("User not found");
       }
 
-      return { success: true };
+      const updatedUser = {
+        ...user,
+        usdt_balance: usdtBalance.toString(),
+        total_portfolio_value: totalPortfolioValue.toString(),
+        total_pnl: totalPnL.toString(),
+        total_pnl_percentage: totalPnLPercentage.toString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      await AsyncStorageService.createOrUpdateUser(updatedUser);
+      console.log("✅ User balance and portfolio value updated successfully:", uuid);
+      return updatedUser;
     } catch (error) {
       console.error("Failed to update user balance and portfolio value:", error);
       throw error;
@@ -161,185 +118,85 @@ class UserRepository {
     }
   }
 
-  static async updatePortfolio(
-    uuid: string,
-    holdings: Record<string, Holding>
-  ) {
-    console.log("====================================");
-    console.log("Updating portfolio for UUID:", uuid);
-    console.log("Holdings to update:", JSON.stringify(holdings, null, 2));
-    console.log("====================================");
-
+  static async savePortfolio(uuid: string, portfolio: any[]) {
     try {
-      // Normalize holdings to prevent duplicate entries (case-insensitive)
-      const normalizedHoldings: Record<string, Holding> = {};
-
-      Object.entries(holdings).forEach(([symbol, holding]) => {
-        const normalizedSymbol = symbol.toUpperCase();
-
-        if (normalizedHoldings[normalizedSymbol]) {
-          // Merge duplicate entries
-          const existing = normalizedHoldings[normalizedSymbol];
-          const totalAmount = existing.amount + holding.amount;
-          const totalValue = existing.valueInUSD + holding.valueInUSD;
-
-          normalizedHoldings[normalizedSymbol] = {
-            ...existing,
-            amount: totalAmount,
-            valueInUSD: totalValue,
-            averageBuyPrice: totalValue / totalAmount,
-          };
-        } else {
-          normalizedHoldings[normalizedSymbol] = {
-            ...holding,
-            symbol: normalizedSymbol,
-          };
-        }
-      });
-
-      console.log(
-        "Normalized holdings:",
-        JSON.stringify(normalizedHoldings, null, 2)
-      );
-
-      // Convert holdings to portfolio data format
-      const portfolioData = Object.entries(normalizedHoldings).map(
-        ([symbol, holding]) => ({
-          user_id: uuid,
-          symbol,
-          quantity: (holding.amount || 0).toString(),
-          avg_cost: (holding.averageBuyPrice || 0).toString(),
-          current_price: (holding.currentPrice || 0).toString(),
-          total_value: (holding.valueInUSD || 0).toString(),
-          profit_loss: (holding.profitLoss || 0).toString(),
-          profit_loss_percent: (holding.profitLossPercentage || 0).toString(),
-          image_url: holding.image_url || undefined,
-        })
-      );
-
-      // Update portfolio in AsyncStorage
-      await AsyncStorageService.updatePortfolio(uuid, portfolioData);
-      console.log("✅ Portfolio updated in AsyncStorage for user:", uuid);
-
-      console.log("Portfolio updated successfully for user:", uuid);
-
-      // Sync to Supabase
-      try {
-        console.log("Preparing to sync portfolio to Supabase...");
-
-        // Ensure user exists in Supabase before syncing portfolio
-        const userExists = await UUIDService.ensureUserInSupabase(uuid);
-        if (!userExists) {
-          console.error(
-            "❌ Cannot sync portfolio: user does not exist in Supabase"
-          );
-          console.error(
-            "❌ Portfolio sync will be retried when user is created"
-          );
-          return; // Don't throw, just return and let the sync retry later
-        }
-
-        // Convert holdings to portfolio array format expected by SyncService
-        const portfolioArray = Object.entries(normalizedHoldings).map(
-          ([symbol, holding]) => ({
-            symbol,
-            quantity: (holding.amount || 0).toString(),
-            avg_cost: (holding.averageBuyPrice || 0).toString(),
-            current_price: (holding.currentPrice || 0).toString(),
-            total_value: (holding.valueInUSD || 0).toString(),
-            profit_loss: (holding.profitLoss || 0).toString(),
-            profit_loss_percent: (holding.profitLossPercentage || 0).toString(),
-            image: holding.image_url || null,
-          })
-        );
-
-        console.log(
-          "Portfolio array to sync to Supabase:",
-          JSON.stringify(portfolioArray, null, 2)
-        );
-        console.log("Portfolio array length:", portfolioArray.length);
-
-        const syncResult = await SyncService.syncPortfolio(
-          uuid,
-          portfolioArray
-        );
-        console.log(
-          "Supabase sync result:",
-          JSON.stringify(syncResult, null, 2)
-        );
-
-        if (syncResult.success) {
-          console.log(
-            "✅ Portfolio synced to Supabase successfully for user:",
-            uuid
-          );
-        } else {
-          console.error(
-            "❌ Portfolio sync to Supabase failed:",
-            syncResult.error
-          );
-          console.error("Sync result details:", syncResult);
-        }
-      } catch (syncError) {
-        console.error("❌ Exception during Supabase sync:", syncError);
-        console.error(
-          "Sync error stack:",
-          syncError instanceof Error ? syncError.stack : "No stack trace"
-        );
-        // Don't throw here - local update succeeded, cloud sync can be retried later
-        // The SyncService will handle offline queueing if needed
-      }
+      await AsyncStorageService.saveUserPortfolio(uuid, portfolio);
+      console.log("✅ Portfolio saved successfully:", uuid);
     } catch (error) {
-      console.error("❌ Failed to update portfolio:", error);
-      console.error(
-        "Error stack:",
-        error instanceof Error ? error.stack : "No stack trace"
-      );
-
-      // Check if it's a readonly database error
-      if (
-        error instanceof Error &&
-        error.message.includes("readonly database")
-      ) {
-        console.warn(
-          "⚠️ Database is readonly (likely using Expo Go) - portfolio will only sync to Supabase"
-        );
-        console.warn(
-          "⚠️ For persistent local storage, use a development build or standalone app"
-        );
-
-        // Still try to sync to Supabase even if local DB fails
-        try {
-          const portfolioArray = Object.entries(holdings).map(
-            ([symbol, holding]) => ({
-              symbol: symbol.toUpperCase(),
-              quantity: (holding.amount || 0).toString(),
-              avg_cost: (holding.averageBuyPrice || 0).toString(),
-              current_price: (holding.currentPrice || 0).toString(),
-              total_value: (holding.valueInUSD || 0).toString(),
-              profit_loss: (holding.profitLoss || 0).toString(),
-              profit_loss_percent: (
-                holding.profitLossPercentage || 0
-              ).toString(),
-              image: holding.image_url || null,
-            })
-          );
-
-          await SyncService.syncPortfolio(uuid, portfolioArray);
-          console.log(
-            "✅ Portfolio synced to Supabase despite local DB failure"
-          );
-        } catch (supabaseError) {
-          console.error("❌ Supabase sync also failed:", supabaseError);
-        }
-      } else {
-        throw error;
-      }
+      console.error("Failed to save portfolio:", error);
+      throw error;
     }
   }
 
-  async getCurrentUser() {
-    return UserRepository.getOrCreateUser();
+  static async addPortfolioItem(item: any) {
+    try {
+      await AsyncStorageService.addPortfolioItem(item);
+      console.log("✅ Portfolio item added successfully:", item.symbol);
+    } catch (error) {
+      console.error("Failed to add portfolio item:", error);
+      throw error;
+    }
+  }
+
+  static async updatePortfolioItem(item: any) {
+    try {
+      await AsyncStorageService.updatePortfolioItem(item);
+      console.log("✅ Portfolio item updated successfully:", item.symbol);
+    } catch (error) {
+      console.error("Failed to update portfolio item:", error);
+      throw error;
+    }
+  }
+
+  static async removePortfolioItem(uuid: string, symbol: string) {
+    try {
+      await AsyncStorageService.removePortfolioItem(uuid, symbol);
+      console.log("✅ Portfolio item removed successfully:", symbol);
+    } catch (error) {
+      console.error("Failed to remove portfolio item:", error);
+      throw error;
+    }
+  }
+
+  static async getTransactions(uuid: string) {
+    try {
+      const transactions = await AsyncStorageService.getTransactions(uuid);
+      return transactions;
+    } catch (error) {
+      console.error("Failed to get transactions:", error);
+      return [];
+    }
+  }
+
+  static async addTransaction(transaction: any) {
+    try {
+      await AsyncStorageService.addTransaction(transaction);
+      console.log("✅ Transaction added successfully:", transaction.id);
+    } catch (error) {
+      console.error("Failed to add transaction:", error);
+      throw error;
+    }
+  }
+
+  static async clearUserData(uuid: string) {
+    try {
+      await AsyncStorageService.clearUserData(uuid);
+      console.log("✅ User data cleared successfully:", uuid);
+    } catch (error) {
+      console.error("Failed to clear user data:", error);
+      throw error;
+    }
+  }
+
+  static async recreateUserData(uuid: string, balance: number = 100000) {
+    try {
+      const userData = await AsyncStorageService.recreateUserData(uuid, balance);
+      console.log("✅ User data recreated successfully:", uuid);
+      return userData;
+    } catch (error) {
+      console.error("Failed to recreate user data:", error);
+      throw error;
+    }
   }
 }
 

@@ -511,3 +511,146 @@ export const handleUserReinitialization = async <T>(
   // If it's not an authentication error, re-throw the original error
   throw error;
 };
+
+/**
+ * Calculate USDT balance from portfolio data
+ * This function calculates the USDT balance by finding the USDT entry in the portfolio
+ * and returning its quantity as the available USDT balance
+ */
+export const calculateUSDTBalanceFromPortfolio = (portfolio: any[]): number => {
+  try {
+    // Handle undefined or null portfolio
+    if (!portfolio || !Array.isArray(portfolio)) {
+      console.warn('calculateUSDTBalanceFromPortfolio: portfolio is undefined or not an array, returning 0');
+      return 0;
+    }
+    
+    const usdtEntry = portfolio.find(item => 
+      item && item.symbol && item.symbol.toUpperCase() === 'USDT'
+    );
+    
+    if (usdtEntry) {
+      return parseFloat(usdtEntry.quantity || '0');
+    }
+    
+    return 0;
+  } catch (error) {
+    console.error('Error calculating USDT balance from portfolio:', error);
+    return 0;
+  }
+};
+
+/**
+ * Calculate total portfolio value including USDT
+ * This function sums up the total_value of all portfolio items
+ */
+export const calculateTotalPortfolioValue = (portfolio: any[]): number => {
+  try {
+    // Handle undefined or null portfolio
+    if (!portfolio || !Array.isArray(portfolio)) {
+      console.warn('calculateTotalPortfolioValue: portfolio is undefined or not an array, returning 0');
+      return 0;
+    }
+    
+    return portfolio.reduce((total, item) => {
+      if (!item) return total;
+      const itemValue = parseFloat(item.total_value || '0');
+      return total + itemValue;
+    }, 0);
+  } catch (error) {
+    console.error('Error calculating total portfolio value:', error);
+    return 0;
+  }
+};
+
+/**
+ * Calculate total PnL from portfolio data
+ * This function sums up the profit_loss of all portfolio items
+ */
+export const calculateTotalPnL = (portfolio: any[]): number => {
+  try {
+    // Handle undefined or null portfolio
+    if (!portfolio || !Array.isArray(portfolio)) {
+      console.warn('calculateTotalPnL: portfolio is undefined or not an array, returning 0');
+      return 0;
+    }
+    
+    return portfolio.reduce((total, item) => {
+      if (!item) return total;
+      const itemPnL = parseFloat(item.profit_loss || '0');
+      return total + itemPnL;
+    }, 0);
+  } catch (error) {
+    console.error('Error calculating total PnL:', error);
+    return 0;
+  }
+};
+
+/**
+ * Calculate total PnL percentage based on initial balance
+ */
+export const calculateTotalPnLPercentage = (totalPnL: number, initialBalance: number = 100000): number => {
+  try {
+    if (initialBalance <= 0) return 0;
+    return (totalPnL / initialBalance) * 100;
+  } catch (error) {
+    console.error('Error calculating total PnL percentage:', error);
+    return 0;
+  }
+};
+
+/**
+ * Validate and fix user data consistency
+ * This function ensures all required fields are present and calculates missing values
+ */
+export const validateAndFixUserData = (userData: any, portfolio: any[] = []): any => {
+  try {
+    const now = new Date().toISOString();
+    
+    // Ensure portfolio is an array
+    const safePortfolio = Array.isArray(portfolio) ? portfolio : [];
+    
+    // Calculate values from portfolio if not present
+    const usdtBalance = userData.usdt_balance ? parseFloat(userData.usdt_balance) : calculateUSDTBalanceFromPortfolio(safePortfolio);
+    const totalPortfolioValue = userData.total_portfolio_value ? parseFloat(userData.total_portfolio_value) : calculateTotalPortfolioValue(safePortfolio);
+    const totalPnL = userData.total_pnl ? parseFloat(userData.total_pnl) : calculateTotalPnL(safePortfolio);
+    const initialBalance = userData.initial_balance ? parseFloat(userData.initial_balance) : 100000;
+    const totalPnLPercentage = userData.total_pnl_percentage ? parseFloat(userData.total_pnl_percentage) : calculateTotalPnLPercentage(totalPnL, initialBalance);
+    
+    // Ensure all required fields are present
+    const fixedUserData = {
+      id: userData.id,
+      username: userData.username || `user_${userData.id?.slice(0, 8) || 'unknown'}`,
+      display_name: userData.display_name || `User ${userData.id?.slice(0, 8) || 'unknown'}`,
+      avatar_emoji: userData.avatar_emoji || "🚀",
+      usdt_balance: usdtBalance.toString(),
+      total_portfolio_value: totalPortfolioValue.toString(),
+      initial_balance: initialBalance.toString(),
+      total_pnl: totalPnL.toString(),
+      total_pnl_percentage: totalPnLPercentage.toString(),
+      total_trades: userData.total_trades || 0,
+      total_buy_volume: userData.total_buy_volume || "0.00",
+      total_sell_volume: userData.total_sell_volume || "0.00",
+      win_rate: userData.win_rate || "0.00",
+      global_rank: userData.global_rank || undefined,
+      last_trade_at: userData.last_trade_at || undefined,
+      join_date: userData.join_date || now,
+      last_active: userData.last_active || now,
+      created_at: userData.created_at || now,
+      updated_at: now,
+    };
+    
+    console.log('✅ User data validated and fixed:', {
+      id: fixedUserData.id,
+      usdt_balance: fixedUserData.usdt_balance,
+      total_portfolio_value: fixedUserData.total_portfolio_value,
+      total_pnl: fixedUserData.total_pnl,
+      total_pnl_percentage: fixedUserData.total_pnl_percentage,
+    });
+    
+    return fixedUserData;
+  } catch (error) {
+    console.error('Error validating and fixing user data:', error);
+    return userData;
+  }
+};

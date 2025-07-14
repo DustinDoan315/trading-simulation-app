@@ -8,7 +8,6 @@ import {
   FlatList,
   RefreshControl,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -74,8 +73,8 @@ const LeaderboardModal = () => {
             item.users?.display_name || item.users?.username || "Unknown User",
           avatar: item.users?.avatar_emoji || "👤",
           pnl: parseFloat(item.total_pnl || "0"),
-          percentage: parseFloat(item.total_pnl_percentage || "0"),
-          portfolio: parseFloat(item.total_portfolio_value || "0"),
+          percentage: parseFloat(item.percentage_return || "0"),
+          portfolio: parseFloat(item.portfolio_value || "0"),
           isCurrentUser: item.is_current_user || false,
         };
       }
@@ -165,7 +164,7 @@ const LeaderboardModal = () => {
                     { color: item.percentage >= 0 ? "#10BA68" : "#F9335D" },
                   ]}>
                   {item.percentage >= 0 ? "+" : ""}
-                  {item.percentage}%
+                  {item.percentage.toFixed(2)}%
                 </Text>
                 <Text style={styles.statLabel}>Return</Text>
               </View>
@@ -199,12 +198,9 @@ const LeaderboardModal = () => {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.title}>Leaderboards</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={styles.placeholder} />
       </View>
 
-      {/* Tab Navigation */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "global" && styles.activeTab]}
@@ -241,7 +237,6 @@ const LeaderboardModal = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Rankings List */}
       <FlatList
         data={getCurrentDataTyped()}
         keyExtractor={(item) => item.id}
@@ -291,87 +286,75 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1A1D2F",
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 8,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#FFFFFF",
   },
-  filterButton: {
+  placeholder: {
     width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1A1D2F",
-    justifyContent: "center",
-    alignItems: "center",
   },
-
   tabContainer: {
     flexDirection: "row",
-    paddingHorizontal: 20,
+    marginHorizontal: 20,
     marginBottom: 20,
-    gap: 8,
+    backgroundColor: "#1A1D2F",
+    borderRadius: 16,
+    padding: 6,
   },
   tab: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#1A1D2F",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#2A2E42",
+    borderRadius: 12,
   },
   activeTab: {
     backgroundColor: "#6674CC",
-    borderColor: "#6674CC",
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: "500",
     color: "#9DA3B4",
+    fontSize: 14,
+    fontWeight: "600",
   },
   activeTabText: {
     color: "#FFFFFF",
+    fontWeight: "700",
   },
   rankingsList: {
     flex: 1,
   },
   rankingsListContent: {
-    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   rankedItem: {
     flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: "#1A1D2F",
+    marginHorizontal: 20,
+    marginBottom: 8,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#2A2E42",
   },
   currentUserItem: {
-    borderColor: "#6674CC",
+    backgroundColor: "#2A2F45",
     borderWidth: 2,
+    borderColor: "#6674CC",
   },
   rankSection: {
     marginRight: 16,
-    justifyContent: "center",
   },
   rankBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
   },
   rankText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
   },
   infoSection: {
@@ -400,47 +383,54 @@ const styles = StyleSheet.create({
   },
   currentUserName: {
     color: "#6674CC",
+    fontWeight: "700",
   },
   members: {
     fontSize: 12,
     color: "#9DA3B4",
   },
   statsContainer: {
-    alignItems: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
   },
   statItem: {
     alignItems: "center",
-    marginBottom: 4,
+    marginLeft: 16,
   },
   statValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#FFFFFF",
+    marginBottom: 2,
   },
   statLabel: {
     fontSize: 10,
     color: "#9DA3B4",
-    textTransform: "uppercase",
   },
   emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 40,
+    paddingHorizontal: 40,
+    paddingVertical: 60,
   },
   emptyStateText: {
     fontSize: 16,
     color: "#9DA3B4",
     textAlign: "center",
+    lineHeight: 24,
   },
   lastUpdatedContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    alignItems: "center",
+    paddingVertical: 12,
+    backgroundColor: "#1A1D2F",
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 12,
   },
   lastUpdatedText: {
     fontSize: 12,
     color: "#9DA3B4",
+    textAlign: "center",
   },
 });
 

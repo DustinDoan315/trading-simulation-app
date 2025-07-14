@@ -1,35 +1,34 @@
-import * as Linking from 'expo-linking';
-import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import LeaderboardService from '@/services/LeaderboardService';
-import RealTimeDataService from '@/services/RealTimeDataService';
-import scheduler from '@/utils/scheduler';
-import Toast from 'react-native-toast-message';
-import UUIDService from '@/services/UUIDService';
-import { createUser, fetchUser } from '@/features/userSlice';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { logger } from '@/utils/logger';
-import { NotificationProvider } from '@/components/ui/Notification';
-import { Provider } from 'react-redux';
-import { SafeAreaView } from 'react-native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { store } from '../store';
-import { updateDailyBalance } from '@/utils/balanceUpdater';
-import { useCallback, useEffect } from 'react';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useFonts } from 'expo-font';
-import { UserProvider } from '@/context/UserContext';
-import { UserService } from '@/services/UserService';
-import 'react-native-reanimated';
-
+import * as Linking from "expo-linking";
+import * as SplashScreen from "expo-splash-screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import LeaderboardService from "@/services/LeaderboardService";
+import RealTimeDataService from "@/services/RealTimeDataService";
+import scheduler from "@/utils/scheduler";
+import Toast from "react-native-toast-message";
+import UUIDService from "@/services/UUIDService";
+import { BackgroundDataSyncService } from "@/services/BackgroundDataSyncService";
+import { createUser, fetchUser } from "@/features/userSlice";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { logger } from "@/utils/logger";
+import { NotificationProvider } from "@/components/ui/Notification";
+import { Provider } from "react-redux";
+import { SafeAreaView } from "react-native";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { store } from "../store";
+import { updateDailyBalance } from "@/utils/balanceUpdater";
+import { useCallback, useEffect } from "react";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useFonts } from "expo-font";
+import { UserProvider } from "@/context/UserContext";
+import { UserService } from "@/services/UserService";
+import "react-native-reanimated";
 
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-
 
 SplashScreen.preventAutoHideAsync();
 
@@ -51,6 +50,9 @@ export default function RootLayout() {
         const userId = await UUIDService.getOrCreateUser();
         await initializeUser(userId);
 
+        // Initialize background data sync service
+        await initializeBackgroundSync();
+
         // Set up deep link handling
         setupDeepLinking();
 
@@ -59,6 +61,7 @@ export default function RootLayout() {
           // Stop real-time data services when app is unmounted
           RealTimeDataService.getInstance().stopUpdates();
           LeaderboardService.getInstance().cleanup();
+          BackgroundDataSyncService.getInstance().stop();
         };
       }
     };
@@ -127,6 +130,36 @@ export default function RootLayout() {
       }
     } catch (error) {
       logger.error("Error initializing user", "AppLayout", error);
+    }
+  }, []);
+
+  const initializeBackgroundSync = useCallback(async () => {
+    try {
+      logger.info("Initializing background data sync service", "AppLayout");
+
+      const syncService = BackgroundDataSyncService.getInstance();
+
+      // Configure the sync service
+      syncService.updateConfig({
+        intervalMs: 30000, // 30 seconds
+        maxConcurrentUpdates: 5,
+        retryAttempts: 3,
+        retryDelayMs: 5000,
+      });
+
+      // Start the sync service
+      await syncService.start();
+
+      logger.info(
+        "Background data sync service initialized successfully",
+        "AppLayout"
+      );
+    } catch (error) {
+      logger.error(
+        "Error initializing background sync service",
+        "AppLayout",
+        error
+      );
     }
   }, []);
 

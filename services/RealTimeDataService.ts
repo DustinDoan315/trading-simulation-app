@@ -97,6 +97,12 @@ class RealTimeDataService {
             cryptoId: symbol,
             currentPrice: coin.current_price,
           }));
+          
+          // The updateCurrentPrice action will automatically:
+          // 1. Update the portfolio with new prices
+          // 2. Recalculate P&L
+          // 3. Update the users table with real-time values
+          // 4. Trigger leaderboard updates
         }
       });
 

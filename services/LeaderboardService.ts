@@ -31,6 +31,11 @@ class LeaderboardService {
     error: null,
     lastUpdated: null,
   };
+  private isSubscribed = false;
+  private updateTimeout: ReturnType<typeof setTimeout> | null = null;
+  private refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+  private lastFetchTime: number = 0;
+  private readonly FETCH_COOLDOWN = 2000; // 2 seconds cooldown between fetches
 
   private constructor() {}
 
@@ -53,10 +58,18 @@ class LeaderboardService {
     };
   }
 
-  // Notify all subscribers
+  // Notify all subscribers with debouncing
   private notifySubscribers(): void {
-    console.log(`🔄 Notifying ${this.subscribers.size} subscribers of data update`);
-    this.subscribers.forEach(callback => callback(this.currentData));
+    // Clear existing timeout
+    if (this.updateTimeout) {
+      clearTimeout(this.updateTimeout);
+    }
+
+    // Debounce notifications to prevent rapid updates
+    this.updateTimeout = setTimeout(() => {
+      console.log(`🔄 Notifying ${this.subscribers.size} subscribers of data update`);
+      this.subscribers.forEach(callback => callback(this.currentData));
+    }, 1000); // Increased debounce time to 1 second
   }
 
   // Update data and notify subscribers
@@ -77,9 +90,26 @@ class LeaderboardService {
     return this.currentData;
   }
 
+  // Check if we should fetch new data (cooldown mechanism)
+  private shouldFetch(): boolean {
+    const now = Date.now();
+    if (now - this.lastFetchTime < this.FETCH_COOLDOWN) {
+      console.log(`🔄 Skipping fetch - cooldown active (${this.FETCH_COOLDOWN - (now - this.lastFetchTime)}ms remaining)`);
+      return false;
+    }
+    this.lastFetchTime = now;
+    return true;
+  }
+
   // Load initial leaderboard data
   async loadLeaderboardData(filters: LeaderboardFilters): Promise<void> {
     try {
+      // Check if we should fetch new data
+      if (!this.shouldFetch()) {
+        console.log("🔄 Skipping loadLeaderboardData due to cooldown");
+        return;
+      }
+
       this.updateData({ isLoading: true, error: null });
       
       // Store current filters for real-time updates
@@ -99,8 +129,10 @@ class LeaderboardService {
         lastUpdated: new Date(),
       });
 
-      // Set up real-time subscriptions
-      this.setupRealtimeSubscriptions(filters);
+      // Set up real-time subscriptions only if not already subscribed
+      if (!this.isSubscribed) {
+        this.setupRealtimeSubscriptions(filters);
+      }
     } catch (error) {
       console.error('Error loading leaderboard data:', error);
       this.updateData({
@@ -110,14 +142,24 @@ class LeaderboardService {
     }
   }
 
-  // Fetch global leaderboard
+  // Fetch global leaderboard with deduplication
   private async fetchGlobalLeaderboard(filters: LeaderboardFilters): Promise<LeaderboardRanking[]> {
     try {
       const rankings = await UserService.getLeaderboard(filters.period, undefined, filters.limit || 50);
       
-      // Filter out users with no rank (new users who haven't traded yet)
-      // Also ensure ranks are properly calculated (not 0)
-      return rankings.filter(ranking => ranking.rank && ranking.rank > 0);
+      // Filter out users with no rank and deduplicate by user_id
+      const uniqueRankings = rankings
+        .filter(ranking => ranking.rank && ranking.rank > 0)
+        .reduce((acc, ranking) => {
+          const existing = acc.find(r => r.user_id === ranking.user_id);
+          if (!existing) {
+            acc.push(ranking);
+          }
+          return acc;
+        }, [] as LeaderboardRanking[]);
+
+      console.log(`🔄 Fetched ${uniqueRankings.length} unique global rankings`);
+      return uniqueRankings;
     } catch (error) {
       console.error('Error fetching global leaderboard:', error);
       return [];
@@ -146,23 +188,33 @@ class LeaderboardService {
         filters.limit || 50
       );
 
-      // Transform the data to match LeaderboardRanking format
-      return friendsData.map((item: any) => ({
-        id: item.id,
-        user_id: item.user_id,
-        collection_id: item.collection_id,
-        period: item.period,
-        rank: item.rank,
-        total_pnl: item.total_pnl,
-        percentage_return: item.percentage_return,
-        portfolio_value: item.portfolio_value,
-        trade_count: item.trade_count,
-        win_rate: item.win_rate,
-        calculated_at: item.calculated_at,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        users: item.users, // Include user details for display
-      }));
+      // Transform the data to match LeaderboardRanking format and deduplicate
+      const uniqueFriendsData = friendsData
+        .reduce((acc, item: any) => {
+          const existing = acc.find((r: LeaderboardRanking) => r.user_id === item.user_id);
+          if (!existing) {
+            acc.push({
+              id: item.id,
+              user_id: item.user_id,
+              collection_id: item.collection_id,
+              period: item.period,
+              rank: item.rank,
+              total_pnl: item.total_pnl,
+              percentage_return: item.percentage_return,
+              portfolio_value: item.portfolio_value,
+              trade_count: item.trade_count,
+              win_rate: item.win_rate,
+              calculated_at: item.calculated_at,
+              created_at: item.created_at,
+              updated_at: item.updated_at,
+              users: item.users, // Include user details for display
+            });
+          }
+          return acc;
+        }, [] as LeaderboardRanking[]);
+
+      console.log(`🔄 Fetched ${uniqueFriendsData.length} unique friends rankings`);
+      return uniqueFriendsData;
     } catch (error) {
       console.error('Error fetching friends leaderboard:', error);
       return [];
@@ -181,7 +233,7 @@ class LeaderboardService {
     }
   }
 
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions with better management
   private setupRealtimeSubscriptions(filters: LeaderboardFilters): void {
     // Clean up existing channels
     this.cleanupChannels();
@@ -243,74 +295,129 @@ class LeaderboardService {
       .subscribe();
 
     this.channels.set('user', userChannel);
+    this.isSubscribed = true;
   }
 
-  // Handle leaderboard ranking updates
+  // Handle leaderboard ranking updates with debouncing
   private async handleLeaderboardUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
     try {
-      // Use current filters if available, otherwise use passed filters
-      const currentFilters = this.currentFilters || filters;
-      
-      // Refresh the appropriate leaderboard data
-      if (payload.new?.collection_id) {
-        // Collection-specific leaderboard
-        const collectionsData = await this.fetchCollectionsLeaderboard(currentFilters);
-        this.updateData({ collections: collectionsData });
-      } else {
-        // Global leaderboard
-        const globalData = await this.fetchGlobalLeaderboard(currentFilters);
-        this.updateData({ global: globalData });
+      // Clear existing refresh timeout
+      if (this.refreshTimeout) {
+        clearTimeout(this.refreshTimeout);
       }
+
+      // Debounce the refresh to prevent excessive updates
+      this.refreshTimeout = setTimeout(async () => {
+        try {
+          // Check if we should fetch new data
+          if (!this.shouldFetch()) {
+            console.log("🔄 Skipping leaderboard update due to cooldown");
+            return;
+          }
+
+          // Use current filters if available, otherwise use passed filters
+          const currentFilters = this.currentFilters || filters;
+          
+          // Refresh the appropriate leaderboard data
+          if (payload.new?.collection_id) {
+            // Collection-specific leaderboard
+            const collectionsData = await this.fetchCollectionsLeaderboard(currentFilters);
+            this.updateData({ collections: collectionsData });
+          } else {
+            // Global leaderboard
+            const globalData = await this.fetchGlobalLeaderboard(currentFilters);
+            this.updateData({ global: globalData });
+          }
+        } catch (error) {
+          console.error('Error handling leaderboard update:', error);
+        }
+      }, 3000); // 3 second debounce for real-time updates
     } catch (error) {
-      console.error('Error handling leaderboard update:', error);
+      console.error('Error setting up leaderboard update handler:', error);
     }
   }
 
-  // Handle portfolio updates
+  // Handle portfolio updates with debouncing
   private async handlePortfolioUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
     try {
-      // Use current filters if available, otherwise use passed filters
-      const currentFilters = this.currentFilters || filters;
-      
-      // Portfolio changes affect user rankings, so refresh all leaderboards
-      const [globalData, friendsData, collectionsData] = await Promise.all([
-        this.fetchGlobalLeaderboard(currentFilters),
-        this.fetchFriendsLeaderboard(currentFilters),
-        this.fetchCollectionsLeaderboard(currentFilters),
-      ]);
+      // Clear existing refresh timeout
+      if (this.refreshTimeout) {
+        clearTimeout(this.refreshTimeout);
+      }
 
-      this.updateData({
-        global: globalData,
-        friends: friendsData,
-        collections: collectionsData,
-        lastUpdated: new Date(),
-      });
+      // Debounce the refresh to prevent excessive updates
+      this.refreshTimeout = setTimeout(async () => {
+        try {
+          // Check if we should fetch new data
+          if (!this.shouldFetch()) {
+            console.log("🔄 Skipping portfolio update due to cooldown");
+            return;
+          }
+
+          // Use current filters if available, otherwise use passed filters
+          const currentFilters = this.currentFilters || filters;
+          
+          // Portfolio changes affect user rankings, so refresh all leaderboards
+          const [globalData, friendsData, collectionsData] = await Promise.all([
+            this.fetchGlobalLeaderboard(currentFilters),
+            this.fetchFriendsLeaderboard(currentFilters),
+            this.fetchCollectionsLeaderboard(currentFilters),
+          ]);
+
+          this.updateData({
+            global: globalData,
+            friends: friendsData,
+            collections: collectionsData,
+            lastUpdated: new Date(),
+          });
+        } catch (error) {
+          console.error('Error handling portfolio update:', error);
+        }
+      }, 3000); // 3 second debounce for real-time updates
     } catch (error) {
-      console.error('Error handling portfolio update:', error);
+      console.error('Error setting up portfolio update handler:', error);
     }
   }
 
-  // Handle user updates
+  // Handle user updates with debouncing
   private async handleUserUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
     try {
-      // Use current filters if available, otherwise use passed filters
-      const currentFilters = this.currentFilters || filters;
-      
-      // User changes affect rankings, so refresh all leaderboards
-      const [globalData, friendsData, collectionsData] = await Promise.all([
-        this.fetchGlobalLeaderboard(currentFilters),
-        this.fetchFriendsLeaderboard(currentFilters),
-        this.fetchCollectionsLeaderboard(currentFilters),
-      ]);
+      // Clear existing refresh timeout
+      if (this.refreshTimeout) {
+        clearTimeout(this.refreshTimeout);
+      }
 
-      this.updateData({
-        global: globalData,
-        friends: friendsData,
-        collections: collectionsData,
-        lastUpdated: new Date(),
-      });
+      // Debounce the refresh to prevent excessive updates
+      this.refreshTimeout = setTimeout(async () => {
+        try {
+          // Check if we should fetch new data
+          if (!this.shouldFetch()) {
+            console.log("🔄 Skipping user update due to cooldown");
+            return;
+          }
+
+          // Use current filters if available, otherwise use passed filters
+          const currentFilters = this.currentFilters || filters;
+          
+          // User changes affect rankings, so refresh all leaderboards
+          const [globalData, friendsData, collectionsData] = await Promise.all([
+            this.fetchGlobalLeaderboard(currentFilters),
+            this.fetchFriendsLeaderboard(currentFilters),
+            this.fetchCollectionsLeaderboard(currentFilters),
+          ]);
+
+          this.updateData({
+            global: globalData,
+            friends: friendsData,
+            collections: collectionsData,
+            lastUpdated: new Date(),
+          });
+        } catch (error) {
+          console.error('Error handling user update:', error);
+        }
+      }, 3000); // 3 second debounce for real-time updates
     } catch (error) {
-      console.error('Error handling user update:', error);
+      console.error('Error setting up user update handler:', error);
     }
   }
 
@@ -321,6 +428,7 @@ class LeaderboardService {
       console.log(`Cleaned up ${key} channel`);
     });
     this.channels.clear();
+    this.isSubscribed = false;
   }
 
   // Update filters and reload data
@@ -328,8 +436,10 @@ class LeaderboardService {
     await this.loadLeaderboardData(filters);
   }
 
-  // Manual refresh
+  // Manual refresh (bypasses cooldown)
   async refresh(filters: LeaderboardFilters): Promise<void> {
+    // Reset cooldown for manual refresh
+    this.lastFetchTime = 0;
     await this.loadLeaderboardData(filters);
   }
 
@@ -344,7 +454,8 @@ class LeaderboardService {
       // Recalculate all ranks
       await UserService.recalculateAllRanks();
       
-      // Load fresh data
+      // Reset cooldown and load fresh data
+      this.lastFetchTime = 0;
       await this.loadLeaderboardData(filters);
       
       console.log('✅ Leaderboard cleanup and refresh completed');
@@ -423,6 +534,14 @@ class LeaderboardService {
   cleanup(): void {
     this.cleanupChannels();
     this.subscribers.clear();
+    if (this.updateTimeout) {
+      clearTimeout(this.updateTimeout);
+      this.updateTimeout = null;
+    }
+    if (this.refreshTimeout) {
+      clearTimeout(this.refreshTimeout);
+      this.refreshTimeout = null;
+    }
   }
 
   // Static method to cleanup and refresh leaderboard data
@@ -432,6 +551,28 @@ class LeaderboardService {
       period: "ALL_TIME",
       limit: 50,
     });
+  }
+
+  // Static method to fix duplicate entries
+  static async fixDuplicateEntries(): Promise<void> {
+    try {
+      console.log('🔧 Fixing leaderboard duplicate entries...');
+      
+      // Import and run the cleanup script
+      const { fixLeaderboardDuplicates } = await import('../scripts/fix-leaderboard-duplicates');
+      await fixLeaderboardDuplicates();
+      
+      // Refresh the current data
+      const instance = LeaderboardService.getInstance();
+      if (instance.currentFilters) {
+        await instance.loadLeaderboardData(instance.currentFilters);
+      }
+      
+      console.log('✅ Leaderboard duplicate entries fixed');
+    } catch (error) {
+      console.error('Error fixing duplicate entries:', error);
+      throw error;
+    }
   }
 }
 

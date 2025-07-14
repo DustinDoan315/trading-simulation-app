@@ -892,7 +892,34 @@ export class UserService {
   }
 
   // Leaderboard Update Methods
+  private static updateTimeout: Map<string, ReturnType<typeof setTimeout>> = new Map();
+
   static async updateLeaderboardRankings(userId: string): Promise<void> {
+    try {
+      // Clear existing timeout for this user
+      if (this.updateTimeout.has(userId)) {
+        clearTimeout(this.updateTimeout.get(userId)!);
+      }
+
+      // Debounce updates to prevent excessive calls
+      const timeoutId = setTimeout(async () => {
+        try {
+          await this.performLeaderboardUpdate(userId);
+        } catch (error) {
+          logger.error("Error in debounced leaderboard update", "UserService", error);
+        } finally {
+          this.updateTimeout.delete(userId);
+        }
+      }, 1000); // 1 second debounce
+
+      this.updateTimeout.set(userId, timeoutId);
+    } catch (error) {
+      logger.error("Error setting up debounced leaderboard update", "UserService", error);
+      throw error;
+    }
+  }
+
+  private static async performLeaderboardUpdate(userId: string): Promise<void> {
     try {
       // Get user's current portfolio and stats
       const portfolio = await this.getPortfolio(userId);
@@ -917,10 +944,30 @@ export class UserService {
         return;
       }
 
-      // Use user's actual P&L data from the users table, not calculated from portfolio
-      const totalPnL = parseFloat(user.total_pnl || "0");
-      const totalPortfolioValue = parseFloat(user.total_portfolio_value || "0");
-      const totalPnLPercentage = parseFloat(user.total_pnl_percentage || "0");
+      // Calculate real-time P&L and portfolio value from current portfolio data
+      let totalPnL = 0;
+      let totalPortfolioValue = 0;
+      const initialBalance = parseFloat(user.initial_balance || "100000");
+
+      // Calculate from portfolio items with current prices
+      portfolio.forEach((item) => {
+        const quantity = parseFloat(item.quantity || "0");
+        const currentPrice = parseFloat(item.current_price || item.avg_cost || "0");
+        const avgCost = parseFloat(item.avg_cost || "0");
+        const totalValue = quantity * currentPrice;
+        
+        totalPortfolioValue += totalValue;
+        
+        // Calculate P&L for non-USDT items
+        if (item.symbol.toUpperCase() !== "USDT") {
+          const costBasis = quantity * avgCost;
+          const itemPnL = totalValue - costBasis;
+          totalPnL += itemPnL;
+        }
+      });
+
+      // Calculate P&L percentage
+      const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
 
       logger.info(
         `Updating leaderboard for user ${userId}: P&L=${totalPnL}, Portfolio=${totalPortfolioValue}, Return=${totalPnLPercentage}%`,
@@ -945,20 +992,42 @@ export class UserService {
         rank: calculatedRank,
       });
 
-      // Recalculate all ranks for this period to ensure consistency
-      await this.recalculateAllRanks();
-
-      // Update user's P&L data and global rank in the users table
-      const allTimeRank = await this.getUserRank(userId, "ALL_TIME");
-      await this.updateUser(userId, {
+      // Update user's P&L data and global rank in the users table with real-time values
+      const userUpdateData = {
         total_pnl: totalPnL.toString(),
         total_pnl_percentage: totalPnLPercentage.toString(),
         total_portfolio_value: totalPortfolioValue.toString(),
-        global_rank: allTimeRank,
-      } as any);
+        global_rank: calculatedRank,
+      } as any; // Use any to bypass type checking for this specific case
 
       logger.info(
-        `Updated leaderboard rankings for user ${userId} with calculated ranks`,
+        `Updating user ${userId} with real-time values:`,
+        "UserService",
+        userUpdateData
+      );
+
+      const updatedUser = await this.updateUser(userId, userUpdateData);
+
+      if (updatedUser) {
+        logger.info(
+          `Successfully updated user ${userId} with real-time values`,
+          "UserService",
+          {
+            total_pnl: updatedUser.total_pnl,
+            total_pnl_percentage: updatedUser.total_pnl_percentage,
+            total_portfolio_value: updatedUser.total_portfolio_value,
+            global_rank: updatedUser.global_rank,
+          }
+        );
+      } else {
+        logger.error(
+          `Failed to update user ${userId} with real-time values`,
+          "UserService"
+        );
+      }
+
+      logger.info(
+        `Updated leaderboard rankings for user ${userId} with real-time calculated values`,
         "UserService"
       );
     } catch (error) {
@@ -1285,22 +1354,57 @@ export class UserService {
     collection_id?: string | null;
   }): Promise<void> {
     try {
-      // Use upsert to avoid duplicate entries for the same user, period, and collection
+      // First, delete any existing entries for this user and period to prevent duplicates
+      const { error: deleteError } = await supabase
+        .from("leaderboard_rankings")
+        .delete()
+        .eq("user_id", params.user_id)
+        .eq("period", params.period)
+        .is("collection_id", params.collection_id || null);
+
+      if (deleteError) {
+        logger.warn("Error deleting existing leaderboard entries", "UserService", deleteError);
+        // Continue anyway, the insert might still work
+      }
+
+      const rankingData = {
+        user_id: params.user_id,
+        period: params.period,
+        total_pnl: params.total_pnl,
+        percentage_return: params.total_pnl_percentage, // Use percentage_return to match database schema
+        portfolio_value: params.total_portfolio_value, // Use portfolio_value to match database schema
+        trade_count: params.total_trades, // Use trade_count to match database schema
+        rank: params.rank,
+        collection_id: params.collection_id || null,
+        calculated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Insert new entry (since we deleted any existing ones)
       const { error } = await supabase
         .from("leaderboard_rankings")
-        .upsert([
-          {
-            user_id: params.user_id,
-            period: params.period,
-            total_pnl: params.total_pnl,
-            percentage_return: params.total_pnl_percentage, // Use percentage_return to match database schema
-            portfolio_value: params.total_portfolio_value, // Use portfolio_value to match database schema
-            trade_count: params.total_trades, // Use trade_count to match database schema
-            rank: params.rank,
-            collection_id: params.collection_id || null,
-          },
-        ], { onConflict: "user_id,period,collection_id" });
-      if (error) throw error;
+        .insert([rankingData]);
+      
+      if (error) {
+        // If insert fails due to unique constraint, try update instead
+        if (error.code === '23505') { // Unique violation
+          logger.warn("Unique constraint violation, trying update instead", "UserService", error);
+          
+          const { error: updateError } = await supabase
+            .from("leaderboard_rankings")
+            .update(rankingData)
+            .eq("user_id", params.user_id)
+            .eq("period", params.period)
+            .is("collection_id", params.collection_id || null);
+          
+          if (updateError) throw updateError;
+          logger.info(`Updated leaderboard ranking for user ${params.user_id}`, "UserService");
+        } else {
+          throw error;
+        }
+      } else {
+        logger.info(`Created new leaderboard ranking for user ${params.user_id}`, "UserService");
+      }
     } catch (error) {
       logger.error("Error upserting leaderboard ranking", "UserService", error);
       throw error;
@@ -1477,6 +1581,157 @@ export class UserService {
         error: `Reset failed: ${error}`,
         details: result.details,
       };
+    }
+  }
+
+  // Static method to manually refresh leaderboard rankings (for testing real-time updates)
+  static async refreshLeaderboardRankings(userId: string): Promise<void> {
+    try {
+      logger.info(`Manually refreshing leaderboard rankings for user ${userId}`, "UserService");
+      await this.updateLeaderboardRankings(userId);
+      logger.info(`Leaderboard rankings refreshed for user ${userId}`, "UserService");
+    } catch (error) {
+      logger.error(`Error refreshing leaderboard rankings for user ${userId}`, "UserService", error);
+      throw error;
+    }
+  }
+
+  // Static method to refresh all users' leaderboard rankings
+  static async refreshAllLeaderboardRankings(): Promise<void> {
+    try {
+      logger.info("Refreshing leaderboard rankings for all users", "UserService");
+      
+      // Get all users
+      const { data: users, error: usersError } = await supabase
+        .from("users")
+        .select("id");
+
+      if (usersError) throw usersError;
+
+      if (!users || users.length === 0) {
+        logger.info("No users found for leaderboard refresh", "UserService");
+        return;
+      }
+
+      // Update rankings for each user
+      for (const user of users) {
+        try {
+          await this.updateLeaderboardRankings(user.id);
+        } catch (error) {
+          logger.error(`Error updating rankings for user ${user.id}`, "UserService", error);
+          // Continue with other users even if one fails
+        }
+      }
+
+      logger.info(
+        `Leaderboard rankings refreshed for ${users.length} users`,
+        "UserService"
+      );
+    } catch (error) {
+      logger.error("Error refreshing all leaderboard rankings", "UserService", error);
+      throw error;
+    }
+  }
+
+  // Static method to force update all users' real-time data in the users table
+  // This method ensures that all users have up-to-date P&L values in the users table
+  // which will automatically update the leaderboard when the users table changes
+  static async forceUpdateAllUsersRealTimeData(): Promise<void> {
+    try {
+      logger.info("Force updating all users' real-time data", "UserService");
+      
+      // Get all users
+      const { data: users, error: usersError } = await supabase
+        .from("users")
+        .select("id");
+
+      if (usersError) throw usersError;
+
+      if (!users || users.length === 0) {
+        logger.info("No users found for real-time data update", "UserService");
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Update real-time data for each user
+      for (const user of users) {
+        try {
+          // Get user's current portfolio and calculate real-time values
+          const portfolio = await this.getPortfolio(user.id);
+          const userData = await this.getUserById(user.id);
+
+          if (!userData) continue;
+
+          // Check if user has made any trades
+          const hasTraded = portfolio.some(
+            (asset) =>
+              asset.symbol.toUpperCase() !== "USDT" &&
+              parseFloat(asset.quantity || "0") > 0
+          );
+
+          if (!hasTraded) {
+            // Reset to default values for users who haven't traded
+            await this.updateUser(user.id, {
+              total_pnl: "0",
+              total_pnl_percentage: "0",
+              total_portfolio_value: userData.initial_balance || "100000.00",
+              global_rank: undefined,
+            } as any);
+            successCount++;
+            continue;
+          }
+
+          // Calculate real-time P&L and portfolio value
+          let totalPnL = 0;
+          let totalPortfolioValue = 0;
+          const initialBalance = parseFloat(userData.initial_balance || "100000");
+
+          portfolio.forEach((item) => {
+            const quantity = parseFloat(item.quantity || "0");
+            const currentPrice = parseFloat(item.current_price || item.avg_cost || "0");
+            const avgCost = parseFloat(item.avg_cost || "0");
+            const totalValue = quantity * currentPrice;
+            
+            totalPortfolioValue += totalValue;
+            
+            // Calculate P&L for non-USDT items
+            if (item.symbol.toUpperCase() !== "USDT") {
+              const costBasis = quantity * avgCost;
+              const itemPnL = totalValue - costBasis;
+              totalPnL += itemPnL;
+            }
+          });
+
+          // Calculate P&L percentage
+          const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
+
+          // Update user with real-time calculated values
+          await this.updateUser(user.id, {
+            total_pnl: totalPnL.toString(),
+            total_pnl_percentage: totalPnLPercentage.toString(),
+            total_portfolio_value: totalPortfolioValue.toString(),
+          } as any);
+
+          successCount++;
+          logger.info(
+            `Updated user ${user.id} real-time data: P&L=${totalPnL}, Portfolio=${totalPortfolioValue}, Return=${totalPnLPercentage}%`,
+            "UserService"
+          );
+        } catch (error) {
+          logger.error(`Error updating real-time data for user ${user.id}`, "UserService", error);
+          errorCount++;
+        }
+      }
+
+      logger.info(
+        `Force update completed: ${successCount} successful, ${errorCount} errors`,
+        "UserService"
+      );
+    } catch (error) {
+      logger.error("Error force updating all users' real-time data", "UserService", error);
+      throw error;
     }
   }
 }
