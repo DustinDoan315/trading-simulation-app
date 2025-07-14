@@ -6,8 +6,9 @@ import RealTimeDataService from "@/services/RealTimeDataService";
 import TabSelector from "./TableSelector";
 import { DEFAULT_CRYPTO, DEFAULT_CURRENCY } from "@/utils/constant";
 import { formatAmount } from "@/utils/formatters";
+import { LinearGradient } from "expo-linear-gradient";
 import { RootState } from "@/store";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useDualBalance } from "@/hooks/useDualBalance";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSelector } from "react-redux";
@@ -238,48 +239,114 @@ const OrderEntry = React.memo(
 
     return (
       <View style={styles.container}>
-        <TabSelector
-          selectedTab={selectedTab}
-          onSelectTab={setSelectedTab}
-          marginEnabled={marginEnabled}
-          onToggleMargin={setMarginEnabled}
-        />
+        {/* Enhanced Tab Selector */}
+        <View style={styles.tabSection}>
+          <TabSelector
+            selectedTab={selectedTab}
+            onSelectTab={setSelectedTab}
+            marginEnabled={marginEnabled}
+            onToggleMargin={setMarginEnabled}
+          />
+        </View>
 
-        <PriceInput
-          label={`${t("order.price")} (${DEFAULT_CURRENCY})`}
-          value={price}
-          onChangeText={handlePriceChange}
-          placeholder="0.00"
-          editable={isPriceEditable}
-        />
+        {/* Balance Display */}
+        <View style={styles.balanceSection}>
+          <LinearGradient
+            colors={["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"]}
+            style={styles.balanceCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}>
+            <Text style={styles.balanceLabel}>
+              {selectedTab === "buy"
+                ? "Available USDT"
+                : `Available ${baseSymbol}`}
+            </Text>
+            <Text style={styles.balanceAmount}>
+              {formatAmount(currentBalance, selectedTab === "buy" ? 2 : 6)}{" "}
+              {selectedTab === "buy" ? "USDT" : baseSymbol}
+            </Text>
+          </LinearGradient>
+        </View>
 
-        <PriceInput
-          label={`${t("order.amount")} (${baseSymbol})`}
-          value={amount}
-          onChangeText={handleAmountChange}
-          placeholder="0.00"
-          keyboardType="numeric"
-        />
+        {/* Input Fields Section */}
+        <View style={styles.inputSection}>
+          <View style={styles.inputRow}>
+            <View style={styles.inputContainer}>
+              <PriceInput
+                label={`${t("order.price")} (${DEFAULT_CURRENCY})`}
+                value={price}
+                onChangeText={handlePriceChange}
+                placeholder="0.00"
+                editable={isPriceEditable}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <PriceInput
+                label={`${t("order.amount")} (${baseSymbol})`}
+                value={amount}
+                onChangeText={handleAmountChange}
+                placeholder="0.00"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+        </View>
 
-        <AmountPercentButton
-          currentPosition={currentPosition}
-          setCurrentPosition={setCurrentPosition}
-          onChange={handleSliderChange}
-          tradeType={selectedTab}
-          availableAmount={currentBalance}
-          amountUnit={baseSymbol}
-          currentPrice={effectivePrice}
-          balanceType={selectedTab === "buy" ? "usdt" : "token"}
-          resetTrigger={resetCounter}
-        />
+        {/* Amount Slider Section */}
+        <View style={styles.sliderSection}>
+          <AmountPercentButton
+            currentPosition={currentPosition}
+            setCurrentPosition={setCurrentPosition}
+            onChange={handleSliderChange}
+            tradeType={selectedTab}
+            availableAmount={currentBalance}
+            amountUnit={baseSymbol}
+            currentPrice={effectivePrice}
+            balanceType={selectedTab === "buy" ? "usdt" : "token"}
+            resetTrigger={resetCounter}
+          />
+        </View>
 
-        <ActionButton
-          type={selectedTab}
-          onPress={handleSubmitOrder}
-          cryptoSymbol={baseSymbol}
-          disabled={!canSell || disabled}
-          loading={disabled}
-        />
+        {/* Total Calculation */}
+        <View style={styles.totalSection}>
+          <LinearGradient
+            colors={["rgba(102, 116, 204, 0.1)", "rgba(102, 116, 204, 0.05)"]}
+            style={styles.totalCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total Value:</Text>
+              <Text style={styles.totalAmount}>
+                $
+                {formatAmount(
+                  (parseFloat(amount) || 0) * (parseFloat(price) || 0),
+                  2
+                )}
+              </Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={styles.feeLabel}>Fees (0.1%):</Text>
+              <Text style={styles.feeAmount}>
+                $
+                {formatAmount(
+                  (parseFloat(amount) || 0) * (parseFloat(price) || 0) * 0.001,
+                  2
+                )}
+              </Text>
+            </View>
+          </LinearGradient>
+        </View>
+
+        {/* Action Button */}
+        <View style={styles.buttonSection}>
+          <ActionButton
+            type={selectedTab}
+            onPress={handleSubmitOrder}
+            cryptoSymbol={baseSymbol}
+            disabled={!canSell || disabled}
+            loading={disabled}
+          />
+        </View>
       </View>
     );
   }
@@ -289,8 +356,79 @@ OrderEntry.displayName = "OrderEntry";
 
 const styles = StyleSheet.create({
   container: {
-    padding: Dimensions.spacing.lg,
-    width: "55%",
+    padding: Dimensions.spacing.md,
+    width: "100%",
+  },
+  tabSection: {
+    marginBottom: Dimensions.spacing.md,
+  },
+  balanceSection: {
+    marginBottom: Dimensions.spacing.md,
+  },
+  balanceCard: {
+    padding: Dimensions.spacing.md,
+    borderRadius: Dimensions.radius.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  balanceLabel: {
+    fontSize: Dimensions.fontSize.sm,
+    color: "rgba(255, 255, 255, 0.7)",
+    marginBottom: Dimensions.spacing.xs,
+  },
+  balanceAmount: {
+    fontSize: Dimensions.fontSize.xl,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  inputSection: {
+    marginBottom: Dimensions.spacing.md,
+  },
+  inputRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  inputContainer: {
+    flex: 1,
+    marginHorizontal: Dimensions.spacing.xs,
+  },
+  sliderSection: {
+    marginBottom: Dimensions.spacing.md,
+  },
+  totalSection: {
+    marginTop: Dimensions.spacing.md,
+  },
+  totalCard: {
+    padding: Dimensions.spacing.md,
+    borderRadius: Dimensions.radius.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: Dimensions.spacing.xs,
+  },
+  totalLabel: {
+    fontSize: Dimensions.fontSize.sm,
+    color: "rgba(255, 255, 255, 0.7)",
+  },
+  totalAmount: {
+    fontSize: Dimensions.fontSize.md,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  feeLabel: {
+    fontSize: Dimensions.fontSize.sm,
+    color: "rgba(255, 255, 255, 0.7)",
+  },
+  feeAmount: {
+    fontSize: Dimensions.fontSize.md,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  buttonSection: {
+    marginTop: Dimensions.spacing.md,
   },
 });
 

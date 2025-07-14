@@ -1,8 +1,9 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Switch } from "react-native";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
+import React from "react";
 import Typography from "@/styles/typography";
+import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { useLanguage } from "@/context/LanguageContext";
 
 const TabSelector = ({
@@ -16,35 +17,55 @@ const TabSelector = ({
     <View style={styles.container}>
       <View style={styles.tabButtonsContainer}>
         <TouchableOpacity
-          style={[
-            styles.tabButton,
-            selectedTab === "buy" ? styles.buyTabActive : null,
-          ]}
+          style={styles.tabButton}
           onPress={() => onSelectTab("buy")}
-          activeOpacity={0.7}>
-          <Text
+          activeOpacity={0.8}>
+          <LinearGradient
+            colors={
+              selectedTab === "buy"
+                ? ["#10B981", "#059669"]
+                : ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"]
+            }
             style={[
-              styles.tabText,
-              selectedTab === "buy" ? styles.buyTabTextActive : null,
-            ]}>
-            {t("trading.buy")}
-          </Text>
+              styles.tabGradient,
+              selectedTab === "buy" && styles.buyTabActive,
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}>
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "buy" ? styles.buyTabTextActive : null,
+              ]}>
+              {t("trading.buy")}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.tabButton,
-            selectedTab === "sell" ? styles.sellTabActive : null,
-          ]}
+          style={styles.tabButton}
           onPress={() => onSelectTab("sell")}
-          activeOpacity={0.7}>
-          <Text
+          activeOpacity={0.8}>
+          <LinearGradient
+            colors={
+              selectedTab === "sell"
+                ? ["#EF4444", "#DC2626"]
+                : ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"]
+            }
             style={[
-              styles.tabText,
-              selectedTab === "sell" ? styles.sellTabTextActive : null,
-            ]}>
-            {t("trading.sell")}
-          </Text>
+              styles.tabGradient,
+              selectedTab === "sell" && styles.sellTabActive,
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}>
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "sell" ? styles.sellTabTextActive : null,
+              ]}>
+              {t("trading.sell")}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </View>
@@ -61,32 +82,55 @@ const styles = StyleSheet.create({
   tabButtonsContainer: {
     flexDirection: "row",
     flex: 1,
+    gap: Dimensions.spacing.sm,
   },
   tabButton: {
+    flex: 1,
+    borderRadius: Dimensions.radius.md,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tabGradient: {
     paddingVertical: Dimensions.spacing.md,
     paddingHorizontal: Dimensions.spacing.xl,
-    borderRadius: Dimensions.radius.sm,
-    marginRight: Dimensions.spacing.md,
+    borderRadius: Dimensions.radius.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   buyTabActive: {
-    backgroundColor: Colors.action.buyLight,
-    borderWidth: Dimensions.border.thin,
-    borderColor: Colors.action.buyBorder,
+    borderColor: "#10B981",
+    shadowColor: "#10B981",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   sellTabActive: {
-    backgroundColor: Colors.action.sellLight,
-    borderWidth: Dimensions.border.thin,
-    borderColor: Colors.action.sellBorder,
+    borderColor: "#EF4444",
+    shadowColor: "#EF4444",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   tabText: {
-    ...Typography.tabInactive,
+    fontSize: Dimensions.fontSize.md,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.7)",
   },
   buyTabTextActive: {
-    color: Colors.action.buy,
+    color: "#FFFFFF",
     fontWeight: "bold",
   },
   sellTabTextActive: {
-    color: Colors.action.sell,
+    color: "#FFFFFF",
     fontWeight: "bold",
   },
   marginContainer: {

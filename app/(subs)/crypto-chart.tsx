@@ -1,6 +1,5 @@
 import Chart from "@/components/crypto/Chart";
 import colors from "@/styles/colors";
-import OrderBook from "@/components/trading/OrderBook";
 import OrderEntry from "@/components/trading/OrderEntry";
 import React, { useEffect, useRef, useState } from "react";
 import SymbolHeader from "@/components/crypto/SymbolHeader";
@@ -8,9 +7,9 @@ import TimeframeSelector from "@/components/crypto/TimeframeSelector";
 import TradingContextIndicator from "@/components/trading/TradingContextIndicator";
 import useCryptoAPI from "@/hooks/useCryptoAPI";
 import useHistoricalData from "@/hooks/useHistoricalData";
-import useOrderBook from "@/hooks/useOrderBook";
 import UUIDService from "@/services/UUIDService";
 import { ChartType, Order, TimeframeOption } from "../../types/crypto";
+import { LinearGradient } from "expo-linear-gradient";
 import { logger } from "@/utils/logger";
 import { OrderDispatchContext, OrderValidationContext } from "@/utils/helper";
 import { RootState, useAppDispatch } from "@/store";
@@ -25,7 +24,6 @@ import { useUser } from "@/context/UserContext";
 import { WebView } from "react-native-webview";
 import {
   ActivityIndicator,
-  Animated,
   Modal,
   SafeAreaView,
   ScrollView,
@@ -63,7 +61,6 @@ const CryptoChartScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<string>("");
   const [submissionProgress, setSubmissionProgress] = useState(0);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Dual balance hook
   const {
@@ -81,7 +78,6 @@ const CryptoChartScreen = () => {
   console.log("currentHoldings", currentHoldings);
   console.log("activeContext", activeContext);
 
-  const { askOrders, bidOrders } = useOrderBook(id);
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
   const { currentPrice, priceChange } = useCryptoAPI(timeframe, id);
@@ -101,26 +97,24 @@ const CryptoChartScreen = () => {
     }
   }, [collectionId, switchContext, loadCollection]);
 
-  // Animate loading modal
+  // Cleanup loading state on component unmount or navigation
   useEffect(() => {
-    if (isSubmitting) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [isSubmitting, fadeAnim]);
+    return () => {
+      // Ensure loading state is reset when component unmounts
+      setIsSubmitting(false);
+      setSubmissionStatus("");
+      setSubmissionProgress(0);
+    };
+  }, []);
+
+  // Debug: Monitor loading state changes
+  useEffect(() => {
+    console.log("🔄 Loading state changed:", {
+      isSubmitting,
+      submissionStatus,
+      submissionProgress,
+    });
+  }, [isSubmitting, submissionStatus, submissionProgress]);
 
   // Simulate submission progress
   useEffect(() => {
@@ -198,9 +192,19 @@ const CryptoChartScreen = () => {
     }
   };
 
+  const resetLoadingState = () => {
+    console.log("🔄 Manually resetting loading state");
+    setIsSubmitting(false);
+    setSubmissionStatus("");
+    setSubmissionProgress(0);
+  };
+
   // Enhanced order submission with dual balance support and loading states
   const submitOrder = async (order: Order): Promise<void> => {
+    if (isSubmitting) return; // Prevent multiple submissions
     setIsSubmitting(true);
+    const minDisplayTime = 1000; // 1 second
+    const startTime = Date.now();
     setSubmissionStatus("Validating order...");
     setSubmissionProgress(10);
 
@@ -242,7 +246,6 @@ const CryptoChartScreen = () => {
       setSubmissionProgress(60);
 
       // Balance should be automatically updated in Redux state
-      console.log("✅ Trade executed, balance should be updated automatically");
 
       // Handle order submission with dual balance context
       await handleOrderSubmission(
@@ -262,19 +265,18 @@ const CryptoChartScreen = () => {
       setSubmissionProgress(100);
 
       // Show success for a moment before hiding
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const elapsed = Date.now() - startTime;
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.max(0, minDisplayTime - elapsed, 1000))
+      );
+      resetLoadingState();
     } catch (error: any) {
-      logger.error("Failed to submit order", "CryptoChart", error);
-      setSubmissionStatus("Error occurred. Retrying...");
-
-      // Handle authentication errors using utility function
+      setSubmissionStatus("Error occurred. Please try again.");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      resetLoadingState();
       await handleUserReinitialization(error, reinitializeUser, () =>
         submitOrder(order)
       );
-    } finally {
-      setIsSubmitting(false);
-      setSubmissionStatus("");
-      setSubmissionProgress(0);
     }
   };
 
@@ -283,16 +285,19 @@ const CryptoChartScreen = () => {
     <Modal
       visible={isSubmitting}
       transparent={true}
-      animationType="none"
-      onRequestClose={() => {}}>
-      <Animated.View
-        style={[
-          styles.loadingOverlay,
-          {
-            opacity: fadeAnim,
-          },
-        ]}>
-        <Animated.View style={[styles.loadingContainer]}>
+      onRequestClose={() => {
+        // Allow users to close modal by back button if needed
+        if (isSubmitting) {
+          resetLoadingState();
+        }
+      }}
+      statusBarTranslucent={true}>
+      <View
+        style={styles.loadingOverlay}
+        pointerEvents={isSubmitting ? "auto" : "none"}>
+        <View
+          style={styles.loadingContainer}
+          pointerEvents={isSubmitting ? "auto" : "none"}>
           {/* Loading Icon */}
           <View style={styles.loadingIconContainer}>
             <ActivityIndicator size="large" color="#6674CC" />
@@ -306,7 +311,7 @@ const CryptoChartScreen = () => {
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <Animated.View
+              <View
                 style={[
                   styles.progressFill,
                   {
@@ -329,8 +334,8 @@ const CryptoChartScreen = () => {
             </Text>
             <Text style={styles.contextSymbol}>{symbol}</Text>
           </View>
-        </Animated.View>
-      </Animated.View>
+        </View>
+      </View>
     </Modal>
   );
 
@@ -372,26 +377,33 @@ const CryptoChartScreen = () => {
           timeframe={timeframe}
         />
 
-        {/* Order Book and Entry Components */}
-        <View style={styles.orderSection}>
-          <OrderEntry
-            key={`${symbol}-${currentUsdtBalance}`} // Force re-render when balance changes
-            symbol={symbol}
-            name={name}
-            orderType={orderType}
-            currentPrice={currentPrice ? Number(currentPrice) : undefined}
-            availableBalance={currentUsdtBalance} // Use current context balance
-            onSubmitOrder={submitOrder}
-            disabled={isSubmitting}
-          />
-
-          <OrderBook
-            symbol={symbol}
-            askOrders={askOrders}
-            bidOrders={bidOrders}
-            currentPrice={currentPrice}
-            webViewRef={webViewRef}
-          />
+        {/* Beautiful Section Under Chart */}
+        <View style={styles.bottomSection}>
+          {/* Enhanced Order Entry Section */}
+          <View style={styles.orderSection}>
+            <LinearGradient
+              colors={[
+                "rgba(102, 116, 204, 0.15)",
+                "rgba(102, 116, 204, 0.08)",
+              ]}
+              style={styles.orderEntryCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}>
+              <View style={styles.orderEntryHeader}>
+                <Text style={styles.orderEntryTitle}>{symbol}</Text>
+              </View>
+              <OrderEntry
+                key={`${symbol}-${currentUsdtBalance}`}
+                symbol={symbol}
+                name={name}
+                orderType={orderType}
+                currentPrice={currentPrice ? Number(currentPrice) : undefined}
+                availableBalance={currentUsdtBalance}
+                onSubmitOrder={submitOrder}
+                disabled={isSubmitting}
+              />
+            </LinearGradient>
+          </View>
         </View>
       </ScrollView>
 
@@ -409,11 +421,44 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  bottomSection: {
+    marginTop: 20,
+    paddingHorizontal: 16,
+  },
+  contextSection: {
+    marginBottom: 16,
+  },
   orderSection: {
-    paddingBottom: 20,
-    marginTop: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  orderEntryCard: {
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#6674CC",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 16,
+  },
+  orderEntryHeader: {
+    alignItems: "center",
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+  },
+  orderEntryTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  orderEntrySubtitle: {
+    fontSize: 16,
+    color: "#9DA3B4",
+    fontWeight: "500",
   },
   // Loading Modal Styles
   loadingOverlay: {
@@ -424,18 +469,20 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     backgroundColor: "#1A1D2F",
-    borderRadius: 20,
-    padding: 30,
+    borderRadius: 24,
+    padding: 32,
     alignItems: "center",
-    minWidth: 280,
+    minWidth: 300,
+    borderWidth: 1,
+    borderColor: "rgba(102, 116, 204, 0.3)",
     shadowColor: "#6674CC",
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 12,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 16,
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 20,
   },
   loadingIconContainer: {
     position: "relative",
@@ -469,16 +516,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   progressBar: {
-    height: 6,
+    height: 8,
     backgroundColor: "#2A2D3E",
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: "hidden",
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "rgba(102, 116, 204, 0.2)",
   },
   progressFill: {
     height: "100%",
     backgroundColor: "#6674CC",
-    borderRadius: 3,
+    borderRadius: 4,
+    shadowColor: "#6674CC",
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
   },
   progressText: {
     fontSize: 12,

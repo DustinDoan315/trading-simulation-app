@@ -56,7 +56,7 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
     tradeType = "buy",
     availableAmount = 0,
     amountUnit = "BTC",
-    currentPrice = 45000, // More realistic default for BTC
+    currentPrice = 122000,
     balanceType = "token",
     resetTrigger,
   }) => {
@@ -217,15 +217,15 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: Dimensions.spacing.sm,
     marginBottom: Dimensions.spacing.md,
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "center",
   },
   amountButton: {
     paddingHorizontal: Dimensions.spacing.md,
     paddingVertical: Dimensions.spacing.sm,
     borderRadius: Dimensions.radius.sm,
     borderWidth: 1,
-    minWidth: 80,
+    minWidth: 60,
     alignItems: "center",
   },
   labelsContainer: {

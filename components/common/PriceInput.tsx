@@ -1,9 +1,10 @@
-import React from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
 import Colors from "@/styles/colors";
 import Dimensions from "@/styles/dimensions";
+import React from "react";
 import Typography from "@/styles/typography";
 import { formatAmount } from "@/utils/formatters";
+import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 const PriceInput = ({
   label,
@@ -37,10 +38,19 @@ const PriceInput = ({
   React.useEffect(() => {
     setRawValue(value?.toString() || "");
   }, [value]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-      <View style={[styles.inputWrapper, !editable && styles.inputDisabled]}>
+      <LinearGradient
+        colors={
+          isFocused
+            ? ["rgba(102, 116, 204, 0.15)", "rgba(102, 116, 204, 0.08)"]
+            : ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"]
+        }
+        style={[styles.inputWrapper, !editable && styles.inputDisabled]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}>
         <TextInput
           style={styles.input}
           value={isFocused ? rawValue : formatAmount(rawValue, 2)}
@@ -49,12 +59,12 @@ const PriceInput = ({
           onBlur={() => setIsFocused(false)}
           keyboardType={keyboardType}
           placeholder={placeholder}
-          placeholderTextColor={Colors.text.tertiary}
-          selectionColor={Colors.action.primary}
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+          selectionColor="#6674CC"
           editable={editable}
         />
         {suffix && <Text style={styles.suffix}>{suffix}</Text>}
-      </View>
+      </LinearGradient>
     </View>
   );
 };
@@ -66,32 +76,43 @@ const styles = StyleSheet.create({
   label: {
     ...Typography.longLabel,
     marginBottom: Dimensions.spacing.xs,
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: Dimensions.fontSize.sm,
+    fontWeight: "500",
   },
   inputWrapper: {
-    backgroundColor: Colors.background.primary,
     borderRadius: Dimensions.radius.md,
-    borderWidth: Dimensions.border.thin,
-    borderColor: Colors.border.light,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
     height: Dimensions.components.inputHeight,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Dimensions.spacing.md,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   inputDisabled: {
-    backgroundColor: Colors.background.secondary,
-    opacity: 0.7,
+    opacity: 0.6,
   },
   input: {
     flex: 1,
-    color: Colors.text.primary,
+    color: "#FFFFFF",
     fontSize: Dimensions.fontSize.md,
     height: Dimensions.components.inputHeight,
     padding: 0,
+    fontWeight: "500",
   },
   suffix: {
-    color: Colors.text.tertiary,
+    color: "rgba(255, 255, 255, 0.6)",
     fontSize: Dimensions.fontSize.sm,
     marginLeft: Dimensions.spacing.xs,
+    fontWeight: "500",
   },
 });
 
