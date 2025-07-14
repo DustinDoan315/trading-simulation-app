@@ -24,6 +24,12 @@ import {
 } from "../types/database";
 
 
+// Global debouncing for leaderboard updates
+let leaderboardUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
+let lastLeaderboardUpdate = 0;
+let isUpdatingLeaderboard = false;
+const LEADERBOARD_UPDATE_COOLDOWN = 3000; // 3 seconds cooldown
+
 export class UserService {
   // User Operations
   static async createUser(params: CreateUserParams): Promise<User | null> {
@@ -805,13 +811,14 @@ export class UserService {
     }
   }
 
-  // Leaderboard Operations
+  // Leaderboard Operations (ALL_TIME only)
   static async getLeaderboard(
     period: "WEEKLY" | "MONTHLY" | "ALL_TIME",
     collectionId?: string,
     limit = 50
   ): Promise<LeaderboardRanking[]> {
     try {
+      // Force ALL_TIME period since we only support that
       let query = supabase
         .from("leaderboard_rankings")
         .select(
@@ -827,7 +834,7 @@ export class UserService {
           )
         `
         )
-        .eq("period", period)
+        .eq("period", "ALL_TIME")
         .order("rank", { ascending: true })
         .limit(limit);
 
@@ -895,145 +902,102 @@ export class UserService {
   private static updateTimeout: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   static async updateLeaderboardRankings(userId: string): Promise<void> {
-    try {
-      // Clear existing timeout for this user
-      if (this.updateTimeout.has(userId)) {
-        clearTimeout(this.updateTimeout.get(userId)!);
-      }
-
-      // Debounce updates to prevent excessive calls
-      const timeoutId = setTimeout(async () => {
-        try {
-          await this.performLeaderboardUpdate(userId);
-        } catch (error) {
-          logger.error("Error in debounced leaderboard update", "UserService", error);
-        } finally {
-          this.updateTimeout.delete(userId);
-        }
-      }, 1000); // 1 second debounce
-
-      this.updateTimeout.set(userId, timeoutId);
-    } catch (error) {
-      logger.error("Error setting up debounced leaderboard update", "UserService", error);
-      throw error;
+    const now = Date.now();
+    
+    // Check if we're already updating
+    if (isUpdatingLeaderboard) {
+      console.log("🔄 Leaderboard update skipped - already in progress");
+      return;
     }
-  }
-
-  private static async performLeaderboardUpdate(userId: string): Promise<void> {
-    try {
-      // Get user's current portfolio and stats
-      const portfolio = await this.getPortfolio(userId);
-      const user = await this.getUserById(userId);
-
-      if (!user) return;
-
-      // Check if user has made any trades (has portfolio items other than USDT)
-      const hasTraded = portfolio.some(
-        (asset) =>
-          asset.symbol.toUpperCase() !== "USDT" &&
-          parseFloat(asset.quantity || "0") > 0
-      );
-
-      // If user hasn't traded yet, remove them from leaderboard rankings
-      if (!hasTraded) {
-        await this.removeUserFromLeaderboard(userId);
-        logger.info(
-          `Removed user ${userId} from leaderboard (no trades yet)`,
-          "UserService"
-        );
+    
+    // Check if we're in cooldown period
+    if (now - lastLeaderboardUpdate < LEADERBOARD_UPDATE_COOLDOWN) {
+      console.log("🔄 Leaderboard update skipped - in cooldown period");
+      return;
+    }
+    
+    // Clear existing timeout
+    if (leaderboardUpdateTimeout) {
+      clearTimeout(leaderboardUpdateTimeout);
+    }
+    
+    // Set new timeout for debounced update
+    leaderboardUpdateTimeout = setTimeout(async () => {
+      if (isUpdatingLeaderboard) {
+        console.log("🔄 Leaderboard update skipped - already in progress (timeout)");
         return;
       }
-
-      // Calculate real-time P&L and portfolio value from current portfolio data
-      let totalPnL = 0;
-      let totalPortfolioValue = 0;
-      const initialBalance = parseFloat(user.initial_balance || "100000");
-
-      // Calculate from portfolio items with current prices
-      portfolio.forEach((item) => {
-        const quantity = parseFloat(item.quantity || "0");
-        const currentPrice = parseFloat(item.current_price || item.avg_cost || "0");
-        const avgCost = parseFloat(item.avg_cost || "0");
-        const totalValue = quantity * currentPrice;
+      
+      isUpdatingLeaderboard = true;
+      
+      try {
+        console.log("🔄 Starting leaderboard rankings update for user:", userId);
+        lastLeaderboardUpdate = Date.now();
         
-        totalPortfolioValue += totalValue;
-        
-        // Calculate P&L for non-USDT items
-        if (item.symbol.toUpperCase() !== "USDT") {
-          const costBasis = quantity * avgCost;
-          const itemPnL = totalValue - costBasis;
-          totalPnL += itemPnL;
+        const user = await this.getUserById(userId);
+        if (!user) {
+          console.error("❌ User not found for leaderboard update:", userId);
+          return;
         }
-      });
 
-      // Calculate P&L percentage
-      const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
-
-      logger.info(
-        `Updating leaderboard for user ${userId}: P&L=${totalPnL}, Portfolio=${totalPortfolioValue}, Return=${totalPnLPercentage}%`,
-        "UserService"
-      );
-
-      // Update or create leaderboard rankings for ALL_TIME period only
-      const calculatedRank = await this.calculateUserRank(
-        userId,
-        "ALL_TIME",
-        totalPnL,
-        totalPortfolioValue
-      );
-
-      await this.upsertLeaderboardRanking({
-        user_id: userId,
-        period: "ALL_TIME",
-        total_pnl: totalPnL.toString(),
-        total_pnl_percentage: totalPnLPercentage.toString(),
-        total_portfolio_value: totalPortfolioValue.toString(),
-        total_trades: portfolio.length,
-        rank: calculatedRank,
-      });
-
-      // Update user's P&L data and global rank in the users table with real-time values
-      const userUpdateData = {
-        total_pnl: totalPnL.toString(),
-        total_pnl_percentage: totalPnLPercentage.toString(),
-        total_portfolio_value: totalPortfolioValue.toString(),
-        global_rank: calculatedRank,
-      } as any; // Use any to bypass type checking for this specific case
-
-      logger.info(
-        `Updating user ${userId} with real-time values:`,
-        "UserService",
-        userUpdateData
-      );
-
-      const updatedUser = await this.updateUser(userId, userUpdateData);
-
-      if (updatedUser) {
-        logger.info(
-          `Successfully updated user ${userId} with real-time values`,
-          "UserService",
-          {
-            total_pnl: updatedUser.total_pnl,
-            total_pnl_percentage: updatedUser.total_pnl_percentage,
-            total_portfolio_value: updatedUser.total_portfolio_value,
-            global_rank: updatedUser.global_rank,
+        // Get current portfolio data
+        const portfolio = await this.getPortfolio(userId);
+        const totalPortfolioValue = parseFloat(user.total_portfolio_value || "0");
+        
+        // Calculate real PnL from portfolio data
+        let totalPnL = 0;
+        const initialBalance = parseFloat(user.initial_balance || "100000");
+        
+        portfolio.forEach((item) => {
+          const quantity = parseFloat(item.quantity || "0");
+          const currentPrice = parseFloat(item.current_price || item.avg_cost || "0");
+          const avgCost = parseFloat(item.avg_cost || "0");
+          
+          // Calculate P&L for non-USDT items
+          if (item.symbol.toUpperCase() !== "USDT") {
+            const totalValue = quantity * currentPrice;
+            const costBasis = quantity * avgCost;
+            const itemPnL = totalValue - costBasis;
+            totalPnL += itemPnL;
           }
-        );
-      } else {
-        logger.error(
-          `Failed to update user ${userId} with real-time values`,
-          "UserService"
-        );
-      }
+        });
+        
+        // Calculate P&L percentage
+        const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
+        
+        console.log("🔄 Calculated PnL from portfolio:", {
+          totalPnL,
+          totalPnLPercentage,
+          portfolioItems: portfolio.length,
+          initialBalance
+        });
 
-      logger.info(
-        `Updated leaderboard rankings for user ${userId} with real-time calculated values`,
-        "UserService"
-      );
-    } catch (error) {
-      logger.error("Error updating leaderboard rankings", "UserService", error);
-      throw error;
-    }
+        // Update user's PnL data in the users table
+        await this.updateUser(userId, {
+          total_pnl: totalPnL.toString(),
+          total_pnl_percentage: totalPnLPercentage.toString(),
+        } as any);
+
+        // Calculate ALL_TIME rankings only
+        await this.upsertLeaderboardRanking({
+          user_id: userId,
+          period: "ALL_TIME",
+          total_pnl: totalPnL.toString(),
+          total_pnl_percentage: totalPnLPercentage.toString(),
+          total_portfolio_value: totalPortfolioValue.toString(),
+          total_trades: portfolio.length,
+          rank: await this.calculateUserRank(userId, "ALL_TIME", totalPnL, totalPortfolioValue),
+        });
+
+        console.log("✅ Leaderboard rankings and user PnL updated successfully for user:", userId);
+      } catch (error) {
+        console.error("❌ Error updating leaderboard rankings:", error);
+        // Reset cooldown on error so we can retry
+        lastLeaderboardUpdate = 0;
+      } finally {
+        isUpdatingLeaderboard = false;
+      }
+    }, 1000); // 1 second debounce
   }
 
   // Calculate user's rank based on performance
@@ -1290,7 +1254,7 @@ export class UserService {
     }
   }
 
-  // Get leaderboard statistics
+  // Get leaderboard statistics (ALL_TIME only)
   static async getLeaderboardStats(
     period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"
   ): Promise<{
@@ -1299,10 +1263,11 @@ export class UserService {
     averagePnL: number;
   }> {
     try {
+      // Force ALL_TIME period since we only support that
       const { data: rankings, error } = await supabase
         .from("leaderboard_rankings")
         .select("user_id, rank, total_pnl")
-        .eq("period", period)
+        .eq("period", "ALL_TIME")
         .is("collection_id", null)
         .order("rank", { ascending: true });
 

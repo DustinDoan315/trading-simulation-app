@@ -96,53 +96,55 @@ const LeaderboardScreen = () => {
     });
   }, [updateFilters]);
 
-  // Initialize leaderboard rankings if needed (only once)
-  useEffect(() => {
-    const initializeRankings = async () => {
-      try {
-        console.log("🔄 Initializing leaderboard rankings...");
+  // DISABLED: Automatic initialization for manual-only refresh
+  // useEffect(() => {
+  //   const initializeRankings = async () => {
+  //     try {
+  //       console.log("🔄 Initializing leaderboard rankings...");
 
-        // Force update current user's leaderboard rankings first
-        if (user?.id) {
-          console.log(
-            "🔄 Force updating current user's leaderboard rankings..."
-          );
-          await UserService.updateLeaderboardRankings(user.id);
-        }
+  //       // Force update current user's leaderboard rankings first
+  //       if (user?.id) {
+  //         console.log(
+  //           "🔄 Force updating current user's leaderboard rankings..."
+  //         );
+  //         await UserService.updateLeaderboardRankings(user.id);
+  //       }
 
-        await UserService.initializeLeaderboardRankings();
-        console.log("✅ Leaderboard rankings initialized");
-      } catch (error) {
-        console.error("❌ Error initializing leaderboard rankings:", error);
-      }
-    };
+  //       await UserService.initializeLeaderboardRankings();
+  //       console.log("✅ Leaderboard rankings initialized");
+  //     } catch (error) {
+  //       console.error("❌ Error initializing leaderboard rankings:", error);
+  //     }
+  //   };
 
-    // Only initialize if we have a user and no data yet, and only once per session
-    if (
-      user?.id &&
-      leaderboardData.global.length === 0 &&
-      !hasInitialized.current
-    ) {
-      hasInitialized.current = true;
-      initializeRankings();
-    }
-  }, [user?.id, leaderboardData.global.length]);
+  //   // Only initialize if we have a user and no data yet, and only once per session
+  //   if (
+  //     user?.id &&
+  //     leaderboardData.global.length === 0 &&
+  //     !hasInitialized.current
+  //   ) {
+  //     hasInitialized.current = true;
+  //     initializeRankings();
+  //   }
+  // }, [user?.id, leaderboardData.global.length]);
 
-  // Force update current user's rankings when screen becomes active (debounced)
-  useEffect(() => {
-    const updateCurrentUserRankings = async () => {
-      if (user?.id) {
-        try {
-          await UserService.updateLeaderboardRankings(user.id);
-        } catch (error) {
-          console.error("Error updating current user rankings:", error);
-        }
-      }
-    };
+  // DISABLED: Automatic leaderboard updates for manual-only refresh
+  // useEffect(() => {
+  //   const updateCurrentUserRankings = async () => {
+  //     if (user?.id) {
+  //       try {
+  //       await UserService.updateLeaderboardRankings(user.id);
+  //       } catch (error) {
+  //       console.error("Error updating current user rankings:", error);
+  //       }
+  //     }
+  //   };
 
-    // Update when component mounts and when user changes
-    updateCurrentUserRankings();
-  }, [user?.id]);
+  //   // Only update when user changes, not on every mount
+  //   if (user?.id) {
+  //     updateCurrentUserRankings();
+  //   }
+  // }, [user?.id]);
 
   // Debounced refresh function
   const debouncedRefresh = useCallback(async () => {
@@ -164,12 +166,7 @@ const LeaderboardScreen = () => {
       try {
         console.log("🔄 Starting debounced refresh...");
 
-        // Force update current user's rankings
-        if (user?.id) {
-          await UserService.updateLeaderboardRankings(user.id);
-        }
-
-        // Refresh the leaderboard data
+        // Refresh the leaderboard data (this will trigger leaderboard updates automatically)
         await refresh();
         await refreshRank();
 
@@ -186,12 +183,12 @@ const LeaderboardScreen = () => {
     }, 1000); // 1 second debounce
   }, [user?.id, activeTab, refresh, refreshRank, loadFriendsData]);
 
-  // Refresh leaderboard when screen becomes active (debounced)
-  useFocusEffect(
-    useCallback(() => {
-      debouncedRefresh();
-    }, [debouncedRefresh])
-  );
+  // DISABLED: Automatic refresh on focus for manual-only refresh
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     debouncedRefresh();
+  //   }, [debouncedRefresh])
+  // );
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -394,8 +391,13 @@ const LeaderboardScreen = () => {
     try {
       console.log("🔄 Starting manual refresh...");
 
-      // First, force update current user's leaderboard rankings with real-time data
+      // Force update all users' real-time PnL data first
+      console.log("🔄 Updating all users' real-time PnL data...");
+      await UserService.forceUpdateAllUsersRealTimeData();
+
+      // Force update current user's leaderboard rankings
       if (user?.id) {
+        console.log("🔄 Updating current user's leaderboard rankings...");
         await UserService.updateLeaderboardRankings(user.id);
       }
 
@@ -469,9 +471,11 @@ const LeaderboardScreen = () => {
         <Text style={styles.title}>Leaderboards</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
-            style={[styles.syncButton, !isEnabled && styles.syncButtonDisabled]}
-            onPress={toggleSync}>
-            <Text style={styles.syncButtonText}>{isEnabled ? "🔄" : "⏸️"}</Text>
+            style={[styles.syncButton, styles.syncButtonDisabled]}
+            onPress={() =>
+              console.log("🔄 Background sync disabled - manual refresh only")
+            }>
+            <Text style={styles.syncButtonText}>⏸️</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -537,19 +541,9 @@ const LeaderboardScreen = () => {
       {/* Last Updated Indicator */}
       {lastUpdated && (
         <View style={styles.lastUpdatedContainer}>
-          <Text style={styles.lastUpdatedText}>
+          <Text style={styles.syncStatusText}>
             Last updated: {lastUpdated.toLocaleTimeString()}
           </Text>
-          {syncStatus.isRunning && (
-            <Text style={styles.syncStatusText}>
-              🔄 Background sync running... (Syncs: {syncStatus.syncCount})
-            </Text>
-          )}
-          {syncStatus.lastError && (
-            <Text style={styles.syncErrorText}>
-              ❌ Sync error: {syncStatus.lastError}
-            </Text>
-          )}
         </View>
       )}
     </SafeAreaView>

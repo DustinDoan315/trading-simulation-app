@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { clearSearchHistory } from '@/features/searchHistorySlice';
-import { forceRefreshAllData } from '@/utils/resetUtils';
-import { formatAmount } from '@/utils/formatters';
-import { height } from '@/utils/response';
-import { Ionicons } from '@expo/vector-icons';
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
-import { LinearGradient } from 'expo-linear-gradient';
-import { loadBalance, resetBalance } from '@/features/balanceSlice';
-import { logger } from '@/utils/logger';
-import { persistor } from '@/store';
-import { resetFavorites } from '@/features/favoritesSlice';
-import { useAppDispatch } from '@/store';
-import { useLanguage } from '@/context/LanguageContext';
-import { UserBalance } from '@/services/CryptoService';
-import { UserService } from '@/services/UserService';
-import { useUser } from '@/context/UserContext';
+import React, { useState } from "react";
+import { clearSearchHistory } from "@/features/searchHistorySlice";
+import { forceRefreshAllData } from "@/utils/resetUtils";
+import { formatAmount } from "@/utils/formatters";
+import { height } from "@/utils/response";
+import { Ionicons } from "@expo/vector-icons";
+import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
+import { LinearGradient } from "expo-linear-gradient";
+import { loadBalance, resetBalance } from "@/features/balanceSlice";
+import { logger } from "@/utils/logger";
+import { persistor } from "@/store";
+import { resetFavorites } from "@/features/favoritesSlice";
+import { useAppDispatch } from "@/store";
+import { useLanguage } from "@/context/LanguageContext";
+import { UserBalance } from "@/features/balanceSlice";
+import { UserService } from "@/services/UserService";
+import { useUser } from "@/context/UserContext";
 import {
   Alert,
   Modal,
@@ -23,7 +23,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 
 // components/home/BalanceSection.tsx
 
@@ -172,7 +171,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
         <Text style={styles.balanceAmount}>
           {isBalanceHidden
             ? "********"
-            : `$${formatAmount(balance.totalInUSD)}`}
+            : `$${formatAmount(balance.totalPortfolioValue)}`}
         </Text>
       </TouchableOpacity>
 

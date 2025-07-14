@@ -34,8 +34,11 @@ class LeaderboardService {
   private isSubscribed = false;
   private updateTimeout: ReturnType<typeof setTimeout> | null = null;
   private refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+  private leaderboardUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
+  private portfolioUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
+  private userUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
   private lastFetchTime: number = 0;
-  private readonly FETCH_COOLDOWN = 2000; // 2 seconds cooldown between fetches
+  private readonly FETCH_COOLDOWN = 5000; // 5 seconds cooldown between fetches
 
   private constructor() {}
 
@@ -235,79 +238,26 @@ class LeaderboardService {
 
   // Set up real-time subscriptions with better management
   private setupRealtimeSubscriptions(filters: LeaderboardFilters): void {
+    // DISABLED: Real-time subscriptions for manual-only refresh
+    console.log('🔄 Real-time subscriptions disabled - manual refresh only');
+    
     // Clean up existing channels
     this.cleanupChannels();
-
-    // Subscribe to leaderboard_rankings table changes
-    const leaderboardChannel = supabase
-      .channel('leaderboard-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'leaderboard_rankings',
-          filter: `period=eq.${filters.period}`,
-        },
-        (payload: any) => {
-          console.log('🔄 Leaderboard real-time update:', payload);
-          this.handleLeaderboardUpdate(payload, filters);
-        }
-      )
-      .subscribe();
-
-    this.channels.set('leaderboard', leaderboardChannel);
-
-    // Subscribe to portfolio changes (affects user rankings)
-    const portfolioChannel = supabase
-      .channel('portfolio-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'portfolio',
-        },
-        (payload: any) => {
-          console.log('🔄 Portfolio real-time update:', payload);
-          this.handlePortfolioUpdate(payload, filters);
-        }
-      )
-      .subscribe();
-
-    this.channels.set('portfolio', portfolioChannel);
-
-    // Subscribe to user balance changes
-    const userChannel = supabase
-      .channel('user-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'users',
-        },
-        (payload: any) => {
-          console.log('🔄 User real-time update:', payload);
-          this.handleUserUpdate(payload, filters);
-        }
-      )
-      .subscribe();
-
-    this.channels.set('user', userChannel);
-    this.isSubscribed = true;
+    
+    // Don't subscribe to any real-time channels
+    this.isSubscribed = false;
   }
 
   // Handle leaderboard ranking updates with debouncing
   private async handleLeaderboardUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
     try {
-      // Clear existing refresh timeout
-      if (this.refreshTimeout) {
-        clearTimeout(this.refreshTimeout);
+      // Clear existing leaderboard update timeout
+      if (this.leaderboardUpdateTimeout) {
+        clearTimeout(this.leaderboardUpdateTimeout);
       }
 
       // Debounce the refresh to prevent excessive updates
-      this.refreshTimeout = setTimeout(async () => {
+      this.leaderboardUpdateTimeout = setTimeout(async () => {
         try {
           // Check if we should fetch new data
           if (!this.shouldFetch()) {
@@ -331,7 +281,7 @@ class LeaderboardService {
         } catch (error) {
           console.error('Error handling leaderboard update:', error);
         }
-      }, 3000); // 3 second debounce for real-time updates
+      }, 8000); // 8 second debounce for real-time updates
     } catch (error) {
       console.error('Error setting up leaderboard update handler:', error);
     }
@@ -340,13 +290,13 @@ class LeaderboardService {
   // Handle portfolio updates with debouncing
   private async handlePortfolioUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
     try {
-      // Clear existing refresh timeout
-      if (this.refreshTimeout) {
-        clearTimeout(this.refreshTimeout);
+      // Clear existing portfolio update timeout
+      if (this.portfolioUpdateTimeout) {
+        clearTimeout(this.portfolioUpdateTimeout);
       }
 
       // Debounce the refresh to prevent excessive updates
-      this.refreshTimeout = setTimeout(async () => {
+      this.portfolioUpdateTimeout = setTimeout(async () => {
         try {
           // Check if we should fetch new data
           if (!this.shouldFetch()) {
@@ -373,7 +323,7 @@ class LeaderboardService {
         } catch (error) {
           console.error('Error handling portfolio update:', error);
         }
-      }, 3000); // 3 second debounce for real-time updates
+      }, 8000); // 8 second debounce for real-time updates
     } catch (error) {
       console.error('Error setting up portfolio update handler:', error);
     }
@@ -382,13 +332,13 @@ class LeaderboardService {
   // Handle user updates with debouncing
   private async handleUserUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
     try {
-      // Clear existing refresh timeout
-      if (this.refreshTimeout) {
-        clearTimeout(this.refreshTimeout);
+      // Clear existing user update timeout
+      if (this.userUpdateTimeout) {
+        clearTimeout(this.userUpdateTimeout);
       }
 
       // Debounce the refresh to prevent excessive updates
-      this.refreshTimeout = setTimeout(async () => {
+      this.userUpdateTimeout = setTimeout(async () => {
         try {
           // Check if we should fetch new data
           if (!this.shouldFetch()) {
@@ -415,7 +365,7 @@ class LeaderboardService {
         } catch (error) {
           console.error('Error handling user update:', error);
         }
-      }, 3000); // 3 second debounce for real-time updates
+      }, 10000); // 10 second debounce for real-time updates
     } catch (error) {
       console.error('Error setting up user update handler:', error);
     }
@@ -448,7 +398,7 @@ class LeaderboardService {
     try {
       console.log('🧹 Cleaning up and refreshing leaderboard data...');
       
-      // Clean up duplicate entries
+      // Clean up duplicate entries and remove WEEKLY/MONTHLY periods
       await UserService.cleanupLeaderboardRankings();
       
       // Recalculate all ranks
@@ -541,6 +491,18 @@ class LeaderboardService {
     if (this.refreshTimeout) {
       clearTimeout(this.refreshTimeout);
       this.refreshTimeout = null;
+    }
+    if (this.leaderboardUpdateTimeout) {
+      clearTimeout(this.leaderboardUpdateTimeout);
+      this.leaderboardUpdateTimeout = null;
+    }
+    if (this.portfolioUpdateTimeout) {
+      clearTimeout(this.portfolioUpdateTimeout);
+      this.portfolioUpdateTimeout = null;
+    }
+    if (this.userUpdateTimeout) {
+      clearTimeout(this.userUpdateTimeout);
+      this.userUpdateTimeout = null;
     }
   }
 

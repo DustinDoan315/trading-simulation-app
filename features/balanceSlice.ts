@@ -82,15 +82,10 @@ const calculateTotalPortfolioValue = (
   return totalValue;
 };
 
-// Helper function to update leaderboard rankings
+// DISABLED: Automatic leaderboard updates for manual-only refresh
 const updateLeaderboardRankings = async (uuid: string) => {
-  try {
-    await UserService.updateLeaderboardRankings(uuid);
-    console.log("✅ Leaderboard rankings updated successfully");
-  } catch (error) {
-    console.error("❌ Error updating leaderboard rankings:", error);
-    // Don't throw error to avoid breaking the main flow
-  }
+  console.log("🔄 Automatic leaderboard update disabled - manual refresh only");
+  // Do nothing - leaderboard will only update on manual refresh
 };
 
 const initialState: BalanceState = {
@@ -226,41 +221,9 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   console.log("Loading balance - Final USDT balance:", usdtBalance);
   console.log("====================================");
 
-  // Calculate the correct USDT balance based on portfolio data
-  // If there are crypto holdings, the USDT balance should be reduced
-  let calculatedUsdtBalance = 100000; // Start with initial balance
-  let totalCryptoValue = 0;
-
-  portfolio.forEach((item) => {
-    if (item.symbol.toUpperCase() !== "USDT") {
-      const quantity = parseFloat(item.quantity);
-      const currentPrice = parseFloat(item.current_price || item.avg_cost);
-      const valueInUSD = quantity * currentPrice;
-      totalCryptoValue += valueInUSD;
-      console.log(`Portfolio item ${item.symbol}: ${quantity} * ${currentPrice} = ${valueInUSD}`);
-    }
-  });
-
-  calculatedUsdtBalance = 100000 - totalCryptoValue;
-  console.log("Loading balance - Total crypto value:", totalCryptoValue);
-  console.log("Loading balance - Calculated USDT balance:", calculatedUsdtBalance);
-
-  // Use the calculated balance if it's different from the stored balance
-  if (Math.abs(calculatedUsdtBalance - usdtBalance) > 1) {
-    console.log("Loading balance - USDT balance mismatch detected!");
-    console.log("Loading balance - Stored balance:", usdtBalance);
-    console.log("Loading balance - Calculated balance:", calculatedUsdtBalance);
-    console.log("Loading balance - Using calculated balance");
-    usdtBalance = calculatedUsdtBalance;
-    
-    // Update the user's USDT balance in AsyncStorage
-    try {
-      await UserRepository.updateUserBalance(uuid, usdtBalance);
-      console.log("Loading balance - Updated user USDT balance in AsyncStorage");
-    } catch (error) {
-      console.error("Loading balance - Failed to update USDT balance:", error);
-    }
-  }
+  // Trust the USDT balance from the database - don't recalculate it
+  // The USDT balance should reflect actual trading history, not be derived from crypto holdings
+  console.log("Loading balance - Using USDT balance from database:", usdtBalance);
 
   // Initialize holdings object
   const holdings: Record<string, Holding> = {};

@@ -121,7 +121,8 @@ class UserRepository {
   static async savePortfolio(uuid: string, portfolio: any[]) {
     try {
       await AsyncStorageService.saveUserPortfolio(uuid, portfolio);
-      console.log("✅ Portfolio saved successfully:", uuid);
+      // Sync to Supabase cloud
+      await SyncService.syncPortfolio(uuid, portfolio);
     } catch (error) {
       console.error("Failed to save portfolio:", error);
       throw error;
@@ -131,7 +132,9 @@ class UserRepository {
   static async addPortfolioItem(item: any) {
     try {
       await AsyncStorageService.addPortfolioItem(item);
-      console.log("✅ Portfolio item added successfully:", item.symbol);
+      // Sync to Supabase cloud (fetch full portfolio for user)
+      const portfolio = await AsyncStorageService.getUserPortfolio(item.user_id);
+      await SyncService.syncPortfolio(item.user_id, portfolio);
     } catch (error) {
       console.error("Failed to add portfolio item:", error);
       throw error;
@@ -141,7 +144,9 @@ class UserRepository {
   static async updatePortfolioItem(item: any) {
     try {
       await AsyncStorageService.updatePortfolioItem(item);
-      console.log("✅ Portfolio item updated successfully:", item.symbol);
+      // Sync to Supabase cloud (fetch full portfolio for user)
+      const portfolio = await AsyncStorageService.getUserPortfolio(item.user_id);
+      await SyncService.syncPortfolio(item.user_id, portfolio);
     } catch (error) {
       console.error("Failed to update portfolio item:", error);
       throw error;
@@ -151,7 +156,9 @@ class UserRepository {
   static async removePortfolioItem(uuid: string, symbol: string) {
     try {
       await AsyncStorageService.removePortfolioItem(uuid, symbol);
-      console.log("✅ Portfolio item removed successfully:", symbol);
+      // Sync to Supabase cloud (fetch full portfolio for user)
+      const portfolio = await AsyncStorageService.getUserPortfolio(uuid);
+      await SyncService.syncPortfolio(uuid, portfolio);
     } catch (error) {
       console.error("Failed to remove portfolio item:", error);
       throw error;

@@ -37,7 +37,8 @@ export interface CryptoCurrency {
 }
 
 export interface UserBalance {
-  totalInUSD: number;
+  usdtBalance: number; // Available USDT for trading
+  totalPortfolioValue: number; // Total portfolio value including all assets
   holdings: {
     [key: string]: {
       amount: number;
@@ -306,13 +307,15 @@ export const getUserBalance = async (): Promise<UserBalance> => {
     const user = await UserRepository.getUser(uuid);
 
     return {
-      totalInUSD: user ? parseFloat(user.usdt_balance) : 100000,
+      usdtBalance: user ? parseFloat(user.usdt_balance) : 100000,
+      totalPortfolioValue: user ? parseFloat(user.total_portfolio_value) : 100000,
       holdings: {}, // Holdings will be loaded separately
     };
   } catch (error) {
     console.error("Error getting user balance:", error);
     return {
-      totalInUSD: 100000,
+      usdtBalance: 100000,
+      totalPortfolioValue: 100000,
       holdings: {},
     };
   }
@@ -328,7 +331,7 @@ export const updateUserBalance = async (
 ): Promise<void> => {
   try {
     const uuid = await UUIDService.getOrCreateUser();
-    await UserRepository.updateUserBalance(uuid, newBalance.totalInUSD);
+    await UserRepository.updateUserBalance(uuid, newBalance.usdtBalance);
   } catch (error) {
     console.error("Error updating user balance:", error);
   }
@@ -493,7 +496,8 @@ export const prepareForBlockchain = (balance: UserBalance): any => {
   // This is a placeholder for actual blockchain integration
   // In a real app, you'd use ethers.js or web3.js to format data for transactions
   return {
-    totalValue: (balance.totalInUSD || 0).toString(),
+    totalValue: (balance.totalPortfolioValue || 0).toString(),
+    usdtBalance: (balance.usdtBalance || 0).toString(),
     tokens: Object.entries(balance.holdings).map(([id, data]) => ({
       id,
       amount: (data.amount || 0).toString(),

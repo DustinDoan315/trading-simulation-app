@@ -1,3 +1,4 @@
+import { BackgroundDataSyncService } from './BackgroundDataSyncService';
 import { getMarketData } from './CryptoService';
 import { store } from '@/store';
 import { updateCurrentPrice } from '@/features/balanceSlice';
@@ -19,7 +20,7 @@ class RealTimeDataService {
     isLoading: false,
     error: null,
     consecutiveErrors: 0,
-    updateInterval: 60* 1000,
+    updateInterval: 30000, // 30 seconds to match background sync
     isInitialized: false,
   };
   private intervalId: NodeJS.Timeout | any = null;
@@ -151,10 +152,18 @@ class RealTimeDataService {
 
     console.log('RealTimeDataService: Starting real-time updates...');
     
+    // Start the background sync service for comprehensive data updates
+    const backgroundSync = BackgroundDataSyncService.getInstance();
+    if (!backgroundSync.isServiceRunning()) {
+      backgroundSync.start().catch(error => {
+        console.error('RealTimeDataService: Failed to start background sync:', error);
+      });
+    }
+    
     // Initial update
     this.updateCryptoPrices();
 
-    // Set up interval for real-time updates
+    // Set up interval for real-time updates (30 seconds to match background sync)
     this.intervalId = setInterval(() => {
       this.updateCryptoPrices();
     }, this.state.updateInterval);
@@ -178,7 +187,12 @@ class RealTimeDataService {
   // Manual refresh
   async refresh(): Promise<void> {
     console.log('RealTimeDataService: Manual refresh requested');
-    await this.updateCryptoPrices();
+    
+    // Trigger both real-time updates and background sync
+    await Promise.all([
+      this.updateCryptoPrices(),
+      BackgroundDataSyncService.getInstance().forceSync()
+    ]);
   }
 
   // Check if service is active

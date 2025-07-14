@@ -1,4 +1,5 @@
 import LeaderboardService from './LeaderboardService';
+import { getMarketData } from './CryptoService';
 import { logger } from '@/utils/logger';
 import { supabase } from './SupabaseService';
 import { UserService } from './UserService';
@@ -23,6 +24,8 @@ export class BackgroundDataSyncService {
   private static instance: BackgroundDataSyncService;
   private syncInterval: NodeJS.Timeout | any = null;
   private isRunning = false;
+  private lastLeaderboardSync = 0;
+  private LEADERBOARD_SYNC_COOLDOWN = 60000; // 1 minute cooldown for leaderboard syncs
   private syncStatus: SyncStatus = {
     isRunning: false,
     lastSyncAt: null,
@@ -107,19 +110,22 @@ export class BackgroundDataSyncService {
       
       const startTime = Date.now();
       
-      // Step 1: Sync portfolio data with current prices
-      await this.syncPortfolioData();
+      // Step 1: Get real-time market data from CoinGecko API
+      const marketData = await this.getRealTimeMarketData();
       
-      // Step 2: Update user P&L and portfolio values
+      // Step 2: Sync portfolio data with current prices
+      await this.syncPortfolioData(marketData);
+      
+      // Step 3: Update user P&L and portfolio values
       await this.syncUserData();
       
-      // Step 3: Update leaderboard rankings
+      // Step 4: Update leaderboard rankings
       await this.syncLeaderboardData();
       
-      // Step 4: Force refresh all users' real-time data to ensure consistency
+      // Step 5: Force refresh all users' real-time data to ensure consistency
       await UserService.forceUpdateAllUsersRealTimeData();
       
-      // Step 4: Clean up any inconsistencies
+      // Step 6: Clean up any inconsistencies
       await this.cleanupInconsistencies();
       
       const duration = Date.now() - startTime;
@@ -144,8 +150,25 @@ export class BackgroundDataSyncService {
     }
   }
 
+  // Get real-time market data from CoinGecko API
+  private async getRealTimeMarketData(): Promise<any[]> {
+    try {
+      logger.info('Fetching real-time market data from CoinGecko...', 'BackgroundDataSyncService');
+      
+      // Fetch fresh market data from CoinGecko API
+      const marketData = await getMarketData(true, 100); // Get top 100 coins
+      
+      logger.info(`Fetched ${marketData.length} market data entries`, 'BackgroundDataSyncService');
+      
+      return marketData;
+    } catch (error) {
+      logger.error('Error fetching real-time market data', 'BackgroundDataSyncService', error);
+      return [];
+    }
+  }
+
   // Sync portfolio data with current prices
-  private async syncPortfolioData(): Promise<void> {
+  private async syncPortfolioData(marketData: any[]): Promise<void> {
     try {
       logger.info('Syncing portfolio data with current prices...', 'BackgroundDataSyncService');
       
@@ -174,19 +197,19 @@ export class BackgroundDataSyncService {
         return;
       }
 
-      // Group by symbol to get current prices efficiently
-      const symbols = [...new Set(validPortfolios.map(p => p.symbol))];
-      
-      // Get current prices for all symbols (you might need to implement this based on your price source)
-      const currentPrices = await this.getCurrentPrices(symbols);
+      // Create a map of current prices from market data
+      const currentPrices: Record<string, number> = {};
+      marketData.forEach(coin => {
+        currentPrices[coin.symbol.toUpperCase()] = coin.current_price;
+      });
       
       // Update portfolio items with current prices and recalculate values
       const updates = validPortfolios.map(portfolio => {
-        const currentPrice = currentPrices[portfolio.symbol] || portfolio.current_price;
+        const currentPrice = currentPrices[portfolio.symbol] || parseFloat(portfolio.current_price || '0');
         const quantity = parseFloat(portfolio.quantity || '0');
         const avgCost = parseFloat(portfolio.avg_cost || '0');
         
-        const totalValue = quantity * parseFloat(currentPrice);
+        const totalValue = quantity * currentPrice;
         const costBasis = quantity * avgCost;
         const profitLoss = totalValue - costBasis;
         const profitLossPercent = avgCost > 0 ? (profitLoss / costBasis) * 100 : 0;
@@ -194,7 +217,7 @@ export class BackgroundDataSyncService {
         return {
           id: portfolio.id,
           symbol: portfolio.symbol, // Include symbol to prevent constraint violation
-          current_price: currentPrice,
+          current_price: currentPrice.toString(),
           total_value: totalValue.toString(),
           profit_loss: profitLoss.toString(),
           profit_loss_percent: profitLossPercent.toString(),
@@ -216,46 +239,105 @@ export class BackgroundDataSyncService {
         }
       }
 
-      logger.info(`Updated ${updates.length} portfolio items`, 'BackgroundDataSyncService');
+      logger.info(`Updated ${updates.length} portfolio items with real-time prices`, 'BackgroundDataSyncService');
     } catch (error) {
       logger.error('Error syncing portfolio data', 'BackgroundDataSyncService', error);
       throw error;
     }
   }
 
-  // Sync user data with real-time calculated values
+  // Sync user data with updated portfolio values
   private async syncUserData(): Promise<void> {
     try {
-      logger.info('Syncing user data with real-time values...', 'BackgroundDataSyncService');
+      logger.info('Syncing user data with updated portfolio values...', 'BackgroundDataSyncService');
       
       // Get all users
-      const { data: users, error } = await supabase
+      const { data: users, error: usersError } = await supabase
         .from('users')
         .select('id');
 
-      if (error) throw error;
+      if (usersError) throw usersError;
 
       if (!users || users.length === 0) {
-        logger.info('No users to sync', 'BackgroundDataSyncService');
+        logger.info('No users found for data sync', 'BackgroundDataSyncService');
         return;
       }
 
-      // Update each user's real-time data
-      for (let i = 0; i < users.length; i += this.config.maxConcurrentUpdates) {
-        const batch = users.slice(i, i + this.config.maxConcurrentUpdates);
-        
-        await Promise.all(
-          batch.map(async (user) => {
-            try {
-              await UserService.updateLeaderboardRankings(user.id);
-            } catch (error) {
-              logger.error(`Error updating user ${user.id}`, 'BackgroundDataSyncService', error);
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Update each user's portfolio value and P&L
+      for (const user of users) {
+        try {
+          // Get user's portfolio
+          const { data: portfolio, error: portfolioError } = await supabase
+            .from('portfolio')
+            .select('*')
+            .eq('user_id', user.id);
+
+          if (portfolioError) {
+            logger.error(`Error fetching portfolio for user ${user.id}`, 'BackgroundDataSyncService', portfolioError);
+            errorCount++;
+            continue;
+          }
+
+          if (!portfolio || portfolio.length === 0) {
+            // User has no portfolio, reset to default values
+            await supabase
+              .from('users')
+              .update({
+                total_portfolio_value: '100000.00',
+                total_pnl: '0.00',
+                total_pnl_percentage: '0.00',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', user.id);
+            successCount++;
+            continue;
+          }
+
+          // Calculate total portfolio value and P&L
+          let totalPortfolioValue = 0;
+          let totalPnL = 0;
+          let totalCostBasis = 0;
+
+          portfolio.forEach(asset => {
+            if (asset.symbol.toUpperCase() !== 'USDT') {
+              const currentValue = parseFloat(asset.total_value || '0');
+              const costBasis = parseFloat(asset.quantity || '0') * parseFloat(asset.avg_cost || '0');
+              
+              totalPortfolioValue += currentValue;
+              totalPnL += parseFloat(asset.profit_loss || '0');
+              totalCostBasis += costBasis;
             }
-          })
-        );
+          });
+
+          // Add USDT balance to total portfolio value
+          const usdtBalance = parseFloat(portfolio.find(p => p.symbol.toUpperCase() === 'USDT')?.total_value || '0');
+          totalPortfolioValue += usdtBalance;
+
+          // Calculate P&L percentage
+          const totalPnLPercentage = totalCostBasis > 0 ? (totalPnL / totalCostBasis) * 100 : 0;
+
+          // Update user data
+          await supabase
+            .from('users')
+            .update({
+              total_portfolio_value: totalPortfolioValue.toString(),
+              total_pnl: totalPnL.toString(),
+              total_pnl_percentage: totalPnLPercentage.toString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user.id);
+
+          successCount++;
+        } catch (error) {
+          logger.error(`Error updating user data for user ${user.id}`, 'BackgroundDataSyncService', error);
+          errorCount++;
+        }
       }
 
-      logger.info(`Updated ${users.length} users with real-time data`, 'BackgroundDataSyncService');
+      logger.info(`Updated ${successCount} users, ${errorCount} errors`, 'BackgroundDataSyncService');
     } catch (error) {
       logger.error('Error syncing user data', 'BackgroundDataSyncService', error);
       throw error;
@@ -265,19 +347,18 @@ export class BackgroundDataSyncService {
   // Sync leaderboard data
   private async syncLeaderboardData(): Promise<void> {
     try {
+      const now = Date.now();
+      if (now - this.lastLeaderboardSync < this.LEADERBOARD_SYNC_COOLDOWN) {
+        logger.info('Leaderboard sync skipped due to cooldown', 'BackgroundDataSyncService');
+        return;
+      }
+
       logger.info('Syncing leaderboard data...', 'BackgroundDataSyncService');
       
-      const leaderboardService = LeaderboardService.getInstance();
+      // Force refresh all leaderboard rankings
+      await UserService.refreshAllLeaderboardRankings();
       
-      // Clean up any duplicate or inconsistent entries
-      await leaderboardService.cleanupAndRefresh({
-        period: 'ALL_TIME',
-        limit: 100,
-      });
-
-      // Recalculate all ranks for consistency
-      await UserService.recalculateAllRanks();
-
+      this.lastLeaderboardSync = now;
       logger.info('Leaderboard data synced successfully', 'BackgroundDataSyncService');
     } catch (error) {
       logger.error('Error syncing leaderboard data', 'BackgroundDataSyncService', error);
@@ -285,12 +366,12 @@ export class BackgroundDataSyncService {
     }
   }
 
-  // Clean up any data inconsistencies
+  // Clean up data inconsistencies
   private async cleanupInconsistencies(): Promise<void> {
     try {
       logger.info('Cleaning up data inconsistencies...', 'BackgroundDataSyncService');
       
-      // Remove portfolio entries with null or empty symbols
+      // Remove portfolio entries with null symbols
       const { error: symbolError } = await supabase
         .from('portfolio')
         .delete()
@@ -402,42 +483,6 @@ export class BackgroundDataSyncService {
     } catch (error) {
       logger.error('Error cleaning up inconsistencies', 'BackgroundDataSyncService', error);
       throw error;
-    }
-  }
-
-  // Get current prices for symbols (implement based on your price source)
-  private async getCurrentPrices(symbols: string[]): Promise<Record<string, string>> {
-    try {
-      // Filter out invalid symbols
-      const validSymbols = symbols.filter(symbol => symbol && symbol.trim() !== '');
-      
-      if (validSymbols.length === 0) {
-        logger.info('No valid symbols to get prices for', 'BackgroundDataSyncService');
-        return {};
-      }
-
-      // This is a placeholder - implement based on your price source
-      // You might want to use your existing CryptoService or similar
-      const prices: Record<string, string> = {};
-      
-      // For now, we'll get prices from the portfolio table's current prices
-      // In a real implementation, you'd fetch from your price API
-      const { data: portfolios } = await supabase
-        .from('portfolio')
-        .select('symbol, current_price')
-        .in('symbol', validSymbols)
-        .not('symbol', 'is', null);
-
-      portfolios?.forEach(portfolio => {
-        if (portfolio.symbol && portfolio.current_price) {
-          prices[portfolio.symbol] = portfolio.current_price;
-        }
-      });
-
-      return prices;
-    } catch (error) {
-      logger.error('Error getting current prices', 'BackgroundDataSyncService', error);
-      return {};
     }
   }
 

@@ -126,9 +126,7 @@ export const useRealTimeBalance = (): RealTimeBalanceData => {
     // Also refresh user rank
     if (user?.id) {
       try {
-        // Update leaderboard rankings first
-        await UserService.updateLeaderboardRankings(user.id);
-        // Then fetch the updated rank
+        // Fetch the updated rank (leaderboard rankings are updated automatically by other services)
         const rank = await UserService.getUserRank(user.id, "ALL_TIME");
         setUserRank(rank);
       } catch (error) {
