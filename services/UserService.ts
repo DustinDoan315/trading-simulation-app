@@ -1,3 +1,5 @@
+import { AsyncStorageService } from './AsyncStorageService';
+import { DEFAULT_BALANCE } from '@/utils/constant';
 import { logger } from '@/utils/logger';
 import { supabase } from './SupabaseService';
 import {
@@ -946,7 +948,7 @@ export class UserService {
         
         // Calculate real PnL from portfolio data
         let totalPnL = 0;
-        const initialBalance = parseFloat(user.initial_balance || "100000");
+        const initialBalance = parseFloat(user.initial_balance || DEFAULT_BALANCE.toString());
         
         portfolio.forEach((item) => {
           const quantity = parseFloat(item.quantity || "0");
@@ -1499,9 +1501,9 @@ export class UserService {
       // Step 5: Reset user profile to default values
       try {
         const defaultUserData = {
-          usdt_balance: "100000.00",
-          total_portfolio_value: "100000.00",
-          initial_balance: "100000.00",
+          usdt_balance: DEFAULT_BALANCE.toString() + ".00",
+          total_portfolio_value: DEFAULT_BALANCE.toString() + ".00",
+          initial_balance: DEFAULT_BALANCE.toString() + ".00",
           total_pnl: "0.00",
           total_pnl_percentage: "0.00",
           total_trades: 0,
@@ -1525,6 +1527,37 @@ export class UserService {
         } else {
           result.details.userProfile = true;
           logger.info("User profile reset to default successfully", "UserService");
+          
+          // Step 6: Update AsyncStorage with the reset user data
+          try {
+            const resetUserData = {
+              id: userId,
+              username: `user_${userId.slice(0, 8)}`,
+              display_name: `User ${userId.slice(0, 8)}`,
+              avatar_emoji: "🚀",
+              usdt_balance: defaultUserData.usdt_balance,
+              total_portfolio_value: defaultUserData.total_portfolio_value,
+              initial_balance: defaultUserData.initial_balance,
+              total_pnl: defaultUserData.total_pnl,
+              total_pnl_percentage: defaultUserData.total_pnl_percentage,
+              total_trades: defaultUserData.total_trades,
+              total_buy_volume: defaultUserData.total_buy_volume,
+              total_sell_volume: defaultUserData.total_sell_volume,
+              win_rate: defaultUserData.win_rate,
+              global_rank: undefined,
+              last_trade_at: undefined,
+              join_date: new Date().toISOString(),
+              last_active: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: defaultUserData.updated_at,
+            };
+            
+            await AsyncStorageService.createOrUpdateUser(resetUserData);
+            logger.info("AsyncStorage updated with reset user data", "UserService");
+          } catch (asyncStorageError) {
+            logger.warn("Failed to update AsyncStorage with reset data", "UserService", asyncStorageError);
+            // Don't fail the reset if AsyncStorage update fails
+          }
         }
       } catch (error) {
         logger.error("Error resetting user profile", "UserService", error);
@@ -1641,7 +1674,7 @@ export class UserService {
             await this.updateUser(user.id, {
               total_pnl: "0",
               total_pnl_percentage: "0",
-              total_portfolio_value: userData.initial_balance || "100000.00",
+              total_portfolio_value: userData.initial_balance || (DEFAULT_BALANCE.toString() + ".00"),
               global_rank: undefined,
             } as any);
             successCount++;
@@ -1651,7 +1684,7 @@ export class UserService {
           // Calculate real-time P&L and portfolio value
           let totalPnL = 0;
           let totalPortfolioValue = 0;
-          const initialBalance = parseFloat(userData.initial_balance || "100000");
+          const initialBalance = parseFloat(userData.initial_balance || DEFAULT_BALANCE.toString());
 
           portfolio.forEach((item) => {
             const quantity = parseFloat(item.quantity || "0");

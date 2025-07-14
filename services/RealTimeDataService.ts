@@ -79,12 +79,20 @@ class RealTimeDataService {
       // Fetch latest market data
       const marketData = await getMarketData(true, 50);
       
+      console.log('RealTimeDataService: Market data received:', marketData.length, 'coins');
+      console.log('RealTimeDataService: Sample market data:', marketData.slice(0, 3).map(coin => ({
+        symbol: coin.symbol,
+        price: coin.current_price
+      })));
+      
       // Get current balance from store
       const balance = store.getState().balance.balance;
       
       // Update prices in Redux store
       marketData.forEach((coin) => {
         const symbol = coin.symbol.toUpperCase();
+        
+        console.log(`RealTimeDataService: Updating ${symbol} price to ${coin.current_price}`);
         
         // Update crypto prices slice
         store.dispatch(updatePrice({

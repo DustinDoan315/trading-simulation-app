@@ -51,10 +51,17 @@ export class DualBalanceService {
         };
       });
 
-      // Add USDT holding
+      // Calculate actual USDT balance from initial balance and crypto holdings
+      const initialBalance = parseFloat(user.initial_balance);
+      const cryptoValue = portfolio?.reduce((sum, item) => sum + parseFloat(item.total_value), 0) || 0;
+      const actualUsdtBalance = initialBalance - cryptoValue;
+      
+      // Use the calculated balance instead of the database field
+      const usdtBalance = Math.max(0, actualUsdtBalance);
+      
       holdings.USDT = {
-        amount: parseFloat(user.usdt_balance),
-        valueInUSD: parseFloat(user.usdt_balance),
+        amount: usdtBalance,
+        valueInUSD: usdtBalance,
         symbol: 'USDT',
         name: 'Tether',
         image_url: 'https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661',
@@ -65,12 +72,21 @@ export class DualBalanceService {
       };
 
       const totalPortfolioValue = this.calculateTotalPortfolioValue(holdings);
-      const initialBalance = parseFloat(user.initial_balance);
       const totalPnL = totalPortfolioValue - initialBalance;
       const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
 
+      console.log('📊 getIndividualBalance - Database values:', {
+        userId,
+        usdtBalanceFromDB: user.usdt_balance,
+        calculatedUsdtBalance: usdtBalance,
+        initialBalance,
+        cryptoValue,
+        totalPortfolioValue,
+        totalPnL
+      });
+
       return {
-        usdtBalance: parseFloat(user.usdt_balance),
+        usdtBalance,
         totalPortfolioValue,
         holdings,
         totalPnL,
@@ -184,6 +200,13 @@ export class DualBalanceService {
         balanceBefore = individualBalance.usdtBalance;
         balanceAfter = isBuy ? balanceBefore - totalValue : balanceBefore + totalValue;
         
+        console.log('💳 executeTrade - Balance calculation:', {
+          balanceBefore,
+          balanceAfter,
+          isBuy,
+          totalValue
+        });
+        
         // Update individual balance and portfolio
         await this.updateIndividualTrade(order, userId);
       } else {
@@ -237,6 +260,15 @@ export class DualBalanceService {
     const price = order.price;
     const totalValue = order.total;
 
+    console.log('🔄 updateIndividualTrade - Trade details:', {
+      isBuy,
+      symbol,
+      quantity,
+      price,
+      totalValue,
+      userId
+    });
+
     // Update USDT balance
     const { data: user } = await supabase
       .from('users')
@@ -249,14 +281,55 @@ export class DualBalanceService {
     const currentUsdtBalance = parseFloat(user.usdt_balance);
     const newUsdtBalance = isBuy ? currentUsdtBalance - totalValue : currentUsdtBalance + totalValue;
 
-    await supabase
+    console.log('💰 USDT Balance Update:', {
+      currentUsdtBalance,
+      newUsdtBalance,
+      operation: isBuy ? 'subtract' : 'add',
+      totalValue
+    });
+
+    // Calculate crypto value first
+    const cryptoValue = await this.calculateCryptoValue(userId);
+    const totalPortfolioValue = newUsdtBalance + cryptoValue;
+
+    console.log('📊 Portfolio value calculation:', {
+      newUsdtBalance,
+      cryptoValue,
+      totalPortfolioValue
+    });
+
+    const { error: updateError } = await supabase
       .from('users')
       .update({ 
         usdt_balance: newUsdtBalance.toString(),
-        total_portfolio_value: (newUsdtBalance + this.calculateCryptoValue(userId)).toString(),
+        total_portfolio_value: totalPortfolioValue.toString(),
         last_trade_at: new Date().toISOString()
       })
       .eq('id', userId);
+
+    if (updateError) {
+      console.error('❌ Failed to update USDT balance:', updateError);
+      throw updateError;
+    }
+
+    console.log('✅ USDT balance updated successfully to:', newUsdtBalance);
+
+    // Verify the update was successful
+    const { data: verifyUser } = await supabase
+      .from('users')
+      .select('usdt_balance')
+      .eq('id', userId)
+      .single();
+
+    if (verifyUser) {
+      const actualBalance = parseFloat(verifyUser.usdt_balance);
+      console.log('🔍 Verification - Actual balance in database:', actualBalance);
+      if (Math.abs(actualBalance - newUsdtBalance) > 0.01) {
+        console.error('❌ Balance verification failed! Expected:', newUsdtBalance, 'Got:', actualBalance);
+      } else {
+        console.log('✅ Balance verification successful');
+      }
+    }
 
     // Update portfolio holdings
     await this.updateIndividualPortfolio(symbol, quantity, price, totalValue, isBuy, userId);
@@ -289,11 +362,15 @@ export class DualBalanceService {
     const currentBalance = parseFloat(member.current_balance);
     const newBalance = isBuy ? currentBalance - totalValue : currentBalance + totalValue;
 
+    // Calculate crypto value first
+    const cryptoValue = await this.calculateCollectionCryptoValue(collectionId, userId);
+    const totalPortfolioValue = newBalance + cryptoValue;
+
     await supabase
       .from('collection_members')
       .update({ 
         current_balance: newBalance.toString(),
-        total_portfolio_value: (newBalance + this.calculateCollectionCryptoValue(collectionId, userId)).toString(),
+        total_portfolio_value: totalPortfolioValue.toString(),
         last_trade_at: new Date().toISOString()
       })
       .eq('collection_id', collectionId)

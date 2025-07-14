@@ -1,7 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { logger } from '@/utils/logger';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from "react";
+import { getCryptoDetails } from "@/services/CryptoService";
+import { Ionicons } from "@expo/vector-icons";
+import { logger } from "@/utils/logger";
+import { RootState } from "@/store";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { useSelector } from "react-redux";
 import {
   ActivityIndicator,
   Dimensions,
@@ -20,13 +23,10 @@ import {
   formatPercentage,
 } from "@/utils/formatters";
 
-
-// Type definitions for route params
 type CryptoDetailRouteParams = {
   cryptoId: string;
 };
 
-// For type safety with useRoute hook
 type CryptoDetailRouteProp = RouteProp<
   { detail: CryptoDetailRouteParams },
   "detail"
@@ -43,6 +43,11 @@ const CryptoDetailScreen: React.FC = () => {
   const route = useRoute<CryptoDetailRouteProp>();
   const { cryptoId } = route.params;
 
+  // Get real-time price from Redux store
+  const realTimePrice = useSelector(
+    (state: RootState) => state.cryptoPrices.prices[cryptoId.toUpperCase()]
+  );
+
   const [cryptoData, setCryptoData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [timeRange, setTimeRange] = useState<"1d" | "1w" | "1m" | "3m" | "1y">(
@@ -55,18 +60,22 @@ const CryptoDetailScreen: React.FC = () => {
   const fetchCryptoData = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Use real-time price from Redux store or fallback to a reasonable default
+      const currentPrice = realTimePrice || 45000; // More realistic default for BTC
+
       const marketData = [1, 2, 3].map((i) => ({
         id: `crypto-${i}`,
         name: `Crypto ${i}`,
         symbol: `C${i}`,
-        current_price: Math.floor(Math.random() * 100000),
+        current_price: currentPrice * (0.8 + Math.random() * 0.4), // Vary around the real price
         price_change_percentage_24h: Math.random() * 10 - 5,
         image: `https://example.com/crypto${i}.png`,
-        market_cap: Math.floor(Math.random() * 1000000000),
-        total_volume: Math.floor(Math.random() * 10000000),
-        circulating_supply: Math.floor(Math.random() * 1000000),
-        max_supply: Math.floor(Math.random() * 10000000),
-        ath: Math.floor(Math.random() * 100000),
+        market_cap: currentPrice * 1000000 * (0.5 + Math.random()), // Realistic market cap
+        total_volume: currentPrice * 10000 * (0.5 + Math.random()), // Realistic volume
+        circulating_supply: 1000000 * (0.5 + Math.random()), // Realistic supply
+        max_supply: 10000000 * (0.5 + Math.random()), // Realistic max supply
+        ath: currentPrice * 1.5, // Realistic ATH
         ath_change_percentage: Math.random() * 10 - 5,
       }));
       const crypto = marketData.find((c) => c.id === cryptoId);
@@ -85,13 +94,17 @@ const CryptoDetailScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [cryptoId]);
+  }, [cryptoId, realTimePrice]);
 
   useEffect(() => {
     const fetchCryptoDetails = async () => {
       try {
         const crypto = await getCryptoDetails(cryptoId);
         if (crypto) {
+          // Update with real-time price if available
+          if (realTimePrice) {
+            crypto.current_price = realTimePrice;
+          }
           setCryptoData(crypto);
         } else {
           logger.error(
@@ -107,7 +120,17 @@ const CryptoDetailScreen: React.FC = () => {
     if (cryptoId) {
       fetchCryptoDetails();
     }
-  }, [cryptoId]);
+  }, [cryptoId, realTimePrice]);
+
+  // Update crypto data when real-time price changes
+  useEffect(() => {
+    if (cryptoData && realTimePrice) {
+      setCryptoData((prev: any) => ({
+        ...prev,
+        current_price: realTimePrice,
+      }));
+    }
+  }, [realTimePrice, cryptoData]);
 
   // Chart dimensions
   const screenWidth = Dimensions.get("window").width;
@@ -281,7 +304,7 @@ const CryptoDetailScreen: React.FC = () => {
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>Circulating Supply</Text>
                 <Text style={styles.statValue}>
-                  {formatLargeNumber(cryptoData.circulating_supply)}{" "}
+                  {formatCurrency(cryptoData.circulating_supply)}{" "}
                   {cryptoData.symbol.toUpperCase()}
                 </Text>
               </View>
@@ -289,7 +312,7 @@ const CryptoDetailScreen: React.FC = () => {
                 <Text style={styles.statLabel}>Max Supply</Text>
                 <Text style={styles.statValue}>
                   {cryptoData.max_supply
-                    ? `${formatLargeNumber(
+                    ? `${formatCurrency(
                         cryptoData.max_supply
                       )} ${cryptoData.symbol.toUpperCase()}`
                     : "Unlimited"}

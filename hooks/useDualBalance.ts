@@ -142,19 +142,15 @@ export const useDualBalance = () => {
         context: activeContext 
       })).unwrap();
       
-      // Reload the appropriate balance after trade
-      if (activeContext.type === 'individual') {
-        await loadIndividual();
-      } else if (activeContext.collectionId) {
-        await loadCollection(activeContext.collectionId);
-      }
+      // The Redux state is automatically updated in executeTrade.fulfilled
+      // No need to manually reload the balance
       
       return result;
     } catch (error) {
       console.error('Failed to execute trade:', error);
       throw error;
     }
-  }, [dispatch, activeContext, initializeUserIfNeeded, loadIndividual, loadCollection]);
+  }, [dispatch, activeContext, initializeUserIfNeeded]);
 
   // Update holding in current context
   const updateHolding = useCallback((payload: HoldingUpdatePayload) => {

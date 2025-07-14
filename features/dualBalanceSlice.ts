@@ -1,12 +1,12 @@
 import UUIDService from '../services/UUIDService';
 import {
-    CollectionBalance,
-    CombinedPnLResult,
-    DualBalanceState,
-    IndividualBalance,
-    PnLResult,
-    TradingContext
-    } from '../types/database';
+  CollectionBalance,
+  CombinedPnLResult,
+  DualBalanceState,
+  IndividualBalance,
+  PnLResult,
+  TradingContext
+  } from '../types/database';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { DualBalanceService } from '../services/DualBalanceService';
 import { Holding, HoldingUpdatePayload } from '../types/crypto';
@@ -49,7 +49,16 @@ export const executeTrade = createAsyncThunk(
   'dualBalance/executeTrade',
   async ({ order, context }: { order: any; context: TradingContext }) => {
     const uuid = await UUIDService.getOrCreateUser();
-    return await DualBalanceService.executeTrade(order, context, uuid);
+    const transaction = await DualBalanceService.executeTrade(order, context, uuid);
+    
+    // Return both the transaction and the updated balance
+    if (context.type === 'individual') {
+      const updatedBalance = await DualBalanceService.getIndividualBalance(uuid);
+      return { transaction, updatedBalance };
+    } else {
+      const updatedBalance = await DualBalanceService.getCollectionBalance(context.collectionId!, uuid);
+      return { transaction, updatedBalance };
+    }
   }
 );
 
@@ -385,8 +394,19 @@ const dualBalanceSlice = createSlice({
         // Handle loading state if needed
       })
       .addCase(executeTrade.fulfilled, (state, action) => {
-        // Trade executed successfully, balance updates handled by the service
+        // Trade executed successfully, update the balance in Redux state
         console.log('Trade executed successfully:', action.payload);
+        
+        const { transaction, updatedBalance } = action.payload;
+        
+        // Update the appropriate balance based on the context
+        if ('collectionId' in updatedBalance) {
+          // Collection balance
+          state.collections[updatedBalance.collectionId] = updatedBalance;
+        } else {
+          // Individual balance
+          state.individual = updatedBalance;
+        }
       })
       .addCase(executeTrade.rejected, (state, action) => {
         console.error('Failed to execute trade:', action.error);

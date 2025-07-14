@@ -77,6 +77,10 @@ interface SyncQueueItem {
 }
 
 export class AsyncStorageService {
+  // Helper function to normalize user IDs for consistent comparison
+  private static normalizeUserId(userId: string): string {
+    return userId.toLowerCase();
+  }
   // User operations
   static async createOrUpdateUser(userData: UserData): Promise<UserData> {
     try {
@@ -104,10 +108,12 @@ export class AsyncStorageService {
       if (userData) {
         const user = JSON.parse(userData) as UserData;
         console.log("🔍 AsyncStorageService.getUser - Parsed user:", user);
-        console.log("🔍 AsyncStorageService.getUser - User ID match:", user.id === userId);
         
-        // Since we're storing a single user object, just verify the ID matches
-        if (user.id === userId) {
+        // Use case-insensitive comparison for user ID
+        const userIdMatch = this.normalizeUserId(user.id) === this.normalizeUserId(userId);
+        console.log("🔍 AsyncStorageService.getUser - User ID match:", userIdMatch);
+        
+        if (userIdMatch) {
           return user;
         } else {
           console.log("🔍 AsyncStorageService.getUser - User ID mismatch, expected:", userId, "got:", user.id);
@@ -180,7 +186,7 @@ export class AsyncStorageService {
       const portfolioData = await AsyncStorage.getItem(PORTFOLIO_KEY);
       if (portfolioData) {
         const portfolio = JSON.parse(portfolioData) as PortfolioData[];
-        return portfolio.filter((item) => item.user_id === user_id);
+        return portfolio.filter((item) => this.normalizeUserId(item.user_id) === this.normalizeUserId(user_id));
       }
       return [];
     } catch (error) {
@@ -196,8 +202,8 @@ export class AsyncStorageService {
       
       if (existingData) {
         allPortfolio = JSON.parse(existingData) as PortfolioData[];
-        // Remove existing portfolio for this user
-        allPortfolio = allPortfolio.filter((item) => item.user_id !== user_id);
+        // Remove existing portfolio for this user (case-insensitive)
+        allPortfolio = allPortfolio.filter((item) => this.normalizeUserId(item.user_id) !== this.normalizeUserId(user_id));
       }
       
       // Add new portfolio data
@@ -220,9 +226,9 @@ export class AsyncStorageService {
         portfolio = JSON.parse(existingData) as PortfolioData[];
       }
       
-      // Remove existing item with same symbol for this user
+      // Remove existing item with same symbol for this user (case-insensitive)
       portfolio = portfolio.filter((existing) => 
-        !(existing.user_id === item.user_id && existing.symbol === item.symbol)
+        !(this.normalizeUserId(existing.user_id) === this.normalizeUserId(item.user_id) && existing.symbol === item.symbol)
       );
       
       // Add new item
@@ -245,9 +251,9 @@ export class AsyncStorageService {
       
       let portfolio: PortfolioData[] = JSON.parse(existingData) as PortfolioData[];
       
-      // Find and update the item
+      // Find and update the item (case-insensitive)
       const index = portfolio.findIndex((item) => 
-        item.user_id === updatedItem.user_id && item.symbol === updatedItem.symbol
+        this.normalizeUserId(item.user_id) === this.normalizeUserId(updatedItem.user_id) && item.symbol === updatedItem.symbol
       );
       
       if (index !== -1) {
@@ -272,9 +278,9 @@ export class AsyncStorageService {
       
       let portfolio: PortfolioData[] = JSON.parse(existingData) as PortfolioData[];
       
-      // Remove the item
+      // Remove the item (case-insensitive)
       portfolio = portfolio.filter((item) => 
-        !(item.user_id === user_id && item.symbol === symbol)
+        !(this.normalizeUserId(item.user_id) === this.normalizeUserId(user_id) && item.symbol === symbol)
       );
       
       await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(portfolio));
@@ -291,7 +297,7 @@ export class AsyncStorageService {
       const transactionsData = await AsyncStorage.getItem(TRANSACTIONS_KEY);
       if (transactionsData) {
         const transactions = JSON.parse(transactionsData) as TransactionData[];
-        return transactions.filter((item) => item.user_id === user_id);
+        return transactions.filter((item) => this.normalizeUserId(item.user_id) === this.normalizeUserId(user_id));
       }
       return [];
     } catch (error) {
@@ -385,25 +391,54 @@ export class AsyncStorageService {
   // Clear user-specific data (for user reset)
   static async clearUserData(userId: string): Promise<void> {
     try {
-      // Get existing data and remove user-specific entries
+      console.log("🧹 AsyncStorageService.clearUserData - Clearing data for user:", userId);
+      
+      // Get existing data and remove user-specific entries (case-insensitive)
       const portfolioData = await AsyncStorage.getItem(PORTFOLIO_KEY);
       if (portfolioData) {
         const portfolio = JSON.parse(portfolioData) as PortfolioData[];
-        const filteredPortfolio = portfolio.filter(item => item.user_id !== userId);
+        const filteredPortfolio = portfolio.filter(item => 
+          this.normalizeUserId(item.user_id) !== this.normalizeUserId(userId)
+        );
         await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(filteredPortfolio));
+        console.log("✅ Portfolio data cleared for user:", userId);
       }
 
       const transactionsData = await AsyncStorage.getItem(TRANSACTIONS_KEY);
       if (transactionsData) {
         const transactions = JSON.parse(transactionsData) as TransactionData[];
-        const filteredTransactions = transactions.filter(item => item.user_id !== userId);
+        const filteredTransactions = transactions.filter(item => 
+          this.normalizeUserId(item.user_id) !== this.normalizeUserId(userId)
+        );
         await AsyncStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(filteredTransactions));
+        console.log("✅ Transaction data cleared for user:", userId);
       }
 
       // Clear user profile
       await AsyncStorage.removeItem(USER_KEY);
+      console.log("✅ User profile cleared");
       
-      console.log("✅ User-specific AsyncStorage data cleared for user:", userId);
+      // Clear any additional cached data that might be user-specific
+      const additionalKeys = [
+        'user_balance',
+        'user_portfolio', 
+        'user_transactions',
+        'user_favorites',
+        'portfolio_cache',
+        'balance_cache',
+        'last_app_reset'
+      ];
+      
+      for (const key of additionalKeys) {
+        try {
+          await AsyncStorage.removeItem(key);
+          console.log("✅ Cleared additional cache key:", key);
+        } catch (error) {
+          console.log("⚠️ Could not clear key:", key, error);
+        }
+      }
+      
+      console.log("✅ All user-specific AsyncStorage data cleared for user:", userId);
     } catch (error) {
       console.error("❌ Failed to clear user AsyncStorage data:", error);
       throw error;
@@ -443,6 +478,24 @@ export class AsyncStorageService {
       return userData;
     } catch (error) {
       console.error("❌ Failed to recreate user data:", error);
+      throw error;
+    }
+  }
+
+  // Clear all data from AsyncStorage
+  static async clearAllData(): Promise<void> {
+    try {
+      console.log("🧹 AsyncStorageService.clearAllData - Clearing all AsyncStorage data");
+      
+      // Get all keys
+      const allKeys = await AsyncStorage.getAllKeys();
+      console.log(`Found ${allKeys.length} keys to clear:`, allKeys);
+      
+      // Clear all keys
+      await AsyncStorage.multiRemove(allKeys);
+      console.log("✅ All AsyncStorage data cleared successfully");
+    } catch (error) {
+      console.error("❌ Failed to clear all AsyncStorage data:", error);
       throw error;
     }
   }

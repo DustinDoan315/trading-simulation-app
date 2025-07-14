@@ -1,11 +1,37 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import UUIDService from '@/services/UUIDService';
 import { Alert } from 'react-native';
+import { AsyncStorageService } from '@/services/AsyncStorageService';
 import { logger } from '@/utils/logger';
 import { ResetService } from '@/services/ResetService';
+import { supabase } from '@/services/SupabaseService';
 import { UserService } from '@/services/UserService';
 
 /**
  * Utility functions for resetting the app cache and creating new users
  */
+
+/**
+ * Comprehensive cache clearing function
+ * This ensures all cached data is properly cleared
+ */
+export const clearAllCachedData = async (): Promise<void> => {
+  try {
+    logger.info("Starting comprehensive cache clearing", "resetUtils");
+    
+    // Get all AsyncStorage keys
+    const allKeys = await AsyncStorage.getAllKeys();
+    logger.info(`Found ${allKeys.length} AsyncStorage keys to clear`, "resetUtils");
+    
+    // Clear all keys
+    await AsyncStorage.multiRemove(allKeys);
+    logger.info("All AsyncStorage keys cleared successfully", "resetUtils");
+    
+  } catch (error) {
+    logger.error("Error during comprehensive cache clearing", "resetUtils", error);
+    throw error;
+  }
+};
 
 /**
  * Force refresh all local data after reset
@@ -34,6 +60,40 @@ export const forceRefreshAllData = async (
     // Wait a moment for Redux state to clear
     await new Promise(resolve => setTimeout(resolve, 500));
 
+    // Clear all cached data in AsyncStorage comprehensively
+    try {
+      await clearAllCachedData();
+      logger.info("Comprehensively cleared all cached data from AsyncStorage", "resetUtils");
+    } catch (storageError) {
+      logger.warn("Error clearing AsyncStorage cache", "resetUtils", storageError);
+    }
+
+    // Also clear user-specific data using AsyncStorageService
+    try {
+      await AsyncStorageService.clearUserData(userId);
+      logger.info("Cleared user-specific data from AsyncStorageService", "resetUtils");
+    } catch (serviceError) {
+      logger.warn("Error clearing AsyncStorageService data", "resetUtils", serviceError);
+    }
+
+    // Wait a moment for cache clearing to complete
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Force reload user data from database to AsyncStorage
+    try {
+      // Get the updated user data from database
+      const userData = await UserService.getUserById(userId);
+      if (userData) {
+        // Save the updated user data to AsyncStorage
+        await AsyncStorageService.createOrUpdateUser(userData);
+        logger.info("Updated user data loaded from database and saved to AsyncStorage", "resetUtils");
+      } else {
+        logger.warn("No user data found in database after reset", "resetUtils");
+      }
+    } catch (error) {
+      logger.error("Error loading user data from database after reset", "resetUtils", error);
+    }
+
     // Force reload balance from database
     if (dispatch) {
       dispatch({ type: 'balance/loadBalance' });
@@ -47,34 +107,6 @@ export const forceRefreshAllData = async (
     // Also force refresh portfolio data from database
     if (dispatch) {
       dispatch({ type: 'user/fetchPortfolio', payload: userId });
-    }
-
-    // Clear any cached data in AsyncStorage
-    try {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      await AsyncStorage.multiRemove([
-        'user_balance',
-        'user_portfolio',
-        'user_transactions',
-        'user_favorites',
-        'portfolio_cache',
-        'balance_cache',
-        'portfolio_data', // Main portfolio cache key used by AsyncStorageService
-        'transactions_data', // Main transactions cache key used by AsyncStorageService
-        'user_profile' // User profile cache key
-      ]);
-      logger.info("Cleared cached data from AsyncStorage", "resetUtils");
-    } catch (storageError) {
-      logger.warn("Error clearing AsyncStorage cache", "resetUtils", storageError);
-    }
-
-    // Also clear user-specific data using AsyncStorageService
-    try {
-      const { AsyncStorageService } = await import('../services/AsyncStorageService');
-      await AsyncStorageService.clearUserData(userId);
-      logger.info("Cleared user-specific data from AsyncStorageService", "resetUtils");
-    } catch (serviceError) {
-      logger.warn("Error clearing AsyncStorageService data", "resetUtils", serviceError);
     }
 
     logger.info("All local data refreshed successfully", "resetUtils");
@@ -159,11 +191,10 @@ export const resetPortfolioData = async (): Promise<boolean> => {
     console.log("🔄 Starting portfolio reset...");
 
     // Get current user UUID
-    const UUIDService = require('@/services/UUIDService').default;
     const uuid = await UUIDService.getOrCreateUser();
 
     // Clear portfolio data from Supabase
-    const { error } = await require('@/services/SupabaseService').supabase
+    const { error } = await supabase
       .from("portfolio")
       .delete()
       .eq("user_id", uuid);
@@ -174,8 +205,9 @@ export const resetPortfolioData = async (): Promise<boolean> => {
     }
 
     // Reset user balance to default
-    const { error: userError } = await require('@/services/SupabaseService').supabase
-      .from("users")
+    const { error: userError } = await supabase
+
+    .from("users")
       .update({ 
         usdt_balance: "100000.00",
         total_portfolio_value: "100000.00",
@@ -322,8 +354,7 @@ export const showPortfolioResetConfirmation = (
  */
 export const getCurrentUserUUID = async (): Promise<string | null> => {
   try {
-    const UUIDService = await import("@/services/UUIDService");
-    return await UUIDService.default.getOrCreateUser();
+    return await UUIDService.getOrCreateUser();
   } catch (error) {
     console.error("Error getting current user UUID:", error);
     return null;
@@ -335,10 +366,7 @@ export const getCurrentUserUUID = async (): Promise<string | null> => {
  */
 export const checkIfNewUser = async (): Promise<boolean> => {
   try {
-    const AsyncStorage = await import(
-      "@react-native-async-storage/async-storage"
-    );
-    const lastReset = await AsyncStorage.default.getItem("last_app_reset");
+    const lastReset = await AsyncStorage.getItem("last_app_reset");
 
     if (!lastReset) {
       return true; // No reset timestamp found, likely a new user

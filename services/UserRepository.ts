@@ -2,6 +2,7 @@ import UUIDService from './UUIDService';
 import { AsyncStorageService } from './AsyncStorageService';
 import { Holding } from '../types/crypto';
 import { SyncService } from './SupabaseService';
+import { UserService } from './UserService';
 
 // repositories/UserRepository.ts
 
@@ -42,7 +43,25 @@ class UserRepository {
 
   static async getUser(uuid: string) {
     try {
-      const user = await AsyncStorageService.getUser(uuid);
+      // First try to get from AsyncStorage
+      let user = await AsyncStorageService.getUser(uuid);
+      
+      // If not found in AsyncStorage, try to get from database
+      if (!user) {
+        console.log("User not found in AsyncStorage, trying database...");
+        try {
+          user = await UserService.getUserById(uuid);
+          
+          if (user) {
+            console.log("User found in database, saving to AsyncStorage...");
+            // Save to AsyncStorage for future use
+            await AsyncStorageService.createOrUpdateUser(user);
+          }
+        } catch (error) {
+          console.error("Error getting user from database:", error);
+        }
+      }
+      
       return user;
     } catch (error) {
       console.error("Failed to get user:", error);

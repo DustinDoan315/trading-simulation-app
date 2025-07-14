@@ -1,16 +1,52 @@
-import ActionButton from './ActionButton';
-import AmountPercentButton from '../common/AmountPercentButton';
-import Dimensions from '@/styles/dimensions';
-import PriceInput from '../common/PriceInput';
-import React, { useEffect, useRef, useState } from 'react';
-import TabSelector from './TableSelector';
-import { DEFAULT_CRYPTO, DEFAULT_CURRENCY } from '@/utils/constant';
-import { formatAmount } from '@/utils/formatters';
-import { RootState } from '@/store';
-import { StyleSheet, View } from 'react-native';
-import { useLanguage } from '@/context/LanguageContext';
-import { useSelector } from 'react-redux';
+import ActionButton from "./ActionButton";
+import AmountPercentButton from "../common/AmountPercentButton";
+import Dimensions from "@/styles/dimensions";
+import PriceInput from "../common/PriceInput";
+import RealTimeDataService from "@/services/RealTimeDataService";
+import TabSelector from "./TableSelector";
+import { DEFAULT_CRYPTO, DEFAULT_CURRENCY } from "@/utils/constant";
+import { formatAmount } from "@/utils/formatters";
+import { RootState } from "@/store";
+import { StyleSheet, View } from "react-native";
+import { useDualBalance } from "@/hooks/useDualBalance";
+import { useLanguage } from "@/context/LanguageContext";
+import { useSelector } from "react-redux";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
+// Symbol-specific fallback prices
+const getFallbackPrice = (symbol: string): number => {
+  const symbolUpper = symbol.toUpperCase();
+  switch (symbolUpper) {
+    case "BTC":
+      return 120000;
+    case "ETH":
+      return 3100;
+    case "SOL":
+      return 166;
+    case "BNB":
+      return 700;
+    case "ADA":
+      return 0.5;
+    case "DOT":
+      return 7;
+    case "LINK":
+      return 15;
+    case "UNI":
+      return 7;
+    case "MATIC":
+      return 0.8;
+    case "LTC":
+      return 70;
+    default:
+      return 100; // Generic fallback
+  }
+};
 
 interface OrderEntryProps {
   name?: string;
@@ -35,167 +71,221 @@ interface OrderEntryProps {
   disabled?: boolean;
 }
 
-const OrderEntry = ({
-  symbol = DEFAULT_CRYPTO,
-  name = "Bitcoin",
-  orderType = "market",
-  currentPrice = 0,
-  onSubmitOrder,
-  availableBalance = 0,
-  disabled = false,
-}: OrderEntryProps) => {
-  const { t } = useLanguage();
-  // Get token balance from store
-  const tokenBalance = useSelector((state: RootState) => {
-    const holdings = state.balance.balance.holdings;
-    // Try to find by symbol (case-insensitive) or by direct key access
-    const holding =
-      holdings[symbol.toUpperCase()] ||
-      holdings[symbol.toLowerCase()] ||
-      Object.values(holdings).find(
-        (h: any) => h.symbol.toUpperCase() === symbol.toUpperCase()
-      );
+const OrderEntry = React.memo(
+  ({
+    symbol = DEFAULT_CRYPTO,
+    name = "Bitcoin",
+    orderType = "market",
+    currentPrice = 0,
+    onSubmitOrder,
+    availableBalance = 0,
+    disabled = false,
+  }: OrderEntryProps) => {
+    const { t } = useLanguage();
 
-    return holding ? holding.amount : 0;
-  });
+    // Extract base symbol from full symbol format (e.g., "SOL/USDT" -> "SOL")
+    const baseSymbol = useMemo(() => symbol?.split("/")[0] || symbol, [symbol]);
 
-  const [price, setPrice] = useState("0");
-  const [amount, setAmount] = useState("0");
-  const [selectedTab, setSelectedTab] = useState<"buy" | "sell">("buy");
-  const [marginEnabled, setMarginEnabled] = useState(false);
-  const firstRender = useRef(true);
+    // Get real-time price from Redux store
+    const realTimePrice = useSelector(
+      (state: RootState) => state.cryptoPrices.prices[baseSymbol.toUpperCase()]
+    );
 
-  // Use currentPrice from props or fallback to 100 if not available
-  const fallbackPrice = currentPrice || 100;
+    // Use dual balance system for consistent data
+    const { currentHoldings } = useDualBalance();
 
-  const currentBalance =
-    selectedTab === "buy" ? availableBalance : tokenBalance;
+    // Get token balance from dual balance holdings
+    const tokenBalance = useMemo(() => {
+      const holding =
+        currentHoldings[baseSymbol.toUpperCase()] ||
+        currentHoldings[baseSymbol.toLowerCase()] ||
+        Object.values(currentHoldings).find(
+          (h: any) => h.symbol.toUpperCase() === baseSymbol.toUpperCase()
+        );
 
-  // Disable sell button if no token balance
-  const canSell = selectedTab === "buy" || tokenBalance > 0;
+      return holding ? holding.amount : 0;
+    }, [currentHoldings, baseSymbol]);
 
-  const [sliderPosition, setSliderPosition] = useState(
-    currentBalance > 0 ? 100 : 0
-  );
-  const [currentPosition, setCurrentPosition] = useState(0);
-  const [resetCounter, setResetCounter] = useState(0);
+    const [price, setPrice] = useState("0");
+    const [amount, setAmount] = useState("0");
+    const [selectedTab, setSelectedTab] = useState<"buy" | "sell">("buy");
+    const [marginEnabled, setMarginEnabled] = useState(false);
+    const firstRender = useRef(true);
 
-  useEffect(() => {
-    if (symbol) {
-      setPrice(fallbackPrice.toString());
-    }
-  }, [symbol, currentPrice]);
+    // Use real-time price from Redux store, fallback to props, then to symbol-specific default
+    const effectivePrice = useMemo(
+      () => realTimePrice || currentPrice || getFallbackPrice(baseSymbol),
+      [realTimePrice, currentPrice, baseSymbol]
+    );
 
-  useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
+    const currentBalance = useMemo(
+      () => (selectedTab === "buy" ? availableBalance : tokenBalance),
+      [selectedTab, availableBalance, tokenBalance]
+    );
 
-    handleSliderChange(0);
-    setResetCounter((prev) => prev + 1);
-  }, [selectedTab]);
+    // Reset slider when balance changes
+    useEffect(() => {
+      if (currentBalance > 0) {
+        setSliderPosition(100);
+      } else {
+        setSliderPosition(0);
+      }
+      setAmount("0");
+      setResetCounter((prev) => prev + 1);
+    }, [currentBalance]);
 
-  const handleSliderChange = (position: any) => {
-    setSliderPosition(position);
-    setAmount(formatAmount(position));
-  };
+    // Disable sell button if no token balance
+    const canSell = useMemo(
+      () => selectedTab === "buy" || tokenBalance > 0,
+      [selectedTab, tokenBalance]
+    );
 
-  const handlePriceChange = (value: any) => {
-    setPrice(value);
-  };
+    const [sliderPosition, setSliderPosition] = useState(
+      currentBalance > 0 ? 100 : 0
+    );
+    const [currentPosition, setCurrentPosition] = useState(0);
+    const [resetCounter, setResetCounter] = useState(0);
 
-  const handleAmountChange = (value: string) => {
-    // Only allow numbers and single decimal point
-    const cleanedValue = value.replace(/[^0-9.]/g, "");
-    // Ensure only one decimal point
-    const parts = cleanedValue.split(".");
-    const formattedValue =
-      parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 8)}` : parts[0];
+    // Initialize real-time data service when component mounts
+    useEffect(() => {
+      const realTimeService = RealTimeDataService.getInstance();
+      if (!realTimeService.isActive()) {
+        realTimeService.startUpdates();
+      }
+    }, []);
 
-    setAmount(formattedValue);
+    useEffect(() => {
+      if (baseSymbol) {
+        setPrice(effectivePrice.toString());
+      }
+    }, [baseSymbol, effectivePrice]);
 
-    if (currentBalance > 0 && formattedValue) {
-      const numericValue = parseFloat(formattedValue) || 0;
-      const newPosition = (numericValue / currentBalance) * 100;
-      setSliderPosition(Math.min(100, Math.max(0, newPosition)));
-    }
-  };
+    useEffect(() => {
+      if (firstRender.current) {
+        firstRender.current = false;
+        return;
+      }
 
-  const handleSubmitOrder = () => {
-    const parsedPrice = parseFloat(price.replace(",", "."));
-    const parsedAmount = parseFloat(amount.replace(",", "."));
-    const effectivePrice = orderType === "market" ? fallbackPrice : parsedPrice;
-    const total = effectivePrice * parsedAmount;
-    const fees = total * 0.001;
+      handleSliderChange(0);
+      setResetCounter((prev) => prev + 1);
+    }, [selectedTab]);
 
-    if (onSubmitOrder && symbol) {
-      onSubmitOrder({
-        type: selectedTab,
-        orderType: orderType,
-        symbol: symbol,
-        name: name,
-        price: effectivePrice,
-        amount: parsedAmount,
-        total: total,
-        fees: fees,
-        status: "pending",
-        timestamp: Date.now(),
-      });
-    }
-    handleSliderChange(0);
-    setResetCounter((prev) => prev + 1);
-  };
+    const handleSliderChange = useCallback((position: any) => {
+      setSliderPosition(position);
+      setAmount(formatAmount(position));
+    }, []);
 
-  const isPriceEditable = orderType !== "market";
+    const handlePriceChange = useCallback((value: any) => {
+      setPrice(value);
+    }, []);
 
-  return (
-    <View style={styles.container}>
-      <TabSelector
-        selectedTab={selectedTab}
-        onSelectTab={setSelectedTab}
-        marginEnabled={marginEnabled}
-        onToggleMargin={setMarginEnabled}
-      />
+    const handleAmountChange = useCallback(
+      (value: string) => {
+        // Only allow numbers and single decimal point
+        const cleanedValue = value.replace(/[^0-9.]/g, "");
+        // Ensure only one decimal point
+        const parts = cleanedValue.split(".");
+        const formattedValue =
+          parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 8)}` : parts[0];
 
-      <PriceInput
-        label={`${t("order.price")} (${DEFAULT_CURRENCY})`}
-        value={price}
-        onChangeText={handlePriceChange}
-        placeholder="0.00"
-        editable={isPriceEditable}
-      />
+        setAmount(formattedValue);
 
-      <PriceInput
-        label={`${t("order.amount")} (${symbol})`}
-        value={amount}
-        onChangeText={handleAmountChange}
-        placeholder="0.00"
-        keyboardType="numeric"
-      />
+        if (currentBalance > 0 && formattedValue) {
+          const numericValue = parseFloat(formattedValue) || 0;
+          const newPosition = (numericValue / currentBalance) * 100;
+          setSliderPosition(Math.min(100, Math.max(0, newPosition)));
+        }
+      },
+      [currentBalance]
+    );
 
-      <AmountPercentButton
-        currentPosition={currentPosition}
-        setCurrentPosition={setCurrentPosition}
-        onChange={handleSliderChange}
-        tradeType={selectedTab}
-        availableAmount={currentBalance}
-        amountUnit={symbol}
-        currentPrice={fallbackPrice}
-        balanceType={selectedTab === "buy" ? "usdt" : "token"}
-        resetTrigger={resetCounter}
-      />
+    const handleSubmitOrder = useCallback(() => {
+      const parsedPrice = parseFloat(price.replace(",", "."));
+      const parsedAmount = parseFloat(amount.replace(",", "."));
+      const orderPrice = orderType === "market" ? effectivePrice : parsedPrice;
+      const total = orderPrice * parsedAmount;
+      const fees = total * 0.001;
 
-      <ActionButton
-        type={selectedTab}
-        onPress={handleSubmitOrder}
-        cryptoSymbol={symbol}
-        disabled={!canSell || disabled}
-        loading={disabled}
-      />
-    </View>
-  );
-};
+      if (onSubmitOrder && baseSymbol) {
+        onSubmitOrder({
+          type: selectedTab,
+          orderType: orderType,
+          symbol: baseSymbol,
+          name: name,
+          price: orderPrice,
+          amount: parsedAmount,
+          total: total,
+          fees: fees,
+          status: "pending",
+          timestamp: Date.now(),
+        });
+      }
+      handleSliderChange(0);
+      setResetCounter((prev) => prev + 1);
+    }, [
+      price,
+      amount,
+      orderType,
+      effectivePrice,
+      onSubmitOrder,
+      baseSymbol,
+      selectedTab,
+      name,
+      handleSliderChange,
+    ]);
+
+    const isPriceEditable = useMemo(() => orderType !== "market", [orderType]);
+
+    return (
+      <View style={styles.container}>
+        <TabSelector
+          selectedTab={selectedTab}
+          onSelectTab={setSelectedTab}
+          marginEnabled={marginEnabled}
+          onToggleMargin={setMarginEnabled}
+        />
+
+        <PriceInput
+          label={`${t("order.price")} (${DEFAULT_CURRENCY})`}
+          value={price}
+          onChangeText={handlePriceChange}
+          placeholder="0.00"
+          editable={isPriceEditable}
+        />
+
+        <PriceInput
+          label={`${t("order.amount")} (${baseSymbol})`}
+          value={amount}
+          onChangeText={handleAmountChange}
+          placeholder="0.00"
+          keyboardType="numeric"
+        />
+
+        <AmountPercentButton
+          currentPosition={currentPosition}
+          setCurrentPosition={setCurrentPosition}
+          onChange={handleSliderChange}
+          tradeType={selectedTab}
+          availableAmount={currentBalance}
+          amountUnit={baseSymbol}
+          currentPrice={effectivePrice}
+          balanceType={selectedTab === "buy" ? "usdt" : "token"}
+          resetTrigger={resetCounter}
+        />
+
+        <ActionButton
+          type={selectedTab}
+          onPress={handleSubmitOrder}
+          cryptoSymbol={baseSymbol}
+          disabled={!canSell || disabled}
+          loading={disabled}
+        />
+      </View>
+    );
+  }
+);
+
+OrderEntry.displayName = "OrderEntry";
 
 const styles = StyleSheet.create({
   container: {

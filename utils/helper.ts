@@ -3,6 +3,7 @@ import * as bip39 from 'bip39';
 import * as Crypto from 'expo-crypto';
 import Toast from 'react-native-toast-message';
 import { Buffer } from 'buffer';
+import { DEFAULT_BALANCE } from '@/utils/constant';
 import { logger } from '@/utils/logger';
 import { Order } from '@/types/crypto';
 import { Platform } from 'react-native';
@@ -167,6 +168,7 @@ const MIN_AMOUNT = 0.1;
 // Define types for the functions we need
 export interface OrderValidationContext {
   getHoldings: () => Record<string, any>;
+  getUsdtBalance?: () => number; // Optional USDT balance getter
 }
 
 export interface OrderDispatchContext {
@@ -226,19 +228,34 @@ function validateOrder(order: Order, context: OrderValidationContext): void {
     console.log("✅ Sufficient balance for sell order");
   } else if (order.type === "buy") {
     // For buy orders, check USDT balance
-    const usdtHolding = holdings.USDT || holdings.usdt;
-    console.log("🔍 USDT holding for buy order:", usdtHolding);
+    let usdtBalance = 0;
+    
+    // First try to get USDT balance from context if available
+    if (context.getUsdtBalance) {
+      usdtBalance = context.getUsdtBalance();
+      console.log("🔍 USDT balance from context:", usdtBalance);
+    }
+    
+    // Fallback to checking holdings if no context balance
+    if (usdtBalance === 0) {
+      const usdtHolding = holdings.USDT || holdings.usdt;
+      console.log("🔍 USDT holding for buy order:", usdtHolding);
+      
+      if (usdtHolding) {
+        usdtBalance = usdtHolding.amount;
+      }
+    }
 
-    if (!usdtHolding) {
+    if (usdtBalance === 0) {
       const msg = "No USDT balance found for buying";
-      console.error("❌ No USDT holding found");
+      console.error("❌ No USDT balance found");
       throw new OrderError("balance.insufficient", msg);
     }
 
-    if (usdtHolding.amount < order.total) {
-      const msg = `Insufficient USDT balance. You have ${usdtHolding.amount} USDT, trying to spend ${order.total} USDT`;
+    if (usdtBalance < order.total) {
+      const msg = `Insufficient USDT balance. You have ${usdtBalance} USDT, trying to spend ${order.total} USDT`;
       console.error("❌ Insufficient USDT balance:", {
-        available: usdtHolding.amount,
+        available: usdtBalance,
         requested: order.total,
       });
       throw new OrderError("balance.insufficient", msg);
@@ -516,13 +533,20 @@ export const handleUserReinitialization = async <T>(
  * Calculate USDT balance from portfolio data
  * This function calculates the USDT balance by finding the USDT entry in the portfolio
  * and returning its quantity as the available USDT balance
+ * If portfolio is empty (fresh reset), returns default balance
  */
 export const calculateUSDTBalanceFromPortfolio = (portfolio: any[]): number => {
   try {
     // Handle undefined or null portfolio
     if (!portfolio || !Array.isArray(portfolio)) {
-      console.warn('calculateUSDTBalanceFromPortfolio: portfolio is undefined or not an array, returning 0');
-      return 0;
+      console.warn('calculateUSDTBalanceFromPortfolio: portfolio is undefined or not an array, returning default balance');
+      return DEFAULT_BALANCE; // Return default balance instead of 0
+    }
+    
+    // If portfolio is empty, this likely means a fresh reset - return default balance
+    if (portfolio.length === 0) {
+      console.log('calculateUSDTBalanceFromPortfolio: portfolio is empty (fresh reset), returning default balance');
+      return DEFAULT_BALANCE;
     }
     
     const usdtEntry = portfolio.find(item => 
@@ -533,10 +557,13 @@ export const calculateUSDTBalanceFromPortfolio = (portfolio: any[]): number => {
       return parseFloat(usdtEntry.quantity || '0');
     }
     
+    // If no USDT entry found but portfolio has other items, return 0
+    // This means user has spent all their USDT
+    console.log('calculateUSDTBalanceFromPortfolio: no USDT entry found in portfolio, returning 0');
     return 0;
   } catch (error) {
     console.error('Error calculating USDT balance from portfolio:', error);
-    return 0;
+    return DEFAULT_BALANCE; // Return default balance on error instead of 0
   }
 };
 
@@ -589,7 +616,7 @@ export const calculateTotalPnL = (portfolio: any[]): number => {
 /**
  * Calculate total PnL percentage based on initial balance
  */
-export const calculateTotalPnLPercentage = (totalPnL: number, initialBalance: number = 100000): number => {
+export const calculateTotalPnLPercentage = (totalPnL: number, initialBalance: number = DEFAULT_BALANCE): number => {
   try {
     if (initialBalance <= 0) return 0;
     return (totalPnL / initialBalance) * 100;
@@ -614,7 +641,7 @@ export const validateAndFixUserData = (userData: any, portfolio: any[] = []): an
     const usdtBalance = userData.usdt_balance ? parseFloat(userData.usdt_balance) : calculateUSDTBalanceFromPortfolio(safePortfolio);
     const totalPortfolioValue = userData.total_portfolio_value ? parseFloat(userData.total_portfolio_value) : calculateTotalPortfolioValue(safePortfolio);
     const totalPnL = userData.total_pnl ? parseFloat(userData.total_pnl) : calculateTotalPnL(safePortfolio);
-    const initialBalance = userData.initial_balance ? parseFloat(userData.initial_balance) : 100000;
+    const initialBalance = userData.initial_balance ? parseFloat(userData.initial_balance) : DEFAULT_BALANCE;
     const totalPnLPercentage = userData.total_pnl_percentage ? parseFloat(userData.total_pnl_percentage) : calculateTotalPnLPercentage(totalPnL, initialBalance);
     
     // Ensure all required fields are present

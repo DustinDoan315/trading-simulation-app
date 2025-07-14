@@ -1,28 +1,28 @@
-import Chart from '@/components/crypto/Chart';
-import colors from '@/styles/colors';
-import OrderBook from '@/components/trading/OrderBook';
-import OrderEntry from '@/components/trading/OrderEntry';
-import React, { useEffect, useRef, useState } from 'react';
-import SymbolHeader from '@/components/crypto/SymbolHeader';
-import TimeframeSelector from '@/components/crypto/TimeframeSelector';
-import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
-import useCryptoAPI from '@/hooks/useCryptoAPI';
-import useHistoricalData from '@/hooks/useHistoricalData';
-import useOrderBook from '@/hooks/useOrderBook';
-import UUIDService from '@/services/UUIDService';
-import { ChartType, Order, TimeframeOption } from '../../types/crypto';
-import { logger } from '@/utils/logger';
-import { OrderDispatchContext, OrderValidationContext } from '@/utils/helper';
-import { RootState } from '@/store';
-import { updateCollectionHolding } from '@/features/dualBalanceSlice';
-import { useDispatch, useSelector } from 'react-redux';
-import { useDualBalance } from '@/hooks/useDualBalance';
-import { useLanguage } from '@/context/LanguageContext';
-import { useLocalSearchParams } from 'expo-router';
-import { useNotification } from '@/components/ui/Notification';
-import { UserService } from '@/services/UserService';
-import { useUser } from '@/context/UserContext';
-import { WebView } from 'react-native-webview';
+import Chart from "@/components/crypto/Chart";
+import colors from "@/styles/colors";
+import OrderBook from "@/components/trading/OrderBook";
+import OrderEntry from "@/components/trading/OrderEntry";
+import React, { useEffect, useRef, useState } from "react";
+import SymbolHeader from "@/components/crypto/SymbolHeader";
+import TimeframeSelector from "@/components/crypto/TimeframeSelector";
+import TradingContextIndicator from "@/components/trading/TradingContextIndicator";
+import useCryptoAPI from "@/hooks/useCryptoAPI";
+import useHistoricalData from "@/hooks/useHistoricalData";
+import useOrderBook from "@/hooks/useOrderBook";
+import UUIDService from "@/services/UUIDService";
+import { ChartType, Order, TimeframeOption } from "../../types/crypto";
+import { logger } from "@/utils/logger";
+import { OrderDispatchContext, OrderValidationContext } from "@/utils/helper";
+import { RootState, useAppDispatch } from "@/store";
+import { updateCollectionHolding } from "@/features/dualBalanceSlice";
+import { useDualBalance } from "@/hooks/useDualBalance";
+import { useLanguage } from "@/context/LanguageContext";
+import { useLocalSearchParams } from "expo-router";
+import { useNotification } from "@/components/ui/Notification";
+import { UserService } from "@/services/UserService";
+import { useSelector } from "react-redux";
+import { useUser } from "@/context/UserContext";
+import { WebView } from "react-native-webview";
 import {
   ActivityIndicator,
   Animated,
@@ -36,6 +36,7 @@ import {
 } from "react-native";
 import {
   addTradeHistory,
+  loadBalance,
   updateHolding,
   updateTrade,
 } from "@/features/balanceSlice";
@@ -44,14 +45,13 @@ import {
   handleUserReinitialization,
 } from "@/utils/helper";
 
-
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
   const { reinitializeUser } = useUser();
   const { id, symbol, name, image, collectionId, collectionName }: any =
     useLocalSearchParams();
   const { balance } = useSelector((state: RootState) => state.balance);
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeframeOption>("3m");
@@ -74,12 +74,22 @@ const CryptoChartScreen = () => {
     executeTradeInContext,
     switchContext,
     loadCollection,
+    loadIndividual,
   } = useDualBalance();
+
+  console.log("currentUsdtBalance", currentUsdtBalance);
+  console.log("currentHoldings", currentHoldings);
+  console.log("activeContext", activeContext);
 
   const { askOrders, bidOrders } = useOrderBook(id);
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
   const { currentPrice, priceChange } = useCryptoAPI(timeframe, id);
+
+  // Load balance data when component mounts
+  useEffect(() => {
+    dispatch(loadBalance());
+  }, [dispatch]);
 
   // Set collection context if collectionId is provided
   useEffect(() => {
@@ -197,6 +207,7 @@ const CryptoChartScreen = () => {
     try {
       const validationContext: OrderValidationContext = {
         getHoldings: () => currentHoldings, // Use current context holdings
+        getUsdtBalance: () => currentUsdtBalance, // Provide USDT balance from context
       };
 
       const dispatchContext: OrderDispatchContext = {
@@ -229,6 +240,9 @@ const CryptoChartScreen = () => {
 
       setSubmissionStatus("Processing transaction...");
       setSubmissionProgress(60);
+
+      // Balance should be automatically updated in Redux state
+      console.log("✅ Trade executed, balance should be updated automatically");
 
       // Handle order submission with dual balance context
       await handleOrderSubmission(
@@ -327,8 +341,6 @@ const CryptoChartScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}>
-        {/* Trading Context Indicator */}
-
         {/* Symbol Header */}
         <SymbolHeader
           symbol={symbol}
@@ -363,7 +375,8 @@ const CryptoChartScreen = () => {
         {/* Order Book and Entry Components */}
         <View style={styles.orderSection}>
           <OrderEntry
-            symbol={symbol?.slice(0, 3)}
+            key={`${symbol}-${currentUsdtBalance}`} // Force re-render when balance changes
+            symbol={symbol}
             name={name}
             orderType={orderType}
             currentPrice={currentPrice ? Number(currentPrice) : undefined}
@@ -373,7 +386,7 @@ const CryptoChartScreen = () => {
           />
 
           <OrderBook
-            symbol={symbol?.slice(0, 3)}
+            symbol={symbol}
             askOrders={askOrders}
             bidOrders={bidOrders}
             currentPrice={currentPrice}
