@@ -1,7 +1,7 @@
-import UUIDService from '@/services/UUIDService';
-import { logger } from '@/utils/logger';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { User } from '@/types/database';
+import UUIDService from "@/services/UUIDService";
+import { logger } from "@/utils/logger";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { User } from "@/types/database";
 import React, {
   ReactNode,
   createContext,
@@ -18,7 +18,6 @@ import {
   fetchUser,
   fetchUserStats,
 } from "@/features/userSlice";
-
 
 interface UserContextType {
   user: User | null;
@@ -94,7 +93,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         // If user doesn't exist, create a new one
         logger.info("User not found, creating new user", "UserContext");
-        const username = `user_${userId.slice(0, 8)}`;
+        const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
+        const username = `user_${userId.slice(0, 8)}_${timestamp}`;
         await dispatch(
           createUser({
             username,

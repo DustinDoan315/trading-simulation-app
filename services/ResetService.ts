@@ -158,14 +158,18 @@ export class ResetService {
 
       // Create new user profile with correct structure
       const now = new Date().toISOString();
+      const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
       const userProfile = {
         id: newUuid,
-        username: `user_${newUuid.slice(0, 8)}`,
+        username: `user_${newUuid.slice(0, 8)}_${timestamp}`,
         usdt_balance: "100000",
         total_portfolio_value: "100000",
         initial_balance: "100000",
         total_pnl: "0.00",
+        total_pnl_percentage: "0.00",
         total_trades: 0,
+        total_buy_volume: "0.00",
+        total_sell_volume: "0.00",
         win_rate: "0.00",
         join_date: now,
         last_active: now,
@@ -387,9 +391,10 @@ export class ResetService {
   private static async resetUserProfile(uuid: string): Promise<void> {
     try {
       // Create default user profile
+      const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
       const defaultProfile = {
         id: uuid,
-        username: `user_${uuid.slice(0, 8)}`,
+        username: `user_${uuid.slice(0, 8)}_${timestamp}`,
         usdt_balance: "100000",
         total_portfolio_value: "100000",
         initial_balance: "100000",
@@ -414,7 +419,7 @@ export class ResetService {
       try {
         const { error } = await supabase.from("users").upsert({
           id: uuid,
-          username: `user_${uuid.slice(0, 8)}`,
+          username: `user_${uuid.slice(0, 8)}_${timestamp}`,
           usdt_balance: "100000",
           total_portfolio_value: "100000",
           initial_balance: "100000",

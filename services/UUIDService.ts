@@ -2,8 +2,10 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AsyncStorageService } from './AsyncStorageService';
 import { getDeviceUUID } from '@/utils/deviceUtils';
+import { isInvalidUUIDFormat, validateUUIDFormat } from '@/utils/fixUUIDIssue';
 import { logger } from '@/utils/logger';
 import { UserSyncService } from './UserSyncService';
+
 
 
 // Enhanced UUIDService.ts
@@ -17,20 +19,39 @@ class UUIDService {
     let uuid = await SecureStore.getItemAsync(USER_UUID_KEY);
     logger.info("Fetching or creating user UUID", "UUIDService", { uuid: uuid ? "exists" : "new" });
     
+    // Check if existing UUID is in invalid format and clear it
+    if (uuid && isInvalidUUIDFormat(uuid)) {
+      logger.warn("Invalid UUID format detected, clearing and regenerating", "UUIDService", { invalidUuid: uuid });
+      await SecureStore.deleteItemAsync(USER_UUID_KEY);
+      await AsyncStorage.removeItem(USER_PROFILE_KEY);
+      uuid = null;
+    }
+    
     if (!uuid) {
       uuid = await getDeviceUUID();
+      
+      // Validate the new UUID format
+      if (!validateUUIDFormat(uuid)) {
+        logger.error("Generated UUID is still invalid format", "UUIDService", { invalidUuid: uuid });
+        throw new Error("Failed to generate valid UUID format");
+      }
+      
       await SecureStore.setItemAsync(USER_UUID_KEY, uuid);
 
       // Initialize user profile with proper timestamp format
       const now = new Date().toISOString();
+      const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
       const userProfile = {
         id: uuid,
-        username: `user_${uuid.slice(0, 8)}`,
+        username: `user_${uuid.slice(0, 8)}_${timestamp}`,
         usdt_balance: "100000",
         total_portfolio_value: "100000",
         initial_balance: "100000",
         total_pnl: "0.00",
+        total_pnl_percentage: "0.00",
         total_trades: 0,
+        total_buy_volume: "0.00",
+        total_sell_volume: "0.00",
         win_rate: "0.00",
         join_date: now,
         last_active: now,
@@ -120,14 +141,18 @@ class UUIDService {
       } else {
         // Create default user profile
         const now = new Date().toISOString();
+        const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
         const userProfile = {
           id: uuid,
-          username: `user_${uuid.slice(0, 8)}`,
+          username: `user_${uuid.slice(0, 8)}_${timestamp}`,
           usdt_balance: "100000",
           total_portfolio_value: "100000",
           initial_balance: "100000",
           total_pnl: "0.00",
+          total_pnl_percentage: "0.00",
           total_trades: 0,
+          total_buy_volume: "0.00",
+          total_sell_volume: "0.00",
           win_rate: "0.00",
           join_date: now,
           last_active: now,

@@ -451,9 +451,10 @@ export class AsyncStorageService {
       console.log("🔄 AsyncStorageService.recreateUserData - Recreating user data for:", userId);
       
       const now = new Date().toISOString();
+      const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
       const userData: UserData = {
         id: userId,
-        username: `user_${userId.slice(0, 8)}`,
+        username: `user_${userId.slice(0, 8)}_${timestamp}`,
         display_name: `User ${userId.slice(0, 8)}`,
         avatar_emoji: "🚀",
         usdt_balance: balance.toString(),

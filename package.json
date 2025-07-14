@@ -8,7 +8,15 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest --watchAll"
+    "test": "jest --watchAll",
+    "fastlane:build-dev": "cd ios && fastlane build_dev",
+    "fastlane:install-dev": "cd ios && fastlane install_dev",
+    "fastlane:build-simulator": "cd ios && fastlane build_simulator",
+    "fastlane:test": "cd ios && fastlane test",
+    "fastlane:screenshots": "cd ios && fastlane screenshots",
+    "fastlane:clean": "cd ios && fastlane clean",
+    "fastlane:setup": "cd ios && fastlane setup_dev",
+    "fastlane:lanes": "cd ios && fastlane lanes"
   },
   "jest": {
     "preset": "jest-expo"

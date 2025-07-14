@@ -1,3 +1,4 @@
+import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UUIDService from '@/services/UUIDService';
 import { Alert } from 'react-native';
@@ -6,6 +7,7 @@ import { logger } from '@/utils/logger';
 import { ResetService } from '@/services/ResetService';
 import { supabase } from '@/services/SupabaseService';
 import { UserService } from '@/services/UserService';
+
 
 /**
  * Utility functions for resetting the app cache and creating new users
@@ -347,6 +349,29 @@ export const showPortfolioResetConfirmation = (
       },
     ]
   );
+};
+
+/**
+ * Clear current user UUID to force regeneration with proper format
+ * This helps resolve UUID format issues
+ */
+export const clearUserUUID = async (): Promise<void> => {
+  try {
+    console.log("🔄 Clearing user UUID to force regeneration...");
+    
+    // Clear from SecureStore
+    await SecureStore.deleteItemAsync("user_uuid_13");
+    await SecureStore.deleteItemAsync("user_uuid_12");
+    
+    // Clear from AsyncStorage
+    await AsyncStorage.removeItem("user_profile");
+    await AsyncStorage.removeItem("user_uuid");
+    
+    console.log("✅ User UUID cleared successfully");
+  } catch (error) {
+    console.error("❌ Error clearing user UUID:", error);
+    throw error;
+  }
 };
 
 /**

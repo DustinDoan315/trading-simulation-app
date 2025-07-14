@@ -1,7 +1,7 @@
-import UUIDService from './UUIDService';
 import { AsyncStorageService } from './AsyncStorageService';
 import { Holding } from '../types/crypto';
 import { SyncService } from './SupabaseService';
+import UUIDService from './UUIDService';
 import { UserService } from './UserService';
 
 // repositories/UserRepository.ts
@@ -10,9 +10,10 @@ class UserRepository {
   static async createUser(uuid: string) {
     try {
       const now = new Date().toISOString();
+      const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
       const userData = {
         id: uuid,
-        username: `user_${uuid.slice(0, 8)}`,
+        username: `user_${uuid.slice(0, 8)}_${timestamp}`,
         display_name: `User ${uuid.slice(0, 8)}`,
         avatar_emoji: "🚀",
         usdt_balance: "100000",

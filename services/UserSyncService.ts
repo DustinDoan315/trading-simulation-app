@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { supabase } from "./SupabaseService";
-import { TimestampUtils } from "@/utils/helper";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from './SupabaseService';
+import { TimestampUtils } from '@/utils/helper';
 
 const SYNC_STATUS_KEY = "sync_status";
 
@@ -26,7 +26,7 @@ export class UserSyncService {
           id: userProfile.id || userProfile.uuid, // Use 'id' instead of 'uuid' to match schema
           username:
             userProfile.username ||
-            `user_${(userProfile.id || userProfile.uuid).slice(0, 8)}`,
+            `user_${(userProfile.id || userProfile.uuid).slice(0, 8)}_${Date.now().toString().slice(-6)}`,
           usdt_balance:
             userProfile.usdt_balance || userProfile.balance || "100000",
           total_portfolio_value: userProfile.total_portfolio_value || "100000",

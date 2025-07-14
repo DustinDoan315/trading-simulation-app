@@ -645,9 +645,10 @@ export const validateAndFixUserData = (userData: any, portfolio: any[] = []): an
     const totalPnLPercentage = userData.total_pnl_percentage ? parseFloat(userData.total_pnl_percentage) : calculateTotalPnLPercentage(totalPnL, initialBalance);
     
     // Ensure all required fields are present
+    const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
     const fixedUserData = {
       id: userData.id,
-      username: userData.username || `user_${userData.id?.slice(0, 8) || 'unknown'}`,
+      username: userData.username || `user_${userData.id?.slice(0, 8) || 'unknown'}_${timestamp}`,
       display_name: userData.display_name || `User ${userData.id?.slice(0, 8) || 'unknown'}`,
       avatar_emoji: userData.avatar_emoji || "🚀",
       usdt_balance: usdtBalance.toString(),
