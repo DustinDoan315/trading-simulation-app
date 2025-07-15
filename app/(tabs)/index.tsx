@@ -52,50 +52,59 @@ const HomeScreen = () => {
     onResetBalance,
   } = useHomeData();
 
-  // Get balance from Redux store
   const reduxBalance = useSelector((state: RootState) => state.balance.balance);
 
-  // Animation values
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
 
-  // News state
   const [newsArticles, setNewsArticles] = useState<CryptoNewsArticle[]>([]);
   const [loadingNews, setLoadingNews] = useState(false);
 
-  const handleAddButtonPress = () => {
-    router.push("/(subs)/crypto-search");
-  };
+  useEffect(() => {
+    if (user) {
+      dispatch(loadBalance());
+      loadCryptoNews();
+    }
+  }, [user, dispatch]);
 
   const handleRefresh = async () => {
     if (user) {
       await refreshUserData(user.id);
-
       dispatch(loadBalance());
     }
-
     await loadCryptoNews();
     onRefresh();
   };
 
-  useEffect(() => {
-    if (user) {
-      dispatch(loadBalance());
-    }
-  }, [user, dispatch]);
-
-  // Load crypto news
-  useEffect(() => {
-    loadCryptoNews();
-  }, []);
-
-  const loadCryptoNews = async () => {
+  const loadCryptoNews = async (retryCount = 0) => {
     try {
+      console.log(`🔄 Loading crypto news (attempt ${retryCount + 1})`);
       setLoadingNews(true);
-      const articles = await cryptoNewsService.getTopCryptoNews(3);
+
+      const articles = await cryptoNewsService.getTopCryptoNews(5);
+      console.log(`✅ News loaded: ${articles.length} articles`);
       setNewsArticles(articles);
+
+      // If no articles loaded and we haven't retried too many times, try again
+      if (articles.length === 0 && retryCount < 3) {
+        console.log(
+          `⚠️ No articles loaded, retrying... (attempt ${retryCount + 1})`
+        );
+        setTimeout(() => {
+          loadCryptoNews(retryCount + 1);
+        }, 2000); // Retry after 2 seconds
+      }
     } catch (error) {
-      console.error("Error loading crypto news:", error);
+      console.error("❌ Error loading crypto news:", error);
+      // If error occurred and we haven't retried too many times, try again
+      if (retryCount < 3) {
+        console.log(
+          `🔄 Error occurred, retrying... (attempt ${retryCount + 1})`
+        );
+        setTimeout(() => {
+          loadCryptoNews(retryCount + 1);
+        }, 2000); // Retry after 2 seconds
+      }
     } finally {
       setLoadingNews(false);
     }
@@ -359,14 +368,13 @@ const HomeScreen = () => {
           </LinearGradient>
         </Animated.View>
 
-        {/* Market Insights */}
         <Animated.View
           style={[
             styles.insightsSection,
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Latest Crypto News</Text>
+            <Text style={styles.sectionTitle}>Crypto News</Text>
           </View>
 
           {loadingNews ? (
@@ -388,7 +396,7 @@ const HomeScreen = () => {
               <Text style={styles.newsErrorText}>No news available</Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={loadCryptoNews}>
+                onPress={() => loadCryptoNews()}>
                 <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>

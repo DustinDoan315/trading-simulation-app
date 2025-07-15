@@ -1,5 +1,6 @@
 import { configService } from '@/utils/config';
 import { logger } from '@/utils/logger';
+import { waitForAppInitialization } from '@/utils/initializeApp';
 
 export interface CryptoNewsArticle {
   id: string;
@@ -22,12 +23,27 @@ class CryptoNewsService {
 
   async getTopCryptoNews(limit: number = 3): Promise<CryptoNewsArticle[]> {
     try {
-      // Get API key from secure configuration
+      logger.info("Starting getTopCryptoNews", "CryptoNewsService");
+      
+      // Wait for app to be fully initialized
+      try {
+        logger.info("Waiting for app initialization...", "CryptoNewsService");
+        await waitForAppInitialization(5000); // Wait up to 5 seconds
+        logger.info("App initialization completed", "CryptoNewsService");
+      } catch (error) {
+        logger.warn("App initialization timeout, proceeding without API key", "CryptoNewsService");
+      }
+
       const apiKey = configService.get("NEWS_API_KEY");
+      logger.info(`API key available: ${apiKey ? 'Yes' : 'No'}`, "CryptoNewsService");
 
       if (!apiKey) {
-        logger.warn(
-          "No API key configured, returning empty array",
+        logger.error(
+          "No API key configured. Please check your .env file or app.json configuration.",
+          "CryptoNewsService"
+        );
+        logger.error(
+          "Expected: EXPO_PUBLIC_NEWS_API_KEY in .env or NEWS_API_KEY in app.json extra section",
           "CryptoNewsService"
         );
         return [];
@@ -93,8 +109,8 @@ class CryptoNewsService {
         })
       );
 
-      // Return transformed articles or empty array if no articles found
-      if (transformedArticles.length > 0) {
+            if (transformedArticles.length > 0) {
+        logger.info(`Returning ${transformedArticles.length} articles`, "CryptoNewsService");
         return transformedArticles.slice(0, limit);
       } else {
         logger.warn(
@@ -112,8 +128,7 @@ class CryptoNewsService {
 
   async getNewsDetail(articleId: string): Promise<CryptoNewsArticle> {
     try {
-      // For now, we'll return a mock article since the NewsAPI doesn't provide individual article endpoints
-      // In a real implementation, you might want to store articles locally or use a different API
+     
       throw new Error("News detail not implemented - use direct URL instead");
     } catch (error) {
       logger.error("Error fetching news detail", "CryptoNewsService", error);
@@ -126,25 +141,23 @@ class CryptoNewsService {
       return this.getDefaultImage();
     }
 
-    // Clean up the URL
+    
     let cleanUrl = imageUrl.trim();
 
-    // Fix common issues with image URLs
+   
     if (cleanUrl.includes('cointelegraph.com') && cleanUrl.includes('format=auto')) {
-      // Extract the actual image URL from Cointelegraph's CDN format
       const match = cleanUrl.match(/https:\/\/s3\.cointelegraph\.com\/uploads\/[^"]+/);
       if (match) {
         cleanUrl = match[0];
       }
     }
 
-    // Fix Biztoc image URLs
     if (cleanUrl.includes('biztoc.com/cdn/')) {
-      // Convert to a more reliable format
+      
       cleanUrl = cleanUrl.replace('_s.webp', '_l.webp');
     }
 
-    // Validate URL format
+    
     try {
       new URL(cleanUrl);
     } catch {
@@ -152,7 +165,7 @@ class CryptoNewsService {
       return this.getDefaultImage();
     }
 
-    // Check for common problematic patterns
+    
     const problematicPatterns = [
       'data:image',
       'blob:',
@@ -169,7 +182,7 @@ class CryptoNewsService {
       }
     }
 
-    // Ensure HTTPS for security
+    
     if (cleanUrl.startsWith('http://')) {
       cleanUrl = cleanUrl.replace('http://', 'https://');
     }
@@ -243,7 +256,14 @@ class CryptoNewsService {
         "CryptoNewsService"
       );
 
-      // Get API key from secure configuration
+     
+      try {
+        await waitForAppInitialization(5000); 
+      } catch (error) {
+        logger.warn("App initialization timeout, proceeding without API key", "CryptoNewsService");
+      }
+
+      
       const apiKey = configService.get("NEWS_API_KEY");
 
       if (!apiKey) {

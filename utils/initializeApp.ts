@@ -1,5 +1,5 @@
-import { configService } from "./config";
-import { logger } from "./logger";
+import { configService } from './config';
+import { logger } from './logger';
 
 /**
  * Initialize all app-wide services and configuration
@@ -10,6 +10,9 @@ export async function initializeApp(): Promise<void> {
 
     // Initialize configuration service
     await configService.initialize();
+
+    // Test configuration
+    await configService.testConfiguration();
 
     // Set up the API key if not already configured
     await setupApiKey();
@@ -22,6 +25,22 @@ export async function initializeApp(): Promise<void> {
 }
 
 /**
+ * Wait for app to be fully initialized
+ * @param timeoutMs - Maximum time to wait in milliseconds (default: 10000ms)
+ * @returns Promise that resolves when app is ready or rejects on timeout
+ */
+export async function waitForAppInitialization(timeoutMs: number = 10000): Promise<void> {
+  const startTime = Date.now();
+  
+  while (!isAppInitialized()) {
+    if (Date.now() - startTime > timeoutMs) {
+      throw new Error("App initialization timeout");
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+}
+
+/**
  * Set up the API key securely
  */
 async function setupApiKey(): Promise<void> {
@@ -29,14 +48,10 @@ async function setupApiKey(): Promise<void> {
     const currentApiKey = configService.get("NEWS_API_KEY");
 
     if (!currentApiKey) {
-      // Set the API key securely
-      await configService.set(
-        "NEWS_API_KEY",
-        "0b2bddf9eef5407eb519f8b389b06c38"
-      );
-      logger.info("API key configured securely", "initializeApp");
+      logger.warn("No NEWS_API_KEY found in environment configuration", "initializeApp");
+      logger.info("Please ensure NEWS_API_KEY is set in your .env file or app.json", "initializeApp");
     } else {
-      logger.info("API key already configured", "initializeApp");
+      logger.info("API key configured from environment", "initializeApp");
     }
   } catch (error) {
     logger.error("Failed to setup API key", "initializeApp", error);

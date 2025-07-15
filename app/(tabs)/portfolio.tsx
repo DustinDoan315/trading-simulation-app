@@ -3,6 +3,8 @@ import BalanceCard from '@/components/portfolio/BalanceCard';
 import PortfolioHeader from '@/components/portfolio/PortfolioHeader';
 import React, { useCallback, useMemo } from 'react';
 import { Asset } from '@/types/crypto';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { navigateToCryptoChart } from '@/utils/navigation';
 import { OthersButton } from '@/components/portfolio/OthersButton';
 import { styles } from '@/components/portfolio/styles';
@@ -13,6 +15,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
+  Animated,
+  Dimensions,
   FlatList,
   RefreshControl,
   StatusBar,
@@ -20,6 +24,8 @@ import {
   View,
 } from "react-native";
 
+
+const { width } = Dimensions.get("window");
 
 const PortfolioScreen = () => {
   const insets = useSafeAreaInsets();
@@ -75,44 +81,114 @@ const PortfolioScreen = () => {
 
   const ListHeaderComponent = useMemo(
     () => (
-      <>
-        <PortfolioHeader
-          totalValue={formattedTotalBalance}
-          changePercentage={portfolioChangePercent}
-          changeValue={formattedTotalPnL}
-        />
-        <BalanceCard
-          balance={formattedAvailableBalance}
-          progress={0}
-          assets={displayAssets}
+      <View style={styles.enhancedContainer}>
+        <LinearGradient
+          colors={["#1A1D2F", "#131523", "#0F111A"]}
+          style={styles.backgroundGradient}
         />
 
-        {/* Real-time Balance Information */}
-        <View style={styles.userStatsContainer}>
-          <View style={styles.statRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Total P&L</Text>
-              <Text
-                style={[
-                  styles.statValue,
-                  { color: totalPnL >= 0 ? "#4CAF50" : "#F44336" },
-                ]}>
-                {formattedTotalPnL}
-              </Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>P&L %</Text>
-              <Text
-                style={[
-                  styles.statValue,
-                  { color: totalPnLPercentage >= 0 ? "#4CAF50" : "#F44336" },
-                ]}>
-                {formattedTotalPnLPercentage}
-              </Text>
-            </View>
-          </View>
+        <View style={styles.headerContainer}>
+          <PortfolioHeader
+            totalValue={formattedTotalBalance}
+            changePercentage={portfolioChangePercent}
+            changeValue={formattedTotalPnL}
+          />
         </View>
-      </>
+        <View style={styles.balanceCardContainer}>
+          <BalanceCard
+            balance={formattedAvailableBalance}
+            progress={0}
+            assets={displayAssets}
+          />
+        </View>
+
+        <View style={styles.enhancedStatsContainer}>
+          <LinearGradient
+            colors={["rgba(140, 158, 255, 0.1)", "rgba(140, 158, 255, 0.05)"]}
+            style={styles.statsGradient}>
+            <View style={styles.statsHeader}>
+              <Ionicons name="trending-up" size={20} color="#8C9EFF" />
+              <Text style={styles.statsTitle}>Portfolio Performance</Text>
+            </View>
+
+            <View style={styles.statRow}>
+              <View style={styles.statItem}>
+                <View style={styles.statIconContainer}>
+                  <Ionicons
+                    name={totalPnL >= 0 ? "arrow-up" : "arrow-down"}
+                    size={16}
+                    color={totalPnL >= 0 ? "#4CAF50" : "#F44336"}
+                  />
+                </View>
+                <Text style={styles.statLabel}>Total P&L</Text>
+                <Text
+                  style={[
+                    styles.statValue,
+                    { color: totalPnL >= 0 ? "#4CAF50" : "#F44336" },
+                  ]}>
+                  {formattedTotalPnL}
+                </Text>
+              </View>
+
+              <View style={styles.statDivider} />
+
+              <View style={styles.statItem}>
+                <View style={styles.statIconContainer}>
+                  <Ionicons name="analytics" size={16} color="#8C9EFF" />
+                </View>
+                <Text style={styles.statLabel}>P&L %</Text>
+                <Text
+                  style={[
+                    styles.statValue,
+                    { color: totalPnLPercentage >= 0 ? "#4CAF50" : "#F44336" },
+                  ]}>
+                  {formattedTotalPnLPercentage}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+
+        {displayAssets.length === 0 && !loading && (
+          <View style={styles.welcomeContainer}>
+            <LinearGradient
+              colors={[
+                "rgba(140, 158, 255, 0.15)",
+                "rgba(140, 158, 255, 0.05)",
+              ]}
+              style={styles.welcomeGradient}>
+              <Ionicons name="wallet-outline" size={48} color="#8C9EFF" />
+              <Text style={styles.welcomeTitle}>
+                Welcome to Your Portfolio!
+              </Text>
+              <Text style={styles.welcomeSubtitle}>
+                Start building your crypto portfolio by adding your first assets
+              </Text>
+              <View style={styles.welcomeStats}>
+                <View style={styles.welcomeStat}>
+                  <Text style={styles.welcomeStatValue}>0</Text>
+                  <Text style={styles.welcomeStatLabel}>Assets</Text>
+                </View>
+                <View style={styles.welcomeStatDivider} />
+                <View style={styles.welcomeStat}>
+                  <Text style={styles.welcomeStatValue}>$0.00</Text>
+                  <Text style={styles.welcomeStatLabel}>Total Value</Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </View>
+        )}
+
+        {displayAssets.length > 0 && (
+          <View style={styles.assetsHeader}>
+            <Text style={styles.assetsTitle}>Your Assets</Text>
+            <Text style={styles.assetsSubtitle}>
+              {displayAssets.length} asset
+              {displayAssets.length !== 1 ? "s" : ""} in your portfolio
+            </Text>
+          </View>
+        )}
+      </View>
     ),
     [
       formattedTotalBalance,
@@ -124,16 +200,25 @@ const PortfolioScreen = () => {
       totalPnL,
       totalPnLPercentage,
       formattedTotalPnLPercentage,
+      loading,
     ]
   );
 
   const ListEmptyComponent = useMemo(() => {
     if (loading || userLoading || realTimeLoading) {
-      return <ActivityIndicator size="large" color="#FFFFFF" />;
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8C9EFF" />
+          <Text style={styles.loadingText}>Loading your portfolio...</Text>
+        </View>
+      );
     }
     if (error) {
       return (
-        <Text style={styles.errorText}>{t("portfolio.errorLoading")}</Text>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color="#F44336" />
+          <Text style={styles.errorText}>{t("portfolio.errorLoading")}</Text>
+        </View>
       );
     }
     return null;
@@ -145,9 +230,9 @@ const PortfolioScreen = () => {
       <RefreshControl
         refreshing={loading || userLoading || realTimeLoading}
         onRefresh={handleRefresh}
-        tintColor="#FFFFFF"
+        tintColor="#8C9EFF"
         title={t("portfolio.pullToRefresh")}
-        titleColor="#FFFFFF"
+        titleColor="#8C9EFF"
       />
     ),
     [loading, userLoading, realTimeLoading, handleRefresh, t]
@@ -157,7 +242,7 @@ const PortfolioScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor="#131523" />
       <FlatList
         data={displayAssets}
         renderItem={renderAsset}

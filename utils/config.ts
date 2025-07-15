@@ -1,6 +1,7 @@
-import * as SecureStore from "expo-secure-store";
-import Constants from "expo-constants";
-import { logger } from "./logger";
+import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
+import { logger } from './logger';
+
 
 // Configuration interface
 interface AppConfig {
@@ -53,18 +54,19 @@ class ConfigService {
     }
   }
 
-  /**
-   * Load configuration from environment variables
-   */
+ 
   private async loadFromEnvironment(): Promise<void> {
     try {
       const expoConfig = Constants.expoConfig;
       const extra = expoConfig?.extra || {};
 
-      // Load from Expo Constants extra
+      logger.info("Loading environment configuration...", "ConfigService");
+      logger.info(`Expo Constants extra keys: ${Object.keys(extra).join(', ')}`, "ConfigService");
+
+     
       if (extra.NEWS_API_KEY) {
         this.config.NEWS_API_KEY = extra.NEWS_API_KEY;
-        logger.info("Loaded NEWS_API_KEY from environment", "ConfigService");
+        logger.info("Loaded NEWS_API_KEY from Expo Constants", "ConfigService");
       }
 
       if (extra.SUPABASE_URL) {
@@ -78,6 +80,25 @@ class ConfigService {
       if (extra.ENVIRONMENT) {
         this.config.ENVIRONMENT = extra.ENVIRONMENT;
       }
+
+     logger.info("Checking process.env for environment variables...", "ConfigService");
+      
+      if (process.env.EXPO_PUBLIC_NEWS_API_KEY) {
+        this.config.NEWS_API_KEY = process.env.EXPO_PUBLIC_NEWS_API_KEY;
+        logger.info("Loaded NEWS_API_KEY from process.env", "ConfigService");
+      }
+
+      if (process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        this.config.SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      }
+
+      if (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) {
+        this.config.SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+      }
+
+      
+      logger.info(`Configuration loaded - NEWS_API_KEY: ${this.config.NEWS_API_KEY ? 'Available' : 'Missing'}`, "ConfigService");
+      logger.info(`Environment: ${this.config.ENVIRONMENT}`, "ConfigService");
     } catch (error) {
       logger.warn(
         "Failed to load from environment variables",
@@ -190,6 +211,26 @@ class ConfigService {
       NEWS_API_KEY: NEWS_API_KEY ? "***" : "",
       SUPABASE_ANON_KEY: SUPABASE_ANON_KEY ? "***" : "",
     };
+  }
+
+
+  async testConfiguration(): Promise<void> {
+    logger.info("=== Configuration Test ===", "ConfigService");
+    
+    // Test environment variables
+    logger.info(`process.env.EXPO_PUBLIC_NEWS_API_KEY: ${process.env.EXPO_PUBLIC_NEWS_API_KEY ? 'Available' : 'Missing'}`, "ConfigService");
+    logger.info(`process.env.EXPO_PUBLIC_SUPABASE_URL: ${process.env.EXPO_PUBLIC_SUPABASE_URL ? 'Available' : 'Missing'}`, "ConfigService");
+    
+    // Test Expo Constants
+    const expoConfig = Constants.expoConfig;
+    const extra = expoConfig?.extra || {};
+    logger.info(`Expo Constants NEWS_API_KEY: ${extra.NEWS_API_KEY ? 'Available' : 'Missing'}`, "ConfigService");
+    
+    // Test current config
+    logger.info(`Current config NEWS_API_KEY: ${this.config.NEWS_API_KEY ? 'Available' : 'Missing'}`, "ConfigService");
+    logger.info(`Config initialized: ${this.isInitialized}`, "ConfigService");
+    
+    logger.info("=== End Configuration Test ===", "ConfigService");
   }
 
   /**
