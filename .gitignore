@@ -14,3 +14,4 @@ expo-env.d.ts
 android
 ios
 .cursor/mcp.json
+yarn.lock

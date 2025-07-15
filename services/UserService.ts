@@ -974,13 +974,17 @@ export class UserService {
           initialBalance
         });
 
-        // Update user's PnL data in the users table
+        // Calculate ALL_TIME rankings only
+        const calculatedRank = await this.calculateUserRank(userId, "ALL_TIME", totalPnL, totalPortfolioValue);
+        
+        // Update user's PnL data and global rank in the users table
         await this.updateUser(userId, {
           total_pnl: totalPnL.toString(),
           total_pnl_percentage: totalPnLPercentage.toString(),
+          global_rank: calculatedRank,
         } as any);
 
-        // Calculate ALL_TIME rankings only
+        // Update leaderboard rankings table
         await this.upsertLeaderboardRanking({
           user_id: userId,
           period: "ALL_TIME",
@@ -988,7 +992,7 @@ export class UserService {
           total_pnl_percentage: totalPnLPercentage.toString(),
           total_portfolio_value: totalPortfolioValue.toString(),
           total_trades: portfolio.length,
-          rank: await this.calculateUserRank(userId, "ALL_TIME", totalPnL, totalPortfolioValue),
+          rank: calculatedRank,
         });
 
         console.log("✅ Leaderboard rankings and user PnL updated successfully for user:", userId);
@@ -1062,7 +1066,7 @@ export class UserService {
       // Get all rankings for ALL_TIME period, sorted by performance
       const { data: rankings, error } = await supabase
         .from("leaderboard_rankings")
-        .select("id, total_pnl, portfolio_value")
+        .select("id, user_id, total_pnl, portfolio_value")
         .eq("period", "ALL_TIME")
         .is("collection_id", null)
         .order("total_pnl", { ascending: false })
@@ -1075,10 +1079,17 @@ export class UserService {
         const ranking = rankings![i];
         const newRank = i + 1;
 
+        // Update leaderboard_rankings table
         await supabase
           .from("leaderboard_rankings")
           .update({ rank: newRank })
           .eq("id", ranking.id);
+
+        // Update users table global_rank
+        await supabase
+          .from("users")
+          .update({ global_rank: newRank })
+          .eq("id", ranking.user_id);
       }
     } catch (error) {
       logger.error("Error recalculating all ranks", "UserService", error);
@@ -1249,6 +1260,45 @@ export class UserService {
           } else {
             logger.info(`Deleted ${toDelete.length} duplicate leaderboard entries`, "UserService");
           }
+        }
+      }
+
+      // Reset global_rank for all users who don't have leaderboard entries
+      const { data: usersWithRankings, error: rankingsError } = await supabase
+        .from("leaderboard_rankings")
+        .select("user_id")
+        .eq("period", "ALL_TIME")
+        .is("collection_id", null);
+
+      if (rankingsError) {
+        logger.error("Error getting users with rankings", "UserService", rankingsError);
+        return;
+      }
+
+      const usersWithRankingsSet = new Set(usersWithRankings?.map(r => r.user_id) || []);
+      
+      // Update users who don't have rankings to have null global_rank
+      if (usersWithRankingsSet.size > 0) {
+        const { error: resetError } = await supabase
+          .from("users")
+          .update({ global_rank: null })
+          .not("id", "in", `(${Array.from(usersWithRankingsSet).map(id => `'${id}'`).join(",")})`);
+
+        if (resetError) {
+          logger.error("Error resetting global_rank for users without rankings", "UserService", resetError);
+        } else {
+          logger.info("Reset global_rank for users without leaderboard rankings", "UserService");
+        }
+      } else {
+        // If no users have rankings, reset all users
+        const { error: resetError } = await supabase
+          .from("users")
+          .update({ global_rank: null });
+
+        if (resetError) {
+          logger.error("Error resetting global_rank for all users", "UserService", resetError);
+        } else {
+          logger.info("Reset global_rank for all users (no rankings found)", "UserService");
         }
       }
     } catch (error) {
@@ -1631,6 +1681,80 @@ export class UserService {
     }
   }
 
+  // Static method to sync global_rank from leaderboard_rankings to users table
+  static async syncGlobalRanksFromLeaderboard(): Promise<void> {
+    try {
+      logger.info("Syncing global ranks from leaderboard to users table", "UserService");
+      
+      // Get all leaderboard rankings for ALL_TIME period, sorted by rank
+      const { data: rankings, error } = await supabase
+        .from("leaderboard_rankings")
+        .select("user_id, rank")
+        .eq("period", "ALL_TIME")
+        .is("collection_id", null)
+        .order("rank", { ascending: true });
+
+      if (error) throw error;
+
+      if (!rankings || rankings.length === 0) {
+        logger.info("No leaderboard rankings found to sync", "UserService");
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Update each user's global_rank
+      for (const ranking of rankings) {
+        try {
+          const { error: updateError } = await supabase
+            .from("users")
+            .update({ global_rank: ranking.rank })
+            .eq("id", ranking.user_id);
+
+          if (updateError) {
+            logger.error(`Error updating global_rank for user ${ranking.user_id}`, "UserService", updateError);
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } catch (error) {
+          logger.error(`Error updating global_rank for user ${ranking.user_id}`, "UserService", error);
+          errorCount++;
+        }
+      }
+
+      logger.info(
+        `Global rank sync completed: ${successCount} successful, ${errorCount} errors`,
+        "UserService"
+      );
+    } catch (error) {
+      logger.error("Error syncing global ranks from leaderboard", "UserService", error);
+      throw error;
+    }
+  }
+
+  // Static method to fix global ranks issue
+  static async fixGlobalRanksIssue(): Promise<void> {
+    try {
+      logger.info("Fixing global ranks issue...", "UserService");
+      
+      // Step 1: Clean up leaderboard rankings
+      await this.cleanupLeaderboardRankings();
+      
+      // Step 2: Recalculate all ranks
+      await this.recalculateAllRanks();
+      
+      // Step 3: Sync global ranks from leaderboard to users table
+      await this.syncGlobalRanksFromLeaderboard();
+      
+      logger.info("Global ranks issue fixed successfully", "UserService");
+    } catch (error) {
+      logger.error("Error fixing global ranks issue", "UserService", error);
+      throw error;
+    }
+  }
+
   // Static method to force update all users' real-time data in the users table
   // This method ensures that all users have up-to-date P&L values in the users table
   // which will automatically update the leaderboard when the users table changes
@@ -1675,7 +1799,7 @@ export class UserService {
               total_pnl: "0",
               total_pnl_percentage: "0",
               total_portfolio_value: userData.initial_balance || (DEFAULT_BALANCE.toString() + ".00"),
-              global_rank: undefined,
+              global_rank: null, // Users who haven't traded shouldn't have a rank
             } as any);
             successCount++;
             continue;
@@ -1705,11 +1829,15 @@ export class UserService {
           // Calculate P&L percentage
           const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
 
-          // Update user with real-time calculated values
+          // Calculate user's rank
+          const calculatedRank = await this.calculateUserRank(user.id, "ALL_TIME", totalPnL, totalPortfolioValue);
+
+          // Update user with real-time calculated values including global rank
           await this.updateUser(user.id, {
             total_pnl: totalPnL.toString(),
             total_pnl_percentage: totalPnLPercentage.toString(),
             total_portfolio_value: totalPortfolioValue.toString(),
+            global_rank: calculatedRank,
           } as any);
 
           successCount++;

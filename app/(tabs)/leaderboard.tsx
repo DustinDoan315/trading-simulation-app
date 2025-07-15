@@ -1,12 +1,12 @@
-import colors from "@/styles/colors";
-import LeaderboardService from "@/services/LeaderboardService";
-import { useBackgroundSync } from "@/hooks/useBackgroundSync";
-import { useFocusEffect } from "@react-navigation/native";
-import { useLeaderboardData } from "@/hooks/useLeaderboardData";
-import { useLeaderboardRanking } from "@/hooks/useLeaderboardRanking";
-import { useNotification } from "@/components/ui/Notification";
-import { UserService } from "@/services/UserService";
-import { useUser } from "@/context/UserContext";
+import colors from '@/styles/colors';
+import LeaderboardService from '@/services/LeaderboardService';
+import { useBackgroundSync } from '@/hooks/useBackgroundSync';
+import { useFocusEffect } from '@react-navigation/native';
+import { useLeaderboardData } from '@/hooks/useLeaderboardData';
+import { useLeaderboardRanking } from '@/hooks/useLeaderboardRanking';
+import { useNotification } from '@/components/ui/Notification';
+import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 import {
   FlatList,
   RefreshControl,
@@ -24,6 +24,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+
 
 const LeaderboardScreen = () => {
   const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
@@ -391,7 +392,11 @@ const LeaderboardScreen = () => {
     try {
       console.log("🔄 Starting manual refresh...");
 
-      // Force update all users' real-time PnL data first
+      // Fix global ranks issue first
+      console.log("🔧 Fixing global ranks issue...");
+      await UserService.fixGlobalRanksIssue();
+
+      // Force update all users' real-time PnL data
       console.log("🔄 Updating all users' real-time PnL data...");
       await UserService.forceUpdateAllUsersRealTimeData();
 
@@ -664,6 +669,7 @@ const styles = StyleSheet.create({
     color: "#9DA3B4",
     textAlign: "center",
   },
+
   statsSection: {
     flexDirection: "row",
     justifyContent: "space-around",

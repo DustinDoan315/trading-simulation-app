@@ -404,6 +404,9 @@ class LeaderboardService {
       // Recalculate all ranks
       await UserService.recalculateAllRanks();
       
+      // Sync global ranks from leaderboard to users table
+      await UserService.syncGlobalRanksFromLeaderboard();
+      
       // Reset cooldown and load fresh data
       this.lastFetchTime = 0;
       await this.loadLeaderboardData(filters);
