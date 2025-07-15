@@ -1,17 +1,17 @@
-import ActionButton from "./ActionButton";
-import AmountPercentButton from "../common/AmountPercentButton";
-import Dimensions from "@/styles/dimensions";
-import PriceInput from "../common/PriceInput";
-import RealTimeDataService from "@/services/RealTimeDataService";
-import TabSelector from "./TableSelector";
-import { DEFAULT_CRYPTO, DEFAULT_CURRENCY } from "@/utils/constant";
-import { formatAmount } from "@/utils/formatters";
-import { LinearGradient } from "expo-linear-gradient";
-import { RootState } from "@/store";
-import { StyleSheet, Text, View } from "react-native";
-import { useDualBalance } from "@/hooks/useDualBalance";
-import { useLanguage } from "@/context/LanguageContext";
-import { useSelector } from "react-redux";
+import ActionButton from './ActionButton';
+import AmountPercentButton from '../common/AmountPercentButton';
+import Dimensions from '@/styles/dimensions';
+import PriceInput from '../common/PriceInput';
+import RealTimeDataService from '@/services/RealTimeDataService';
+import TabSelector from './TableSelector';
+import { DEFAULT_CRYPTO, DEFAULT_CURRENCY } from '@/utils/constant';
+import { formatAmount } from '@/utils/formatters';
+import { LinearGradient } from 'expo-linear-gradient';
+import { RootState } from '@/store';
+import { StyleSheet, Text, View } from 'react-native';
+import { useDualBalance } from '@/hooks/useDualBalance';
+import { useLanguage } from '@/context/LanguageContext';
+import { useSelector } from 'react-redux';
 import React, {
   useCallback,
   useEffect,
@@ -315,7 +315,7 @@ const OrderEntry = React.memo(
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}>
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total Value:</Text>
+              <Text style={styles.totalLabel}>{t("order.total")}:</Text>
               <Text style={styles.totalAmount}>
                 $
                 {formatAmount(
@@ -325,7 +325,7 @@ const OrderEntry = React.memo(
               </Text>
             </View>
             <View style={styles.totalRow}>
-              <Text style={styles.feeLabel}>Fees (0.1%):</Text>
+              <Text style={styles.feeLabel}>{t("order.fee")} (0.1%):</Text>
               <Text style={styles.feeAmount}>
                 $
                 {formatAmount(

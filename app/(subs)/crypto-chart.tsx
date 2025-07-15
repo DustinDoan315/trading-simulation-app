@@ -43,7 +43,6 @@ import {
   handleUserReinitialization,
 } from "@/utils/helper";
 
-
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
   const { reinitializeUser } = useUser();
@@ -192,7 +191,7 @@ const CryptoChartScreen = () => {
     setIsSubmitting(true);
     const minDisplayTime = 1000; // 1 second
     const startTime = Date.now();
-    setSubmissionStatus("Validating order...");
+    setSubmissionStatus(t("chart.validatingOrder"));
     setSubmissionProgress(10);
 
     try {
@@ -223,13 +222,13 @@ const CryptoChartScreen = () => {
         },
       };
 
-      setSubmissionStatus("Executing trade...");
+      setSubmissionStatus(t("chart.executingTrade"));
       setSubmissionProgress(30);
 
       // Execute trade using dual balance system
       await executeTradeInContext(order);
 
-      setSubmissionStatus("Processing transaction...");
+      setSubmissionStatus(t("chart.processingTransaction"));
       setSubmissionProgress(60);
 
       // Balance should be automatically updated in Redux state
@@ -242,13 +241,13 @@ const CryptoChartScreen = () => {
         dispatchContext
       );
 
-      setSubmissionStatus("Finalizing...");
+      setSubmissionStatus(t("chart.finalizing"));
       setSubmissionProgress(90);
 
       // Simulate final processing
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      setSubmissionStatus("Order completed successfully!");
+      setSubmissionStatus(t("chart.orderCompleted"));
       setSubmissionProgress(100);
 
       // Show success for a moment before hiding
@@ -258,7 +257,7 @@ const CryptoChartScreen = () => {
       );
       resetLoadingState();
     } catch (error: any) {
-      setSubmissionStatus("Error occurred. Please try again.");
+      setSubmissionStatus(t("chart.errorOccurred"));
       await new Promise((resolve) => setTimeout(resolve, 2000));
       resetLoadingState();
       await handleUserReinitialization(error, reinitializeUser, () =>
@@ -292,7 +291,7 @@ const CryptoChartScreen = () => {
           </View>
 
           {/* Status Text */}
-          <Text style={styles.loadingTitle}>Processing Order</Text>
+          <Text style={styles.loadingTitle}>{t("chart.processingOrder")}</Text>
           <Text style={styles.loadingStatus}>{submissionStatus}</Text>
 
           {/* Progress Bar */}
@@ -316,8 +315,8 @@ const CryptoChartScreen = () => {
           <View style={styles.contextInfo}>
             <Text style={styles.contextLabel}>
               {activeContext.type === "collection"
-                ? "Collection Trade"
-                : "Individual Trade"}
+                ? t("chart.collectionTrade")
+                : t("chart.individualTrade")}
             </Text>
             <Text style={styles.contextSymbol}>{symbol}</Text>
           </View>

@@ -1,8 +1,8 @@
-import React, { createContext, useContext, ReactNode } from "react";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { setLanguage } from "@/features/languageSlice";
-import enTranslations from "../translations/en.json";
-import viTranslations from "../translations/vi.json";
+import enTranslations from '../translations/en.json';
+import React, { createContext, ReactNode, useContext } from 'react';
+import viTranslations from '../translations/vi.json';
+import { setLanguage } from '@/features/languageSlice';
+import { useAppDispatch, useAppSelector } from '@/store';
 
 type Translations = typeof enTranslations;
 type Language = "en" | "vi";
@@ -10,7 +10,7 @@ type Language = "en" | "vi";
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(
@@ -28,7 +28,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     (state) => state.language.currentLanguage
   );
 
-  const t = (key: string): string => {
+  const t = (key: string, params?: Record<string, string | number>): string => {
     const keys = key.split(".");
     let value: any = translations[currentLanguage];
 
@@ -37,7 +37,17 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       if (value === undefined) return key; // Return key if translation not found
     }
 
-    return value || key;
+    let result = value || key;
+
+    // Handle string interpolation if params are provided
+    if (params && typeof result === "string") {
+      Object.keys(params).forEach((paramKey) => {
+        const regex = new RegExp(`{${paramKey}}`, "g");
+        result = result.replace(regex, String(params[paramKey]));
+      });
+    }
+
+    return result;
   };
 
   return (

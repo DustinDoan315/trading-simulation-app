@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CryptoNewsArticle } from '@/services/CryptoNewsService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   ActivityIndicator,
   Dimensions,
@@ -11,7 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 
 const { width } = Dimensions.get("window");
 
@@ -24,19 +24,22 @@ export const CryptoNewsCard: React.FC<CryptoNewsCardProps> = ({
   article,
   onPress,
 }) => {
+  const { t } = useLanguage();
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
-  const getSentimentColors = (sentiment: string): [string, string] => {
+  const getSentimentColors = (
+    sentiment: string
+  ): readonly [string, string, string, string] => {
     switch (sentiment) {
       case "positive":
-        return ["#10B981", "#059669"];
+        return ["#00FF88", "#00CC6A", "#00994C", "#00662E"] as const;
       case "negative":
-        return ["#EF4444", "#DC2626"];
+        return ["#FF4757", "#FF3742", "#FF2E3A", "#FF1F2A"] as const;
       case "neutral":
-        return ["#6366F1", "#4F46E5"];
+        return ["#A4B0BE", "#747D8C", "#57606F", "#2F3542"] as const;
       default:
-        return ["#6B7280", "#4B5563"];
+        return ["#A4B0BE", "#747D8C", "#57606F", "#2F3542"] as const;
     }
   };
 
@@ -60,9 +63,9 @@ export const CryptoNewsCard: React.FC<CryptoNewsCardProps> = ({
       (now.getTime() - date.getTime()) / (1000 * 60 * 60)
     );
 
-    if (diffInHours < 1) return "Just now";
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInHours < 48) return "Yesterday";
+    if (diffInHours < 1) return t("news.justNow");
+    if (diffInHours < 24) return t("news.hoursAgo", { hours: diffInHours });
+    if (diffInHours < 48) return t("news.yesterday");
     return date.toLocaleDateString();
   };
 
@@ -152,7 +155,9 @@ export const CryptoNewsCard: React.FC<CryptoNewsCardProps> = ({
 
               <View style={styles.footer}>
                 <View style={styles.readMoreContainer}>
-                  <Text style={styles.readMoreText}>Read Full Article</Text>
+                  <Text style={styles.readMoreText}>
+                    {t("news.readFullArticle")}
+                  </Text>
                   <View style={styles.arrowContainer}>
                     <Ionicons name="arrow-forward" size={14} color="white" />
                   </View>

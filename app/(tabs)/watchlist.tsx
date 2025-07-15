@@ -19,7 +19,6 @@ import {
   View,
 } from "react-native";
 
-
 const { width: screenWidth } = Dimensions.get("window");
 
 const WatchlistScreen = () => {
@@ -83,11 +82,10 @@ const WatchlistScreen = () => {
                 </LinearGradient>
               </View>
               <Text style={styles.emptyStateTitle}>
-                Your Watchlist is Empty
+                {t("watchList.emptyTitle")}
               </Text>
               <Text style={styles.emptyStateDescription}>
-                Start building your portfolio by adding cryptocurrencies to
-                track their performance
+                {t("watchList.emptyDescription")}
               </Text>
               <TouchableOpacity
                 style={styles.emptyStateButton}
@@ -99,7 +97,7 @@ const WatchlistScreen = () => {
                   style={styles.emptyStateButtonGradient}>
                   <Ionicons name="add-circle" size={20} color="white" />
                   <Text style={styles.emptyStateButtonText}>
-                    Add First Crypto
+                    {t("watchList.addFirstCrypto")}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -118,10 +116,12 @@ const WatchlistScreen = () => {
                 end={{ x: 1, y: 1 }}
                 style={styles.statsCard}>
                 <View style={styles.statsHeader}>
-                  <Text style={styles.statsTitle}>Portfolio Overview</Text>
+                  <Text style={styles.statsTitle}>
+                    {t("watchList.portfolioOverview")}
+                  </Text>
                   <View style={styles.statsBadge}>
                     <Text style={styles.statsBadgeText}>
-                      {filteredList.length} Assets
+                      {filteredList.length} {t("watchList.assets")}
                     </Text>
                   </View>
                 </View>
@@ -131,7 +131,9 @@ const WatchlistScreen = () => {
                       <Ionicons name="eye" size={20} color="#667eea" />
                     </View>
                     <Text style={styles.statValue}>{filteredList.length}</Text>
-                    <Text style={styles.statLabel}>Watching</Text>
+                    <Text style={styles.statLabel}>
+                      {t("watchList.watching")}
+                    </Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
@@ -142,7 +144,9 @@ const WatchlistScreen = () => {
                     <Text style={[styles.statValue, styles.gainingValue]}>
                       {gainingCount}
                     </Text>
-                    <Text style={styles.statLabel}>Gaining</Text>
+                    <Text style={styles.statLabel}>
+                      {t("watchList.gaining")}
+                    </Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
@@ -157,7 +161,9 @@ const WatchlistScreen = () => {
                     <Text style={[styles.statValue, styles.decliningValue]}>
                       {decliningCount}
                     </Text>
-                    <Text style={styles.statLabel}>Declining</Text>
+                    <Text style={styles.statLabel}>
+                      {t("watchList.declining")}
+                    </Text>
                   </View>
                 </View>
               </LinearGradient>

@@ -2,6 +2,7 @@ import colors from '@/styles/colors';
 import LeaderboardService from '@/services/LeaderboardService';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { useFocusEffect } from '@react-navigation/native';
+import { useLanguage } from '@/context/LanguageContext';
 import { useLeaderboardData } from '@/hooks/useLeaderboardData';
 import { useLeaderboardRanking } from '@/hooks/useLeaderboardRanking';
 import { useNotification } from '@/components/ui/Notification';
@@ -36,6 +37,7 @@ const LeaderboardScreen = () => {
   const { showNotification } = useNotification();
   const { user } = useUser();
   const { syncStatus, isEnabled, toggleSync } = useBackgroundSync();
+  const { t } = useLanguage();
 
   // Initialize leaderboard data with real-time updates
   const {
@@ -306,7 +308,9 @@ const LeaderboardScreen = () => {
               {item.name}
             </Text>
             {type === "collections" && (
-              <Text style={styles.members}>{item.members} members</Text>
+              <Text style={styles.members}>
+                {item.members} {t("leaderboard.members")}
+              </Text>
             )}
           </View>
         </View>
@@ -317,7 +321,9 @@ const LeaderboardScreen = () => {
               <Text style={styles.statValue}>
                 ${item.totalValue.toLocaleString()}
               </Text>
-              <Text style={styles.statLabel}>Total Value</Text>
+              <Text style={styles.statLabel}>
+                {t("leaderboard.totalValue")}
+              </Text>
             </View>
           ) : (
             <>
@@ -340,7 +346,7 @@ const LeaderboardScreen = () => {
                   {item.percentage >= 0 ? "+" : ""}
                   {item.percentage.toFixed(2)}%
                 </Text>
-                <Text style={styles.statLabel}>Return</Text>
+                <Text style={styles.statLabel}>{t("leaderboard.return")}</Text>
               </View>
             </>
           )}
@@ -357,7 +363,9 @@ const LeaderboardScreen = () => {
         id: item.id || `friend-${item.user_id}`,
         rank: item.rank || 0,
         name:
-          item.users?.display_name || item.users?.username || "Unknown User",
+          item.users?.display_name ||
+          item.users?.username ||
+          t("leaderboard.unknownUser"),
         avatar: item.users?.avatar_emoji || "👤",
         pnl: parseFloat(item.total_pnl || "0"),
         percentage: parseFloat(item.percentage_return || "0"),
@@ -366,7 +374,7 @@ const LeaderboardScreen = () => {
       }));
     }
     return globalRankings; // fallback to global
-  }, [activeTab, globalRankings, friendsData, user?.id]);
+  }, [activeTab, globalRankings, friendsData, user?.id, t]);
 
   const handleRefresh = async () => {
     if (isRefreshingRef.current) {
@@ -412,11 +420,11 @@ const LeaderboardScreen = () => {
           <Text style={styles.rankLabel}>
             {activeTab === "friends"
               ? currentRank
-                ? "Your Global Position"
-                : "Start trading to get ranked"
+                ? t("leaderboard.yourGlobalPosition")
+                : t("leaderboard.startTradingToGetRanked")
               : currentRank
-              ? "Your Current Rank"
-              : "Start trading to get ranked"}
+              ? t("leaderboard.yourCurrentRank")
+              : t("leaderboard.startTradingToGetRanked")}
           </Text>
         </View>
       </View>
@@ -426,19 +434,25 @@ const LeaderboardScreen = () => {
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stats.totalUsers}</Text>
             <Text style={styles.statLabel}>
-              {activeTab === "friends" ? "Global Traders" : "Total Traders"}
+              {activeTab === "friends"
+                ? t("leaderboard.globalTraders")
+                : t("leaderboard.totalTraders")}
             </Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
               {stats.topPerformer ? `#${stats.topPerformer.rank}` : "—"}
             </Text>
-            <Text style={styles.statLabel}>Top Performer</Text>
+            <Text style={styles.statLabel}>
+              {t("leaderboard.topPerformer")}
+            </Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stats.totalUsers}</Text>
             <Text style={styles.statLabel}>
-              {activeTab === "friends" ? "Active Global" : "Active Traders"}
+              {activeTab === "friends"
+                ? t("leaderboard.activeGlobal")
+                : t("leaderboard.activeTraders")}
             </Text>
           </View>
         </View>
@@ -472,7 +486,7 @@ const LeaderboardScreen = () => {
               styles.tabText,
               activeTab === "global" && styles.activeTabText,
             ]}>
-            Global
+            {t("leaderboard.global")}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -483,7 +497,7 @@ const LeaderboardScreen = () => {
               styles.tabText,
               activeTab === "friends" && styles.activeTabText,
             ]}>
-            Friends
+            {t("leaderboard.friends")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -508,12 +522,12 @@ const LeaderboardScreen = () => {
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
               {isLoading || friendsLoading
-                ? "Loading leaderboard..."
+                ? t("leaderboard.loadingLeaderboard")
                 : activeTab === "friends"
                 ? friendsData.length === 0
-                  ? "No friends found. Add some friends to see them on the leaderboard!"
-                  : "No friends with rankings yet. Start trading to appear on the leaderboard!"
-                : "No rankings available yet"}
+                  ? t("leaderboard.noFriendsFound")
+                  : t("leaderboard.noFriendsWithRankings")
+                : t("leaderboard.noRankingsAvailable")}
             </Text>
           </View>
         }
@@ -525,7 +539,9 @@ const LeaderboardScreen = () => {
       {lastUpdated && (
         <View style={styles.lastUpdatedContainer}>
           <Text style={styles.syncStatusText}>
-            Last updated: {lastUpdated.toLocaleTimeString()}
+            {t("leaderboard.lastUpdated", {
+              time: lastUpdated.toLocaleTimeString(),
+            })}
           </Text>
         </View>
       )}

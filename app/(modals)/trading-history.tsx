@@ -6,6 +6,7 @@ import { logger } from '@/utils/logger';
 import { router } from 'expo-router';
 import { Transaction } from '@/types/database';
 import { useAppDispatch } from '@/store';
+import { useLanguage } from '@/context/LanguageContext';
 import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
@@ -20,10 +21,10 @@ import {
   View,
 } from "react-native";
 
-
 const TradingHistoryModal = () => {
   const dispatch = useAppDispatch();
   const { user, transactions, loading, error, refreshUserData } = useUser();
+  const { t } = useLanguage();
 
   const [activeFilter, setActiveFilter] = useState<"all" | "buy" | "sell">(
     "all"
@@ -94,11 +95,13 @@ const TradingHistoryModal = () => {
       (now.getTime() - date.getTime()) / (1000 * 60 * 60)
     );
 
-    if (diffInHours < 1) return "Just now";
-    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 1) return t("tradingHistory.justNow");
+    if (diffInHours < 24)
+      return t("tradingHistory.hoursAgo", { hours: diffInHours });
 
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}d ago`;
+    if (diffInDays < 7)
+      return t("tradingHistory.daysAgo", { days: diffInDays });
 
     return date.toLocaleDateString();
   };
@@ -176,7 +179,9 @@ const TradingHistoryModal = () => {
             </View>
             <View style={styles.symbolInfo}>
               <Text style={styles.symbol}>{trade.symbol}</Text>
-              <Text style={styles.symbolName}>{trade.symbol} Token</Text>
+              <Text style={styles.symbolName}>
+                {trade.symbol} {t("tradingHistory.token")}
+              </Text>
             </View>
           </View>
 
@@ -198,13 +203,13 @@ const TradingHistoryModal = () => {
         {/* Amount and Price Section */}
         <View style={styles.amountSection}>
           <View style={styles.amountRow}>
-            <Text style={styles.amountLabel}>Amount</Text>
+            <Text style={styles.amountLabel}>{t("tradingHistory.amount")}</Text>
             <Text style={styles.amountValue}>
               {formatAmount(trade.quantity)} {trade.symbol}
             </Text>
           </View>
           <View style={styles.amountRow}>
-            <Text style={styles.amountLabel}>Price</Text>
+            <Text style={styles.amountLabel}>{t("tradingHistory.price")}</Text>
             <Text style={styles.amountValue}>
               {formatCurrency(trade.price)}
             </Text>
@@ -214,14 +219,16 @@ const TradingHistoryModal = () => {
         {/* Total and Fee Section */}
         <View style={styles.totalSection}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Value</Text>
+            <Text style={styles.totalLabel}>
+              {t("tradingHistory.totalValue")}
+            </Text>
             <Text style={styles.totalValue}>
               {formatCurrency(trade.total_value)}
             </Text>
           </View>
           {parseFloat(trade.fee) > 0 && (
             <View style={styles.feeRow}>
-              <Text style={styles.feeLabel}>Fee</Text>
+              <Text style={styles.feeLabel}>{t("tradingHistory.fee")}</Text>
               <Text style={styles.feeValue}>{formatCurrency(trade.fee)}</Text>
             </View>
           )}
@@ -318,12 +325,14 @@ const TradingHistoryModal = () => {
             onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.title}>Trading History</Text>
+          <Text style={styles.title}>{t("tradingHistory.title")}</Text>
           <View style={styles.exportButton} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#6674CC" />
-          <Text style={styles.loadingText}>Loading trading history...</Text>
+          <Text style={styles.loadingText}>
+            {t("tradingHistory.loadingTradingHistory")}
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -339,7 +348,7 @@ const TradingHistoryModal = () => {
           onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.title}>Trading History</Text>
+        <Text style={styles.title}>{t("tradingHistory.title")}</Text>
         <TouchableOpacity style={styles.exportButton}>
           <Ionicons name="download-outline" size={20} color="#FFFFFF" />
         </TouchableOpacity>
@@ -359,17 +368,17 @@ const TradingHistoryModal = () => {
       {/* Trade Type Filter */}
       <View style={styles.filterContainer}>
         <FilterButton
-          title="All"
+          title={t("tradingHistory.all")}
           value="all"
           isActive={activeFilter === "all"}
         />
         <FilterButton
-          title="Buy"
+          title={t("tradingHistory.buy")}
           value="buy"
           isActive={activeFilter === "buy"}
         />
         <FilterButton
-          title="Sell"
+          title={t("tradingHistory.sell")}
           value="sell"
           isActive={activeFilter === "sell"}
         />
@@ -378,7 +387,9 @@ const TradingHistoryModal = () => {
       {/* Statistics Summary */}
       <View style={styles.statsContainer}>
         <LinearGradient colors={["#1A1D2F", "#2A2E42"]} style={styles.statCard}>
-          <Text style={styles.statLabel}>Total Trades</Text>
+          <Text style={styles.statLabel}>
+            {t("tradingHistory.totalTrades")}
+          </Text>
           <Text style={styles.statValue}>{filteredHistory.length}</Text>
         </LinearGradient>
         {activeFilter === "all" && (
@@ -386,13 +397,17 @@ const TradingHistoryModal = () => {
             <LinearGradient
               colors={["#1A1D2F", "#2A2E42"]}
               style={styles.statCard}>
-              <Text style={styles.statLabel}>Buy Orders</Text>
+              <Text style={styles.statLabel}>
+                {t("tradingHistory.buyOrders")}
+              </Text>
               <Text style={styles.statValue}>{buyCount}</Text>
             </LinearGradient>
             <LinearGradient
               colors={["#1A1D2F", "#2A2E42"]}
               style={styles.statCard}>
-              <Text style={styles.statLabel}>Sell Orders</Text>
+              <Text style={styles.statLabel}>
+                {t("tradingHistory.sellOrders")}
+              </Text>
               <Text style={styles.statValue}>{sellCount}</Text>
             </LinearGradient>
           </>
@@ -401,7 +416,9 @@ const TradingHistoryModal = () => {
           <LinearGradient
             colors={["#1A1D2F", "#2A2E42"]}
             style={styles.statCard}>
-            <Text style={styles.statLabel}>Buy Orders</Text>
+            <Text style={styles.statLabel}>
+              {t("tradingHistory.buyOrders")}
+            </Text>
             <Text style={styles.statValue}>{buyCount}</Text>
           </LinearGradient>
         )}
@@ -409,7 +426,9 @@ const TradingHistoryModal = () => {
           <LinearGradient
             colors={["#1A1D2F", "#2A2E42"]}
             style={styles.statCard}>
-            <Text style={styles.statLabel}>Sell Orders</Text>
+            <Text style={styles.statLabel}>
+              {t("tradingHistory.sellOrders")}
+            </Text>
             <Text style={styles.statValue}>{sellCount}</Text>
           </LinearGradient>
         )}
@@ -441,11 +460,13 @@ const TradingHistoryModal = () => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="receipt-outline" size={48} color="#9DA3B4" />
-            <Text style={styles.emptyText}>No trading history found</Text>
+            <Text style={styles.emptyText}>
+              {t("tradingHistory.noTradingHistoryFound")}
+            </Text>
             <Text style={styles.emptySubtext}>
               {filteredHistory.length === 0 && transactions.length > 0
-                ? "Try adjusting your filters"
-                : "Start trading to see your history"}
+                ? t("tradingHistory.tryAdjustingFilters")
+                : t("tradingHistory.startTradingToSeeHistory")}
             </Text>
           </View>
         )}

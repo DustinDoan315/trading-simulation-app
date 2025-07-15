@@ -24,11 +24,11 @@ import {
   View,
 } from "react-native";
 
-
 const { width } = Dimensions.get("window");
 
 const PortfolioScreen = () => {
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   const { user, loading: userLoading, refreshUserData } = useUser();
   const { displayAssets, loading, error } = usePortfolioData();
 
@@ -108,7 +108,9 @@ const PortfolioScreen = () => {
             style={styles.statsGradient}>
             <View style={styles.statsHeader}>
               <Ionicons name="trending-up" size={20} color="#8C9EFF" />
-              <Text style={styles.statsTitle}>Portfolio Performance</Text>
+              <Text style={styles.statsTitle}>
+                {t("portfolio.portfolioPerformance")}
+              </Text>
             </View>
 
             <View style={styles.statRow}>
@@ -120,7 +122,7 @@ const PortfolioScreen = () => {
                     color={totalPnL >= 0 ? "#4CAF50" : "#F44336"}
                   />
                 </View>
-                <Text style={styles.statLabel}>Total P&L</Text>
+                <Text style={styles.statLabel}>{t("portfolio.totalPnL")}</Text>
                 <Text
                   style={[
                     styles.statValue,
@@ -136,7 +138,9 @@ const PortfolioScreen = () => {
                 <View style={styles.statIconContainer}>
                   <Ionicons name="analytics" size={16} color="#8C9EFF" />
                 </View>
-                <Text style={styles.statLabel}>P&L %</Text>
+                <Text style={styles.statLabel}>
+                  {t("portfolio.pnlPercentage")}
+                </Text>
                 <Text
                   style={[
                     styles.statValue,
@@ -159,20 +163,24 @@ const PortfolioScreen = () => {
               style={styles.welcomeGradient}>
               <Ionicons name="wallet-outline" size={48} color="#8C9EFF" />
               <Text style={styles.welcomeTitle}>
-                Welcome to Your Portfolio!
+                {t("portfolio.welcomeTitle")}
               </Text>
               <Text style={styles.welcomeSubtitle}>
-                Start building your crypto portfolio by adding your first assets
+                {t("portfolio.welcomeSubtitle")}
               </Text>
               <View style={styles.welcomeStats}>
                 <View style={styles.welcomeStat}>
                   <Text style={styles.welcomeStatValue}>0</Text>
-                  <Text style={styles.welcomeStatLabel}>Assets</Text>
+                  <Text style={styles.welcomeStatLabel}>
+                    {t("portfolio.assetsCount")}
+                  </Text>
                 </View>
                 <View style={styles.welcomeStatDivider} />
                 <View style={styles.welcomeStat}>
                   <Text style={styles.welcomeStatValue}>$0.00</Text>
-                  <Text style={styles.welcomeStatLabel}>Total Value</Text>
+                  <Text style={styles.welcomeStatLabel}>
+                    {t("portfolio.totalValueLabel")}
+                  </Text>
                 </View>
               </View>
             </LinearGradient>
@@ -181,10 +189,12 @@ const PortfolioScreen = () => {
 
         {displayAssets.length > 0 && (
           <View style={styles.assetsHeader}>
-            <Text style={styles.assetsTitle}>Your Assets</Text>
+            <Text style={styles.assetsTitle}>{t("portfolio.yourAssets")}</Text>
             <Text style={styles.assetsSubtitle}>
-              {displayAssets.length} asset
-              {displayAssets.length !== 1 ? "s" : ""} in your portfolio
+              {t("portfolio.assetsInPortfolio", {
+                count: displayAssets.length,
+                plural: displayAssets.length !== 1 ? "s" : "",
+              })}
             </Text>
           </View>
         )}
@@ -201,6 +211,7 @@ const PortfolioScreen = () => {
       totalPnLPercentage,
       formattedTotalPnLPercentage,
       loading,
+      t,
     ]
   );
 
@@ -209,7 +220,9 @@ const PortfolioScreen = () => {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#8C9EFF" />
-          <Text style={styles.loadingText}>Loading your portfolio...</Text>
+          <Text style={styles.loadingText}>
+            {t("portfolio.loadingPortfolio")}
+          </Text>
         </View>
       );
     }
@@ -222,9 +235,8 @@ const PortfolioScreen = () => {
       );
     }
     return null;
-  }, [loading, userLoading, realTimeLoading, error]);
+  }, [loading, userLoading, realTimeLoading, error, t]);
 
-  const { t } = useLanguage();
   const refreshControl = useMemo(
     () => (
       <RefreshControl

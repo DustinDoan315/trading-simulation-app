@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import styles from './styles';
 import { AchievementCard } from '@/components/home/AchievementCard';
 import { AddButton } from '@/components/home/AddButton';
 import { BalanceSection } from '@/components/home/BalanceSection';
@@ -11,6 +12,7 @@ import { navigateToCryptoChart } from '@/utils/navigation';
 import { RootState, useAppDispatch } from '@/store';
 import { router } from 'expo-router';
 import { useHomeData } from '@/hooks/useHomeData';
+import { useLanguage } from '@/context/LanguageContext';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/context/UserContext';
 import {
@@ -50,6 +52,7 @@ const HomeScreen = () => {
     onRefresh,
     onResetBalance,
   } = useHomeData();
+  const { t } = useLanguage();
 
   const reduxBalance = useSelector((state: RootState) => state.balance.balance);
 
@@ -166,7 +169,7 @@ const HomeScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.loadingText}>{t("common.loading")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -191,30 +194,32 @@ const HomeScreen = () => {
           {user ? (
             <>
               <Text style={styles.welcomeText}>
-                Welcome back, {user.display_name || user.username}! 👋
+                {t("home.welcomeBack", {
+                  name: user.display_name || user.username,
+                })}
               </Text>
               <View style={styles.userStatsContainer}>
                 <View style={styles.statBadge}>
                   <Ionicons name="trending-up" size={16} color="#4BB543" />
                   <Text style={styles.statText}>
-                    {user.total_trades} trades
+                    {user.total_trades} {t("home.trades")}
                   </Text>
                 </View>
                 {isNewUser && (
                   <View style={styles.newUserBadge}>
                     <Ionicons name="star" size={14} color="#FFD700" />
-                    <Text style={styles.newUserText}>New Trader</Text>
+                    <Text style={styles.newUserText}>
+                      {t("home.newTrader")}
+                    </Text>
                   </View>
                 )}
               </View>
             </>
           ) : (
             <>
-              <Text style={styles.welcomeText}>
-                Welcome to Trading Simulator! 🚀
-              </Text>
+              <Text style={styles.welcomeText}>{t("home.welcomeToApp")}</Text>
               <Text style={styles.welcomeSubtext}>
-                Master trading with zero risk
+                {t("home.welcomeSubtext")}
               </Text>
             </>
           )}
@@ -233,7 +238,7 @@ const HomeScreen = () => {
               { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
             ]}>
             <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
-              Get Started
+              {t("home.getStarted")}
             </Text>
             <View style={styles.quickActionsGrid}>
               <TouchableOpacity
@@ -243,9 +248,11 @@ const HomeScreen = () => {
                   colors={["#6366F1", "#8B5CF6"]}
                   style={styles.quickActionGradient}>
                   <Ionicons name="school" size={28} color="white" />
-                  <Text style={styles.quickActionTitle}>Learn Trading</Text>
+                  <Text style={styles.quickActionTitle}>
+                    {t("home.learnTrading")}
+                  </Text>
                   <Text style={styles.quickActionSubtitle}>
-                    Master the basics
+                    {t("home.learnTradingSubtitle")}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -257,8 +264,12 @@ const HomeScreen = () => {
                   colors={["#8B5CF6", "#EC4899"]}
                   style={styles.quickActionGradient}>
                   <Ionicons name="play" size={28} color="white" />
-                  <Text style={styles.quickActionTitle}>Practice</Text>
-                  <Text style={styles.quickActionSubtitle}>Start trading</Text>
+                  <Text style={styles.quickActionTitle}>
+                    {t("home.practice")}
+                  </Text>
+                  <Text style={styles.quickActionSubtitle}>
+                    {t("home.practiceSubtitle")}
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -269,9 +280,11 @@ const HomeScreen = () => {
                   colors={["#EC4899", "#F59E0B"]}
                   style={styles.quickActionGradient}>
                   <Ionicons name="star" size={28} color="white" />
-                  <Text style={styles.quickActionTitle}>Watchlist</Text>
+                  <Text style={styles.quickActionTitle}>
+                    {t("home.watchlist")}
+                  </Text>
                   <Text style={styles.quickActionSubtitle}>
-                    Track favorites
+                    {t("home.watchlistSubtitle")}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -283,8 +296,12 @@ const HomeScreen = () => {
                   colors={["#6366F1", "#06B6D4"]}
                   style={styles.quickActionGradient}>
                   <Ionicons name="pie-chart" size={28} color="white" />
-                  <Text style={styles.quickActionTitle}>Portfolio</Text>
-                  <Text style={styles.quickActionSubtitle}>Track progress</Text>
+                  <Text style={styles.quickActionTitle}>
+                    {t("home.portfolio")}
+                  </Text>
+                  <Text style={styles.quickActionSubtitle}>
+                    {t("home.portfolioSubtitle")}
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -297,7 +314,9 @@ const HomeScreen = () => {
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Portfolio Summary</Text>
+            <Text style={styles.sectionTitle}>
+              {t("home.portfolioSummary")}
+            </Text>
           </View>
 
           <LinearGradient
@@ -308,7 +327,7 @@ const HomeScreen = () => {
                 <Text style={styles.statValue}>
                   {formatPortfolioValue(portfolioMetrics.totalValue)}
                 </Text>
-                <Text style={styles.statLabel}>Total Value</Text>
+                <Text style={styles.statLabel}>{t("home.totalValue")}</Text>
                 <View style={styles.statTrend}>
                   <Ionicons
                     name={
@@ -335,10 +354,10 @@ const HomeScreen = () => {
                 <Text style={styles.statValue}>
                   {portfolioMetrics.totalAssets}
                 </Text>
-                <Text style={styles.statLabel}>Assets</Text>
+                <Text style={styles.statLabel}>{t("home.assets")}</Text>
                 <View style={styles.statTrend}>
                   <Ionicons name="add-circle" size={12} color="#6366F1" />
-                  <Text style={styles.trendText}>Active</Text>
+                  <Text style={styles.trendText}>{t("home.active")}</Text>
                 </View>
               </View>
               <View style={styles.statDivider} />
@@ -350,7 +369,7 @@ const HomeScreen = () => {
                   ]}>
                   {formatPnL(portfolioMetrics.totalPnL)}
                 </Text>
-                <Text style={styles.statLabel}>Total P&L</Text>
+                <Text style={styles.statLabel}>{t("home.totalPnL")}</Text>
                 <View style={styles.statTrend}>
                   <Ionicons
                     name={
@@ -366,7 +385,9 @@ const HomeScreen = () => {
                       styles.trendText,
                       { color: getPnLColor(portfolioMetrics.totalPnL) },
                     ]}>
-                    {portfolioMetrics.totalPnL >= 0 ? "Profitable" : "Learning"}
+                    {portfolioMetrics.totalPnL >= 0
+                      ? t("home.profitable")
+                      : t("home.learning")}
                   </Text>
                 </View>
               </View>
@@ -380,13 +401,15 @@ const HomeScreen = () => {
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Crypto News</Text>
+            <Text style={styles.sectionTitle}>{t("home.cryptoNews")}</Text>
           </View>
 
           {loadingNews ? (
             <View style={styles.newsLoadingContainer}>
               <ActivityIndicator size="small" color="#6366F1" />
-              <Text style={styles.newsLoadingText}>Loading latest news...</Text>
+              <Text style={styles.newsLoadingText}>
+                {t("home.loadingLatestNews")}
+              </Text>
             </View>
           ) : newsArticles.length > 0 ? (
             newsArticles.map((article) => (
@@ -399,11 +422,13 @@ const HomeScreen = () => {
           ) : (
             <View style={styles.newsErrorContainer}>
               <Ionicons name="newspaper-outline" size={32} color="#9DA3B4" />
-              <Text style={styles.newsErrorText}>No news available</Text>
+              <Text style={styles.newsErrorText}>
+                {t("home.noNewsAvailable")}
+              </Text>
               <TouchableOpacity
                 style={styles.retryButton}
                 onPress={() => loadCryptoNews()}>
-                <Text style={styles.retryButtonText}>Retry</Text>
+                <Text style={styles.retryButtonText}>{t("common.retry")}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -412,281 +437,5 @@ const HomeScreen = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0F0F23",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 100,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#0F0F23",
-  },
-  loadingText: {
-    fontSize: 18,
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  welcomeSection: {
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 32,
-  },
-  welcomeText: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    marginBottom: 16,
-    letterSpacing: -0.5,
-    textAlign: "left",
-  },
-  welcomeSubtext: {
-    fontSize: 18,
-    color: "#9CA3AF",
-    marginTop: 8,
-    fontWeight: "500",
-    textAlign: "left",
-  },
-  userStatsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    marginTop: 20,
-  },
-  statBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(99, 102, 241, 0.15)",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 24,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
-  },
-  statText: {
-    fontSize: 14,
-    color: "#6366F1",
-    fontWeight: "700",
-  },
-  newUserBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(236, 72, 153, 0.15)",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: "rgba(236, 72, 153, 0.3)",
-  },
-  newUserText: {
-    fontSize: 12,
-    color: "#EC4899",
-    fontWeight: "700",
-  },
-  quickActionsSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 5,
-    paddingHorizontal: 0,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: -0.5,
-    textAlign: "left",
-    marginBottom: 10,
-  },
-  quickActionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-    justifyContent: "space-between",
-  },
-  quickActionCard: {
-    width: width / 2.45,
-    height: 120,
-    borderRadius: 20,
-    overflow: "hidden",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  quickActionGradient: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  quickActionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "white",
-    marginTop: 12,
-    textAlign: "center",
-  },
-  quickActionSubtitle: {
-    fontSize: 13,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 4,
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  portfolioSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  portfolioCard: {
-    borderRadius: 24,
-    padding: 28,
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.2)",
-    elevation: 12,
-    shadowColor: "#6366F1",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-  },
-  portfolioStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  statItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    marginBottom: 8,
-    letterSpacing: -0.5,
-    textAlign: "center",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginBottom: 12,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-  statTrend: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: "rgba(99, 102, 241, 0.1)",
-  },
-  trendText: {
-    fontSize: 10,
-    color: "#6366F1",
-    fontWeight: "600",
-  },
-  statDivider: {
-    width: 1,
-    height: 60,
-    backgroundColor: "rgba(99, 102, 241, 0.2)",
-    marginHorizontal: 2,
-  },
-
-  tipCard: {
-    borderRadius: 20,
-    padding: 24,
-    elevation: 8,
-    shadowColor: "#EC4899",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-  },
-  tipHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 16,
-  },
-  tipTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  tipText: {
-    fontSize: 15,
-    color: "#FFFFFF",
-    lineHeight: 22,
-    fontStyle: "italic",
-    fontWeight: "500",
-  },
-
-  insightsSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-  },
-  achievementsSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-  },
-  newsLoadingContainer: {
-    paddingVertical: 48,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  newsLoadingText: {
-    fontSize: 15,
-    color: "#9CA3AF",
-    marginTop: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  newsErrorContainer: {
-    paddingVertical: 48,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  newsErrorText: {
-    fontSize: 15,
-    color: "#9CA3AF",
-    marginTop: 16,
-    marginBottom: 24,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryButton: {
-    backgroundColor: "#6366F1",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: "#6366F1",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  retryButtonText: {
-    fontSize: 15,
-    color: "white",
-    fontWeight: "700",
-  },
-});
 
 export default HomeScreen;

@@ -1,6 +1,6 @@
-import React from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Dimensions,
   StyleSheet,
@@ -26,16 +26,18 @@ export const MarketInsightsCard: React.FC<MarketInsightsCardProps> = ({
   confidence,
   onPress,
 }) => {
-  const getTrendColors = (trendType: string): [string, string] => {
+  const getTrendColors = (
+    trendType: string
+  ): readonly [string, string, string, string] => {
     switch (trendType) {
       case "bullish":
-        return ["#4BB543", "#45A03D"];
+        return ["#00FF88", "#00CC6A", "#00994C", "#00662E"] as const;
       case "bearish":
-        return ["#FF6B6B", "#FF5252"];
+        return ["#FF4757", "#FF3742", "#FF2E3A", "#FF1F2A"] as const;
       case "neutral":
-        return ["#9DA3B4", "#7A7F8C"];
+        return ["#A4B0BE", "#747D8C", "#57606F", "#2F3542"] as const;
       default:
-        return ["#9DA3B4", "#7A7F8C"];
+        return ["#A4B0BE", "#747D8C", "#57606F", "#2F3542"] as const;
     }
   };
 
@@ -67,7 +69,11 @@ export const MarketInsightsCard: React.FC<MarketInsightsCardProps> = ({
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
-      <LinearGradient colors={getTrendColors(trend)} style={styles.gradient}>
+      <LinearGradient
+        colors={getTrendColors(trend)}
+        style={styles.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
             <Text style={styles.title}>{title}</Text>

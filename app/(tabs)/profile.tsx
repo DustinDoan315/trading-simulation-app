@@ -1,15 +1,16 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import colors from "@/styles/colors";
-import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { logger } from "@/utils/logger";
-import { router } from "expo-router";
-import { updateUser } from "@/features/userSlice";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
-import { UserService } from "@/services/UserService";
-import { useTransactionCount } from "@/hooks/useTransactionCount";
-import { useUser } from "@/context/UserContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import colors from '@/styles/colors';
+import React, { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { logger } from '@/utils/logger';
+import { router } from 'expo-router';
+import { updateUser } from '@/features/userSlice';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { useLanguage } from '@/context/LanguageContext';
+import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
+import { UserService } from '@/services/UserService';
+import { useTransactionCount } from '@/hooks/useTransactionCount';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -28,6 +29,7 @@ import {
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
   const { user, userStats, loading, error, refreshUser } = useUser();
+  const { t } = useLanguage();
 
   // Use real-time balance hook for live updates
   const {
@@ -116,10 +118,10 @@ const ProfileScreen = () => {
       await UserService.updateUser(user.id, updateParams);
 
       setEditModalVisible(false);
-      Alert.alert("Success", "Profile updated successfully!");
+      Alert.alert(t("success.title"), t("profile.profileUpdatedSuccessfully"));
     } catch (error) {
       logger.error("Error updating profile", "Profile", error);
-      Alert.alert("Error", "Failed to update profile. Please try again.");
+      Alert.alert(t("error.title"), t("profile.failedToUpdateProfile"));
     } finally {
       setEditLoading(false);
     }
@@ -203,7 +205,7 @@ const ProfileScreen = () => {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#6674CC" />
-          <Text style={styles.loadingText}>Loading profile...</Text>
+          <Text style={styles.loadingText}>{t("profile.loadingProfile")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -213,7 +215,7 @@ const ProfileScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>User not found</Text>
+          <Text style={styles.errorText}>{t("profile.userNotFound")}</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={async () => {
@@ -226,7 +228,7 @@ const ProfileScreen = () => {
                 logger.error("Failed to reload user", "Profile", error);
               }
             }}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t("common.retry")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -263,14 +265,18 @@ const ProfileScreen = () => {
           <Text style={styles.name}>{user.display_name || user.username}</Text>
           <Text style={styles.username}>@{user.username}</Text>
           <Text style={styles.joinDate}>
-            Member since {new Date(user.join_date).toLocaleDateString()}
+            {t("profile.memberSince", {
+              date: new Date(user.join_date).toLocaleDateString(),
+            })}
           </Text>
         </View>
 
         {/* Enhanced Stats Grid */}
         <View style={styles.statsContainer}>
           <View style={styles.statsHeader}>
-            <Text style={styles.statsSectionTitle}>Trading Statistics</Text>
+            <Text style={styles.statsSectionTitle}>
+              {t("profile.tradingStatistics")}
+            </Text>
             <TouchableOpacity
               style={styles.refreshButton}
               onPress={handleRefresh}
@@ -284,23 +290,23 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.statsGrid}>
             <StatsCard
-              title="Total Trades"
+              title={t("profile.totalTrades")}
               value={transactionCount}
-              subtitle="trades"
+              subtitle={t("profile.trades")}
               color="#6674CC"
               icon="trending-up"
             />
             <StatsCard
-              title="Global Rank"
+              title={t("profile.globalRank")}
               value={userRank ? `#${userRank}` : "N/A"}
-              subtitle="position"
+              subtitle={t("profile.position")}
               color="#FF9500"
               icon="star"
               isLoading={refreshing}
             />
 
             <StatsCard
-              title="Total P&L"
+              title={t("profile.totalPnL")}
               value={formattedTotalPnL}
               subtitle={formattedTotalPnLPercentage}
               color={totalPnL >= 0 ? "#10BA68" : "#F9335D"}
@@ -314,29 +320,33 @@ const ProfileScreen = () => {
         <View style={styles.portfolioCard}>
           <View style={styles.portfolioHeader}>
             <Ionicons name="pie-chart" size={20} color="#6674CC" />
-            <Text style={styles.portfolioTitle}>Portfolio Value</Text>
+            <Text style={styles.portfolioTitle}>
+              {t("profile.portfolioValue")}
+            </Text>
           </View>
           <Text style={styles.portfolioValue}>{formattedTotalBalance}</Text>
           <Text style={styles.portfolioSubtitle}>
-            Real-time portfolio value
+            {t("profile.realTimePortfolioValue")}
           </Text>
         </View>
 
         {/* Account Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
+          <Text style={styles.sectionTitle}>
+            {t("profile.accountInformation")}
+          </Text>
           <View style={styles.settingsGroup}>
             <SettingItem
               icon="trending-up-outline"
-              title="Trading History"
-              subtitle="View your past trades"
+              title={t("profile.tradingHistory")}
+              subtitle={t("profile.viewYourPastTrades")}
               onPress={() => router.push("/trading-history" as any)}
             />
             <SettingItem
               isBottom={true}
               icon="trophy-outline"
-              title="Leaderboard"
-              subtitle="See your ranking"
+              title={t("profile.leaderboard")}
+              subtitle={t("profile.seeYourRanking")}
               onPress={() => router.push("/leaderboard" as any)}
             />
             {/* <SettingItem
@@ -349,7 +359,9 @@ const ProfileScreen = () => {
         </View>
         {lastUpdated && (
           <Text style={styles.lastUpdatedText}>
-            Last updated: {lastUpdated.toLocaleTimeString()}
+            {t("profile.lastUpdated", {
+              time: lastUpdated.toLocaleTimeString(),
+            })}
           </Text>
         )}
       </ScrollView>
@@ -363,7 +375,7 @@ const ProfileScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <Text style={styles.modalTitle}>{t("profile.editProfile")}</Text>
               <TouchableOpacity onPress={handleCancelEdit}>
                 <Ionicons name="close" size={24} color="#9DA3B4" />
               </TouchableOpacity>
@@ -371,20 +383,24 @@ const ProfileScreen = () => {
 
             <View style={styles.modalBody}>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Display Name</Text>
+                <Text style={styles.inputLabel}>
+                  {t("profile.displayName")}
+                </Text>
                 <TextInput
                   style={styles.textInput}
                   value={editForm.display_name}
                   onChangeText={(text) =>
                     setEditForm({ ...editForm, display_name: text })
                   }
-                  placeholder="Enter display name"
+                  placeholder={t("profile.enterDisplayName")}
                   placeholderTextColor="#8F95B2"
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Avatar Emoji</Text>
+                <Text style={styles.inputLabel}>
+                  {t("profile.avatarEmoji")}
+                </Text>
                 <TextInput
                   style={styles.textInput}
                   value={editForm.avatar_emoji}
@@ -403,7 +419,9 @@ const ProfileScreen = () => {
                 style={styles.cancelButton}
                 onPress={handleCancelEdit}
                 disabled={editLoading}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>
+                  {t("common.cancel")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.saveButton}
@@ -412,7 +430,7 @@ const ProfileScreen = () => {
                 {editLoading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.saveButtonText}>Save</Text>
+                  <Text style={styles.saveButtonText}>{t("profile.save")}</Text>
                 )}
               </TouchableOpacity>
             </View>
