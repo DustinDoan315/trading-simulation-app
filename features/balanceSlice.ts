@@ -1,20 +1,20 @@
-import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
-import { PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import UserRepository from '../services/UserRepository';
+import UUIDService from '../services/UUIDService';
+import { AsyncStorageService } from '../services/AsyncStorageService';
 import {
   calculateTotalPnL,
   calculateTotalPnLPercentage,
   calculateTotalPortfolioValue as calculateTotalPortfolioValueFromArray,
   calculateUSDTBalanceFromPortfolio,
   validateAndFixUserData
-} from '../utils/helper';
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AsyncStorageService } from '../services/AsyncStorageService';
+  } from '../utils/helper';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { DEFAULT_BALANCE } from '../utils/constant';
-import UUIDService from '../services/UUIDService';
-import UserRepository from '../services/UserRepository';
-import { UserService } from '../services/UserService';
 import { getCryptoIdFromSymbol } from '../utils/cryptoMapping';
+import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
+import { UserService } from '../services/UserService';
+
 
 export interface UserBalance {
   usdtBalance: number; // Available USDT for trading
@@ -93,7 +93,6 @@ const calculateTotalPortfolioValue = (
 
 // DISABLED: Automatic leaderboard updates for manual-only refresh
 const updateLeaderboardRankings = async (uuid: string) => {
-  console.log("🔄 Automatic leaderboard update disabled - manual refresh only");
   // Do nothing - leaderboard will only update on manual refresh
 };
 
@@ -137,22 +136,17 @@ interface PortfolioItem {
 // Async thunk to load balance from database
 export const loadBalance = createAsyncThunk("balance/load", async () => {
   const uuid = await UUIDService.getOrCreateUser();
-  console.log("====================================");
-  console.log("Loading balance - UUID:", uuid);
   
   let user = await UserRepository.getUser(uuid);
-  console.log("Loading balance - Retrieved user from UserRepository:", user);
   
   // If user not found in UserRepository, try to get from UUIDService cache
   if (!user) {
-    console.log("Loading balance - User not found in UserRepository, trying UUIDService cache...");
     try {
       const userProfileStr = await AsyncStorage.getItem("user_profile");
       if (userProfileStr) {
         const userProfile = JSON.parse(userProfileStr);
         if (userProfile.id === uuid) {
           user = userProfile;
-          console.log("Loading balance - Found user in UUIDService cache:", user);
         }
       }
     } catch (error) {
@@ -191,18 +185,15 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   let portfolio: PortfolioItem[] = [];
   try {
     portfolio = (await UserService.getPortfolio(uuid)) as PortfolioItem[];
-    console.log("Loading balance - Portfolio fetched successfully:", portfolio);
   } catch (error) {
     console.error("Loading balance - Error fetching portfolio:", error);
     portfolio = [];
   }
-  console.log("Loading balance - Final portfolio:", portfolio);
   
   // Helper functions are now imported at the top of the file
   
   // Ensure portfolio is an array and handle potential undefined values
   const safePortfolio = Array.isArray(portfolio) ? portfolio : [];
-  console.log("Loading balance - Safe portfolio:", safePortfolio);
   
   // Validate and fix user data consistency
   const validatedUser = validateAndFixUserData(user, safePortfolio);
@@ -213,13 +204,6 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   const calculatedTotalPnL = calculateTotalPnL(safePortfolio);
   const calculatedTotalPnLPercentage = calculateTotalPnLPercentage(calculatedTotalPnL, parseFloat(validatedUser.initial_balance));
   
-  console.log("Loading balance - Calculated values:", {
-    usdtBalance: calculatedUSDTBalance,
-    totalPortfolioValue: calculatedTotalPortfolioValue,
-    totalPnL: calculatedTotalPnL,
-    totalPnLPercentage: calculatedTotalPnLPercentage,
-  });
-  
   // Always prioritize user's USDT balance from database over portfolio calculation
   // This ensures that the user's actual USDT balance is used, not the portfolio entry
   let usdtBalance = parseFloat(validatedUser.usdt_balance);
@@ -227,9 +211,7 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   // Only use calculated USDT balance if user's USDT balance is completely invalid
   if (isNaN(usdtBalance) || usdtBalance < 0) {
     usdtBalance = calculatedUSDTBalance;
-    console.log("Loading balance - Using calculated USDT balance from portfolio (fallback):", usdtBalance);
   } else {
-    console.log("Loading balance - Using USDT balance from user data:", usdtBalance);
   }
   
   // Update user data with calculated values if they differ significantly
@@ -237,7 +219,6 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   const portfolioValueDiff = Math.abs(calculatedTotalPortfolioValue - parseFloat(validatedUser.total_portfolio_value));
   
   if (usdtBalanceDiff > 0.01 || portfolioValueDiff > 0.01) {
-    console.log("Loading balance - Updating user data with corrected values...");
     try {
       await UserRepository.updateUserBalanceAndPortfolioValue(
         uuid,
@@ -246,26 +227,20 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
         calculatedTotalPnL,
         calculatedTotalPnLPercentage
       );
-      console.log("Loading balance - User data updated with corrected values");
     } catch (error) {
       console.error("Loading balance - Error updating user data:", error);
     }
   }
   
-  console.log("Loading balance - Final USDT balance:", usdtBalance);
-  console.log("====================================");
-
   // Trust the USDT balance from the database - don't recalculate it
   // The USDT balance should reflect actual trading history, not be derived from crypto holdings
-  console.log("Loading balance - Using USDT balance from database:", usdtBalance);
-
+  
   // Initialize holdings object
   const holdings: Record<string, Holding> = {};
 
   // Add portfolio holdings (excluding USDT)
   portfolio.forEach((item) => {
     if (item.symbol.toUpperCase() !== "USDT") {
-      console.log("Processing portfolio item:", item);
       const quantity = parseFloat(item.quantity);
       const currentPrice = parseFloat(item.current_price || item.avg_cost);
       const avgCost = parseFloat(item.avg_cost);
@@ -382,12 +357,6 @@ export const balanceSlice = createSlice({
       return { ...initialState };
     },
     updateHolding: (state, action: PayloadAction<HoldingUpdatePayload>) => {
-      console.log("====================================");
-      console.log("updateHolding reducer called");
-      console.log("Payload:", JSON.stringify(action.payload, null, 2));
-      console.log("Current USDT balance:", state.balance.usdtBalance);
-      console.log("====================================");
-
       const { cryptoId, amount, valueInUSD, symbol, name, image_url } =
         action.payload;
 
@@ -396,22 +365,8 @@ export const balanceSlice = createSlice({
       const holdings = state.balance.holdings;
       const currentHolding = holdings[normalizedSymbol];
 
-      console.log(
-        "Current holding for",
-        normalizedSymbol,
-        ":",
-        currentHolding
-      );
-
       // Handle USDT balance updates separately from other holdings
       if (normalizedSymbol === "USDT") {
-        console.log("Processing USDT balance update");
-        console.log("USDT update details:", {
-          currentUsdtBalance: state.balance.usdtBalance,
-          updateAmount: amount,
-          operation: amount > 0 ? "adding USDT (sell)" : "subtracting USDT (buy)",
-        });
-
         // Update USDT balance directly
         const newUsdtBalance = state.balance.usdtBalance + amount;
         
@@ -433,9 +388,7 @@ export const balanceSlice = createSlice({
           valueInUSD: newUsdtBalance,
         };
 
-        console.log("Updated USDT balance to:", newUsdtBalance);
       } else {
-        console.log("Processing cryptocurrency holding update");
         const pricePerToken = amount !== 0 ? Math.abs(valueInUSD / amount) : 0;
 
         if (currentHolding) {
@@ -469,20 +422,8 @@ export const balanceSlice = createSlice({
           // Recalculate profit/loss
           calculateProfitLoss(holdings[normalizedSymbol]);
 
-          console.log(
-            "Updated existing holding for",
-            normalizedSymbol,
-            "- new amount:",
-            newAmount,
-            "- operation:",
-            amount > 0 ? "buy" : "sell"
-          );
-
           // Remove holding if amount becomes zero or negative
           if (newAmount <= 0) {
-            console.log(
-              `Removing ${normalizedSymbol} holding - amount is zero or negative`
-            );
             delete holdings[normalizedSymbol];
           }
         } else {
@@ -498,12 +439,6 @@ export const balanceSlice = createSlice({
             profitLoss: 0,
             profitLossPercentage: 0,
           };
-          console.log(
-            "Created new holding for",
-            normalizedSymbol,
-            "- amount:",
-            amount
-          );
         }
       }
 
@@ -512,19 +447,6 @@ export const balanceSlice = createSlice({
         holdings,
         state.balance.usdtBalance
       );
-
-      console.log("Updated USDT balance:", state.balance.usdtBalance);
-      console.log("Updated total portfolio value:", state.balance.totalPortfolioValue);
-      console.log("Portfolio breakdown:");
-      Object.keys(holdings).forEach((symbol) => {
-        const holding = holdings[symbol];
-        console.log({
-          symbol,
-          amount: holding.amount,
-          valueInUSD: holding.valueInUSD,
-          currentPrice: holding.currentPrice,
-        });
-      });
 
       // Persist to database
       console.log("Persisting balance and portfolio to database...");
@@ -546,7 +468,6 @@ export const balanceSlice = createSlice({
         // Use a single async operation to update both balance and portfolio
         UUIDService.getOrCreateUser()
           .then(async (uuid) => {
-            console.log("✅ Got UUID for persistence:", uuid);
             
             // Update both USDT balance and total portfolio value in users table
             const totalPnLPercentage = DEFAULT_BALANCE > 0 ? (totalPnL / DEFAULT_BALANCE) * 100 : 0;
@@ -593,8 +514,6 @@ export const balanceSlice = createSlice({
         console.error("❌ Error in updateHolding (before async):", error);
       }
 
-      console.log("updateHolding reducer completed");
-      console.log("====================================");
     },
     updatePortfolio: (state, action: PayloadAction<UserBalance>) => {
       state.balance = action.payload;
@@ -727,12 +646,6 @@ export const balanceSlice = createSlice({
       cryptoUpdate: HoldingUpdatePayload;
       usdtUpdate: HoldingUpdatePayload;
     }>) => {
-      console.log("====================================");
-      console.log("updateTrade reducer called");
-      console.log("Payload:", JSON.stringify(action.payload, null, 2));
-      console.log("Current USDT balance:", state.balance.usdtBalance);
-      console.log("====================================");
-
       const { cryptoUpdate, usdtUpdate } = action.payload;
       const holdings = state.balance.holdings;
 
@@ -810,9 +723,6 @@ export const balanceSlice = createSlice({
         state.balance.usdtBalance
       );
 
-      console.log("Updated USDT balance:", state.balance.usdtBalance);
-      console.log("Updated total portfolio value:", state.balance.totalPortfolioValue);
-
       // Persist to database in a single operation
       console.log("Persisting trade to database...");
 
@@ -830,7 +740,6 @@ export const balanceSlice = createSlice({
 
         UUIDService.getOrCreateUser()
           .then(async (uuid) => {
-            console.log("✅ Got UUID for trade persistence:", uuid);
             
             const totalPnLPercentage = DEFAULT_BALANCE > 0 ? (totalPnL / DEFAULT_BALANCE) * 100 : 0;
             await UserRepository.updateUserBalanceAndPortfolioValue(
@@ -887,8 +796,6 @@ export const balanceSlice = createSlice({
         console.error("❌ Error in updateTrade (before async):", error);
       }
 
-      console.log("updateTrade reducer completed");
-      console.log("====================================");
     },
   },
   extraReducers: (builder) => {

@@ -1,27 +1,27 @@
-import Chart from "@/components/crypto/Chart";
-import colors from "@/styles/colors";
-import OrderEntry from "@/components/trading/OrderEntry";
-import React, { useEffect, useRef, useState } from "react";
-import SymbolHeader from "@/components/crypto/SymbolHeader";
-import TimeframeSelector from "@/components/crypto/TimeframeSelector";
-import TradingContextIndicator from "@/components/trading/TradingContextIndicator";
-import useCryptoAPI from "@/hooks/useCryptoAPI";
-import useHistoricalData from "@/hooks/useHistoricalData";
-import UUIDService from "@/services/UUIDService";
-import { ChartType, Order, TimeframeOption } from "../../types/crypto";
-import { LinearGradient } from "expo-linear-gradient";
-import { logger } from "@/utils/logger";
-import { OrderDispatchContext, OrderValidationContext } from "@/utils/helper";
-import { RootState, useAppDispatch } from "@/store";
-import { updateCollectionHolding } from "@/features/dualBalanceSlice";
-import { useDualBalance } from "@/hooks/useDualBalance";
-import { useLanguage } from "@/context/LanguageContext";
-import { useLocalSearchParams } from "expo-router";
-import { useNotification } from "@/components/ui/Notification";
-import { UserService } from "@/services/UserService";
-import { useSelector } from "react-redux";
-import { useUser } from "@/context/UserContext";
-import { WebView } from "react-native-webview";
+import Chart from '@/components/crypto/Chart';
+import colors from '@/styles/colors';
+import OrderEntry from '@/components/trading/OrderEntry';
+import React, { useEffect, useRef, useState } from 'react';
+import SymbolHeader from '@/components/crypto/SymbolHeader';
+import TimeframeSelector from '@/components/crypto/TimeframeSelector';
+import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
+import useCryptoAPI from '@/hooks/useCryptoAPI';
+import useHistoricalData from '@/hooks/useHistoricalData';
+import UUIDService from '@/services/UUIDService';
+import { ChartType, Order, TimeframeOption } from '../../types/crypto';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
+import { OrderDispatchContext, OrderValidationContext } from '@/utils/helper';
+import { RootState, useAppDispatch } from '@/store';
+import { updateCollectionHolding } from '@/features/dualBalanceSlice';
+import { useDualBalance } from '@/hooks/useDualBalance';
+import { useLanguage } from '@/context/LanguageContext';
+import { useLocalSearchParams } from 'expo-router';
+import { useNotification } from '@/components/ui/Notification';
+import { UserService } from '@/services/UserService';
+import { useSelector } from 'react-redux';
+import { useUser } from '@/context/UserContext';
+import { WebView } from 'react-native-webview';
 import {
   ActivityIndicator,
   Modal,
@@ -42,6 +42,7 @@ import {
   handleOrderSubmission,
   handleUserReinitialization,
 } from "@/utils/helper";
+
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
@@ -74,10 +75,6 @@ const CryptoChartScreen = () => {
     loadIndividual,
   } = useDualBalance();
 
-  console.log("currentUsdtBalance", currentUsdtBalance);
-  console.log("currentHoldings", currentHoldings);
-  console.log("activeContext", activeContext);
-
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
   const { currentPrice, priceChange } = useCryptoAPI(timeframe, id);
@@ -106,15 +103,6 @@ const CryptoChartScreen = () => {
       setSubmissionProgress(0);
     };
   }, []);
-
-  // Debug: Monitor loading state changes
-  useEffect(() => {
-    console.log("🔄 Loading state changed:", {
-      isSubmitting,
-      submissionStatus,
-      submissionProgress,
-    });
-  }, [isSubmitting, submissionStatus, submissionProgress]);
 
   // Simulate submission progress
   useEffect(() => {
@@ -193,7 +181,6 @@ const CryptoChartScreen = () => {
   };
 
   const resetLoadingState = () => {
-    console.log("🔄 Manually resetting loading state");
     setIsSubmitting(false);
     setSubmissionStatus("");
     setSubmissionProgress(0);

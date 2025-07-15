@@ -256,9 +256,9 @@ const PortfolioScreen = () => {
         removeClippedSubviews={true}
         maxToRenderPerBatch={8}
         windowSize={8}
-        getItemLayout={(data, index) => ({
-          length: 78,
-          offset: 78 * index,
+        getItemLayout={(_, index) => ({
+          length: 80,
+          offset: 80 * index,
           index,
         })}
       />

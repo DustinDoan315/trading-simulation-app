@@ -33,10 +33,9 @@ export const styles = StyleSheet.create({
   headerContainer: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 6,
   },
   balanceCardContainer: {
-    marginVertical: 10,
+    marginBottom: 10,
   },
   enhancedStatsContainer: {
     marginHorizontal: 20,

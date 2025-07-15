@@ -84,46 +84,35 @@ export class AsyncStorageService {
   // User operations
   static async createOrUpdateUser(userData: UserData): Promise<UserData> {
     try {
-      console.log("💾 AsyncStorageService.createOrUpdateUser - Saving user data:", userData);
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
-      console.log("✅ User data saved to AsyncStorage:", userData.id);
       
       // Verify the data was saved correctly
       const savedData = await AsyncStorage.getItem(USER_KEY);
-      console.log("💾 AsyncStorageService.createOrUpdateUser - Verification - saved data:", savedData);
       
       return userData;
     } catch (error) {
-      console.error("❌ Failed to save user data to AsyncStorage:", error);
       throw error;
     }
   }
 
   static async getUser(userId: string): Promise<UserData | null> {
     try {
-      console.log("🔍 AsyncStorageService.getUser - Looking for userId:", userId);
       const userData = await AsyncStorage.getItem(USER_KEY);
-      console.log("🔍 AsyncStorageService.getUser - Raw userData:", userData);
       
       if (userData) {
         const user = JSON.parse(userData) as UserData;
-        console.log("🔍 AsyncStorageService.getUser - Parsed user:", user);
         
         // Use case-insensitive comparison for user ID
         const userIdMatch = this.normalizeUserId(user.id) === this.normalizeUserId(userId);
-        console.log("🔍 AsyncStorageService.getUser - User ID match:", userIdMatch);
         
         if (userIdMatch) {
           return user;
         } else {
-          console.log("🔍 AsyncStorageService.getUser - User ID mismatch, expected:", userId, "got:", user.id);
           return null;
         }
       }
-      console.log("🔍 AsyncStorageService.getUser - No userData found");
       return null;
     } catch (error) {
-      console.error("❌ Failed to get user from AsyncStorage:", error);
       return null;
     }
   }
@@ -133,20 +122,13 @@ export class AsyncStorageService {
     newBalance: number
   ): Promise<void> {
     try {
-      console.log("💰 AsyncStorageService.updateUserBalance - Updating balance for userId:", userId, "to:", newBalance);
       const user = await this.getUser(userId);
-      console.log("💰 AsyncStorageService.updateUserBalance - Retrieved user:", user);
       
       if (user) {
         user.usdt_balance = newBalance.toString();
         user.updated_at = new Date().toISOString();
-        console.log("💰 AsyncStorageService.updateUserBalance - Updated user object:", user);
         await this.createOrUpdateUser(user);
-        console.log("✅ User USDT balance updated in AsyncStorage:", newBalance);
       } else {
-        console.error("❌ AsyncStorageService.updateUserBalance - User not found for userId:", userId);
-        console.log("💰 AsyncStorageService.updateUserBalance - Creating new user with balance:", newBalance);
-        
         // Create a new user with the current balance
         const now = new Date().toISOString();
         const newUser: UserData = {
@@ -172,10 +154,8 @@ export class AsyncStorageService {
         };
         
         await this.createOrUpdateUser(newUser);
-        console.log("✅ New user created with balance:", newBalance);
       }
     } catch (error) {
-      console.error("❌ Failed to update user balance in AsyncStorage:", error);
       throw error;
     }
   }
@@ -190,7 +170,6 @@ export class AsyncStorageService {
       }
       return [];
     } catch (error) {
-      console.error("❌ Failed to get portfolio from AsyncStorage:", error);
       return [];
     }
   }
@@ -210,9 +189,7 @@ export class AsyncStorageService {
       allPortfolio.push(...portfolio);
       
       await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(allPortfolio));
-      console.log("✅ Portfolio saved to AsyncStorage for user:", user_id);
     } catch (error) {
-      console.error("❌ Failed to save portfolio to AsyncStorage:", error);
       throw error;
     }
   }
@@ -235,9 +212,7 @@ export class AsyncStorageService {
       portfolio.push(item);
       
       await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(portfolio));
-      console.log("✅ Portfolio item added to AsyncStorage:", item.symbol);
     } catch (error) {
-      console.error("❌ Failed to add portfolio item to AsyncStorage:", error);
       throw error;
     }
   }
@@ -259,12 +234,10 @@ export class AsyncStorageService {
       if (index !== -1) {
         portfolio[index] = updatedItem;
         await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(portfolio));
-        console.log("✅ Portfolio item updated in AsyncStorage:", updatedItem.symbol);
       } else {
         throw new Error("Portfolio item not found");
       }
     } catch (error) {
-      console.error("❌ Failed to update portfolio item in AsyncStorage:", error);
       throw error;
     }
   }
@@ -284,9 +257,7 @@ export class AsyncStorageService {
       );
       
       await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(portfolio));
-      console.log("✅ Portfolio item removed from AsyncStorage:", symbol);
     } catch (error) {
-      console.error("❌ Failed to remove portfolio item from AsyncStorage:", error);
       throw error;
     }
   }
@@ -301,7 +272,6 @@ export class AsyncStorageService {
       }
       return [];
     } catch (error) {
-      console.error("❌ Failed to get transactions from AsyncStorage:", error);
       return [];
     }
   }
@@ -318,9 +288,7 @@ export class AsyncStorageService {
       transactions.push(transaction);
       
       await AsyncStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
-      console.log("✅ Transaction added to AsyncStorage:", transaction.id);
     } catch (error) {
-      console.error("❌ Failed to add transaction to AsyncStorage:", error);
       throw error;
     }
   }
@@ -338,9 +306,7 @@ export class AsyncStorageService {
       queue.push(item);
       
       await AsyncStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
-      console.log("✅ Item added to sync queue:", item.id);
     } catch (error) {
-      console.error("❌ Failed to add item to sync queue:", error);
       throw error;
     }
   }
@@ -353,7 +319,6 @@ export class AsyncStorageService {
       }
       return [];
     } catch (error) {
-      console.error("❌ Failed to get sync queue from AsyncStorage:", error);
       return [];
     }
   }
@@ -371,9 +336,7 @@ export class AsyncStorageService {
       queue = queue.filter((item) => item.id !== itemId);
       
       await AsyncStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
-      console.log("✅ Item removed from sync queue:", itemId);
     } catch (error) {
-      console.error("❌ Failed to remove item from sync queue:", error);
       throw error;
     }
   }
@@ -381,9 +344,7 @@ export class AsyncStorageService {
   static async clearSyncQueue(): Promise<void> {
     try {
       await AsyncStorage.removeItem(SYNC_QUEUE_KEY);
-      console.log("✅ Sync queue cleared");
     } catch (error) {
-      console.error("❌ Failed to clear sync queue:", error);
       throw error;
     }
   }
@@ -391,8 +352,6 @@ export class AsyncStorageService {
   // Clear user-specific data (for user reset)
   static async clearUserData(userId: string): Promise<void> {
     try {
-      console.log("🧹 AsyncStorageService.clearUserData - Clearing data for user:", userId);
-      
       // Get existing data and remove user-specific entries (case-insensitive)
       const portfolioData = await AsyncStorage.getItem(PORTFOLIO_KEY);
       if (portfolioData) {
@@ -401,7 +360,6 @@ export class AsyncStorageService {
           this.normalizeUserId(item.user_id) !== this.normalizeUserId(userId)
         );
         await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(filteredPortfolio));
-        console.log("✅ Portfolio data cleared for user:", userId);
       }
 
       const transactionsData = await AsyncStorage.getItem(TRANSACTIONS_KEY);
@@ -411,12 +369,10 @@ export class AsyncStorageService {
           this.normalizeUserId(item.user_id) !== this.normalizeUserId(userId)
         );
         await AsyncStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(filteredTransactions));
-        console.log("✅ Transaction data cleared for user:", userId);
       }
 
       // Clear user profile
       await AsyncStorage.removeItem(USER_KEY);
-      console.log("✅ User profile cleared");
       
       // Clear any additional cached data that might be user-specific
       const additionalKeys = [
@@ -432,15 +388,11 @@ export class AsyncStorageService {
       for (const key of additionalKeys) {
         try {
           await AsyncStorage.removeItem(key);
-          console.log("✅ Cleared additional cache key:", key);
         } catch (error) {
-          console.log("⚠️ Could not clear key:", key, error);
+          // Silently ignore errors for additional keys
         }
       }
-      
-      console.log("✅ All user-specific AsyncStorage data cleared for user:", userId);
     } catch (error) {
-      console.error("❌ Failed to clear user AsyncStorage data:", error);
       throw error;
     }
   }
@@ -448,8 +400,6 @@ export class AsyncStorageService {
   // Recreate user data if corrupted or missing
   static async recreateUserData(userId: string, balance: number = 100000): Promise<UserData> {
     try {
-      console.log("🔄 AsyncStorageService.recreateUserData - Recreating user data for:", userId);
-      
       const now = new Date().toISOString();
       const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
       const userData: UserData = {
@@ -475,10 +425,8 @@ export class AsyncStorageService {
       };
 
       await this.createOrUpdateUser(userData);
-      console.log("✅ User data recreated successfully:", userData);
       return userData;
     } catch (error) {
-      console.error("❌ Failed to recreate user data:", error);
       throw error;
     }
   }
@@ -486,17 +434,12 @@ export class AsyncStorageService {
   // Clear all data from AsyncStorage
   static async clearAllData(): Promise<void> {
     try {
-      console.log("🧹 AsyncStorageService.clearAllData - Clearing all AsyncStorage data");
-      
       // Get all keys
       const allKeys = await AsyncStorage.getAllKeys();
-      console.log(`Found ${allKeys.length} keys to clear:`, allKeys);
       
       // Clear all keys
       await AsyncStorage.multiRemove(allKeys);
-      console.log("✅ All AsyncStorage data cleared successfully");
     } catch (error) {
-      console.error("❌ Failed to clear all AsyncStorage data:", error);
       throw error;
     }
   }
@@ -508,7 +451,6 @@ export class AsyncStorageService {
       const size = keys.length;
       return { size, keys: [...keys] };
     } catch (error) {
-      console.error("❌ Failed to get storage info:", error);
       return { size: 0, keys: [] };
     }
   }

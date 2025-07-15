@@ -1,6 +1,6 @@
-import React from "react";
-import { Stack } from "expo-router";
-import { Colors } from "../../constants/Colors";
+import React from 'react';
+import { Colors } from '../../constants/Colors';
+import { Stack } from 'expo-router';
 
 /**
  * Onboarding Navigation Layout
@@ -51,6 +51,14 @@ export default function SubLayout() {
           presentation: "modal",
           contentStyle: { backgroundColor: "transparent" },
           title: "crypto-list",
+        }}
+      />
+      <Stack.Screen
+        name="learn-trading"
+        options={{
+          headerShown: false,
+          presentation: "card",
+          title: "learn-trading",
         }}
       />
     </Stack>

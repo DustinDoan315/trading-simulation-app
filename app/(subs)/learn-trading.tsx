@@ -13,7 +13,6 @@ import {
   View,
 } from "react-native";
 
-
 const LearnTradingScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<
     "basics" | "technical" | "advanced"
@@ -26,7 +25,7 @@ const LearnTradingScreen = () => {
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "practice":
-        router.push("/(subs)/crypto-search");
+        // router.push("/(subs)/crypto-search");
         break;
       case "portfolio":
         router.push("/(tabs)/portfolio");

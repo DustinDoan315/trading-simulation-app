@@ -25,6 +25,7 @@ import React, {
   useState,
 } from "react";
 
+// If styles is a default export from a local styles file, otherwise adjust as needed
 
 const LeaderboardScreen = () => {
   const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
@@ -150,7 +151,6 @@ const LeaderboardScreen = () => {
   // Debounced refresh function
   const debouncedRefresh = useCallback(async () => {
     if (isRefreshingRef.current) {
-      console.log("🔄 Refresh already in progress, skipping...");
       return;
     }
 
@@ -165,8 +165,6 @@ const LeaderboardScreen = () => {
 
       isRefreshingRef.current = true;
       try {
-        console.log("🔄 Starting debounced refresh...");
-
         // Refresh the leaderboard data (this will trigger leaderboard updates automatically)
         await refresh();
         await refreshRank();
@@ -174,8 +172,6 @@ const LeaderboardScreen = () => {
         if (activeTab === "friends") {
           await loadFriendsData();
         }
-
-        console.log("✅ Debounced refresh completed");
       } catch (error) {
         console.error("Error during debounced refresh:", error);
       } finally {
@@ -213,16 +209,6 @@ const LeaderboardScreen = () => {
   // Transform real-time data for display (memoized to prevent unnecessary re-renders)
   const transformLeaderboardData = useCallback(
     (data: any[], type: string) => {
-      console.log(`🔄 Transforming ${type} data:`, data.length, "items");
-
-      // Debug: Log the first item to see the actual data structure
-      if (data.length > 0) {
-        console.log(
-          `🔍 Sample ${type} data item:`,
-          JSON.stringify(data[0], null, 2)
-        );
-      }
-
       return data.map((item, index) => {
         if (type === "collections") {
           return {
@@ -384,25 +370,19 @@ const LeaderboardScreen = () => {
 
   const handleRefresh = async () => {
     if (isRefreshingRef.current) {
-      console.log("🔄 Refresh already in progress, skipping...");
       return;
     }
 
     isRefreshingRef.current = true;
     try {
-      console.log("🔄 Starting manual refresh...");
-
       // Fix global ranks issue first
-      console.log("🔧 Fixing global ranks issue...");
       await UserService.fixGlobalRanksIssue();
 
       // Force update all users' real-time PnL data
-      console.log("🔄 Updating all users' real-time PnL data...");
       await UserService.forceUpdateAllUsersRealTimeData();
 
       // Force update current user's leaderboard rankings
       if (user?.id) {
-        console.log("🔄 Updating current user's leaderboard rankings...");
         await UserService.updateLeaderboardRankings(user.id);
       }
 
@@ -412,8 +392,6 @@ const LeaderboardScreen = () => {
       if (activeTab === "friends") {
         await loadFriendsData();
       }
-
-      console.log("✅ Manual refresh completed");
     } catch (error) {
       console.error("Error refreshing leaderboard:", error);
     } finally {

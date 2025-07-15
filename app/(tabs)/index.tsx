@@ -37,7 +37,6 @@ import {
   getPnLColor,
 } from "@/utils/helper";
 
-
 const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
@@ -78,29 +77,20 @@ const HomeScreen = () => {
 
   const loadCryptoNews = async (retryCount = 0) => {
     try {
-      console.log(`🔄 Loading crypto news (attempt ${retryCount + 1})`);
       setLoadingNews(true);
 
       const articles = await cryptoNewsService.getTopCryptoNews(5);
-      console.log(`✅ News loaded: ${articles.length} articles`);
       setNewsArticles(articles);
 
       // If no articles loaded and we haven't retried too many times, try again
       if (articles.length === 0 && retryCount < 3) {
-        console.log(
-          `⚠️ No articles loaded, retrying... (attempt ${retryCount + 1})`
-        );
         setTimeout(() => {
           loadCryptoNews(retryCount + 1);
         }, 2000); // Retry after 2 seconds
       }
     } catch (error) {
-      console.error("❌ Error loading crypto news:", error);
       // If error occurred and we haven't retried too many times, try again
       if (retryCount < 3) {
-        console.log(
-          `🔄 Error occurred, retrying... (attempt ${retryCount + 1})`
-        );
         setTimeout(() => {
           loadCryptoNews(retryCount + 1);
         }, 2000); // Retry after 2 seconds
@@ -320,8 +310,24 @@ const HomeScreen = () => {
                 </Text>
                 <Text style={styles.statLabel}>Total Value</Text>
                 <View style={styles.statTrend}>
-                  <Ionicons name="trending-up" size={12} color="#6366F1" />
-                  <Text style={styles.trendText}>+2.5%</Text>
+                  <Ionicons
+                    name={
+                      portfolioMetrics.totalPnLPercentage >= 0
+                        ? "trending-up"
+                        : "trending-down"
+                    }
+                    size={12}
+                    color={getPnLColor(portfolioMetrics.totalPnLPercentage)}
+                  />
+                  <Text
+                    style={[
+                      styles.trendText,
+                      {
+                        color: getPnLColor(portfolioMetrics.totalPnLPercentage),
+                      },
+                    ]}>{`${portfolioMetrics.totalPnLPercentage.toFixed(
+                    2
+                  )}%`}</Text>
                 </View>
               </View>
               <View style={styles.statDivider} />
@@ -569,7 +575,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: "800",
     color: "#FFFFFF",
     marginBottom: 8,
@@ -577,7 +583,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   statLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#9CA3AF",
     marginBottom: 12,
     fontWeight: "600",

@@ -46,25 +46,19 @@ export default function RootLayout() {
       if (loaded) {
         SplashScreen.hideAsync();
 
-        // Initialize app configuration and services
         await initializeApp();
 
-        // Initialize daily balance update at midnight UTC
         scheduler.addDailyTask("daily-balance-update", updateDailyBalance, 0);
 
-        // Check if user exists and initialize if needed
         const userId = await UUIDService.getOrCreateUser();
         await initializeUser(userId);
 
-        // Initialize background data sync service
         await initializeBackgroundSync();
 
-        // Set up deep link handling
         setupDeepLinking();
 
         return () => {
           scheduler.clear();
-          // Stop real-time data services when app is unmounted
           RealTimeDataService.getInstance().stopUpdates();
           LeaderboardService.getInstance().cleanup();
           BackgroundDataSyncService.getInstance().stop();
@@ -75,12 +69,10 @@ export default function RootLayout() {
   }, [loaded]);
 
   const setupDeepLinking = () => {
-    // Handle deep links when app is already running
     const subscription = Linking.addEventListener("url", (event) => {
       handleDeepLink(event.url);
     });
 
-    // Handle deep links when app is opened from a link
     Linking.getInitialURL().then((url) => {
       if (url) {
         handleDeepLink(url);
@@ -92,7 +84,6 @@ export default function RootLayout() {
 
   const handleDeepLink = useCallback((url: string) => {
     try {
-      // Handle deep link logic here
       logger.info("Deep link handled", "AppLayout", { url });
     } catch (error) {
       logger.error("Error handling deep link", "AppLayout", error);
@@ -103,7 +94,6 @@ export default function RootLayout() {
     try {
       logger.info("Initializing user with ID", "AppLayout", { userId });
 
-      // Load user data from Redux store
       const userData = store.getState().user;
 
       if (userData?.currentUser) {
@@ -114,14 +104,12 @@ export default function RootLayout() {
           "AppLayout"
         );
 
-        // Try to fetch existing user first
         try {
           await store.dispatch(fetchUser(userId)).unwrap();
           logger.info("Existing user fetched successfully", "AppLayout");
         } catch (error) {
-          // If user doesn't exist, create a new one
           logger.info("User not found, creating new user", "AppLayout");
-          const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
+          const timestamp = Date.now().toString().slice(-6);
           const username = `user_${userId.slice(0, 8)}_${timestamp}`;
           await store
             .dispatch(
@@ -146,15 +134,13 @@ export default function RootLayout() {
 
       const syncService = BackgroundDataSyncService.getInstance();
 
-      // Configure the sync service
       syncService.updateConfig({
-        intervalMs: 30000, // 30 seconds
+        intervalMs: 30000,
         maxConcurrentUpdates: 5,
         retryAttempts: 3,
         retryDelayMs: 5000,
       });
 
-      // Start the sync service
       await syncService.start();
 
       logger.info(

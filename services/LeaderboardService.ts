@@ -70,19 +70,13 @@ class LeaderboardService {
 
     // Debounce notifications to prevent rapid updates
     this.updateTimeout = setTimeout(() => {
-      console.log(`🔄 Notifying ${this.subscribers.size} subscribers of data update`);
+     
       this.subscribers.forEach(callback => callback(this.currentData));
-    }, 1000); // Increased debounce time to 1 second
+    }, 1000);
   }
 
   // Update data and notify subscribers
   private updateData(updates: Partial<LeaderboardData>): void {
-    console.log('🔄 Updating leaderboard data:', {
-      globalCount: updates.global?.length || this.currentData.global.length,
-      friendsCount: updates.friends?.length || this.currentData.friends.length,
-      collectionsCount: updates.collections?.length || this.currentData.collections.length,
-      lastUpdated: updates.lastUpdated?.toISOString(),
-    });
     
     this.currentData = { ...this.currentData, ...updates };
     this.notifySubscribers();
@@ -97,7 +91,6 @@ class LeaderboardService {
   private shouldFetch(): boolean {
     const now = Date.now();
     if (now - this.lastFetchTime < this.FETCH_COOLDOWN) {
-      console.log(`🔄 Skipping fetch - cooldown active (${this.FETCH_COOLDOWN - (now - this.lastFetchTime)}ms remaining)`);
       return false;
     }
     this.lastFetchTime = now;
@@ -109,7 +102,6 @@ class LeaderboardService {
     try {
       // Check if we should fetch new data
       if (!this.shouldFetch()) {
-        console.log("🔄 Skipping loadLeaderboardData due to cooldown");
         return;
       }
 
@@ -161,7 +153,6 @@ class LeaderboardService {
           return acc;
         }, [] as LeaderboardRanking[]);
 
-      console.log(`🔄 Fetched ${uniqueRankings.length} unique global rankings`);
       return uniqueRankings;
     } catch (error) {
       console.error('Error fetching global leaderboard:', error);
@@ -216,7 +207,6 @@ class LeaderboardService {
           return acc;
         }, [] as LeaderboardRanking[]);
 
-      console.log(`🔄 Fetched ${uniqueFriendsData.length} unique friends rankings`);
       return uniqueFriendsData;
     } catch (error) {
       console.error('Error fetching friends leaderboard:', error);
@@ -239,7 +229,6 @@ class LeaderboardService {
   // Set up real-time subscriptions with better management
   private setupRealtimeSubscriptions(filters: LeaderboardFilters): void {
     // DISABLED: Real-time subscriptions for manual-only refresh
-    console.log('🔄 Real-time subscriptions disabled - manual refresh only');
     
     // Clean up existing channels
     this.cleanupChannels();
@@ -261,7 +250,6 @@ class LeaderboardService {
         try {
           // Check if we should fetch new data
           if (!this.shouldFetch()) {
-            console.log("🔄 Skipping leaderboard update due to cooldown");
             return;
           }
 
@@ -300,7 +288,6 @@ class LeaderboardService {
         try {
           // Check if we should fetch new data
           if (!this.shouldFetch()) {
-            console.log("🔄 Skipping portfolio update due to cooldown");
             return;
           }
 
@@ -342,7 +329,6 @@ class LeaderboardService {
         try {
           // Check if we should fetch new data
           if (!this.shouldFetch()) {
-            console.log("🔄 Skipping user update due to cooldown");
             return;
           }
 
@@ -375,7 +361,6 @@ class LeaderboardService {
   private cleanupChannels(): void {
     this.channels.forEach((channel, key) => {
       supabase.removeChannel(channel);
-      console.log(`Cleaned up ${key} channel`);
     });
     this.channels.clear();
     this.isSubscribed = false;
@@ -396,8 +381,6 @@ class LeaderboardService {
   // Clean up and refresh leaderboard data
   async cleanupAndRefresh(filters: LeaderboardFilters): Promise<void> {
     try {
-      console.log('🧹 Cleaning up and refreshing leaderboard data...');
-      
       // Clean up duplicate entries and remove WEEKLY/MONTHLY periods
       await UserService.cleanupLeaderboardRankings();
       
@@ -410,8 +393,6 @@ class LeaderboardService {
       // Reset cooldown and load fresh data
       this.lastFetchTime = 0;
       await this.loadLeaderboardData(filters);
-      
-      console.log('✅ Leaderboard cleanup and refresh completed');
     } catch (error) {
       console.error('Error during leaderboard cleanup and refresh:', error);
       throw error;
@@ -421,8 +402,6 @@ class LeaderboardService {
   // Trigger rank recalculation for all users
   async recalculateAllRanks(): Promise<void> {
     try {
-      console.log('🔄 Recalculating all leaderboard ranks...');
-      
       // Get all users and update their rankings
       const { data: users, error } = await supabase
         .from('users')
@@ -431,7 +410,6 @@ class LeaderboardService {
       if (error) throw error;
 
       if (!users || users.length === 0) {
-        console.log('No users found for rank recalculation');
         return;
       }
 
@@ -444,8 +422,6 @@ class LeaderboardService {
           // Continue with other users even if one fails
         }
       }
-
-      console.log(`✅ Rank recalculation completed for ${users.length} users`);
     } catch (error) {
       console.error('Error recalculating all ranks:', error);
       throw error;
@@ -521,8 +497,6 @@ class LeaderboardService {
   // Static method to fix duplicate entries
   static async fixDuplicateEntries(): Promise<void> {
     try {
-      console.log('🔧 Fixing leaderboard duplicate entries...');
-      
       // Import and run the cleanup script
       const { fixLeaderboardDuplicates } = await import('../scripts/fix-leaderboard-duplicates');
       await fixLeaderboardDuplicates();
@@ -532,8 +506,6 @@ class LeaderboardService {
       if (instance.currentFilters) {
         await instance.loadLeaderboardData(instance.currentFilters);
       }
-      
-      console.log('✅ Leaderboard duplicate entries fixed');
     } catch (error) {
       console.error('Error fixing duplicate entries:', error);
       throw error;

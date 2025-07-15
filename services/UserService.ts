@@ -908,13 +908,13 @@ export class UserService {
     
     // Check if we're already updating
     if (isUpdatingLeaderboard) {
-      console.log("🔄 Leaderboard update skipped - already in progress");
+      
       return;
     }
     
     // Check if we're in cooldown period
     if (now - lastLeaderboardUpdate < LEADERBOARD_UPDATE_COOLDOWN) {
-      console.log("🔄 Leaderboard update skipped - in cooldown period");
+      
       return;
     }
     
@@ -926,14 +926,14 @@ export class UserService {
     // Set new timeout for debounced update
     leaderboardUpdateTimeout = setTimeout(async () => {
       if (isUpdatingLeaderboard) {
-        console.log("🔄 Leaderboard update skipped - already in progress (timeout)");
+       
         return;
       }
       
       isUpdatingLeaderboard = true;
       
       try {
-        console.log("🔄 Starting leaderboard rankings update for user:", userId);
+       
         lastLeaderboardUpdate = Date.now();
         
         const user = await this.getUserById(userId);
@@ -967,12 +967,7 @@ export class UserService {
         // Calculate P&L percentage
         const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
         
-        console.log("🔄 Calculated PnL from portfolio:", {
-          totalPnL,
-          totalPnLPercentage,
-          portfolioItems: portfolio.length,
-          initialBalance
-        });
+       
 
         // Calculate ALL_TIME rankings only
         const calculatedRank = await this.calculateUserRank(userId, "ALL_TIME", totalPnL, totalPortfolioValue);
@@ -995,7 +990,7 @@ export class UserService {
           rank: calculatedRank,
         });
 
-        console.log("✅ Leaderboard rankings and user PnL updated successfully for user:", userId);
+       
       } catch (error) {
         console.error("❌ Error updating leaderboard rankings:", error);
         // Reset cooldown on error so we can retry
