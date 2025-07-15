@@ -1,93 +1,77 @@
-import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { logger } from "@/utils/logger";
-import { router, useLocalSearchParams } from "expo-router";
-import { WebView } from "react-native-webview";
+import React, { useEffect, useState } from 'react';
+import { CryptoNewsArticle } from '@/services/CryptoNewsService';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
+import { router, useLocalSearchParams } from 'expo-router';
+import { WebView } from 'react-native-webview';
 import {
   ActivityIndicator,
   Dimensions,
-  Image,
   SafeAreaView,
-  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  CryptoNewsArticle,
-  cryptoNewsService,
-} from "@/services/CryptoNewsService";
+
 
 const { width, height } = Dimensions.get("window");
 
 const NewsDetailScreen = () => {
-  const { articleId } = useLocalSearchParams<{ articleId: string }>();
+  const { articleId, articleData } = useLocalSearchParams<{
+    articleId: string;
+    articleData: string;
+  }>();
   const [article, setArticle] = useState<CryptoNewsArticle | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showWebView, setShowWebView] = useState(false);
+  const [webViewLoading, setWebViewLoading] = useState(true);
 
   useEffect(() => {
     loadArticle();
-  }, [articleId]);
+  }, [articleId, articleData]);
 
   const loadArticle = async () => {
-    if (!articleId) {
-      logger.error("No article ID provided", "NewsDetailScreen");
+    if (!articleId || !articleData) {
+      logger.error("No article ID or data provided", "NewsDetailScreen");
       return;
     }
 
     try {
       setLoading(true);
-      const articleData = await cryptoNewsService.getNewsDetail(articleId);
-      setArticle(articleData);
+      const parsedArticle = JSON.parse(articleData) as CryptoNewsArticle;
+      setArticle(parsedArticle);
     } catch (error) {
-      logger.error("Error loading article", "NewsDetailScreen", error);
+      logger.error("Error parsing article data", "NewsDetailScreen", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const handleWebViewLoadStart = () => {
+    setWebViewLoading(true);
   };
 
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case "positive":
-        return "#4BB543";
-      case "negative":
-        return "#FF6B6B";
-      case "neutral":
-        return "#6262D9";
-      default:
-        return "#9DA3B4";
-    }
-  };
-
-  const handleOpenWebView = () => {
-    setShowWebView(true);
-  };
-
-  const handleCloseWebView = () => {
-    setShowWebView(false);
+  const handleWebViewLoadEnd = () => {
+    setWebViewLoading(false);
   };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6262D9" />
-          <Text style={styles.loadingText}>Loading article...</Text>
-        </View>
+        <StatusBar barStyle="light-content" backgroundColor="#0F0F23" />
+        <LinearGradient colors={["#0F0F23", "#1A1D2F"]} style={styles.gradient}>
+          <View style={styles.loadingContainer}>
+            <View style={styles.loadingCard}>
+              <ActivityIndicator size="large" color="#6366F1" />
+              <Text style={styles.loadingText}>Loading article...</Text>
+              <Text style={styles.loadingSubtext}>
+                Please wait while we fetch the latest news
+              </Text>
+            </View>
+          </View>
+        </LinearGradient>
       </SafeAreaView>
     );
   }
@@ -95,152 +79,79 @@ const NewsDetailScreen = () => {
   if (!article) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={48} color="#FF6B6B" />
-          <Text style={styles.errorText}>Article not found</Text>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (showWebView) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.webViewHeader}>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={handleCloseWebView}>
-            <Ionicons name="close" size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.webViewTitle}>Reading Article</Text>
-        </View>
-        <WebView
-          source={{ uri: article.url }}
-          style={styles.webView}
-          startInLoadingState={true}
-          renderLoading={() => (
-            <View style={styles.webViewLoading}>
-              <ActivityIndicator size="large" color="#6262D9" />
+        <StatusBar barStyle="light-content" backgroundColor="#0F0F23" />
+        <LinearGradient colors={["#0F0F23", "#1A1D2F"]} style={styles.gradient}>
+          <View style={styles.errorContainer}>
+            <View style={styles.errorCard}>
+              <View style={styles.errorIconContainer}>
+                <Ionicons name="alert-circle" size={48} color="#EF4444" />
+              </View>
+              <Text style={styles.errorTitle}>Article Not Found</Text>
+              <Text style={styles.errorText}>
+                The article you're looking for doesn't exist or has been
+                removed.
+              </Text>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.back()}>
+                <LinearGradient
+                  colors={["#6366F1", "#4F46E5"]}
+                  style={styles.backButtonGradient}>
+                  <Ionicons name="arrow-back" size={20} color="white" />
+                  <Text style={styles.backButtonText}>Go Back</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
-          )}
-        />
+          </View>
+        </LinearGradient>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient colors={["#131523", "#1A1D2F"]} style={styles.gradient}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}>
+      <StatusBar barStyle="light-content" backgroundColor="#0F0F23" />
+      <View style={styles.webViewHeader}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}>
+          <View style={styles.backButtonInner}>
             <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <View style={styles.headerInfo}>
-            <Text style={styles.sourceName}>{article.source.name}</Text>
-            <Text style={styles.publishDate}>
-              {formatDate(article.publishedAt)}
-            </Text>
           </View>
-          <TouchableOpacity style={styles.shareButton}>
-            <Ionicons name="share-outline" size={24} color="white" />
-          </TouchableOpacity>
+        </TouchableOpacity>
+        <View style={styles.headerInfo}>
+          <Text style={styles.sourceName}>{article.source.name}</Text>
+          <Text style={styles.articleTitle} numberOfLines={1}>
+            {article.title}
+          </Text>
         </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}>
-          {/* Article Image */}
-          {article.image && (
-            <View style={styles.imageContainer}>
-              <Image
-                source={{ uri: article.image }}
-                style={styles.articleImage}
-                resizeMode="cover"
-              />
-              <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.7)"]}
-                style={styles.imageOverlay}
-              />
-            </View>
-          )}
-
-          {/* Article Content */}
-          <View style={styles.content}>
-            {/* Sentiment Badge */}
-            <View style={styles.sentimentContainer}>
-              <View
-                style={[
-                  styles.sentimentBadge,
-                  { backgroundColor: getSentimentColor(article.sentiment) },
-                ]}>
-                <Ionicons
-                  name={
-                    article.sentiment === "positive"
-                      ? "trending-up"
-                      : article.sentiment === "negative"
-                      ? "trending-down"
-                      : "remove"
-                  }
-                  size={16}
-                  color="white"
-                />
-                <Text style={styles.sentimentText}>
-                  {article.sentiment.charAt(0).toUpperCase() +
-                    article.sentiment.slice(1)}{" "}
-                  Sentiment
-                </Text>
-              </View>
-              <View style={styles.relevanceContainer}>
-                <Text style={styles.relevanceLabel}>Relevance</Text>
-                <Text style={styles.relevanceValue}>{article.relevance}%</Text>
-                <View style={styles.relevanceBar}>
-                  <View
-                    style={[
-                      styles.relevanceFill,
-                      { width: `${article.relevance}%` },
-                    ]}
-                  />
-                </View>
-              </View>
-            </View>
-
-            {/* Article Title */}
-            <Text style={styles.articleTitle}>{article.title}</Text>
-
-            {/* Article Description */}
-            <Text style={styles.articleDescription}>{article.description}</Text>
-
-            {/* Article Content */}
-            <Text style={styles.articleContent}>{article.content}</Text>
-
-            {/* Read Full Article Button */}
-            <TouchableOpacity
-              style={styles.readFullButton}
-              onPress={handleOpenWebView}>
-              <LinearGradient
-                colors={["#6262D9", "#9D62D9"]}
-                style={styles.readFullGradient}>
-                <Ionicons name="open-outline" size={20} color="white" />
-                <Text style={styles.readFullText}>Read Full Article</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            {/* Source Information */}
-            <View style={styles.sourceContainer}>
-              <Text style={styles.sourceLabel}>Source:</Text>
-              <Text style={styles.sourceUrl}>{article.source.url}</Text>
-            </View>
+        <TouchableOpacity style={styles.shareButton}>
+          <View style={styles.shareButtonInner}>
+            <Ionicons name="share-outline" size={24} color="white" />
           </View>
-        </ScrollView>
-      </LinearGradient>
+        </TouchableOpacity>
+      </View>
+
+      <WebView
+        source={{ uri: article.url }}
+        style={styles.webView}
+        startInLoadingState={true}
+        onLoadStart={handleWebViewLoadStart}
+        onLoadEnd={handleWebViewLoadEnd}
+        renderLoading={() => (
+          <View style={styles.webViewLoading}>
+            <ActivityIndicator size="large" color="#6366F1" />
+            <Text style={styles.webViewLoadingText}>Loading article...</Text>
+          </View>
+        )}
+      />
+
+      {webViewLoading && (
+        <View style={styles.webViewLoadingOverlay}>
+          <ActivityIndicator size="large" color="#6366F1" />
+          <Text style={styles.webViewLoadingText}>Loading article...</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -248,7 +159,7 @@ const NewsDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#131523",
+    backgroundColor: "#0F0F23",
   },
   gradient: {
     flex: 1,
@@ -257,193 +168,124 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  loadingCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 20,
+    padding: 40,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
   },
   loadingText: {
-    fontSize: 16,
-    color: "#9DA3B4",
-    marginTop: 16,
+    fontSize: 18,
+    fontWeight: "600",
+    color: "white",
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  loadingSubtext: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    textAlign: "center",
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  errorCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 20,
+    padding: 40,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  errorIconContainer: {
+    marginBottom: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "white",
+    marginBottom: 12,
   },
   errorText: {
-    fontSize: 18,
-    color: "#FF6B6B",
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    fontSize: 16,
+    color: "#9CA3AF",
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 30,
   },
   backButton: {
+    marginRight: 16,
+  },
+  backButtonInner: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 12,
     padding: 8,
   },
   backButtonText: {
     fontSize: 16,
-    color: "#6262D9",
     fontWeight: "600",
-  },
-  headerInfo: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  sourceName: {
-    fontSize: 16,
-    fontWeight: "bold",
     color: "white",
+    marginLeft: 8,
   },
-  publishDate: {
-    fontSize: 12,
-    color: "#9DA3B4",
-    marginTop: 2,
-  },
-  shareButton: {
-    padding: 8,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  imageContainer: {
-    width: width,
-    height: 200,
-    position: "relative",
-  },
-  articleImage: {
-    width: "100%",
-    height: "100%",
-  },
-  imageOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-  },
-  content: {
-    padding: 20,
-  },
-  sentimentContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  sentimentBadge: {
+  backButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  sentimentText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "white",
-  },
-  relevanceContainer: {
-    alignItems: "flex-end",
-  },
-  relevanceLabel: {
-    fontSize: 10,
-    color: "#9DA3B4",
-    marginBottom: 2,
-  },
-  relevanceValue: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 4,
-  },
-  relevanceBar: {
-    width: 60,
-    height: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  relevanceFill: {
-    height: "100%",
-    backgroundColor: "#6262D9",
-    borderRadius: 2,
-  },
-  articleTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-    lineHeight: 32,
-    marginBottom: 16,
-  },
-  articleDescription: {
-    fontSize: 16,
-    color: "#9DA3B4",
-    lineHeight: 24,
-    marginBottom: 20,
-    fontStyle: "italic",
-  },
-  articleContent: {
-    fontSize: 15,
-    color: "white",
-    lineHeight: 24,
-    marginBottom: 30,
-  },
-  readFullButton: {
-    marginBottom: 20,
-  },
-  readFullGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    gap: 8,
-  },
-  readFullText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "white",
-  },
-  sourceContainer: {
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.1)",
-  },
-  sourceLabel: {
-    fontSize: 12,
-    color: "#9DA3B4",
-    marginBottom: 4,
-  },
-  sourceUrl: {
-    fontSize: 14,
-    color: "#6262D9",
-    textDecorationLine: "underline",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
   },
   webViewHeader: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#131523",
+    paddingVertical: 20,
+    backgroundColor: "#0F0F23",
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
-  closeButton: {
-    padding: 8,
-  },
-  webViewTitle: {
+  headerInfo: {
     flex: 1,
+    marginHorizontal: 16,
+  },
+  sourceName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6366F1",
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  articleTitle: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "white",
+    lineHeight: 20,
+  },
+  shareButton: {
     marginLeft: 16,
+  },
+  shareButtonInner: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 12,
+    padding: 8,
   },
   webView: {
     flex: 1,
@@ -456,7 +298,23 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#131523",
+    backgroundColor: "#0F0F23",
+  },
+  webViewLoadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(15, 15, 35, 0.9)",
+  },
+  webViewLoadingText: {
+    fontSize: 16,
+    color: "#9CA3AF",
+    marginTop: 16,
+    fontWeight: "500",
   },
 });
 

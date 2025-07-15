@@ -1,20 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { AchievementCard } from "@/components/home/AchievementCard";
-import { AddButton } from "@/components/home/AddButton";
-import { BalanceSection } from "@/components/home/BalanceSection";
-import { CryptoNewsCard } from "@/components/home/CryptoNewsCard";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { loadBalance } from "@/features/balanceSlice";
-import { MarketInsightsCard } from "@/components/home/MarketInsightsCard";
-import { navigateToCryptoChart } from "@/utils/navigation";
-import { RootState, useAppDispatch } from "@/store";
-import { router } from "expo-router";
-import { TradingEducationCard } from "@/components/home/TradingEducationCard";
-import { useHomeData } from "@/hooks/useHomeData";
-import { useSelector } from "react-redux";
-import { useUser } from "@/context/UserContext";
-import { WatchListSection } from "@/components/home/WatchlistSection";
+import React, { useEffect, useMemo, useState } from 'react';
+import { AchievementCard } from '@/components/home/AchievementCard';
+import { AddButton } from '@/components/home/AddButton';
+import { BalanceSection } from '@/components/home/BalanceSection';
+import { CryptoNewsCard } from '@/components/home/CryptoNewsCard';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { loadBalance } from '@/features/balanceSlice';
+import { MarketInsightsCard } from '@/components/home/MarketInsightsCard';
+import { navigateToCryptoChart } from '@/utils/navigation';
+import { RootState, useAppDispatch } from '@/store';
+import { router } from 'expo-router';
+import { useHomeData } from '@/hooks/useHomeData';
+import { useSelector } from 'react-redux';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Animated,
@@ -38,6 +36,7 @@ import {
   formatPortfolioValue,
   getPnLColor,
 } from "@/utils/helper";
+
 
 const { width } = Dimensions.get("window");
 
@@ -64,10 +63,6 @@ const HomeScreen = () => {
   const [newsArticles, setNewsArticles] = useState<CryptoNewsArticle[]>([]);
   const [loadingNews, setLoadingNews] = useState(false);
 
-  const navigateToChart = (crypto: any) => {
-    navigateToCryptoChart(crypto);
-  };
-
   const handleAddButtonPress = () => {
     router.push("/(subs)/crypto-search");
   };
@@ -75,15 +70,14 @@ const HomeScreen = () => {
   const handleRefresh = async () => {
     if (user) {
       await refreshUserData(user.id);
-      // Also refresh Redux balance
+
       dispatch(loadBalance());
     }
-    // Refresh news as well
+
     await loadCryptoNews();
     onRefresh();
   };
 
-  // Load balance from database on component mount
   useEffect(() => {
     if (user) {
       dispatch(loadBalance());
@@ -107,7 +101,6 @@ const HomeScreen = () => {
     }
   };
 
-  // Animate components on mount
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -128,7 +121,6 @@ const HomeScreen = () => {
     return calculatePortfolioMetrics(reduxBalance);
   }, [reduxBalance]);
 
-  // Use the Redux balance directly since interfaces are now standardized
   const balanceForDisplay = useMemo(() => {
     if (!reduxBalance) {
       return {
@@ -147,13 +139,13 @@ const HomeScreen = () => {
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "learn":
-        // Navigate to learning section or show tutorial
+        router.push("/(subs)/learn-trading");
         break;
       case "practice":
         router.push("/(subs)/crypto-search");
         break;
       case "watchlist":
-        // Focus on watchlist section
+        router.push("/(tabs)/watchlist");
         break;
       case "portfolio":
         router.push("/(tabs)/portfolio");
@@ -164,7 +156,10 @@ const HomeScreen = () => {
   const handleNewsPress = (article: CryptoNewsArticle) => {
     router.push({
       pathname: "/(modals)/news-detail",
-      params: { articleId: article.id },
+      params: {
+        articleId: article.id,
+        articleData: JSON.stringify(article),
+      },
     });
   };
 
@@ -180,7 +175,7 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+      <StatusBar barStyle="light-content" backgroundColor="#0F0F23" />
 
       <ScrollView
         style={styles.scrollView}
@@ -189,7 +184,6 @@ const HomeScreen = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }>
-        {/* Enhanced Welcome Section */}
         <Animated.View
           style={[
             styles.welcomeSection,
@@ -233,24 +227,27 @@ const HomeScreen = () => {
           onResetBalance={onResetBalance}
         />
 
-        {/* Quick Actions for New Users */}
         {isNewUser && (
           <Animated.View
             style={[
               styles.quickActionsSection,
               { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
             ]}>
-            <Text style={styles.sectionTitle}>Get Started</Text>
+            <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
+              Get Started
+            </Text>
             <View style={styles.quickActionsGrid}>
               <TouchableOpacity
                 style={styles.quickActionCard}
                 onPress={() => handleQuickAction("learn")}>
                 <LinearGradient
-                  colors={["#4BB543", "#45A03D"]}
+                  colors={["#6366F1", "#8B5CF6"]}
                   style={styles.quickActionGradient}>
-                  <Ionicons name="school" size={24} color="white" />
-                  <Text style={styles.quickActionTitle}>Learn</Text>
-                  <Text style={styles.quickActionSubtitle}>Trading basics</Text>
+                  <Ionicons name="school" size={28} color="white" />
+                  <Text style={styles.quickActionTitle}>Learn Trading</Text>
+                  <Text style={styles.quickActionSubtitle}>
+                    Master the basics
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -258,9 +255,9 @@ const HomeScreen = () => {
                 style={styles.quickActionCard}
                 onPress={() => handleQuickAction("practice")}>
                 <LinearGradient
-                  colors={["#6262D9", "#9D62D9"]}
+                  colors={["#8B5CF6", "#EC4899"]}
                   style={styles.quickActionGradient}>
-                  <Ionicons name="play" size={24} color="white" />
+                  <Ionicons name="play" size={28} color="white" />
                   <Text style={styles.quickActionTitle}>Practice</Text>
                   <Text style={styles.quickActionSubtitle}>Start trading</Text>
                 </LinearGradient>
@@ -270,11 +267,13 @@ const HomeScreen = () => {
                 style={styles.quickActionCard}
                 onPress={() => handleQuickAction("watchlist")}>
                 <LinearGradient
-                  colors={["#FF6B6B", "#FF8E53"]}
+                  colors={["#EC4899", "#F59E0B"]}
                   style={styles.quickActionGradient}>
-                  <Ionicons name="eye" size={24} color="white" />
-                  <Text style={styles.quickActionTitle}>Watch</Text>
-                  <Text style={styles.quickActionSubtitle}>Market trends</Text>
+                  <Ionicons name="star" size={28} color="white" />
+                  <Text style={styles.quickActionTitle}>Watchlist</Text>
+                  <Text style={styles.quickActionSubtitle}>
+                    Track favorites
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -282,9 +281,9 @@ const HomeScreen = () => {
                 style={styles.quickActionCard}
                 onPress={() => handleQuickAction("portfolio")}>
                 <LinearGradient
-                  colors={["#4ECDC4", "#44A08D"]}
+                  colors={["#6366F1", "#06B6D4"]}
                   style={styles.quickActionGradient}>
-                  <Ionicons name="pie-chart" size={24} color="white" />
+                  <Ionicons name="pie-chart" size={28} color="white" />
                   <Text style={styles.quickActionTitle}>Portfolio</Text>
                   <Text style={styles.quickActionSubtitle}>Track progress</Text>
                 </LinearGradient>
@@ -293,7 +292,6 @@ const HomeScreen = () => {
           </Animated.View>
         )}
 
-        {/* Enhanced Portfolio Summary */}
         <Animated.View
           style={[
             styles.portfolioSection,
@@ -301,14 +299,10 @@ const HomeScreen = () => {
           ]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Portfolio Summary</Text>
-            <TouchableOpacity style={styles.viewAllButton}>
-              <Text style={styles.viewAllText}>View All</Text>
-              <Ionicons name="arrow-forward" size={16} color="#6262D9" />
-            </TouchableOpacity>
           </View>
 
           <LinearGradient
-            colors={["#1A1D2F", "#2A2D3F"]}
+            colors={["#1F2937", "#374151"]}
             style={styles.portfolioCard}>
             <View style={styles.portfolioStats}>
               <View style={styles.statItem}>
@@ -317,7 +311,7 @@ const HomeScreen = () => {
                 </Text>
                 <Text style={styles.statLabel}>Total Value</Text>
                 <View style={styles.statTrend}>
-                  <Ionicons name="trending-up" size={12} color="#4BB543" />
+                  <Ionicons name="trending-up" size={12} color="#6366F1" />
                   <Text style={styles.trendText}>+2.5%</Text>
                 </View>
               </View>
@@ -328,7 +322,7 @@ const HomeScreen = () => {
                 </Text>
                 <Text style={styles.statLabel}>Assets</Text>
                 <View style={styles.statTrend}>
-                  <Ionicons name="add-circle" size={12} color="#6262D9" />
+                  <Ionicons name="add-circle" size={12} color="#6366F1" />
                   <Text style={styles.trendText}>Active</Text>
                 </View>
               </View>
@@ -365,71 +359,6 @@ const HomeScreen = () => {
           </LinearGradient>
         </Animated.View>
 
-        {/* Trading Tip of the Day */}
-        <Animated.View
-          style={[
-            styles.tipSection,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-          ]}>
-          <LinearGradient
-            colors={["#FFD700", "#FFA500"]}
-            style={styles.tipCard}>
-            <View style={styles.tipHeader}>
-              <Ionicons name="bulb" size={20} color="#8B4513" />
-              <Text style={styles.tipTitle}>Trading Tip</Text>
-            </View>
-            <Text style={styles.tipText}>
-              "Start with small positions and focus on learning market patterns
-              before scaling up your trades."
-            </Text>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Educational Content for New Users */}
-        {isNewUser && (
-          <Animated.View
-            style={[
-              styles.educationSection,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Learn Trading</Text>
-              <TouchableOpacity style={styles.viewAllButton}>
-                <Text style={styles.viewAllText}>View All</Text>
-                <Ionicons name="arrow-forward" size={16} color="#6262D9" />
-              </TouchableOpacity>
-            </View>
-
-            <TradingEducationCard
-              title="Crypto Trading Basics"
-              description="Learn the fundamentals of cryptocurrency trading, including market orders, limit orders, and risk management."
-              icon="school"
-              gradientColors={["#4BB543", "#45A03D"]}
-              difficulty="Beginner"
-              duration="10 min"
-              onPress={() => handleQuickAction("learn")}
-            />
-
-            <TradingEducationCard
-              title="Technical Analysis"
-              description="Master chart patterns, indicators, and technical analysis tools to make informed trading decisions."
-              icon="analytics"
-              gradientColors={["#6262D9", "#9D62D9"]}
-              difficulty="Intermediate"
-              duration="15 min"
-              onPress={() => handleQuickAction("learn")}
-            />
-          </Animated.View>
-        )}
-
-        <WatchListSection
-          cryptoList={trending}
-          refreshing={false}
-          onRefresh={() => {}}
-          onItemPress={navigateToChart}
-          scrollEnabled={false}
-        />
-
         {/* Market Insights */}
         <Animated.View
           style={[
@@ -438,15 +367,11 @@ const HomeScreen = () => {
           ]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Latest Crypto News</Text>
-            <TouchableOpacity style={styles.viewAllButton}>
-              <Text style={styles.viewAllText}>View All</Text>
-              <Ionicons name="arrow-forward" size={16} color="#6262D9" />
-            </TouchableOpacity>
           </View>
 
           {loadingNews ? (
             <View style={styles.newsLoadingContainer}>
-              <ActivityIndicator size="small" color="#6262D9" />
+              <ActivityIndicator size="small" color="#6366F1" />
               <Text style={styles.newsLoadingText}>Loading latest news...</Text>
             </View>
           ) : newsArticles.length > 0 ? (
@@ -469,65 +394,7 @@ const HomeScreen = () => {
             </View>
           )}
         </Animated.View>
-
-        {/* Achievements for New Users */}
-        {isNewUser && (
-          <Animated.View
-            style={[
-              styles.achievementsSection,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Your Progress</Text>
-              <TouchableOpacity style={styles.viewAllButton}>
-                <Text style={styles.viewAllText}>View All</Text>
-                <Ionicons name="arrow-forward" size={16} color="#6262D9" />
-              </TouchableOpacity>
-            </View>
-
-            <AchievementCard
-              title="First Trade"
-              description="Complete your first cryptocurrency trade"
-              icon="rocket"
-              progress={user?.total_trades || 0}
-              maxProgress={1}
-              isCompleted={(user?.total_trades || 0) >= 1}
-              reward="+100 XP"
-              onPress={() => handleQuickAction("practice")}
-            />
-
-            <AchievementCard
-              title="Portfolio Builder"
-              description="Hold 3 different cryptocurrencies"
-              icon="pie-chart"
-              progress={portfolioMetrics.totalAssets}
-              maxProgress={3}
-              isCompleted={portfolioMetrics.totalAssets >= 3}
-              reward="+250 XP"
-              onPress={() => handleQuickAction("portfolio")}
-            />
-
-            <AchievementCard
-              title="Learning Champion"
-              description="Complete 5 educational modules"
-              icon="school"
-              progress={0}
-              maxProgress={5}
-              isCompleted={false}
-              reward="+500 XP"
-              onPress={() => handleQuickAction("learn")}
-            />
-          </Animated.View>
-        )}
       </ScrollView>
-      <View
-        style={{
-          position: "absolute",
-          bottom: -10,
-          right: 0,
-        }}>
-        <AddButton onPress={handleAddButtonPress} />
-      </View>
     </SafeAreaView>
   );
 };
@@ -535,135 +402,154 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#131523",
+    backgroundColor: "#0F0F23",
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#131523",
+    backgroundColor: "#0F0F23",
   },
   loadingText: {
     fontSize: 18,
     color: "#FFFFFF",
+    fontWeight: "600",
   },
   welcomeSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 32,
   },
   welcomeText: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontWeight: "800",
     color: "#FFFFFF",
-    marginBottom: 8,
+    marginBottom: 16,
+    letterSpacing: -0.5,
+    textAlign: "left",
   },
   welcomeSubtext: {
-    fontSize: 16,
-    color: "#9DA3B4",
-    marginTop: 4,
+    fontSize: 18,
+    color: "#9CA3AF",
+    marginTop: 8,
+    fontWeight: "500",
+    textAlign: "left",
   },
   userStatsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 16,
+    marginTop: 20,
   },
   statBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(75, 181, 67, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 24,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.3)",
   },
   statText: {
     fontSize: 14,
-    color: "#4BB543",
-    fontWeight: "600",
+    color: "#6366F1",
+    fontWeight: "700",
   },
   newUserBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 215, 0, 0.2)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 16,
-    gap: 4,
+    backgroundColor: "rgba(236, 72, 153, 0.15)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "rgba(236, 72, 153, 0.3)",
   },
   newUserText: {
     fontSize: 12,
-    color: "#FFD700",
-    fontWeight: "600",
+    color: "#EC4899",
+    fontWeight: "700",
   },
   quickActionsSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 5,
+    paddingHorizontal: 0,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 24,
+    fontWeight: "800",
     color: "#FFFFFF",
-  },
-  viewAllButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  viewAllText: {
-    fontSize: 14,
-    color: "#6262D9",
-    fontWeight: "600",
+    letterSpacing: -0.5,
+    textAlign: "left",
+    marginBottom: 10,
   },
   quickActionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 16,
+    justifyContent: "space-between",
   },
   quickActionCard: {
-    width: (width - 64) / 2 - 6,
-    height: 100,
-    borderRadius: 16,
+    width: width / 2.45,
+    height: 120,
+    borderRadius: 20,
     overflow: "hidden",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   quickActionGradient: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    padding: 20,
   },
   quickActionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "800",
     color: "white",
-    marginTop: 8,
+    marginTop: 12,
+    textAlign: "center",
   },
   quickActionSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
-    marginTop: 2,
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.9)",
+    marginTop: 4,
+    textAlign: "center",
+    fontWeight: "500",
   },
   portfolioSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
   },
   portfolioCard: {
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 24,
+    padding: 28,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(99, 102, 241, 0.2)",
+    elevation: 12,
+    shadowColor: "#6366F1",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
   },
   portfolioStats: {
     flexDirection: "row",
@@ -675,97 +561,117 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "800",
     color: "#FFFFFF",
-    marginBottom: 6,
+    marginBottom: 8,
+    letterSpacing: -0.5,
+    textAlign: "center",
   },
   statLabel: {
-    fontSize: 12,
-    color: "#9DA3B4",
-    marginBottom: 8,
+    fontSize: 13,
+    color: "#9CA3AF",
+    marginBottom: 12,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
   statTrend: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
   },
   trendText: {
     fontSize: 10,
-    color: "#4BB543",
+    color: "#6366F1",
     fontWeight: "600",
   },
   statDivider: {
     width: 1,
-    height: 40,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    height: 60,
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
+    marginHorizontal: 2,
   },
-  tipSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
+
   tipCard: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 24,
+    elevation: 8,
+    shadowColor: "#EC4899",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
   },
   tipHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
-  },
-  tipTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#8B4513",
-  },
-  tipText: {
-    fontSize: 14,
-    color: "#8B4513",
-    lineHeight: 20,
-    fontStyle: "italic",
-  },
-  educationSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  insightsSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  achievementsSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  newsLoadingContainer: {
-    paddingVertical: 40,
-    alignItems: "center",
-  },
-  newsLoadingText: {
-    fontSize: 14,
-    color: "#9DA3B4",
-    marginTop: 8,
-  },
-  newsErrorContainer: {
-    paddingVertical: 40,
-    alignItems: "center",
-  },
-  newsErrorText: {
-    fontSize: 14,
-    color: "#9DA3B4",
-    marginTop: 8,
+    gap: 10,
     marginBottom: 16,
   },
+  tipTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+  tipText: {
+    fontSize: 15,
+    color: "#FFFFFF",
+    lineHeight: 22,
+    fontStyle: "italic",
+    fontWeight: "500",
+  },
+
+  insightsSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+  },
+  achievementsSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+  },
+  newsLoadingContainer: {
+    paddingVertical: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newsLoadingText: {
+    fontSize: 15,
+    color: "#9CA3AF",
+    marginTop: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  newsErrorContainer: {
+    paddingVertical: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newsErrorText: {
+    fontSize: 15,
+    color: "#9CA3AF",
+    marginTop: 16,
+    marginBottom: 24,
+    fontWeight: "600",
+    textAlign: "center",
+  },
   retryButton: {
-    backgroundColor: "#6262D9",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: "#6366F1",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    elevation: 4,
+    shadowColor: "#6366F1",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   retryButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     color: "white",
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });
 

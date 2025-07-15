@@ -17,7 +17,7 @@ type RouteName =
   | "portfolio"
   | "collections"
   | "leaderboard"
-  | "friends"
+  | "watchlist"
   | "profile";
 
 type IconMapping = {
@@ -44,9 +44,9 @@ const ICON_MAP: IconMapping = {
     inactive: "trophy-outline",
     active: "trophy",
   },
-  friends: {
-    inactive: "people-circle-outline",
-    active: "people-circle",
+  watchlist: {
+    inactive: "star-outline",
+    active: "star",
   },
   profile: {
     inactive: "person-outline",
@@ -64,7 +64,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
       route.name === "index" ||
       route.name === "portfolio" ||
       route.name === "leaderboard" ||
-      route.name === "friends" ||
+      route.name === "watchlist" ||
       route.name === "profile"
     ) {
       orderedRoutes.push(route);
@@ -76,7 +76,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
       "index",
       "portfolio",
       "leaderboard",
-      "friends",
+      "watchlist",
       "profile",
     ];
     return (
@@ -158,9 +158,9 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="friends"
+        name="watchlist"
         options={{
-          title: "Friends",
+          title: "Watchlist",
         }}
       />
 

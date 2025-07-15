@@ -1,35 +1,37 @@
-import * as Linking from "expo-linking";
-import * as SplashScreen from "expo-splash-screen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import LeaderboardService from "@/services/LeaderboardService";
-import RealTimeDataService from "@/services/RealTimeDataService";
-import scheduler from "@/utils/scheduler";
-import Toast from "react-native-toast-message";
-import UUIDService from "@/services/UUIDService";
-import { BackgroundDataSyncService } from "@/services/BackgroundDataSyncService";
-import { createUser, fetchUser } from "@/features/userSlice";
-import { initializeApp } from "@/utils/initializeApp";
-import { LanguageProvider } from "@/context/LanguageContext";
-import { logger } from "@/utils/logger";
-import { NotificationProvider } from "@/components/ui/Notification";
-import { Provider } from "react-redux";
-import { SafeAreaView } from "react-native";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { store } from "../store";
-import { updateDailyBalance } from "@/utils/balanceUpdater";
-import { useCallback, useEffect } from "react";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { useFonts } from "expo-font";
-import { UserProvider } from "@/context/UserContext";
-import { UserService } from "@/services/UserService";
-import "react-native-reanimated";
+import * as Linking from 'expo-linking';
+import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LeaderboardService from '@/services/LeaderboardService';
+import RealTimeDataService from '@/services/RealTimeDataService';
+import scheduler from '@/utils/scheduler';
+import Toast from 'react-native-toast-message';
+import UUIDService from '@/services/UUIDService';
+import { BackgroundDataSyncService } from '@/services/BackgroundDataSyncService';
+import { createUser, fetchUser } from '@/features/userSlice';
+import { initializeApp } from '@/utils/initializeApp';
+import { LanguageProvider } from '@/context/LanguageContext';
+import { logger } from '@/utils/logger';
+import { NotificationProvider } from '@/components/ui/Notification';
+import { Provider } from 'react-redux';
+import { SafeAreaView } from 'react-native';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { store } from '../store';
+import { updateDailyBalance } from '@/utils/balanceUpdater';
+import { useCallback, useEffect } from 'react';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useFonts } from 'expo-font';
+import { UserProvider } from '@/context/UserContext';
+import { UserService } from '@/services/UserService';
+import 'react-native-reanimated';
+
 
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -167,35 +169,6 @@ export default function RootLayout() {
       );
     }
   }, []);
-
-  const generateUsername = () => {
-    const adjectives = [
-      "Crypto",
-      "Trading",
-      "Digital",
-      "Smart",
-      "Pro",
-      "Elite",
-      "Master",
-      "Legend",
-    ];
-    const nouns = [
-      "Trader",
-      "Investor",
-      "Hodler",
-      "Whale",
-      "Shark",
-      "Guru",
-      "Ninja",
-      "Wizard",
-    ];
-    const randomNum = Math.floor(Math.random() * 1000);
-
-    const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const noun = nouns[Math.floor(Math.random() * nouns.length)];
-
-    return `${adjective}${noun}${randomNum}`;
-  };
 
   if (!loaded) {
     return null;

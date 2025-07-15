@@ -1,8 +1,9 @@
-import React from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+
 
 interface AddButtonProps {
   onPress?: () => void;
@@ -16,14 +17,14 @@ export const AddButton: React.FC<AddButtonProps> = ({ onPress }) => {
   return (
     <View style={styles.addButtonContainer}>
       <LinearGradient
-        colors={["#6262D9",  "#A8A8FF", ]}
+        colors={["#667eea", "#764ba2"]}
         start={{ x: 0.25, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.addButton}>
         <TouchableOpacity style={styles.addButton} onPress={addToken}>
-        <Ionicons name="add" size={30} color="white" />
-      </TouchableOpacity>
-        </LinearGradient>
+          <Ionicons name="add" size={30} color="white" />
+        </TouchableOpacity>
+      </LinearGradient>
     </View>
   );
 };

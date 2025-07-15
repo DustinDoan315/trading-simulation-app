@@ -1,8 +1,9 @@
-import React from "react";
-import { CryptoNewsArticle } from "@/services/CryptoNewsService";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from 'react';
+import { CryptoNewsArticle } from '@/services/CryptoNewsService';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const { width } = Dimensions.get("window");
 
@@ -22,16 +24,19 @@ export const CryptoNewsCard: React.FC<CryptoNewsCardProps> = ({
   article,
   onPress,
 }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
   const getSentimentColors = (sentiment: string): [string, string] => {
     switch (sentiment) {
       case "positive":
-        return ["#4BB543", "#45A03D"];
+        return ["#10B981", "#059669"];
       case "negative":
-        return ["#FF6B6B", "#FF5252"];
+        return ["#EF4444", "#DC2626"];
       case "neutral":
-        return ["#6262D9", "#9D62D9"];
+        return ["#6366F1", "#4F46E5"];
       default:
-        return ["#9DA3B4", "#7A7F8C"];
+        return ["#6B7280", "#4B5563"];
     }
   };
 
@@ -61,88 +66,129 @@ export const CryptoNewsCard: React.FC<CryptoNewsCardProps> = ({
     return date.toLocaleDateString();
   };
 
+  const hasValidImage =
+    article.image &&
+    article.image.trim() !== "" &&
+    !imageError &&
+    article.image !==
+      "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800" &&
+    article.image !==
+      "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800" &&
+    article.image !==
+      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800";
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+  };
+
+  const getDefaultImage = () => {
+    const images = [
+      "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800",
+      "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800",
+      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800",
+    ];
+    return images[Math.floor(Math.random() * images.length)];
+  };
+
   return (
     <TouchableOpacity
       style={styles.container}
       onPress={() => onPress(article)}
-      activeOpacity={0.8}>
-      <LinearGradient
-        colors={getSentimentColors(article.sentiment)}
-        style={styles.gradient}>
-        <View style={styles.header}>
-          <View style={styles.sourceContainer}>
-            <Text style={styles.sourceName}>{article.source.name}</Text>
-            <Text style={styles.publishTime}>
-              {formatDate(article.publishedAt)}
-            </Text>
-          </View>
-          <View style={styles.sentimentContainer}>
-            <View style={styles.sentimentBadge}>
-              <Ionicons
-                name={getSentimentIcon(article.sentiment) as any}
-                size={12}
-                color="white"
-              />
-              <Text style={styles.sentimentText}>
-                {article.sentiment.charAt(0).toUpperCase() +
-                  article.sentiment.slice(1)}
-              </Text>
-            </View>
-            <View style={styles.relevanceContainer}>
-              <Text style={styles.relevanceLabel}>Relevance</Text>
-              <Text style={styles.relevanceValue}>{article.relevance}%</Text>
-              <View style={styles.relevanceBar}>
-                <View
-                  style={[
-                    styles.relevanceFill,
-                    { width: `${article.relevance}%` },
-                  ]}
-                />
+      activeOpacity={0.9}>
+      <View style={styles.cardWrapper}>
+        <LinearGradient
+          colors={getSentimentColors(article.sentiment)}
+          style={styles.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}>
+          <View style={styles.mainContent}>
+            <View
+              style={[
+                styles.textContent,
+                hasValidImage
+                  ? styles.textContentWithImage
+                  : styles.textContentFull,
+              ]}>
+              <View style={styles.header}>
+                <View style={styles.sourceContainer}>
+                  <View style={styles.sourceBadge}>
+                    <Text style={styles.sourceName}>{article.source.name}</Text>
+                  </View>
+                  <Text style={styles.publishTime}>
+                    {formatDate(article.publishedAt)}
+                  </Text>
+                </View>
+                <View style={styles.sentimentContainer}>
+                  <View style={styles.sentimentBadge}>
+                    <Ionicons
+                      name={getSentimentIcon(article.sentiment) as any}
+                      size={12}
+                      color="white"
+                    />
+                    <Text style={styles.sentimentText}>
+                      {article.sentiment.charAt(0).toUpperCase() +
+                        article.sentiment.slice(1)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.articleContent}>
+                <Text style={styles.title} numberOfLines={2}>
+                  {article.title}
+                </Text>
+                <Text
+                  style={styles.description}
+                  numberOfLines={hasValidImage ? 3 : 4}>
+                  {article.description}
+                </Text>
+              </View>
+
+              <View style={styles.footer}>
+                <View style={styles.readMoreContainer}>
+                  <Text style={styles.readMoreText}>Read Full Article</Text>
+                  <View style={styles.arrowContainer}>
+                    <Ionicons name="arrow-forward" size={14} color="white" />
+                  </View>
+                </View>
               </View>
             </View>
-          </View>
-        </View>
 
-        <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={2}>
-            {article.title}
-          </Text>
-          <Text style={styles.description} numberOfLines={3}>
-            {article.description}
-          </Text>
-        </View>
-
-        {article.image && (
-          <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: article.image }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-            <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.7)"]}
-              style={styles.imageOverlay}
-            />
+            {hasValidImage && (
+              <View style={styles.imageContainer}>
+                {imageLoading && (
+                  <View style={styles.imageLoadingContainer}>
+                    <ActivityIndicator size="small" color="white" />
+                  </View>
+                )}
+                <Image
+                  source={{
+                    uri: article.image,
+                    headers: {
+                      "User-Agent": "Mozilla/5.0 (compatible; NewsApp/1.0)",
+                    },
+                    cache: "force-cache",
+                  }}
+                  style={[styles.image, imageLoading && styles.imageLoading]}
+                  resizeMode="cover"
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
+                <LinearGradient
+                  colors={["transparent", "rgba(0,0,0,0.6)"]}
+                  style={styles.imageOverlay}
+                />
+              </View>
+            )}
           </View>
-        )}
-
-        <View style={styles.footer}>
-          <View style={styles.readMoreContainer}>
-            <Text style={styles.readMoreText}>Read Full Article</Text>
-            <Ionicons name="arrow-forward" size={16} color="white" />
-          </View>
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Ionicons
-                name="time-outline"
-                size={12}
-                color="rgba(255,255,255,0.8)"
-              />
-              <Text style={styles.statText}>5 min read</Text>
-            </View>
-          </View>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -150,14 +196,37 @@ export const CryptoNewsCard: React.FC<CryptoNewsCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: width - 40,
-    height: 200,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  cardWrapper: {
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
   },
   gradient: {
-    flex: 1,
+    borderRadius: 20,
     padding: 16,
+    minHeight: 180,
+  },
+  mainContent: {
+    flexDirection: "row",
+    flex: 1,
+    gap: 16,
+  },
+  textContent: {
+    justifyContent: "space-between",
+  },
+  textContentWithImage: {
+    flex: 0.65,
+  },
+  textContentFull: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -168,20 +237,26 @@ const styles = StyleSheet.create({
   sourceContainer: {
     flex: 1,
   },
+  sourceBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+    marginBottom: 4,
+  },
   sourceName: {
-    fontSize: 12,
-    fontWeight: "bold",
+    fontSize: 10,
+    fontWeight: "500",
     color: "white",
-    marginBottom: 2,
+    letterSpacing: 0.3,
   },
   publishTime: {
     fontSize: 10,
     color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: "500",
   },
-  sentimentContainer: {
-    alignItems: "flex-end",
-    minWidth: 80,
-  },
+  sentimentContainer: {},
   sentimentBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -190,67 +265,87 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
-    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sentimentText: {
     fontSize: 10,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "white",
+    letterSpacing: 0.2,
   },
-  relevanceContainer: {
-    alignItems: "flex-end",
-  },
-  relevanceLabel: {
-    fontSize: 8,
-    color: "rgba(255, 255, 255, 0.8)",
-    marginBottom: 2,
-  },
-  relevanceValue: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 2,
-  },
-  relevanceBar: {
-    width: 40,
-    height: 3,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  relevanceFill: {
-    height: "100%",
-    backgroundColor: "white",
-    borderRadius: 2,
-  },
-  content: {
+  articleContent: {
     flex: 1,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   title: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "white",
     marginBottom: 8,
     lineHeight: 20,
+    letterSpacing: 0.2,
   },
   description: {
     fontSize: 13,
     color: "rgba(255, 255, 255, 0.9)",
     lineHeight: 18,
+    fontWeight: "400",
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+  },
+  readMoreContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  readMoreText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "white",
+    letterSpacing: 0.2,
+  },
+  arrowContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 10,
+    padding: 3,
   },
   imageContainer: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    width: 80,
-    height: "100%",
-    borderRadius: 12,
+    flex: 0.35,
+    position: "relative",
+    borderRadius: 16,
     overflow: "hidden",
   },
   image: {
     width: "100%",
     height: "100%",
+  },
+  imageLoading: {
+    opacity: 0.3,
+  },
+  imageLoadingContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    zIndex: 1,
   },
   imageOverlay: {
     position: "absolute",
@@ -258,34 +353,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 40,
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  readMoreContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  readMoreText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "white",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  statText: {
-    fontSize: 10,
-    color: "rgba(255, 255, 255, 0.8)",
   },
 });

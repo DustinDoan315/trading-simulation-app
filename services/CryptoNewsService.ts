@@ -1,5 +1,5 @@
-import { configService } from "@/utils/config";
-import { logger } from "@/utils/logger";
+import { configService } from '@/utils/config';
+import { logger } from '@/utils/logger';
 
 export interface CryptoNewsArticle {
   id: string;
@@ -17,70 +17,8 @@ export interface CryptoNewsArticle {
   relevance: number;
 }
 
-export interface CryptoNewsResponse {
-  articles: CryptoNewsArticle[];
-  totalResults: number;
-}
-
 class CryptoNewsService {
   private readonly BASE_URL = "https://newsapi.org/v2";
-
-  // Fallback data in case API is not available
-  private readonly FALLBACK_NEWS: CryptoNewsArticle[] = [
-    {
-      id: "1",
-      title: "Bitcoin Surges Past $45,000 as Institutional Adoption Grows",
-      description:
-        "Bitcoin has reached new heights as major financial institutions continue to show interest in cryptocurrency investments.",
-      content:
-        "Bitcoin has demonstrated remarkable resilience and growth, reaching the $45,000 milestone. This surge comes amid increasing institutional adoption, with major financial players recognizing the potential of digital assets. Analysts suggest this could be the beginning of a broader crypto bull run.",
-      url: "https://example.com/bitcoin-surge",
-      image:
-        "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800",
-      publishedAt: new Date().toISOString(),
-      source: {
-        name: "CryptoNews",
-        url: "https://cryptonews.com",
-      },
-      sentiment: "positive" as const,
-      relevance: 95,
-    },
-    {
-      id: "2",
-      title: "Ethereum 2.0 Staking Reaches New Milestone",
-      description:
-        "The Ethereum network continues to see increased staking participation, signaling strong community confidence.",
-      content:
-        "Ethereum 2.0 staking has reached a significant milestone with over 20 million ETH now staked. This represents a major step forward in the network's transition to proof-of-stake consensus mechanism.",
-      url: "https://example.com/ethereum-staking",
-      image:
-        "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800",
-      publishedAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      source: {
-        name: "EthereumWorld",
-        url: "https://ethereumworld.com",
-      },
-      sentiment: "positive" as const,
-      relevance: 88,
-    },
-    {
-      id: "3",
-      title: "Regulatory Clarity Boosts Crypto Market Confidence",
-      description:
-        "Recent regulatory developments have provided much-needed clarity for the cryptocurrency industry.",
-      content:
-        "New regulatory frameworks are providing clearer guidelines for cryptocurrency operations, which is boosting market confidence and encouraging institutional investment.",
-      url: "https://example.com/regulatory-clarity",
-      image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800",
-      publishedAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-      source: {
-        name: "CryptoRegulation",
-        url: "https://cryptoregulation.com",
-      },
-      sentiment: "neutral" as const,
-      relevance: 82,
-    },
-  ];
 
   async getTopCryptoNews(limit: number = 3): Promise<CryptoNewsArticle[]> {
     try {
@@ -89,10 +27,10 @@ class CryptoNewsService {
 
       if (!apiKey) {
         logger.warn(
-          "No API key configured, using fallback data",
+          "No API key configured, returning empty array",
           "CryptoNewsService"
         );
-        return this.FALLBACK_NEWS.slice(0, limit);
+        return [];
       }
 
       logger.info("Fetching real crypto news from API", "CryptoNewsService");
@@ -140,7 +78,7 @@ class CryptoNewsService {
           content:
             article.content || article.description || "No content available",
           url: article.url || "",
-          image: article.urlToImage || this.getDefaultImage(),
+          image: this.validateAndFixImageUrl(article.urlToImage),
           publishedAt: article.publishedAt || new Date().toISOString(),
           source: {
             name: article.source?.name || "Unknown Source",
@@ -155,54 +93,108 @@ class CryptoNewsService {
         })
       );
 
-      // Return transformed articles or fallback if no articles found
+      // Return transformed articles or empty array if no articles found
       if (transformedArticles.length > 0) {
         return transformedArticles.slice(0, limit);
       } else {
         logger.warn(
-          "No articles found from API, using fallback data",
+          "No articles found from API, returning empty array",
           "CryptoNewsService"
         );
-        return this.FALLBACK_NEWS.slice(0, limit);
+        return [];
       }
     } catch (error) {
       logger.error("Error fetching crypto news", "CryptoNewsService", error);
-      // Return fallback data on error
-      return this.FALLBACK_NEWS.slice(0, limit);
+      // Return empty array on error instead of fallback data
+      return [];
     }
   }
 
-  private analyzeSentiment(text: string): "positive" | "negative" | "neutral" {
-    const positiveWords = [
-      "surge",
-      "bullish",
-      "gain",
-      "rise",
-      "positive",
-      "growth",
-      "adoption",
-      "milestone",
-      "success",
-    ];
-    const negativeWords = [
-      "crash",
-      "bearish",
-      "drop",
-      "fall",
-      "negative",
-      "decline",
-      "loss",
-      "concern",
-      "risk",
+  async getNewsDetail(articleId: string): Promise<CryptoNewsArticle> {
+    try {
+      // For now, we'll return a mock article since the NewsAPI doesn't provide individual article endpoints
+      // In a real implementation, you might want to store articles locally or use a different API
+      throw new Error("News detail not implemented - use direct URL instead");
+    } catch (error) {
+      logger.error("Error fetching news detail", "CryptoNewsService", error);
+      throw error;
+    }
+  }
+
+  private validateAndFixImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl || imageUrl.trim() === '') {
+      return this.getDefaultImage();
+    }
+
+    // Clean up the URL
+    let cleanUrl = imageUrl.trim();
+
+    // Fix common issues with image URLs
+    if (cleanUrl.includes('cointelegraph.com') && cleanUrl.includes('format=auto')) {
+      // Extract the actual image URL from Cointelegraph's CDN format
+      const match = cleanUrl.match(/https:\/\/s3\.cointelegraph\.com\/uploads\/[^"]+/);
+      if (match) {
+        cleanUrl = match[0];
+      }
+    }
+
+    // Fix Biztoc image URLs
+    if (cleanUrl.includes('biztoc.com/cdn/')) {
+      // Convert to a more reliable format
+      cleanUrl = cleanUrl.replace('_s.webp', '_l.webp');
+    }
+
+    // Validate URL format
+    try {
+      new URL(cleanUrl);
+    } catch {
+      logger.warn(`Invalid image URL: ${imageUrl}`, "CryptoNewsService");
+      return this.getDefaultImage();
+    }
+
+    // Check for common problematic patterns
+    const problematicPatterns = [
+      'data:image',
+      'blob:',
+      'javascript:',
+      'about:',
+      'chrome:',
+      'moz-extension:'
     ];
 
+    for (const pattern of problematicPatterns) {
+      if (cleanUrl.toLowerCase().startsWith(pattern)) {
+        logger.warn(`Blocked image URL with pattern ${pattern}: ${imageUrl}`, "CryptoNewsService");
+        return this.getDefaultImage();
+      }
+    }
+
+    // Ensure HTTPS for security
+    if (cleanUrl.startsWith('http://')) {
+      cleanUrl = cleanUrl.replace('http://', 'https://');
+    }
+
+    logger.info(`Validated image URL: ${cleanUrl}`, "CryptoNewsService");
+    return cleanUrl;
+  }
+
+  private analyzeSentiment(text: string): "positive" | "negative" | "neutral" {
     const lowerText = text.toLowerCase();
-    const positiveCount = positiveWords.filter((word) =>
-      lowerText.includes(word)
-    ).length;
-    const negativeCount = negativeWords.filter((word) =>
-      lowerText.includes(word)
-    ).length;
+    
+    const positiveWords = [
+      "surge", "rise", "gain", "bullish", "rally", "breakthrough", "adoption",
+      "growth", "increase", "positive", "success", "profit", "up", "higher",
+      "strong", "boost", "recovery", "rebound", "soar", "jump", "climb"
+    ];
+    
+    const negativeWords = [
+      "crash", "fall", "drop", "bearish", "decline", "loss", "sell-off",
+      "dump", "plunge", "negative", "failure", "risk", "down", "lower",
+      "weak", "concern", "fear", "panic", "sell", "bear", "correction"
+    ];
+
+    const positiveCount = positiveWords.filter(word => lowerText.includes(word)).length;
+    const negativeCount = negativeWords.filter(word => lowerText.includes(word)).length;
 
     if (positiveCount > negativeCount) return "positive";
     if (negativeCount > positiveCount) return "negative";
@@ -211,21 +203,20 @@ class CryptoNewsService {
 
   private calculateRelevance(text: string): number {
     const cryptoKeywords = [
-      "bitcoin",
-      "ethereum",
-      "crypto",
-      "blockchain",
-      "defi",
-      "nft",
-      "altcoin",
+      "bitcoin", "ethereum", "crypto", "cryptocurrency", "blockchain",
+      "defi", "nft", "token", "coin", "wallet", "exchange", "trading",
+      "mining", "staking", "smart contract", "dapp", "dao", "yield",
+      "liquidity", "amm", "dex", "cex", "metaverse", "web3"
     ];
+
     const lowerText = text.toLowerCase();
-    const keywordCount = cryptoKeywords.filter((keyword) =>
+    const keywordMatches = cryptoKeywords.filter(keyword => 
       lowerText.includes(keyword)
     ).length;
 
-    // Calculate relevance score (0-100)
-    return Math.min(100, (keywordCount / cryptoKeywords.length) * 100 + 50);
+    // Calculate relevance as a percentage (0-100)
+    const relevance = Math.min(100, (keywordMatches / cryptoKeywords.length) * 100);
+    return Math.round(relevance);
   }
 
   private getDefaultImage(): string {
@@ -235,16 +226,6 @@ class CryptoNewsService {
       "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800",
     ];
     return images[Math.floor(Math.random() * images.length)];
-  }
-
-  async getNewsDetail(articleId: string): Promise<CryptoNewsArticle | null> {
-    try {
-      const allNews = await this.getTopCryptoNews(10);
-      return allNews.find((article) => article.id === articleId) || null;
-    } catch (error) {
-      logger.error("Error fetching news detail", "CryptoNewsService", error);
-      return null;
-    }
   }
 
   async refreshNews(limit: number = 3): Promise<CryptoNewsArticle[]> {
@@ -295,7 +276,7 @@ class CryptoNewsService {
           content:
             article.content || article.description || "No content available",
           url: article.url || "",
-          image: article.urlToImage || this.getDefaultImage(),
+          image: this.validateAndFixImageUrl(article.urlToImage),
           publishedAt: article.publishedAt || new Date().toISOString(),
           source: {
             name: article.source?.name || "Unknown Source",

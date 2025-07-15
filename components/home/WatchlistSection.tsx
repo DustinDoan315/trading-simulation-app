@@ -1,10 +1,17 @@
-import React from "react";
-import { AddButton } from "./AddButton";
-import { CryptoCurrency } from "@/services/CryptoService";
-import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
-import { useAppSelector } from "@/store";
-import { WatchListChild } from "./WatchlistItem";
-import { useLanguage } from "@/context/LanguageContext";
+import React from 'react';
+import { AddButton } from './AddButton';
+import { CryptoCurrency } from '@/services/CryptoService';
+import {
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View
+  } from 'react-native';
+import { useAppSelector } from '@/store';
+import { useLanguage } from '@/context/LanguageContext';
+import { WatchListChild } from './WatchlistItem';
+
 
 // components/home/WatchListSection.tsx
 
@@ -66,8 +73,7 @@ export const WatchListSection = React.memo(WatchListSectionComponent);
 const styles = StyleSheet.create({
   watchlistContainer: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingTop: 12,
   },
   watchlistTitle: {
     color: "white",

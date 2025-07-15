@@ -1,20 +1,20 @@
-import React, { useState } from "react";
-import { clearSearchHistory } from "@/features/searchHistorySlice";
-import { forceRefreshAllData } from "@/utils/resetUtils";
-import { formatAmount } from "@/utils/formatters";
-import { height } from "@/utils/response";
-import { Ionicons } from "@expo/vector-icons";
-import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
-import { LinearGradient } from "expo-linear-gradient";
-import { loadBalance, resetBalance } from "@/features/balanceSlice";
-import { logger } from "@/utils/logger";
-import { persistor } from "@/store";
-import { resetFavorites } from "@/features/favoritesSlice";
-import { useAppDispatch } from "@/store";
-import { useLanguage } from "@/context/LanguageContext";
-import { UserBalance } from "@/features/balanceSlice";
-import { UserService } from "@/services/UserService";
-import { useUser } from "@/context/UserContext";
+import React, { useState } from 'react';
+import { clearSearchHistory } from '@/features/searchHistorySlice';
+import { forceRefreshAllData } from '@/utils/resetUtils';
+import { formatAmount } from '@/utils/formatters';
+import { height } from '@/utils/response';
+import { Ionicons } from '@expo/vector-icons';
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { LinearGradient } from 'expo-linear-gradient';
+import { loadBalance, resetBalance } from '@/features/balanceSlice';
+import { logger } from '@/utils/logger';
+import { persistor } from '@/store';
+import { resetFavorites } from '@/features/favoritesSlice';
+import { useAppDispatch } from '@/store';
+import { useLanguage } from '@/context/LanguageContext';
+import { UserBalance } from '@/features/balanceSlice';
+import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 import {
   Alert,
   Modal,
@@ -23,6 +23,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 // components/home/BalanceSection.tsx
 
@@ -136,7 +137,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
   };
 
   return (
-    <LinearGradient colors={["#6262D9", "#9D62D9"]} style={styles.container}>
+    <LinearGradient colors={["#6366F1", "#8B5CF6"]} style={styles.container}>
       <TouchableOpacity onPress={moveToPortfolio}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
@@ -221,26 +222,32 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: height * 0.025,
-    width: "94%",
-    marginVertical: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 20,
+    marginHorizontal: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    borderRadius: 24,
+    width: "90%",
     alignSelf: "center",
+    elevation: 12,
+    shadowColor: "#6366F1",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 20,
   },
   resetButton: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 6,
-    borderRadius: 8,
-    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
+    gap: 6,
   },
   resetButtonDisabled: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -250,7 +257,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 14,
     fontWeight: "600",
-    marginLeft: 4,
   },
   modalContainer: {
     flex: 1,
@@ -260,59 +266,72 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: "80%",
-    backgroundColor: "#1A1D2F",
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: "#1F2937",
+    borderRadius: 20,
+    padding: 24,
+    elevation: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
   },
   modalTitle: {
     color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 16,
+    textAlign: "center",
   },
   modalText: {
-    color: "#9DA3B4",
+    color: "#9CA3AF",
     fontSize: 16,
-    marginBottom: 20,
-    lineHeight: 22,
+    marginBottom: 24,
+    lineHeight: 24,
+    textAlign: "center",
   },
   modalButtons: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+    gap: 12,
   },
   modalButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginLeft: 10,
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#2A2D3E",
+    backgroundColor: "#374151",
   },
   confirmButton: {
-    backgroundColor: "#6262D9",
+    backgroundColor: "#6366F1",
   },
   confirmButtonDisabled: {
-    backgroundColor: "#6262D9",
+    backgroundColor: "#6366F1",
     opacity: 0.5,
   },
   buttonText: {
     color: "white",
-    fontWeight: "600",
+    fontWeight: "700",
+    fontSize: 16,
   },
-
   menuButton: {
-    marginBottom: 20,
+    marginBottom: 0,
   },
   balanceTitle: {
     color: "white",
     fontSize: 18,
     opacity: 0.9,
-    marginBottom: 8,
+    marginBottom: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
   balanceAmount: {
     color: "white",
     fontSize: 36,
-    fontWeight: "bold",
+    fontWeight: "800",
+    textAlign: "center",
+    letterSpacing: -0.5,
   },
 });
