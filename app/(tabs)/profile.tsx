@@ -321,11 +321,56 @@ const ProfileScreen = () => {
               onPress={() => router.push("/trading-history" as any)}
             />
             <SettingItem
-              isBottom={true}
               icon="trophy-outline"
               title={t("profile.leaderboard")}
               subtitle={t("profile.seeYourRanking")}
               onPress={() => router.push("/leaderboard" as any)}
+            />
+            <SettingItem
+              icon="settings-outline"
+              title={t("profile.settings")}
+              subtitle={t("profile.appPreferences")}
+              onPress={() => router.push("/settings" as any)}
+            />
+            <SettingItem
+              isBottom={true}
+              icon="help-circle-outline"
+              title={t("profile.helpSupport")}
+              subtitle={t("profile.getHelp")}
+              onPress={() => router.push("/help" as any)}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {t("profile.accountManagement")}
+          </Text>
+          <View style={styles.settingsGroup}>
+            <SettingItem
+              icon="shield-outline"
+              title={t("profile.privacySecurity")}
+              subtitle={t("profile.managePrivacy")}
+              onPress={() => router.push("/privacy" as any)}
+            />
+            <SettingItem
+              icon="notifications-outline"
+              title={t("profile.notifications")}
+              subtitle={t("profile.manageAlerts")}
+              onPress={() => router.push("/notifications" as any)}
+            />
+            <SettingItem
+              icon="language-outline"
+              title={t("profile.language")}
+              subtitle={t("profile.changeLanguage")}
+              onPress={() => router.push("/language" as any)}
+            />
+            <SettingItem
+              isBottom={true}
+              icon="refresh-outline"
+              title={t("profile.resetData")}
+              subtitle={t("profile.resetToDefault")}
+              onPress={() => router.push("/reset" as any)}
             />
           </View>
         </View>

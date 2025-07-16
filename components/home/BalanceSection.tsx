@@ -4,7 +4,6 @@ import { forceRefreshAllData } from '@/utils/resetUtils';
 import { formatAmount } from '@/utils/formatters';
 import { height } from '@/utils/response';
 import { Ionicons } from '@expo/vector-icons';
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { LinearGradient } from 'expo-linear-gradient';
 import { loadBalance, resetBalance } from '@/features/balanceSlice';
 import { logger } from '@/utils/logger';
@@ -125,18 +124,39 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
 
   const moveToPortfolio = () => {};
 
+  // Calculate portfolio metrics
+  const totalPnL =
+    balance.totalPortfolioValue - (balance.usdtBalance || 100000);
+  const pnLPercentage = (totalPnL / (balance.usdtBalance || 100000)) * 100;
+  const isPositivePnL = totalPnL >= 0;
+
   return (
-    <LinearGradient colors={["#6366F1", "#8B5CF6"]} style={styles.container}>
-      <TouchableOpacity onPress={moveToPortfolio}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
-            <LanguageSwitcher />
-          </TouchableOpacity>
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
+    <View style={styles.container}>
+      {/* Background decorative elements */}
+      <View style={styles.backgroundDecorations}>
+        <View style={styles.circle1} />
+        <View style={styles.circle2} />
+        <View style={styles.circle3} />
+      </View>
+
+      <LinearGradient
+        colors={["#6366F1", "#8B5CF6", "#EC4899"]}
+        style={styles.gradientContainer}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}>
+        <TouchableOpacity
+          onPress={moveToPortfolio}
+          style={styles.contentContainer}>
+          {/* Header with icons and actions */}
+          <View style={styles.headerRow}>
+            <View style={styles.leftHeader}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="wallet" size={20} color="white" />
+              </View>
+              <Text style={styles.balanceTitle}>
+                {t("balance.yourBalance")}
+              </Text>
+            </View>
             <TouchableOpacity
               style={[
                 styles.resetButton,
@@ -146,24 +166,99 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
               disabled={isResetting}>
               <Ionicons
                 name={isResetting ? "hourglass" : "refresh"}
-                size={18}
+                size={16}
                 color="white"
               />
-              <Text style={styles.resetText}>
-                {isResetting
-                  ? t("balance.resetting") || "Resetting..."
-                  : t("balance.reset")}
-              </Text>
             </TouchableOpacity>
           </View>
-        </View>
-        <Text style={styles.balanceTitle}>{t("balance.yourBalance")}</Text>
-        <Text style={styles.balanceAmount}>
-          {isBalanceHidden
-            ? "********"
-            : `$${formatAmount(balance.totalPortfolioValue)}`}
-        </Text>
-      </TouchableOpacity>
+
+          {/* Main balance display */}
+          <View style={styles.balanceDisplay}>
+            <Text style={styles.balanceAmount}>
+              {isBalanceHidden
+                ? "********"
+                : `$${formatAmount(balance.totalPortfolioValue)}`}
+            </Text>
+            <View style={styles.balanceSubtitle}>
+              <Ionicons
+                name="trending-up"
+                size={14}
+                color="rgba(255,255,255,0.8)"
+              />
+              <Text style={styles.balanceSubtitleText}>
+                {t("balance.totalPortfolio")}
+              </Text>
+            </View>
+          </View>
+
+          {/* Portfolio metrics */}
+          <View style={styles.metricsContainer}>
+            <View style={styles.metricItem}>
+              <View style={styles.metricIcon}>
+                <Ionicons
+                  name={isPositivePnL ? "trending-up" : "trending-down"}
+                  size={16}
+                  color={isPositivePnL ? "#4ADE80" : "#F87171"}
+                />
+              </View>
+              <View style={styles.metricContent}>
+                <Text style={styles.metricValue}>
+                  {isBalanceHidden
+                    ? "***"
+                    : `${isPositivePnL ? "+" : ""}${formatAmount(totalPnL)}`}
+                </Text>
+                <Text style={styles.metricLabel}>{t("balance.totalPnL")}</Text>
+              </View>
+            </View>
+
+            <View style={styles.metricDivider} />
+
+            <View style={styles.metricItem}>
+              <View style={styles.metricIcon}>
+                <Ionicons name="analytics" size={16} color="#60A5FA" />
+              </View>
+              <View style={styles.metricContent}>
+                <Text style={styles.metricValue}>
+                  {isBalanceHidden
+                    ? "***"
+                    : `${isPositivePnL ? "+" : ""}${pnLPercentage.toFixed(2)}%`}
+                </Text>
+                <Text style={styles.metricLabel}>
+                  {t("balance.percentage")}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.metricDivider} />
+
+            <View style={styles.metricItem}>
+              <View style={styles.metricIcon}>
+                <Ionicons name="cash" size={16} color="#FBBF24" />
+              </View>
+              <View style={styles.metricContent}>
+                <Text style={styles.metricValue}>
+                  {isBalanceHidden
+                    ? "***"
+                    : `$${formatAmount(balance.usdtBalance || 0)}`}
+                </Text>
+                <Text style={styles.metricLabel}>{t("balance.available")}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Quick action indicator */}
+          <View style={styles.quickAction}>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color="rgba(255,255,255,0.7)"
+            />
+            <Text style={styles.quickActionText}>
+              {t("balance.viewPortfolio")}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </LinearGradient>
 
       <Modal
         visible={showResetModal}
@@ -205,23 +300,64 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
           </View>
         </View>
       </Modal>
-    </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-    borderRadius: 24,
     width: "90%",
     alignSelf: "center",
+    position: "relative",
+  },
+  backgroundDecorations: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+  },
+  circle1: {
+    position: "absolute",
+    top: -20,
+    right: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  },
+  circle2: {
+    position: "absolute",
+    bottom: -30,
+    left: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  },
+  circle3: {
+    position: "absolute",
+    top: "50%",
+    right: "10%",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  },
+  gradientContainer: {
+    borderRadius: 24,
     elevation: 12,
     shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.25,
     shadowRadius: 16,
+    overflow: "hidden",
+  },
+  contentContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
   headerRow: {
     flexDirection: "row",
@@ -229,23 +365,111 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  resetButton: {
+  leftHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    gap: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  balanceTitle: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    opacity: 0.9,
+  },
+  resetButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   resetButtonDisabled: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     opacity: 0.7,
   },
-  resetText: {
+  balanceDisplay: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  balanceAmount: {
     color: "white",
+    fontSize: 42,
+    fontWeight: "800",
+    textAlign: "center",
+    letterSpacing: -1,
+    marginBottom: 8,
+  },
+  balanceSubtitle: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  balanceSubtitleText: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 14,
+    fontWeight: "500",
+    marginLeft: 6,
+  },
+  metricsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  metricItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  metricIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  metricContent: {
+    alignItems: "center",
+  },
+  metricValue: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  metricLabel: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 12,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  metricDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  },
+  quickAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 12,
+  },
+  quickActionText: {
+    color: "rgba(255, 255, 255, 0.8)",
     fontSize: 14,
     fontWeight: "600",
+    marginLeft: 6,
   },
   modalContainer: {
     flex: 1,
@@ -304,23 +528,5 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "700",
     fontSize: 16,
-  },
-  menuButton: {
-    marginBottom: 0,
-  },
-  balanceTitle: {
-    color: "white",
-    fontSize: 18,
-    opacity: 0.9,
-    marginBottom: 12,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  balanceAmount: {
-    color: "white",
-    fontSize: 36,
-    fontWeight: "800",
-    textAlign: "center",
-    letterSpacing: -0.5,
   },
 });

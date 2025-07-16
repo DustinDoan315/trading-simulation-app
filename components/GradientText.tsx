@@ -13,7 +13,7 @@ const GradientText = ({ text }: { text: string }) => {
 
   const onTextLayout = (event: any) => {
     const { width } = event.nativeEvent.layout;
-    setTextWidth(width * 0.9);
+    setTextWidth(width * 0.85);
   };
 
   return (
@@ -30,7 +30,7 @@ const GradientText = ({ text }: { text: string }) => {
           </Defs>
           <SvgText
             fill="url(#grad)"
-            fontSize="30"
+            fontSize="24"
             fontWeight="bold"
             x="0"
             y="30"

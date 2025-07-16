@@ -2,7 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '@/styles/colors';
 import GradientText from '@/components/GradientText';
 import React, { useCallback, useRef, useState } from 'react';
-import UUIDService from '@/services/UUIDService';
 import { createUser } from '@/features/userSlice';
 import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '@/utils/logger';
@@ -133,12 +132,11 @@ const OnboardingScreen = () => {
     setIsCreating(true);
 
     try {
-      const deviceUUID = await UUIDService.getOrCreateUser();
-
       const username = generateUsername();
+
+      // Create user without providing ID - let Supabase generate UUID
       const newUser = await dispatch(
         createUser({
-          id: deviceUUID,
           username,
           display_name: username,
           avatar_emoji: "🚀",
@@ -147,6 +145,7 @@ const OnboardingScreen = () => {
       ).unwrap();
 
       if (newUser) {
+        // Store the cloud-generated UUID
         await AsyncStorage.setItem("@user_id", newUser.id);
 
         await markOnboardingCompleted(newUser.id);
@@ -283,12 +282,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   content: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: "center",
     color: "#d3d3d3",
     marginTop: 20,
