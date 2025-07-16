@@ -1,17 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import colors from '@/styles/colors';
-import React, { useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { logger } from '@/utils/logger';
-import { resetOnboardingStatus } from '@/utils/resetUtils';
-import { router } from 'expo-router';
-import { updateUser } from '@/features/userSlice';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { useLanguage } from '@/context/LanguageContext';
-import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
-import { UserService } from '@/services/UserService';
-import { useTransactionCount } from '@/hooks/useTransactionCount';
-import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -26,7 +12,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import React, { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/store";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
+import { UserService } from "@/services/UserService";
+import colors from "@/styles/colors";
+import { logger } from "@/utils/logger";
+import { router } from "expo-router";
+import { updateUser } from "@/features/userSlice";
+import { useLanguage } from "@/context/LanguageContext";
+import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
+import { useTransactionCount } from "@/hooks/useTransactionCount";
+import { useUser } from "@/context/UserContext";
 
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
