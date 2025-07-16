@@ -2,10 +2,6 @@ import React from 'react';
 import { Colors } from '../../constants/Colors';
 import { Stack } from 'expo-router';
 
-/**
- * Onboarding Navigation Layout
- * @description Manages screen transitions and styling for onboarding process
- */
 export default function SubLayout() {
   return (
     <Stack

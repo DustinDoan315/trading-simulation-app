@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
-  Animated,
   Dimensions,
   FlatList,
   RefreshControl,

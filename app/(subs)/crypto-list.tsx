@@ -98,10 +98,10 @@ const CryptoMarketScreen: React.FC = () => {
     const crypto = cryptoData.find((c) => c.id === id);
     if (crypto) {
       logger.info("Selected crypto", "CryptoList", { symbol: crypto.symbol });
-      router.push({
-        pathname: "/(subs)/crypto-detail",
-        params: { id },
-      });
+      // router.push({
+      //   pathname: "/(subs)/crypto-detail",
+      //   params: { id },
+      // });
     }
   };
 

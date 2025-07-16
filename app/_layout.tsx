@@ -13,8 +13,8 @@ import { LanguageProvider } from '@/context/LanguageContext';
 import { logger } from '@/utils/logger';
 import { NotificationProvider } from '@/components/ui/Notification';
 import { Provider } from 'react-redux';
+import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native';
-import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { store } from '../store';
 import { updateDailyBalance } from '@/utils/balanceUpdater';
@@ -90,43 +90,82 @@ export default function RootLayout() {
     }
   }, []);
 
-  const initializeUser = useCallback(async (userId: string) => {
+  const checkOnboardingStatus = useCallback(async (userId: string) => {
     try {
-      logger.info("Initializing user with ID", "AppLayout", { userId });
-
-      const userData = store.getState().user;
-
-      if (userData?.currentUser) {
-        logger.info("User data loaded successfully from Redux", "AppLayout");
-      } else {
-        logger.warn(
-          "No user data found in Redux store, initializing user",
-          "AppLayout"
-        );
-
-        try {
-          await store.dispatch(fetchUser(userId)).unwrap();
-          logger.info("Existing user fetched successfully", "AppLayout");
-        } catch (error) {
-          logger.info("User not found, creating new user", "AppLayout");
-          const timestamp = Date.now().toString().slice(-6);
-          const username = `user_${userId.slice(0, 8)}_${timestamp}`;
-          await store
-            .dispatch(
-              createUser({
-                username,
-                display_name: username,
-                avatar_emoji: "🚀",
-                usdt_balance: "100000.00",
-              })
-            )
-            .unwrap();
-        }
-      }
+      const onboardingCompleted = await AsyncStorage.getItem(
+        `@onboarding_completed_${userId}`
+      );
+      logger.info("Checking onboarding status", "AppLayout", {
+        userId,
+        onboardingCompleted,
+        isCompleted: onboardingCompleted === "true",
+      });
+      return onboardingCompleted === "true";
     } catch (error) {
-      logger.error("Error initializing user", "AppLayout", error);
+      logger.error("Error checking onboarding status", "AppLayout", error);
+      return false;
     }
   }, []);
+
+  const initializeUser = useCallback(
+    async (userId: string) => {
+      try {
+        logger.info("Initializing user with ID", "AppLayout", { userId });
+
+        const userData = store.getState().user;
+        let isNewUser = false;
+
+        if (userData?.currentUser) {
+          logger.info("User data loaded successfully from Redux", "AppLayout");
+        } else {
+          logger.warn(
+            "No user data found in Redux store, initializing user",
+            "AppLayout"
+          );
+
+          try {
+            await store.dispatch(fetchUser(userId)).unwrap();
+            logger.info("Existing user fetched successfully", "AppLayout");
+          } catch (error) {
+            logger.info("User not found, creating new user", "AppLayout");
+            isNewUser = true;
+            const timestamp = Date.now().toString().slice(-6);
+            const username = `user_${userId.slice(0, 8)}_${timestamp}`;
+            await store
+              .dispatch(
+                createUser({
+                  username,
+                  display_name: username,
+                  avatar_emoji: "🚀",
+                  usdt_balance: "100000.00",
+                })
+              )
+              .unwrap();
+          }
+        }
+
+        const hasCompletedOnboarding = await checkOnboardingStatus(userId);
+
+        if (isNewUser || !hasCompletedOnboarding) {
+          logger.info("Redirecting to onboarding", "AppLayout", {
+            isNewUser,
+            hasCompletedOnboarding,
+          });
+          router.replace("/(onboarding)/onboarding");
+        } else {
+          logger.info(
+            "User has completed onboarding, going to main app",
+            "AppLayout"
+          );
+          router.replace("/(tabs)");
+        }
+      } catch (error) {
+        logger.error("Error initializing user", "AppLayout", error);
+        router.replace("/(onboarding)/onboarding");
+      }
+    },
+    [checkOnboardingStatus]
+  );
 
   const initializeBackgroundSync = useCallback(async () => {
     try {

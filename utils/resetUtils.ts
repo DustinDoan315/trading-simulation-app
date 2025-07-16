@@ -329,6 +329,24 @@ export const getCurrentUserUUID = async (): Promise<string | null> => {
   }
 };
 
+export const resetOnboardingStatus = async (userId?: string): Promise<void> => {
+  try {
+    if (userId) {
+
+      await AsyncStorage.removeItem(`@onboarding_completed_${userId}`);
+      console.log(`Onboarding status reset for user: ${userId}`);
+    } else {
+      const currentUserId = await AsyncStorage.getItem("@user_id");
+      if (currentUserId) {
+        await AsyncStorage.removeItem(`@onboarding_completed_${currentUserId}`);
+        console.log(`Onboarding status reset for current user: ${currentUserId}`);
+      }
+    }
+  } catch (error) {
+    console.error("Error resetting onboarding status:", error);
+  }
+};
+
 export const checkIfNewUser = async (): Promise<boolean> => {
   try {
     const lastReset = await AsyncStorage.getItem("last_app_reset");

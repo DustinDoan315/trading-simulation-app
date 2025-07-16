@@ -43,6 +43,7 @@ import {
   handleUserReinitialization,
 } from "@/utils/helper";
 
+
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
   const { reinitializeUser } = useUser();
@@ -57,12 +58,10 @@ const CryptoChartScreen = () => {
   const [chartType, setChartType] = useState<ChartType>("candlestick");
   const [showIndicators, setShowIndicators] = useState(false);
 
-  // Order submission loading state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<string>("");
   const [submissionProgress, setSubmissionProgress] = useState(0);
 
-  // Dual balance hook
   const {
     activeContext,
     currentBalance,
@@ -78,12 +77,10 @@ const CryptoChartScreen = () => {
 
   const { currentPrice, priceChange } = useCryptoAPI(timeframe, id);
 
-  // Load balance data when component mounts
   useEffect(() => {
     dispatch(loadBalance());
   }, [dispatch]);
 
-  // Set collection context if collectionId is provided
   useEffect(() => {
     if (collectionId) {
       switchContext({ type: "collection", collectionId });
@@ -93,17 +90,14 @@ const CryptoChartScreen = () => {
     }
   }, [collectionId, switchContext, loadCollection]);
 
-  // Cleanup loading state on component unmount or navigation
   useEffect(() => {
     return () => {
-      // Ensure loading state is reset when component unmounts
       setIsSubmitting(false);
       setSubmissionStatus("");
       setSubmissionProgress(0);
     };
   }, []);
 
-  // Simulate submission progress
   useEffect(() => {
     if (isSubmitting) {
       const progressInterval = setInterval(() => {
@@ -128,7 +122,6 @@ const CryptoChartScreen = () => {
       } else if (data.type === "error") {
         setError(data.message);
       } else if (data.type === "priceSelected") {
-        // Price selection handled silently
       } else if (data.type === "chartInteraction") {
         // Chart interaction handled silently
       }
@@ -185,25 +178,23 @@ const CryptoChartScreen = () => {
     setSubmissionProgress(0);
   };
 
-  // Enhanced order submission with dual balance support and loading states
   const submitOrder = async (order: Order): Promise<void> => {
-    if (isSubmitting) return; // Prevent multiple submissions
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    const minDisplayTime = 1000; // 1 second
+    const minDisplayTime = 1000;
     const startTime = Date.now();
     setSubmissionStatus(t("chart.validatingOrder"));
     setSubmissionProgress(10);
 
     try {
       const validationContext: OrderValidationContext = {
-        getHoldings: () => currentHoldings, // Use current context holdings
-        getUsdtBalance: () => currentUsdtBalance, // Provide USDT balance from context
+        getHoldings: () => currentHoldings,
+        getUsdtBalance: () => currentUsdtBalance,
       };
 
       const dispatchContext: OrderDispatchContext = {
         addTradeHistory: (order) => dispatch(addTradeHistory(order)),
         updateHolding: (payload) => {
-          // Use dual balance update instead of regular balance
           if (activeContext.type === "individual") {
             dispatch(updateHolding(payload));
           } else if (activeContext.collectionId) {
@@ -216,24 +207,17 @@ const CryptoChartScreen = () => {
           }
         },
         updateTrade: (payload) => dispatch(updateTrade(payload)),
-        syncTransaction: async (order) => {
-          // Transaction is already created in DualBalanceService.executeTrade()
-          // No need to create another transaction here
-        },
+        syncTransaction: async (order) => {},
       };
 
       setSubmissionStatus(t("chart.executingTrade"));
       setSubmissionProgress(30);
 
-      // Execute trade using dual balance system
       await executeTradeInContext(order);
 
       setSubmissionStatus(t("chart.processingTransaction"));
       setSubmissionProgress(60);
 
-      // Balance should be automatically updated in Redux state
-
-      // Handle order submission with dual balance context
       await handleOrderSubmission(
         order,
         image || "",
@@ -244,13 +228,11 @@ const CryptoChartScreen = () => {
       setSubmissionStatus(t("chart.finalizing"));
       setSubmissionProgress(90);
 
-      // Simulate final processing
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       setSubmissionStatus(t("chart.orderCompleted"));
       setSubmissionProgress(100);
 
-      // Show success for a moment before hiding
       const elapsed = Date.now() - startTime;
       await new Promise((resolve) =>
         setTimeout(resolve, Math.max(0, minDisplayTime - elapsed, 1000))
@@ -266,13 +248,11 @@ const CryptoChartScreen = () => {
     }
   };
 
-  // Loading Modal Component
   const LoadingModal = () => (
     <Modal
       visible={isSubmitting}
       transparent={true}
       onRequestClose={() => {
-        // Allow users to close modal by back button if needed
         if (isSubmitting) {
           resetLoadingState();
         }
@@ -284,17 +264,14 @@ const CryptoChartScreen = () => {
         <View
           style={styles.loadingContainer}
           pointerEvents={isSubmitting ? "auto" : "none"}>
-          {/* Loading Icon */}
           <View style={styles.loadingIconContainer}>
             <ActivityIndicator size="large" color="#6674CC" />
             <View style={styles.loadingIconGlow} />
           </View>
 
-          {/* Status Text */}
           <Text style={styles.loadingTitle}>{t("chart.processingOrder")}</Text>
           <Text style={styles.loadingStatus}>{submissionStatus}</Text>
 
-          {/* Progress Bar */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
               <View
@@ -311,7 +288,6 @@ const CryptoChartScreen = () => {
             </Text>
           </View>
 
-          {/* Context Info */}
           <View style={styles.contextInfo}>
             <Text style={styles.contextLabel}>
               {activeContext.type === "collection"
@@ -332,7 +308,6 @@ const CryptoChartScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}>
-        {/* Symbol Header */}
         <SymbolHeader
           symbol={symbol}
           priceChange={priceChange || ""}
@@ -341,7 +316,6 @@ const CryptoChartScreen = () => {
           toggleIndicators={toggleIndicators}
         />
 
-        {/* Timeframe Selector */}
         <TimeframeSelector
           timeframe={timeframe}
           switchTimeframe={switchTimeframe}
@@ -349,7 +323,6 @@ const CryptoChartScreen = () => {
           toggleIndicators={toggleIndicators}
         />
 
-        {/* Chart */}
         <Chart
           webViewRef={webViewRef}
           loading={loading}
@@ -363,9 +336,7 @@ const CryptoChartScreen = () => {
           timeframe={timeframe}
         />
 
-        {/* Beautiful Section Under Chart */}
         <View style={styles.bottomSection}>
-          {/* Enhanced Order Entry Section */}
           <View style={styles.orderSection}>
             <LinearGradient
               colors={[
@@ -393,7 +364,6 @@ const CryptoChartScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Loading Modal */}
       <LoadingModal />
     </SafeAreaView>
   );

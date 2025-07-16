@@ -248,19 +248,44 @@
     "startTradingToGetRanked": "Bắt đầu giao dịch để được xếp hạng",
     "totalTraders": "Tổng số nhà giao dịch",
     "globalTraders": "Nhà giao dịch toàn cầu",
-    "topPerformer": "Người dẫn đầu",
+    "topPerformer": "Người thực hiện tốt nhất",
     "activeTraders": "Nhà giao dịch tích cực",
     "activeGlobal": "Toàn cầu tích cực",
     "members": "thành viên",
     "totalValue": "Tổng giá trị",
     "return": "Lợi nhuận",
     "loadingLeaderboard": "Đang tải bảng xếp hạng...",
-    "noRankingsAvailable": "Chưa có xếp hạng nào",
+    "noRankingsAvailable": "Chưa có xếp hạng",
     "noFriendsFound": "Không tìm thấy bạn bè. Thêm một số bạn bè để xem họ trên bảng xếp hạng!",
     "noFriendsWithRankings": "Chưa có bạn bè nào có xếp hạng. Bắt đầu giao dịch để xuất hiện trên bảng xếp hạng!",
     "lastUpdated": "Cập nhật lần cuối: {time}",
     "unknownUser": "Người dùng không xác định",
     "unknownCollection": "Bộ sưu tập không xác định"
+  },
+  "onboarding": {
+    "skip": "Bỏ qua",
+    "continue": "Tiếp tục",
+    "getStarted": "Bắt đầu",
+    "creatingAccount": "Đang tạo tài khoản...",
+    "joinThousands": "Tham gia cùng hàng nghìn nhà giao dịch trên toàn thế giới",
+    "progress": "{current} / {total}",
+    "screens": {
+      "welcome": {
+        "title": "Chào mừng đến với Trading Simulator",
+        "subtitle": "Cổng vào giao dịch thông minh",
+        "content": "Làm chủ nghệ thuật giao dịch với tiền ảo trong môi trường hoàn toàn không rủi ro. Học hỏi, thực hành và hoàn thiện chiến lược của bạn."
+      },
+      "learn": {
+        "title": "Học hỏi & Thi đua",
+        "subtitle": "Tham gia cộng đồng giao dịch",
+        "content": "Tham gia các cuộc thi giao dịch thú vị, leo bảng xếp hạng và thách thức bản thân với các nhà giao dịch trên toàn thế giới."
+      },
+      "track": {
+        "title": "Theo dõi tiến độ",
+        "subtitle": "Giám sát thành công",
+        "content": "Nhận thông tin chi tiết về hiệu suất danh mục, thống kê giao dịch và theo dõi hành trình trở thành chuyên gia giao dịch."
+      }
+    }
   },
   "profile": {
     "title": "Hồ sơ",

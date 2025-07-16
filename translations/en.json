@@ -262,6 +262,31 @@
     "unknownUser": "Unknown User",
     "unknownCollection": "Unknown Collection"
   },
+  "onboarding": {
+    "skip": "Skip",
+    "continue": "Continue",
+    "getStarted": "Get Started",
+    "creatingAccount": "Creating Account...",
+    "joinThousands": "Join thousands of traders worldwide",
+    "progress": "{current} of {total}",
+    "screens": {
+      "welcome": {
+        "title": "Welcome to Trading Simulator",
+        "subtitle": "Your Gateway to Smart Trading",
+        "content": "Master the art of trading with virtual money in a completely risk-free environment. Learn, practice, and perfect your strategies."
+      },
+      "learn": {
+        "title": "Learn & Compete",
+        "subtitle": "Join the Trading Community",
+        "content": "Participate in exciting trading competitions, climb the leaderboard, and challenge yourself against traders worldwide."
+      },
+      "track": {
+        "title": "Track Your Progress",
+        "subtitle": "Monitor Your Success",
+        "content": "Get detailed insights into your portfolio performance, trading statistics, and track your journey to becoming a trading expert."
+      }
+    }
+  },
   "profile": {
     "title": "Profile",
     "memberSince": "Member since {date}",

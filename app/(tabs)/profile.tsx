@@ -3,6 +3,7 @@ import colors from '@/styles/colors';
 import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { logger } from '@/utils/logger';
+import { resetOnboardingStatus } from '@/utils/resetUtils';
 import { router } from 'expo-router';
 import { updateUser } from '@/features/userSlice';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -47,7 +48,6 @@ const ProfileScreen = () => {
   const { transactionCount, loading: transactionCountLoading } =
     useTransactionCount(user?.id);
 
-  const [isEditing, setIsEditing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -243,7 +243,6 @@ const ProfileScreen = () => {
             colors={["#6674CC"]}
           />
         }>
-        {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
@@ -264,7 +263,6 @@ const ProfileScreen = () => {
           </Text>
         </View>
 
-        {/* Enhanced Stats Grid */}
         <View style={styles.statsContainer}>
           <View style={styles.statsHeader}>
             <Text style={styles.statsSectionTitle}>
@@ -309,7 +307,6 @@ const ProfileScreen = () => {
           </View>
         </View>
 
-        {/* Portfolio Value */}
         <View style={styles.portfolioCard}>
           <View style={styles.portfolioHeader}>
             <Ionicons name="pie-chart" size={20} color="#6674CC" />
@@ -323,7 +320,6 @@ const ProfileScreen = () => {
           </Text>
         </View>
 
-        {/* Account Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {t("profile.accountInformation")}
@@ -342,12 +338,6 @@ const ProfileScreen = () => {
               subtitle={t("profile.seeYourRanking")}
               onPress={() => router.push("/leaderboard" as any)}
             />
-            {/* <SettingItem
-              icon="people-outline"
-              title="Collections"
-              subtitle="Manage your trading groups"
-              onPress={() => router.push("/collections" as any)}
-            /> */}
           </View>
         </View>
         {lastUpdated && (
@@ -772,6 +762,25 @@ const styles = StyleSheet.create({
     color: "#8F95B2",
     textAlign: "center",
     marginTop: 12,
+  },
+  menuItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2A2E42",
+  },
+  menuItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#FFFFFF",
+    marginLeft: 12,
   },
 });
 

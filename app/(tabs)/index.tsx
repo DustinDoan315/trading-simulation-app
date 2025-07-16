@@ -1,14 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from './styles';
-import { AchievementCard } from '@/components/home/AchievementCard';
-import { AddButton } from '@/components/home/AddButton';
 import { BalanceSection } from '@/components/home/BalanceSection';
 import { CryptoNewsCard } from '@/components/home/CryptoNewsCard';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { loadBalance } from '@/features/balanceSlice';
-import { MarketInsightsCard } from '@/components/home/MarketInsightsCard';
-import { navigateToCryptoChart } from '@/utils/navigation';
 import { RootState, useAppDispatch } from '@/store';
 import { router } from 'expo-router';
 import { useHomeData } from '@/hooks/useHomeData';
@@ -18,12 +14,10 @@ import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Animated,
-  Dimensions,
   RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -39,7 +33,6 @@ import {
   getPnLColor,
 } from "@/utils/helper";
 
-const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
   const dispatch = useAppDispatch();
@@ -85,18 +78,16 @@ const HomeScreen = () => {
       const articles = await cryptoNewsService.getTopCryptoNews(5);
       setNewsArticles(articles);
 
-      // If no articles loaded and we haven't retried too many times, try again
       if (articles.length === 0 && retryCount < 3) {
         setTimeout(() => {
           loadCryptoNews(retryCount + 1);
-        }, 2000); // Retry after 2 seconds
+        }, 2000);
       }
     } catch (error) {
-      // If error occurred and we haven't retried too many times, try again
       if (retryCount < 3) {
         setTimeout(() => {
           loadCryptoNews(retryCount + 1);
-        }, 2000); // Retry after 2 seconds
+        }, 2000);
       }
     } finally {
       setLoadingNews(false);
@@ -118,7 +109,6 @@ const HomeScreen = () => {
     ]).start();
   }, []);
 
-  // Calculate real-time portfolio metrics using utility function
   const portfolioMetrics = useMemo(() => {
     return calculatePortfolioMetrics(reduxBalance);
   }, [reduxBalance]);
@@ -135,8 +125,8 @@ const HomeScreen = () => {
     return reduxBalance;
   }, [reduxBalance]);
 
-  // Check if user is new (less than 5 trades)
-  const isNewUser = !user || user.total_trades < 5;
+  // Check if user is new (less than 20 trades)
+  const isNewUser = !user || user.total_trades < 20;
 
   const handleQuickAction = (action: string) => {
     switch (action) {

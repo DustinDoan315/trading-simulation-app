@@ -13,6 +13,7 @@ import {
   FlatList,
   Image,
   Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -30,7 +31,7 @@ const OnboardingScreen = () => {
   const screens = [
     {
       id: "1",
-      title: "Welcome to Trading Simulator",
+      title: "Welcome to Learn Trading",
       content:
         "Practice trading with virtual money in a risk-free environment.",
       image: require("../../assets/images/onboarding.png"),
@@ -97,6 +98,34 @@ const OnboardingScreen = () => {
     return `${adjective}${noun}${randomNum}`;
   };
 
+  const markOnboardingCompleted = useCallback(async (userId: string) => {
+    try {
+      await AsyncStorage.setItem(`@onboarding_completed_${userId}`, "true");
+      logger.info("Onboarding marked as completed", "Onboarding", { userId });
+
+      const saved = await AsyncStorage.getItem(
+        `@onboarding_completed_${userId}`
+      );
+      logger.info("Verification - onboarding status saved:", "Onboarding", {
+        saved,
+        userId,
+      });
+
+      Alert.alert("Success", `Onboarding completed for user: ${userId}`, [
+        { text: "OK" },
+      ]);
+    } catch (error) {
+      logger.error(
+        "Error marking onboarding as completed",
+        "Onboarding",
+        error
+      );
+      Alert.alert("Error", "Failed to mark onboarding as completed", [
+        { text: "OK" },
+      ]);
+    }
+  }, []);
+
   const handleCreateAccount = useCallback(async () => {
     if (isCreating) return;
 
@@ -114,13 +143,14 @@ const OnboardingScreen = () => {
       ).unwrap();
 
       if (newUser) {
-        // Store the user ID for future use
         await AsyncStorage.setItem("@user_id", newUser.id);
+
+        await markOnboardingCompleted(newUser.id);
+
         logger.info("New user created successfully", "Onboarding", {
           username: newUser.username,
         });
 
-        // Navigate to main app
         router.replace("/(tabs)");
       }
     } catch (error) {
@@ -131,9 +161,9 @@ const OnboardingScreen = () => {
     } finally {
       setIsCreating(false);
     }
-  }, [dispatch, isCreating]);
+  }, [dispatch, isCreating, markOnboardingCompleted]);
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     if (currentIndex < screens.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
@@ -142,19 +172,44 @@ const OnboardingScreen = () => {
         animated: true,
       });
     } else {
-      handleCreateAccount();
+      // Check if user already exists (for existing users going through onboarding)
+      const existingUserId = await AsyncStorage.getItem("@user_id");
+
+      logger.info("Handling onboarding completion", "Onboarding", {
+        currentIndex,
+        existingUserId,
+        isLastScreen: currentIndex === screens.length - 1,
+      });
+
+      if (existingUserId) {
+        // Existing user - just mark onboarding as completed
+        logger.info("Existing user completing onboarding", "Onboarding", {
+          existingUserId,
+        });
+        await markOnboardingCompleted(existingUserId);
+        router.replace("/(tabs)");
+      } else {
+        // New user - create account
+        logger.info("New user creating account", "Onboarding");
+        handleCreateAccount();
+      }
     }
-  }, [currentIndex, screens.length, handleCreateAccount]);
+  }, [
+    currentIndex,
+    screens.length,
+    handleCreateAccount,
+    markOnboardingCompleted,
+  ]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <FlatList
         ref={flatListRef}
         data={screens}
         renderItem={renderItem}
         horizontal
         pagingEnabled
-        scrollEnabled={false}
+        // scrollEnabled={false}
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         onScroll={(event) => {
@@ -188,9 +243,9 @@ const OnboardingScreen = () => {
         }}>
         <LinearGradient
           style={styles.createBtnLinear}
-          colors={["#6F62D9", "#9462D9", "#7E62D9"]}
+          colors={["#6366F1", "#8B5CF6"]}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+          end={{ x: 1, y: 1 }}
           locations={[0, 0.22, 0.54, 0.85, 1]}>
           <Pressable
             onPress={handleNext}
@@ -206,7 +261,7 @@ const OnboardingScreen = () => {
           </Pressable>
         </LinearGradient>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -223,12 +278,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   content: {
-    fontSize: 18,
+    fontSize: 16,
     textAlign: "center",
     color: "#d3d3d3",
     marginTop: 20,

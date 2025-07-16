@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Text } from "react-native";
+import React, { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import {
-  Svg,
-  Text as SvgText,
   Defs,
-  LinearGradient as SvgLinearGradient,
   Stop,
+  Svg,
+  LinearGradient as SvgLinearGradient,
+  Text as SvgText,
 } from "react-native-svg";
 
 const GradientText = ({ text }: { text: string }) => {
@@ -13,7 +13,7 @@ const GradientText = ({ text }: { text: string }) => {
 
   const onTextLayout = (event: any) => {
     const { width } = event.nativeEvent.layout;
-    setTextWidth(width * 1.125);
+    setTextWidth(width * 0.9);
   };
 
   return (

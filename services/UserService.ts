@@ -998,7 +998,7 @@ export class UserService {
       } finally {
         isUpdatingLeaderboard = false;
       }
-    }, 1000); // 1 second debounce
+    }, 1000);
   }
 
   // Calculate user's rank based on performance
@@ -1274,18 +1274,53 @@ export class UserService {
       
       // Update users who don't have rankings to have null global_rank
       if (usersWithRankingsSet.size > 0) {
-        const { error: resetError } = await supabase
-          .from("users")
-          .update({ global_rank: null })
-          .not("id", "in", `(${Array.from(usersWithRankingsSet).map(id => `'${id}'`).join(",")})`);
+        const usersWithRankingsArray = Array.from(usersWithRankingsSet);
+        
+        // Use a more reliable approach by first getting all users, then filtering
+        try {
+          const { data: allUsers, error: fetchError } = await supabase
+            .from("users")
+            .select("id");
 
-        if (resetError) {
-          logger.error("Error resetting global_rank for users without rankings", "UserService", resetError);
-        } else {
-          logger.info("Reset global_rank for users without leaderboard rankings", "UserService");
+          if (fetchError) {
+            logger.error("Error fetching users for global_rank reset", "UserService", fetchError);
+          } else {
+            // Filter out users who have rankings
+            const usersWithoutRankings = allUsers?.filter(user => !usersWithRankingsSet.has(user.id)) || [];
+            
+            if (usersWithoutRankings.length > 0) {
+              // Update each user individually to avoid complex query syntax
+              let successCount = 0;
+              let errorCount = 0;
+              
+              for (const user of usersWithoutRankings) {
+                try {
+                  const { error: updateError } = await supabase
+                    .from("users")
+                    .update({ global_rank: null })
+                    .eq("id", user.id);
+                  
+                  if (updateError) {
+                    logger.error(`Error updating global_rank for user ${user.id}`, "UserService", updateError);
+                    errorCount++;
+                  } else {
+                    successCount++;
+                  }
+                } catch (error) {
+                  logger.error(`Error updating global_rank for user ${user.id}`, "UserService", error);
+                  errorCount++;
+                }
+              }
+              
+              logger.info(`Reset global_rank for ${successCount} users, ${errorCount} errors`, "UserService");
+            } else {
+              logger.info("No users found without rankings to reset", "UserService");
+            }
+          }
+        } catch (error) {
+          logger.error("Error in global_rank reset process", "UserService", error);
         }
       } else {
-        // If no users have rankings, reset all users
         const { error: resetError } = await supabase
           .from("users")
           .update({ global_rank: null });
@@ -1301,7 +1336,7 @@ export class UserService {
     }
   }
 
-  // Get leaderboard statistics (ALL_TIME only)
+
   static async getLeaderboardStats(
     period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"
   ): Promise<{
@@ -1310,7 +1345,7 @@ export class UserService {
     averagePnL: number;
   }> {
     try {
-      // Force ALL_TIME period since we only support that
+
       const { data: rankings, error } = await supabase
         .from("leaderboard_rankings")
         .select("user_id, rank, total_pnl")
@@ -1366,7 +1401,6 @@ export class UserService {
     collection_id?: string | null;
   }): Promise<void> {
     try {
-      // First, delete any existing entries for this user and period to prevent duplicates
       const { error: deleteError } = await supabase
         .from("leaderboard_rankings")
         .delete()
@@ -1376,30 +1410,30 @@ export class UserService {
 
       if (deleteError) {
         logger.warn("Error deleting existing leaderboard entries", "UserService", deleteError);
-        // Continue anyway, the insert might still work
+     
       }
 
       const rankingData = {
         user_id: params.user_id,
         period: params.period,
         total_pnl: params.total_pnl,
-        percentage_return: params.total_pnl_percentage, // Use percentage_return to match database schema
-        portfolio_value: params.total_portfolio_value, // Use portfolio_value to match database schema
-        trade_count: params.total_trades, // Use trade_count to match database schema
+        percentage_return: params.total_pnl_percentage, 
+        portfolio_value: params.total_portfolio_value, 
+        trade_count: params.total_trades, 
         rank: params.rank,
         collection_id: params.collection_id || null,
         calculated_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
-      // Insert new entry (since we deleted any existing ones)
+
       const { error } = await supabase
         .from("leaderboard_rankings")
         .insert([rankingData]);
       
       if (error) {
-        // If insert fails due to unique constraint, try update instead
-        if (error.code === '23505') { // Unique violation
+
+        if (error.code === '23505') { 
           logger.warn("Unique constraint violation, trying update instead", "UserService", error);
           
           const { error: updateError } = await supabase
