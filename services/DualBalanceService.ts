@@ -14,9 +14,6 @@ import { supabase } from './SupabaseService';
 
 
 export class DualBalanceService {
-  /**
-   * Get individual balance for a user
-   */
   static async getIndividualBalance(userId: string): Promise<IndividualBalance> {
     try {
       const { data: user, error } = await supabase
@@ -27,7 +24,6 @@ export class DualBalanceService {
 
       if (error) throw error;
 
-      // Get individual portfolio holdings
       const { data: portfolio, error: portfolioError } = await supabase
         .from('portfolio')
         .select('*')
@@ -35,7 +31,6 @@ export class DualBalanceService {
 
       if (portfolioError) throw portfolioError;
 
-      // Convert portfolio to holdings format
       const holdings: Record<string, any> = {};
       portfolio?.forEach(item => {
         holdings[item.symbol.toUpperCase()] = {
@@ -51,12 +46,10 @@ export class DualBalanceService {
         };
       });
 
-      // Calculate actual USDT balance from initial balance and crypto holdings
       const initialBalance = parseFloat(user.initial_balance);
       const cryptoValue = portfolio?.reduce((sum, item) => sum + parseFloat(item.total_value), 0) || 0;
       const actualUsdtBalance = initialBalance - cryptoValue;
       
-      // Use the calculated balance instead of the database field
       const usdtBalance = Math.max(0, actualUsdtBalance);
       
       holdings.USDT = {
@@ -99,15 +92,11 @@ export class DualBalanceService {
     }
   }
 
-  /**
-   * Get collection balance for a user in a specific collection
-   */
   static async getCollectionBalance(
     collectionId: string, 
     userId: string
   ): Promise<CollectionBalance> {
     try {
-      // Get collection member data
       const { data: member, error: memberError } = await supabase
         .from('collection_members')
         .select('*')
@@ -117,7 +106,6 @@ export class DualBalanceService {
 
       if (memberError) throw memberError;
 
-      // Get collection portfolio holdings
       const { data: portfolio, error: portfolioError } = await supabase
         .from('collection_portfolio')
         .select('*')
@@ -126,7 +114,6 @@ export class DualBalanceService {
 
       if (portfolioError) throw portfolioError;
 
-      // Convert portfolio to holdings format
       const holdings: Record<string, any> = {};
       portfolio?.forEach(item => {
         holdings[item.symbol.toUpperCase()] = {
@@ -142,7 +129,6 @@ export class DualBalanceService {
         };
       });
 
-      // Add USDT holding for collection
       holdings.USDT = {
         amount: parseFloat(member.current_balance),
         valueInUSD: parseFloat(member.current_balance),
@@ -175,9 +161,6 @@ export class DualBalanceService {
     }
   }
 
-  /**
-   * Execute a trade in the specified context
-   */
   static async executeTrade(
     order: any,
     context: TradingContext,
@@ -191,7 +174,6 @@ export class DualBalanceService {
       const totalValue = order.total;
       const fee = order.fees || 0;
 
-      // Get current balance before trade
       let balanceBefore: number;
       let balanceAfter: number;
 
@@ -207,18 +189,15 @@ export class DualBalanceService {
           totalValue
         });
         
-        // Update individual balance and portfolio
         await this.updateIndividualTrade(order, userId);
       } else {
         const collectionBalance = await this.getCollectionBalance(context.collectionId!, userId);
         balanceBefore = collectionBalance.usdtBalance;
         balanceAfter = isBuy ? balanceBefore - totalValue : balanceBefore + totalValue;
         
-        // Update collection balance and portfolio
         await this.updateCollectionTrade(order, context.collectionId!, userId);
       }
 
-      // Create transaction record
       const transaction = {
         user_id: userId,
         type: order.type.toUpperCase() as 'BUY' | 'SELL',
@@ -250,9 +229,6 @@ export class DualBalanceService {
     }
   }
 
-  /**
-   * Update individual balance and portfolio after trade
-   */
   private static async updateIndividualTrade(order: any, userId: string): Promise<void> {
     const isBuy = order.type === 'buy';
     const symbol = order.symbol.toUpperCase();
@@ -260,16 +236,6 @@ export class DualBalanceService {
     const price = order.price;
     const totalValue = order.total;
 
-    console.log('🔄 updateIndividualTrade - Trade details:', {
-      isBuy,
-      symbol,
-      quantity,
-      price,
-      totalValue,
-      userId
-    });
-
-    // Update USDT balance
     const { data: user } = await supabase
       .from('users')
       .select('usdt_balance')
@@ -281,24 +247,10 @@ export class DualBalanceService {
     const currentUsdtBalance = parseFloat(user.usdt_balance);
     const newUsdtBalance = isBuy ? currentUsdtBalance - totalValue : currentUsdtBalance + totalValue;
 
-    console.log('💰 USDT Balance Update:', {
-      currentUsdtBalance,
-      newUsdtBalance,
-      operation: isBuy ? 'subtract' : 'add',
-      totalValue
-    });
-
-    // Calculate crypto value first
     const cryptoValue = await this.calculateCryptoValue(userId);
     const totalPortfolioValue = newUsdtBalance + cryptoValue;
 
-    console.log('📊 Portfolio value calculation:', {
-      newUsdtBalance,
-      cryptoValue,
-      totalPortfolioValue
-    });
-
-    const { error: updateError } = await supabase
+    await supabase
       .from('users')
       .update({ 
         usdt_balance: newUsdtBalance.toString(),
@@ -307,37 +259,9 @@ export class DualBalanceService {
       })
       .eq('id', userId);
 
-    if (updateError) {
-      console.error('❌ Failed to update USDT balance:', updateError);
-      throw updateError;
-    }
-
-    console.log('✅ USDT balance updated successfully to:', newUsdtBalance);
-
-    // Verify the update was successful
-    const { data: verifyUser } = await supabase
-      .from('users')
-      .select('usdt_balance')
-      .eq('id', userId)
-      .single();
-
-    if (verifyUser) {
-      const actualBalance = parseFloat(verifyUser.usdt_balance);
-      console.log('🔍 Verification - Actual balance in database:', actualBalance);
-      if (Math.abs(actualBalance - newUsdtBalance) > 0.01) {
-        console.error('❌ Balance verification failed! Expected:', newUsdtBalance, 'Got:', actualBalance);
-      } else {
-        console.log('✅ Balance verification successful');
-      }
-    }
-
-    // Update portfolio holdings
     await this.updateIndividualPortfolio(symbol, quantity, price, totalValue, isBuy, userId);
   }
 
-  /**
-   * Update collection balance and portfolio after trade
-   */
   private static async updateCollectionTrade(
     order: any, 
     collectionId: string, 
@@ -349,7 +273,6 @@ export class DualBalanceService {
     const price = order.price;
     const totalValue = order.total;
 
-    // Update collection member balance
     const { data: member } = await supabase
       .from('collection_members')
       .select('current_balance')
@@ -362,7 +285,6 @@ export class DualBalanceService {
     const currentBalance = parseFloat(member.current_balance);
     const newBalance = isBuy ? currentBalance - totalValue : currentBalance + totalValue;
 
-    // Calculate crypto value first
     const cryptoValue = await this.calculateCollectionCryptoValue(collectionId, userId);
     const totalPortfolioValue = newBalance + cryptoValue;
 
@@ -376,13 +298,9 @@ export class DualBalanceService {
       .eq('collection_id', collectionId)
       .eq('user_id', userId);
 
-    // Update collection portfolio holdings
     await this.updateCollectionPortfolio(symbol, quantity, price, totalValue, isBuy, collectionId, userId);
   }
 
-  /**
-   * Update individual portfolio holdings
-   */
   private static async updateIndividualPortfolio(
     symbol: string,
     quantity: number,
@@ -403,7 +321,6 @@ export class DualBalanceService {
       const currentAvgCost = parseFloat(existingHolding.avg_cost);
       
       if (isBuy) {
-        // Buying: add to position
         const newQuantity = currentQuantity + quantity;
         const totalCost = (currentQuantity * currentAvgCost) + totalValue;
         const newAvgCost = newQuantity > 0 ? totalCost / newQuantity : 0;
@@ -422,18 +339,15 @@ export class DualBalanceService {
           .eq('user_id', userId)
           .eq('symbol', symbol);
       } else {
-        // Selling: reduce position
         const newQuantity = currentQuantity - quantity;
         
         if (newQuantity <= 0) {
-          // Remove holding if quantity becomes zero or negative
           await supabase
             .from('portfolio')
             .delete()
             .eq('user_id', userId)
             .eq('symbol', symbol);
         } else {
-          // Keep same average cost when selling
           await supabase
             .from('portfolio')
             .update({
@@ -449,7 +363,6 @@ export class DualBalanceService {
         }
       }
     } else if (isBuy) {
-      // Create new holding
       await supabase
         .from('portfolio')
         .insert({
@@ -467,9 +380,6 @@ export class DualBalanceService {
     }
   }
 
-  /**
-   * Update collection portfolio holdings
-   */
   private static async updateCollectionPortfolio(
     symbol: string,
     quantity: number,
@@ -492,7 +402,6 @@ export class DualBalanceService {
       const currentAvgCost = parseFloat(existingHolding.avg_cost);
       
       if (isBuy) {
-        // Buying: add to position
         const newQuantity = currentQuantity + quantity;
         const totalCost = (currentQuantity * currentAvgCost) + totalValue;
         const newAvgCost = newQuantity > 0 ? totalCost / newQuantity : 0;
@@ -512,11 +421,9 @@ export class DualBalanceService {
           .eq('user_id', userId)
           .eq('symbol', symbol);
       } else {
-        // Selling: reduce position
         const newQuantity = currentQuantity - quantity;
         
         if (newQuantity <= 0) {
-          // Remove holding if quantity becomes zero or negative
           await supabase
             .from('collection_portfolio')
             .delete()
@@ -524,7 +431,6 @@ export class DualBalanceService {
             .eq('user_id', userId)
             .eq('symbol', symbol);
         } else {
-          // Keep same average cost when selling
           await supabase
             .from('collection_portfolio')
             .update({
@@ -541,7 +447,6 @@ export class DualBalanceService {
         }
       }
     } else if (isBuy) {
-      // Create new holding
       await supabase
         .from('collection_portfolio')
         .insert({
@@ -560,9 +465,6 @@ export class DualBalanceService {
     }
   }
 
-  /**
-   * Calculate total portfolio value from holdings
-   */
   private static calculateTotalPortfolioValue(holdings: Record<string, any>): number {
     let totalValue = 0;
     
@@ -577,9 +479,6 @@ export class DualBalanceService {
     return totalValue;
   }
 
-  /**
-   * Calculate crypto value for individual portfolio
-   */
   private static async calculateCryptoValue(userId: string): Promise<number> {
     const { data: portfolio } = await supabase
       .from('portfolio')
@@ -589,9 +488,6 @@ export class DualBalanceService {
     return portfolio?.reduce((sum, item) => sum + parseFloat(item.total_value), 0) || 0;
   }
 
-  /**
-   * Calculate crypto value for collection portfolio
-   */
   private static async calculateCollectionCryptoValue(collectionId: string, userId: string): Promise<number> {
     const { data: portfolio } = await supabase
       .from('collection_portfolio')
@@ -602,9 +498,6 @@ export class DualBalanceService {
     return portfolio?.reduce((sum, item) => sum + parseFloat(item.total_value), 0) || 0;
   }
 
-  /**
-   * Calculate PnL for individual trading
-   */
   static async calculateIndividualPnL(userId: string): Promise<PnLResult> {
     const balance = await this.getIndividualBalance(userId);
     
@@ -617,9 +510,6 @@ export class DualBalanceService {
     };
   }
 
-  /**
-   * Calculate PnL for collection trading
-   */
   static async calculateCollectionPnL(collectionId: string, userId: string): Promise<PnLResult> {
     const balance = await this.getCollectionBalance(collectionId, userId);
     
@@ -633,13 +523,9 @@ export class DualBalanceService {
     };
   }
 
-  /**
-   * Calculate combined PnL for all contexts
-   */
   static async calculateCombinedPnL(userId: string): Promise<CombinedPnLResult> {
     const individualPnL = await this.calculateIndividualPnL(userId);
     
-    // Get user's collections
     const { data: collections } = await supabase
       .from('collection_members')
       .select('collection_id')

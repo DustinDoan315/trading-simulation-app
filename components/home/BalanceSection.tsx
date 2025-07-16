@@ -25,8 +25,6 @@ import {
 } from "react-native";
 
 
-// components/home/BalanceSection.tsx
-
 interface BalanceSectionProps {
   balance: UserBalance;
   isBalanceHidden: boolean;
@@ -60,15 +58,12 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
         throw new Error("No user ID available for reset");
       }
 
-      // Step 1: Reset Redux state
       dispatch(resetBalance());
       dispatch(resetFavorites());
       dispatch(clearSearchHistory());
 
-      // Step 2: Clear Redux persist storage
       await persistor.purge();
 
-      // Step 3: Reset user data to default using UserService
       const resetResult = await UserService.resetUserDataToDefault(user.id);
 
       if (resetResult.success) {
@@ -78,7 +73,6 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
           resetResult.details
         );
 
-        // Step 4: Force refresh all local data to ensure UI shows updated data
         try {
           await forceRefreshAllData(user.id, dispatch, refreshUserData);
         } catch (refreshError) {
@@ -87,15 +81,12 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
             "BalanceSection",
             refreshError
           );
-          // Don't fail the reset if refresh fails
         }
 
-        // Call the callback if provided
         onResetBalance?.();
 
         setShowResetModal(false);
 
-        // Show success message with details
         const successMessage =
           `Reset Details:\n` +
           `• Portfolio: ${resetResult.details.portfolio ? "✅" : "❌"}\n` +
@@ -132,9 +123,7 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({
     }
   };
 
-  const moveToPortfolio = () => {
-    // router.navigate("/portfolio");
-  };
+  const moveToPortfolio = () => {};
 
   return (
     <LinearGradient colors={["#6366F1", "#8B5CF6"]} style={styles.container}>

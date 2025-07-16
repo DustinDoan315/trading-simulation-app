@@ -24,6 +24,7 @@ import {
   View,
 } from "react-native";
 
+
 const { width } = Dimensions.get("window");
 
 const PortfolioScreen = () => {
@@ -32,7 +33,6 @@ const PortfolioScreen = () => {
   const { user, loading: userLoading, refreshUserData } = useUser();
   const { displayAssets, loading, error } = usePortfolioData();
 
-  // Use real-time balance hook for live updates
   const {
     totalBalance,
     totalPnL,

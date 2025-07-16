@@ -9,23 +9,13 @@ import { supabase } from '@/services/SupabaseService';
 import { UserService } from '@/services/UserService';
 
 
-/**
- * Utility functions for resetting the app cache and creating new users
- */
-
-/**
- * Comprehensive cache clearing function
- * This ensures all cached data is properly cleared
- */
 export const clearAllCachedData = async (): Promise<void> => {
   try {
     logger.info("Starting comprehensive cache clearing", "resetUtils");
     
-    // Get all AsyncStorage keys
     const allKeys = await AsyncStorage.getAllKeys();
     logger.info(`Found ${allKeys.length} AsyncStorage keys to clear`, "resetUtils");
     
-    // Clear all keys
     await AsyncStorage.multiRemove(allKeys);
     logger.info("All AsyncStorage keys cleared successfully", "resetUtils");
     
@@ -35,10 +25,6 @@ export const clearAllCachedData = async (): Promise<void> => {
   }
 };
 
-/**
- * Force refresh all local data after reset
- * This ensures the UI shows the updated data from the database
- */
 export const forceRefreshAllData = async (
   userId: string,
   dispatch: any,
@@ -47,10 +33,8 @@ export const forceRefreshAllData = async (
   try {
     logger.info("Force refreshing all local data after reset", "resetUtils");
 
-    // Wait a moment for database operations to complete
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Clear Redux state first
     if (dispatch) {
       dispatch({ type: 'user/clearUser' });
       dispatch({ type: 'balance/resetBalance' });
@@ -59,10 +43,8 @@ export const forceRefreshAllData = async (
       dispatch({ type: 'dualBalance/resetAllBalances' });
     }
 
-    // Wait a moment for Redux state to clear
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Clear all cached data in AsyncStorage comprehensively
     try {
       await clearAllCachedData();
       logger.info("Comprehensively cleared all cached data from AsyncStorage", "resetUtils");
@@ -70,7 +52,6 @@ export const forceRefreshAllData = async (
       logger.warn("Error clearing AsyncStorage cache", "resetUtils", storageError);
     }
 
-    // Also clear user-specific data using AsyncStorageService
     try {
       await AsyncStorageService.clearUserData(userId);
       logger.info("Cleared user-specific data from AsyncStorageService", "resetUtils");
@@ -78,15 +59,11 @@ export const forceRefreshAllData = async (
       logger.warn("Error clearing AsyncStorageService data", "resetUtils", serviceError);
     }
 
-    // Wait a moment for cache clearing to complete
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Force reload user data from database to AsyncStorage
     try {
-      // Get the updated user data from database
       const userData = await UserService.getUserById(userId);
       if (userData) {
-        // Save the updated user data to AsyncStorage
         await AsyncStorageService.createOrUpdateUser(userData);
         logger.info("Updated user data loaded from database and saved to AsyncStorage", "resetUtils");
       } else {
@@ -96,17 +73,14 @@ export const forceRefreshAllData = async (
       logger.error("Error loading user data from database after reset", "resetUtils", error);
     }
 
-    // Force reload balance from database
     if (dispatch) {
       dispatch({ type: 'balance/loadBalance' });
     }
 
-    // Refresh user context data to ensure all data is loaded from database
     if (refreshUserData) {
       await refreshUserData(userId);
     }
 
-    // Also force refresh portfolio data from database
     if (dispatch) {
       dispatch({ type: 'user/fetchPortfolio', payload: userId });
     }
@@ -118,10 +92,6 @@ export const forceRefreshAllData = async (
   }
 };
 
-/**
- * Reset the app completely and create a new user
- * This is the main function to call when you want to reset everything
- */
 export const resetAppAndCreateNewUser = async (): Promise<boolean> => {
   try {
     console.log("🔄 Starting complete app reset...");
@@ -142,9 +112,6 @@ export const resetAppAndCreateNewUser = async (): Promise<boolean> => {
   }
 };
 
-/**
- * Reset user data to default values while keeping the same user ID
- */
 export const resetUserDataToDefault = async (userId: string): Promise<{
   success: boolean;
   error?: string;
@@ -185,17 +152,12 @@ export const resetUserDataToDefault = async (userId: string): Promise<{
   }
 };
 
-/**
- * Reset portfolio data only
- */
 export const resetPortfolioData = async (): Promise<boolean> => {
   try {
     console.log("🔄 Starting portfolio reset...");
 
-    // Get current user UUID
     const uuid = await UUIDService.getOrCreateUser();
 
-    // Clear portfolio data from Supabase
     const { error } = await supabase
       .from("portfolio")
       .delete()
@@ -206,7 +168,6 @@ export const resetPortfolioData = async (): Promise<boolean> => {
       return false;
     }
 
-    // Reset user balance to default
     const { error: userError } = await supabase
 
     .from("users")
@@ -232,9 +193,6 @@ export const resetPortfolioData = async (): Promise<boolean> => {
   }
 };
 
-/**
- * Reset only transaction history (keeps user and portfolio but clears transactions)
- */
 export const resetTransactionHistory = async (): Promise<boolean> => {
   try {
     console.log("🔄 Starting transaction history reset...");
@@ -254,9 +212,6 @@ export const resetTransactionHistory = async (): Promise<boolean> => {
   }
 };
 
-/**
- * Show a confirmation dialog and then reset the app
- */
 export const showResetConfirmation = (
   onSuccess?: () => void,
   onError?: (error: string) => void
@@ -302,9 +257,6 @@ export const showResetConfirmation = (
   );
 };
 
-/**
- * Show a confirmation dialog for portfolio reset
- */
 export const showPortfolioResetConfirmation = (
   onSuccess?: () => void,
   onError?: (error: string) => void
@@ -351,19 +303,13 @@ export const showPortfolioResetConfirmation = (
   );
 };
 
-/**
- * Clear current user UUID to force regeneration with proper format
- * This helps resolve UUID format issues
- */
 export const clearUserUUID = async (): Promise<void> => {
   try {
     console.log("🔄 Clearing user UUID to force regeneration...");
     
-    // Clear from SecureStore
     await SecureStore.deleteItemAsync("user_uuid_13");
     await SecureStore.deleteItemAsync("user_uuid_12");
     
-    // Clear from AsyncStorage
     await AsyncStorage.removeItem("user_profile");
     await AsyncStorage.removeItem("user_uuid");
     
@@ -374,9 +320,6 @@ export const clearUserUUID = async (): Promise<void> => {
   }
 };
 
-/**
- * Get current user UUID (useful for debugging)
- */
 export const getCurrentUserUUID = async (): Promise<string | null> => {
   try {
     return await UUIDService.getOrCreateUser();
@@ -386,22 +329,18 @@ export const getCurrentUserUUID = async (): Promise<string | null> => {
   }
 };
 
-/**
- * Check if app has been reset recently (useful for showing onboarding)
- */
 export const checkIfNewUser = async (): Promise<boolean> => {
   try {
     const lastReset = await AsyncStorage.getItem("last_app_reset");
 
     if (!lastReset) {
-      return true; // No reset timestamp found, likely a new user
+      return true;
     }
 
     const resetTime = new Date(lastReset).getTime();
     const now = new Date().getTime();
     const hoursSinceReset = (now - resetTime) / (1000 * 60 * 60);
 
-    // Consider user "new" if reset was within last 24 hours
     return hoursSinceReset < 24;
   } catch (error) {
     console.error("Error checking if new user:", error);

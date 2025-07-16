@@ -21,7 +21,7 @@ class RealTimeDataService {
     isLoading: false,
     error: null,
     consecutiveErrors: 0,
-    updateInterval: 30000, // 30 seconds to match background sync
+    updateInterval: 30000,
     isInitialized: false,
   };
   private intervalId: NodeJS.Timeout | any = null;
@@ -36,36 +36,29 @@ class RealTimeDataService {
     return RealTimeDataService.instance;
   }
 
-  // Subscribe to real-time data updates
   subscribe(callback: (state: RealTimeDataState) => void): () => void {
     this.subscribers.add(callback);
     
-    // Immediately call with current state
     callback(this.state);
     
-    // Return unsubscribe function
     return () => {
       this.subscribers.delete(callback);
     };
   }
 
-  // Notify all subscribers
   private notifySubscribers(): void {
     this.subscribers.forEach(callback => callback(this.state));
   }
 
-  // Update state and notify subscribers
   private updateState(updates: Partial<RealTimeDataState>): void {
     this.state = { ...this.state, ...updates };
     this.notifySubscribers();
   }
 
-  // Get current state
   getState(): RealTimeDataState {
     return this.state;
   }
 
-  // Update crypto prices from market data
   private async updateCryptoPrices(): Promise<void> {
     if (this.state.isLoading) {
       console.log('RealTimeDataService: Update already in progress, skipping...');
@@ -77,7 +70,6 @@ class RealTimeDataService {
 
       console.log('RealTimeDataService: Fetching market data...');
       
-      // Use enhanced crypto service for better caching and rate limiting
       const marketData = await enhancedCryptoService.getMarketData(false, 50, true);
       
       console.log('RealTimeDataService: Market data received:', marketData.length, 'coins');
@@ -86,33 +78,23 @@ class RealTimeDataService {
         price: coin.current_price
       })));
       
-      // Get current balance from store
       const balance = store.getState().balance.balance;
       
-      // Update prices in Redux store
       marketData.forEach((coin) => {
         const symbol = coin.symbol.toUpperCase();
         
         console.log(`RealTimeDataService: Updating ${symbol} price to ${coin.current_price}`);
         
-        // Update crypto prices slice
         store.dispatch(updatePrice({
           symbol,
           price: coin.current_price,
         }));
 
-        // Update balance slice if we have holdings for this crypto
         if (balance?.holdings?.[symbol]) {
           store.dispatch(updateCurrentPrice({
             cryptoId: symbol,
             currentPrice: coin.current_price,
           }));
-          
-          // The updateCurrentPrice action will automatically:
-          // 1. Update the portfolio with new prices
-          // 2. Recalculate P&L
-          // 3. Update the users table with real-time values
-          // 4. Trigger leaderboard updates
         }
       });
 
@@ -123,7 +105,6 @@ class RealTimeDataService {
         isInitialized: true,
       });
       
-      // Reset update interval to normal if we had errors before
       if (this.state.updateInterval > 30000) {
         this.updateState({ updateInterval: 30000 });
         this.restartInterval();
@@ -134,7 +115,6 @@ class RealTimeDataService {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update prices';
       console.error('RealTimeDataService: Error updating crypto prices:', err);
       
-      // Increment consecutive errors and increase update interval
       const newConsecutiveErrors = this.state.consecutiveErrors + 1;
       this.updateState({ 
         error: errorMessage,
@@ -142,7 +122,6 @@ class RealTimeDataService {
         isLoading: false,
       });
       
-      // Increase update interval exponentially on consecutive errors (max 5 minutes)
       if (newConsecutiveErrors >= 3) {
         const newInterval = Math.min(this.state.updateInterval * 2, 300000);
         this.updateState({ updateInterval: newInterval });
@@ -152,7 +131,6 @@ class RealTimeDataService {
     }
   }
 
-  // Start the update interval
   startUpdates(): void {
     if (this.intervalId) {
       console.log('RealTimeDataService: Updates already running');
@@ -161,7 +139,6 @@ class RealTimeDataService {
 
     console.log('RealTimeDataService: Starting real-time updates...');
     
-    // Start the background sync service for comprehensive data updates
     const backgroundSync = BackgroundDataSyncService.getInstance();
     if (!backgroundSync.isServiceRunning()) {
       backgroundSync.start().catch(error => {
@@ -169,16 +146,13 @@ class RealTimeDataService {
       });
     }
     
-    // Initial update
     this.updateCryptoPrices();
 
-    // Set up interval for real-time updates (30 seconds to match background sync)
     this.intervalId = setInterval(() => {
       this.updateCryptoPrices();
     }, this.state.updateInterval);
   }
 
-  // Stop the update interval
   stopUpdates(): void {
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -187,29 +161,24 @@ class RealTimeDataService {
     }
   }
 
-  // Restart interval with new interval time
   private restartInterval(): void {
     this.stopUpdates();
     this.startUpdates();
   }
 
-  // Manual refresh
   async refresh(): Promise<void> {
     console.log('RealTimeDataService: Manual refresh requested');
     
-    // Trigger both real-time updates and background sync
     await Promise.all([
       this.updateCryptoPrices(),
       BackgroundDataSyncService.getInstance().forceSync()
     ]);
   }
 
-  // Check if service is active
   isActive(): boolean {
     return this.intervalId !== null;
   }
 
-  // Get time since last update
   getTimeSinceLastUpdate(): number | null {
     if (!this.state.lastUpdate) return null;
     return Date.now() - this.state.lastUpdate.getTime();

@@ -38,7 +38,6 @@ export const useSyncStatus = () => {
   const checkForSyncIssues = useCallback(() => {
     const { syncStatus: statusData, hasPendingOperations, leaderboardStatus } = syncStatus;
     
-    // Check for failed syncs
     const failedSyncs = Object.entries(statusData).filter(([_, data]) => data.status === 'failed');
     
     if (failedSyncs.length > 0) {
@@ -49,7 +48,6 @@ export const useSyncStatus = () => {
       });
     }
 
-    // Check for pending operations
     if (hasPendingOperations) {
       showNotification({
         type: 'info',
@@ -57,7 +55,6 @@ export const useSyncStatus = () => {
       });
     }
 
-    // Check for leaderboard connection issues
     if (leaderboardStatus?.error) {
       showNotification({
         type: 'info',
@@ -71,7 +68,6 @@ export const useSyncStatus = () => {
   }, [refreshSyncStatus]);
 
   useEffect(() => {
-    // Check for sync issues when status changes
     if (!syncStatus.isLoading) {
       checkForSyncIssues();
     }

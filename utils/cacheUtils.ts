@@ -1,10 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { enhancedCryptoService } from '@/services/EnhancedCryptoService';
 
-/**
- * Cache management utilities for monitoring and debugging
- */
-
 export interface CacheInfo {
   key: string;
   size: number;
@@ -22,9 +18,6 @@ export interface CacheSummary {
   entries: CacheInfo[];
 }
 
-/**
- * Get detailed information about all cached data
- */
 export const getCacheInfo = async (): Promise<CacheSummary> => {
   const cacheKeys = [
     '@crypto_market_data',
@@ -49,19 +42,18 @@ export const getCacheInfo = async (): Promise<CacheSummary> => {
         const size = cached.length;
         totalSize += size;
 
-        // Determine cache status based on age
         let isExpired = false;
         let isStale = false;
 
         if (key === '@crypto_market_data' || key === '@enhanced_market_data') {
-          isExpired = age > 15 * 60 * 1000; // 15 minutes
-          isStale = age > 2 * 60 * 60 * 1000; // 2 hours
+          isExpired = age > 15 * 60 * 1000;
+          isStale = age > 2 * 60 * 60 * 1000;
         } else if (key === '@enhanced_price_history') {
-          isExpired = age > 30 * 60 * 1000; // 30 minutes
-          isStale = age > 4 * 60 * 60 * 1000; // 4 hours
+          isExpired = age > 30 * 60 * 1000;
+          isStale = age > 4 * 60 * 60 * 1000;
         } else if (key === '@enhanced_crypto_details') {
-          isExpired = age > 60 * 60 * 1000; // 1 hour
-          isStale = age > 6 * 60 * 60 * 1000; // 6 hours
+          isExpired = age > 60 * 60 * 1000;
+          isStale = age > 6 * 60 * 60 * 1000;
         }
 
         if (isExpired) {
@@ -95,9 +87,6 @@ export const getCacheInfo = async (): Promise<CacheSummary> => {
   };
 };
 
-/**
- * Clear all cached data
- */
 export const clearAllCaches = async (): Promise<void> => {
   try {
     await enhancedCryptoService.clearAllCaches();
@@ -107,9 +96,6 @@ export const clearAllCaches = async (): Promise<void> => {
   }
 };
 
-/**
- * Clear specific cache by key
- */
 export const clearCache = async (key: string): Promise<void> => {
   try {
     await AsyncStorage.removeItem(key);
@@ -119,9 +105,6 @@ export const clearCache = async (key: string): Promise<void> => {
   }
 };
 
-/**
- * Get cache statistics in a human-readable format
- */
 export const getCacheStats = async (): Promise<string> => {
   try {
     const summary = await getCacheInfo();
@@ -156,14 +139,10 @@ export const getCacheStats = async (): Promise<string> => {
   }
 };
 
-/**
- * Monitor cache performance and log issues
- */
 export const monitorCacheHealth = async (): Promise<void> => {
   try {
     const summary = await getCacheInfo();
     
-    // Log cache health status
     if (summary.expiredEntries > 0) {
       console.warn(`Cache Health: ${summary.expiredEntries} expired entries found`);
     }
@@ -176,7 +155,6 @@ export const monitorCacheHealth = async (): Promise<void> => {
       console.log(`Cache Health: ${summary.freshEntries} fresh entries available`);
     }
     
-    // Log total cache size
     const totalSizeMB = summary.totalSize / (1024 * 1024);
     if (totalSizeMB > 10) {
       console.warn(`Cache Health: Large cache size detected (${totalSizeMB.toFixed(2)} MB)`);
@@ -187,17 +165,12 @@ export const monitorCacheHealth = async (): Promise<void> => {
   }
 };
 
-/**
- * Force refresh all cached data
- */
 export const forceRefreshAllCaches = async (): Promise<void> => {
   try {
     console.log('Force refreshing all caches...');
     
-    // Clear existing caches
     await clearAllCaches();
     
-    // Force refresh market data
     await enhancedCryptoService.getMarketData(true, 50, true);
     
     console.log('All caches refreshed successfully');
@@ -206,9 +179,6 @@ export const forceRefreshAllCaches = async (): Promise<void> => {
   }
 };
 
-/**
- * Export cache data for debugging
- */
 export const exportCacheData = async (): Promise<string> => {
   try {
     const summary = await getCacheInfo();

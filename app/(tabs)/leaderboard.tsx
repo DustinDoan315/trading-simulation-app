@@ -26,7 +26,6 @@ import React, {
   useState,
 } from "react";
 
-// If styles is a default export from a local styles file, otherwise adjust as needed
 
 const LeaderboardScreen = () => {
   const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
@@ -39,7 +38,6 @@ const LeaderboardScreen = () => {
   const { syncStatus, isEnabled, toggleSync } = useBackgroundSync();
   const { t } = useLanguage();
 
-  // Initialize leaderboard data with real-time updates
   const {
     data: leaderboardData,
     refresh,
@@ -52,7 +50,6 @@ const LeaderboardScreen = () => {
     limit: 50,
   });
 
-  // Get current user's rank and leaderboard stats
   const {
     currentRank,
     stats,
@@ -61,7 +58,6 @@ const LeaderboardScreen = () => {
     refreshRank,
   } = useLeaderboardRanking(user?.id || "", "ALL_TIME");
 
-  // Get friends leaderboard data when on friends tab
   const [friendsData, setFriendsData] = useState<any[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
 
@@ -92,7 +88,6 @@ const LeaderboardScreen = () => {
     }
   }, [activeTab, user?.id]);
 
-  // Update filters when time period changes
   useEffect(() => {
     updateFilters({
       period: "ALL_TIME",
@@ -100,74 +95,20 @@ const LeaderboardScreen = () => {
     });
   }, [updateFilters]);
 
-  // DISABLED: Automatic initialization for manual-only refresh
-  // useEffect(() => {
-  //   const initializeRankings = async () => {
-  //     try {
-  //       console.log("🔄 Initializing leaderboard rankings...");
-
-  //       // Force update current user's leaderboard rankings first
-  //       if (user?.id) {
-  //         console.log(
-  //           "🔄 Force updating current user's leaderboard rankings..."
-  //         );
-  //         await UserService.updateLeaderboardRankings(user.id);
-  //       }
-
-  //       await UserService.initializeLeaderboardRankings();
-  //       console.log("✅ Leaderboard rankings initialized");
-  //     } catch (error) {
-  //       console.error("❌ Error initializing leaderboard rankings:", error);
-  //     }
-  //   };
-
-  //   // Only initialize if we have a user and no data yet, and only once per session
-  //   if (
-  //     user?.id &&
-  //     leaderboardData.global.length === 0 &&
-  //     !hasInitialized.current
-  //   ) {
-  //     hasInitialized.current = true;
-  //     initializeRankings();
-  //   }
-  // }, [user?.id, leaderboardData.global.length]);
-
-  // DISABLED: Automatic leaderboard updates for manual-only refresh
-  // useEffect(() => {
-  //   const updateCurrentUserRankings = async () => {
-  //     if (user?.id) {
-  //       try {
-  //       await UserService.updateLeaderboardRankings(user.id);
-  //       } catch (error) {
-  //       console.error("Error updating current user rankings:", error);
-  //       }
-  //     }
-  //   };
-
-  //   // Only update when user changes, not on every mount
-  //   if (user?.id) {
-  //     updateCurrentUserRankings();
-  //   }
-  // }, [user?.id]);
-
-  // Debounced refresh function
   const debouncedRefresh = useCallback(async () => {
     if (isRefreshingRef.current) {
       return;
     }
 
-    // Clear existing timeout
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
     }
 
-    // Set debounced refresh
     refreshTimeoutRef.current = setTimeout(async () => {
       if (isRefreshingRef.current) return;
 
       isRefreshingRef.current = true;
       try {
-        // Refresh the leaderboard data (this will trigger leaderboard updates automatically)
         await refresh();
         await refreshRank();
 
@@ -179,17 +120,9 @@ const LeaderboardScreen = () => {
       } finally {
         isRefreshingRef.current = false;
       }
-    }, 1000); // 1 second debounce
+    }, 1000);
   }, [user?.id, activeTab, refresh, refreshRank, loadFriendsData]);
 
-  // DISABLED: Automatic refresh on focus for manual-only refresh
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     debouncedRefresh();
-  //   }, [debouncedRefresh])
-  // );
-
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (refreshTimeoutRef.current) {

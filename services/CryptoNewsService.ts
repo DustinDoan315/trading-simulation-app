@@ -25,10 +25,9 @@ class CryptoNewsService {
     try {
       logger.info("Starting getTopCryptoNews", "CryptoNewsService");
       
-      // Wait for app to be fully initialized
       try {
         logger.info("Waiting for app initialization...", "CryptoNewsService");
-        await waitForAppInitialization(5000); // Wait up to 5 seconds
+        await waitForAppInitialization(5000);
         logger.info("App initialization completed", "CryptoNewsService");
       } catch (error) {
         logger.warn("App initialization timeout, proceeding without API key", "CryptoNewsService");
@@ -85,7 +84,6 @@ class CryptoNewsService {
         "CryptoNewsService"
       );
 
-      // Transform the API response to our format
       const transformedArticles = (data.articles || []).map(
         (article: any, index: number) => ({
           id: article.url || `article_${index}`,
@@ -121,7 +119,6 @@ class CryptoNewsService {
       }
     } catch (error) {
       logger.error("Error fetching crypto news", "CryptoNewsService", error);
-      // Return empty array on error instead of fallback data
       return [];
     }
   }

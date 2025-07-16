@@ -97,7 +97,6 @@ export class User implements UserType {
     return updates;
   }
 
-  // Helper methods
   getDisplayName(): string {
     return this.display_name || this.username;
   }
@@ -136,9 +135,9 @@ export class User implements UserType {
 
   getPerformanceColor(): string {
     const pnl = this.getTotalPnl();
-    if (pnl > 0) return "#00C851"; // Green
-    if (pnl < 0) return "#ff4444"; // Red
-    return "#666666"; // Gray
+    if (pnl > 0) return "#00C851";
+    if (pnl < 0) return "#ff4444";
+    return "#666666";
   }
 
   getFormattedUsdtBalance(): string {
@@ -174,7 +173,6 @@ export class User implements UserType {
     return `${this.getWinRate().toFixed(1)}%`;
   }
 
-  // Legacy method for backward compatibility
   getBalance(): number {
     return this.getUsdtBalance();
   }

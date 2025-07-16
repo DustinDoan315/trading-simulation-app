@@ -9,7 +9,6 @@ export class UserSyncService {
     userProfile: any
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-      // Use TimestampUtils to ensure proper timestamp format for Supabase
       let createdAt: string;
       try {
         createdAt = TimestampUtils.toISOTimestamp(
@@ -23,7 +22,7 @@ export class UserSyncService {
       const { data, error } = await supabase
         .from("users")
         .upsert({
-          id: userProfile.id || userProfile.uuid, // Use 'id' instead of 'uuid' to match schema
+          id: userProfile.id || userProfile.uuid,
           username:
             userProfile.username ||
             `user_${(userProfile.id || userProfile.uuid).slice(0, 8)}_${Date.now().toString().slice(-6)}`,
@@ -118,7 +117,6 @@ export class UserSyncService {
     }
   }
 
-  // Helper method for cleaner sync status management
   private static async updateSyncStatus(
     status: "synced" | "failed",
     error?: string

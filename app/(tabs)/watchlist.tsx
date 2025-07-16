@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 
+
 const { width: screenWidth } = Dimensions.get("window");
 
 const WatchlistScreen = () => {
@@ -105,7 +106,6 @@ const WatchlistScreen = () => {
           </View>
         ) : (
           <View style={styles.watchlistContainer}>
-            {/* Enhanced Stats Section */}
             <View style={styles.statsSection}>
               <LinearGradient
                 colors={[

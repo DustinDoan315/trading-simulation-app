@@ -7,9 +7,6 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/utils/logger';
 
 
-//SupabaseService.ts
-
-// Types for better type safety
 interface SyncResult<T = unknown> {
   success: boolean;
   data?: T;
@@ -32,7 +29,6 @@ interface QueuedOperation {
   maxRetries: number;
 }
 
-// Configuration validation and setup
 class SupabaseConfig {
   private static validateConfig(url: string, key: string): void {
     if (!url || !key) {
@@ -65,7 +61,6 @@ class SupabaseConfig {
   }
 }
 
-// Initialize Supabase with proper configuration
 const initializeSupabase = (): SupabaseClient => {
   const config = SupabaseConfig.getConfig();
   
@@ -86,7 +81,6 @@ const initializeSupabase = (): SupabaseClient => {
         "x-client-info": "react-native-app",
       },
     },
-    // Add retry logic at client level
     db: {
       schema: "public",
     },
@@ -102,7 +96,6 @@ const initializeSupabase = (): SupabaseClient => {
 
 export const supabase = initializeSupabase();
 
-// Network utility class
 class NetworkUtils {
   static async getNetworkStatus(): Promise<NetworkStatus> {
     try {
@@ -137,13 +130,11 @@ class NetworkUtils {
   }
 }
 
-// Utility function to handle PGRST116 errors (no rows returned)
 export const handleSupabaseError = (error: any, context: string): any => {
   logger.error(`Supabase error in ${context}`, "SupabaseService", error);
   return error;
 };
 
-// Offline queue management
 class OfflineQueue {
   private static QUEUE_KEY = "@sync_queue";
   private static MAX_QUEUE_SIZE = 100;
@@ -201,7 +192,6 @@ class OfflineQueue {
   }
 }
 
-// Type guards for operation payloads
 interface UserSyncPayload {
   uuid: string;
 }
@@ -230,7 +220,6 @@ interface CollectionSyncPayload {
   }>;
 }
 
-// Enhanced Sync Service with network resilience
 export class SyncService {
   private static readonly SYNC_STATUS_KEY = "@sync_status";
   private static readonly RETRY_CONFIG = {
@@ -239,7 +228,6 @@ export class SyncService {
     maxDelay: 10000,
   };
 
-  // Type guard methods
   private static isUserSyncPayload(
     payload: unknown
   ): payload is UserSyncPayload {
@@ -267,7 +255,6 @@ export class SyncService {
     );
   }
 
-  // Test Supabase connection
   static async testConnection(): Promise<SyncResult<boolean>> {
     try {
       logger.info("Testing Supabase connection", "SyncService");
@@ -307,7 +294,6 @@ export class SyncService {
     }
   }
 
-  // Execute operation with retry logic
   private static async executeWithRetry<T>(
     operation: () => Promise<T>,
     context: string,
@@ -340,7 +326,6 @@ export class SyncService {
     throw new Error(`${context} failed after ${maxRetries} attempts`);
   }
 
-  // Update sync status
   private static async updateSyncStatus(
     operation: string,
     status: "synced" | "failed" | "pending",
@@ -362,7 +347,6 @@ export class SyncService {
     }
   }
 
-  // Enhanced user data sync
   static async syncUserData(uuid: string): Promise<SyncResult> {
     try {
       await this.updateSyncStatus("userSync", "pending");
@@ -414,7 +398,6 @@ export class SyncService {
     }
   }
 
-  // Enhanced sync from cloud
   static async syncFromCloud(uuid: string): Promise<SyncResult> {
     try {
       await this.updateSyncStatus("cloudSync", "pending");
@@ -464,7 +447,6 @@ export class SyncService {
     }
   }
 
-  // Enhanced portfolio sync with batch operations - MERGE strategy
   private static async syncPortfolioToCloud(
     uuid: string,
     portfolio: Array<{
@@ -659,7 +641,6 @@ export class SyncService {
       - Local items: ${portfolio.length}`);
   }
 
-  // Public method for portfolio sync
   static async syncPortfolio(
     uuid: string,
     portfolio: any[]
@@ -720,8 +701,6 @@ export class SyncService {
     }
   }
 
-  // DEPRECATED: Clear existing portfolio data for a user
-  // This method is deprecated as we now use MERGE strategy instead of clearing
   static async clearUserPortfolio(uuid: string): Promise<SyncResult> {
     logger.warn("clearUserPortfolio is deprecated. Use MERGE strategy instead.", "SyncService");
 
@@ -759,7 +738,6 @@ export class SyncService {
     }
   }
 
-  // Enhanced collections sync
   static async syncCollectionsToCloud(collections: any[]): Promise<SyncResult> {
     try {
       await this.updateSyncStatus("collectionsSync", "pending");
@@ -837,7 +815,6 @@ export class SyncService {
     }
   }
 
-  // Process offline queue when connection is restored
   static async processOfflineQueue(): Promise<SyncResult> {
     try {
       const queue = await OfflineQueue.getQueue();
@@ -936,7 +913,6 @@ export class SyncService {
     }
   }
 
-  // Get sync status for monitoring
   static async getSyncStatus(): Promise<any> {
     try {
       const status = await AsyncStorage.getItem(this.SYNC_STATUS_KEY);
@@ -947,7 +923,6 @@ export class SyncService {
     }
   }
 
-  // Add new method to update user balance in Supabase
   static async updateUserBalance(
     userId: string,
     newBalance: number
@@ -969,7 +944,6 @@ export class SyncService {
     }
   }
 
-  // Add new method to update user balance and portfolio value in Supabase
   static async updateUserBalanceAndPortfolioValue(
     userId: string,
     usdtBalance: number,
@@ -1004,7 +978,6 @@ export class SyncService {
     }
   }
 
-  // Utility function to handle sync status notifications
   static async notifySyncStatus(
     operation: string,
     success: boolean,
@@ -1025,7 +998,6 @@ export class SyncService {
     }
   }
 
-  // Enhanced sync status monitoring
   static async getDetailedSyncStatus(): Promise<{
     lastSyncAt: string | null;
     syncStatus: Record<

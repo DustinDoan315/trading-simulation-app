@@ -26,12 +26,12 @@ import {
   View,
 } from "react-native";
 
+
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
   const { user, userStats, loading, error, refreshUser } = useUser();
   const { t } = useLanguage();
 
-  // Use real-time balance hook for live updates
   const {
     totalBalance,
     totalPnL,
@@ -44,7 +44,6 @@ const ProfileScreen = () => {
     refresh: refreshRealTimeData,
   } = useRealTimeBalance();
 
-  // Get actual transaction count from database
   const { transactionCount, loading: transactionCountLoading } =
     useTransactionCount(user?.id);
 
@@ -64,7 +63,6 @@ const ProfileScreen = () => {
         display_name: user.display_name || "",
         avatar_emoji: user.avatar_emoji || "🚀",
       });
-      // Set initial last updated timestamp
       if (!lastUpdated) {
         setLastUpdated(new Date());
       }
@@ -76,13 +74,10 @@ const ProfileScreen = () => {
 
     setRefreshing(true);
     try {
-      // Refresh real-time data including user rank
       await refreshRealTimeData();
 
-      // Also refresh user data
       await refreshUser(user.id);
 
-      // Set the last updated timestamp
       setLastUpdated(new Date());
 
       logger.info("Profile data refreshed successfully", "Profile");
@@ -109,12 +104,10 @@ const ProfileScreen = () => {
         avatar_emoji: editForm.avatar_emoji.trim() || "🚀",
       };
 
-      // Update in Redux store
       await dispatch(
         updateUser({ id: user.id, params: updateParams })
       ).unwrap();
 
-      // Update in cloud
       await UserService.updateUser(user.id, updateParams);
 
       setEditModalVisible(false);

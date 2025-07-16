@@ -4,6 +4,7 @@ import viTranslations from '../translations/vi.json';
 import { setLanguage } from '@/features/languageSlice';
 import { useAppDispatch, useAppSelector } from '@/store';
 
+
 type Translations = typeof enTranslations;
 type Language = "en" | "vi";
 
@@ -34,12 +35,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
     for (const k of keys) {
       value = value?.[k];
-      if (value === undefined) return key; // Return key if translation not found
+      if (value === undefined) return key;
     }
 
     let result = value || key;
 
-    // Handle string interpolation if params are provided
     if (params && typeof result === "string") {
       Object.keys(params).forEach((paramKey) => {
         const regex = new RegExp(`{${paramKey}}`, "g");
