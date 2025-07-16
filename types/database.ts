@@ -201,6 +201,7 @@ export interface LeaderboardRanking {
 
 // Database operation types
 export interface CreateUserParams {
+  id?: string;
   username: string;
   display_name?: string;
   avatar_emoji?: string;

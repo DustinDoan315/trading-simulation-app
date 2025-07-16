@@ -42,6 +42,7 @@ export class UserService {
         updated_at: new Date().toISOString(),
       };
 
+      // If id is provided, use it; otherwise let Supabase generate one
       const { data, error } = await supabase
         .from("users")
         .insert([userData])

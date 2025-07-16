@@ -9,6 +9,7 @@ import {
   } from '../types/database';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { DualBalanceService } from '../services/DualBalanceService';
+import { getCryptoImageUrl } from '../utils/cryptoMapping';
 import { Holding, HoldingUpdatePayload } from '../types/crypto';
 
 
@@ -191,7 +192,7 @@ const dualBalanceSlice = createSlice({
             valueInUSD,
             symbol: normalizedSymbol,
             name: name || normalizedSymbol,
-            image_url: image_url || `https://cryptologos.cc/logos/${normalizedSymbol.toLowerCase()}-logo.png`,
+            image_url: image_url || getCryptoImageUrl(normalizedSymbol),
             averageBuyPrice: pricePerToken,
             currentPrice: pricePerToken,
             profitLoss: 0,
@@ -289,7 +290,7 @@ const dualBalanceSlice = createSlice({
             valueInUSD,
             symbol: normalizedSymbol,
             name: name || normalizedSymbol,
-            image_url: image_url || `https://cryptologos.cc/logos/${normalizedSymbol.toLowerCase()}-logo.png`,
+            image_url: image_url || getCryptoImageUrl(normalizedSymbol),
             averageBuyPrice: pricePerToken,
             currentPrice: pricePerToken,
             profitLoss: 0,

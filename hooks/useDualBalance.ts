@@ -84,6 +84,7 @@ export const useDualBalance = () => {
           const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
           const username = `user_${userId.slice(0, 8)}_${timestamp}`;
           await dispatch(createUser({
+            id: userId, // Use the device UUID
             username,
             display_name: username,
             avatar_emoji: "🚀",

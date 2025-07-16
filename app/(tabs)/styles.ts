@@ -110,7 +110,7 @@ export default StyleSheet.create({
   },
   quickActionCard: {
     width: width / 2.45,
-    height: 120,
+    minHeight: 120,
     borderRadius: 20,
     overflow: "hidden",
     elevation: 8,

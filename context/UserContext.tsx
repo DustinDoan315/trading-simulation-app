@@ -1,7 +1,7 @@
-import UUIDService from "@/services/UUIDService";
-import { logger } from "@/utils/logger";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { User } from "@/types/database";
+import UUIDService from '@/services/UUIDService';
+import { logger } from '@/utils/logger';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { User } from '@/types/database';
 import React, {
   ReactNode,
   createContext,
@@ -18,6 +18,7 @@ import {
   fetchUser,
   fetchUserStats,
 } from "@/features/userSlice";
+
 
 interface UserContextType {
   user: User | null;
@@ -97,6 +98,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         const username = `user_${userId.slice(0, 8)}_${timestamp}`;
         await dispatch(
           createUser({
+            id: userId, // Use the device UUID
             username,
             display_name: username,
             avatar_emoji: "🚀",

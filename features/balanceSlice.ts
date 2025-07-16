@@ -11,7 +11,7 @@ import {
   } from '../utils/helper';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { DEFAULT_BALANCE } from '../utils/constant';
-import { getCryptoIdFromSymbol } from '../utils/cryptoMapping';
+import { getCryptoIdFromSymbol, getCryptoImageUrl } from '../utils/cryptoMapping';
 import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
 import { UserService } from '../services/UserService';
 
@@ -231,7 +231,7 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
         cryptoId: cryptoId || undefined,
         image_url:
           item.image_url || item.image ||
-          `https://cryptologos.cc/logos/${item.symbol.toLowerCase()}-logo.png`,
+          getCryptoImageUrl(item.symbol),
         averageBuyPrice: avgCost,
         currentPrice: currentPrice,
         profitLoss: profitLoss,

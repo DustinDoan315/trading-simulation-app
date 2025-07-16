@@ -234,6 +234,8 @@ const LeaderboardScreen = () => {
           <Text style={styles.avatar}>{item.avatar}</Text>
           <View style={styles.nameContainer}>
             <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
               style={[
                 styles.name,
                 item.isCurrentUser && styles.currentUserName,
@@ -291,7 +293,6 @@ const LeaderboardScreen = () => {
   const getCurrentData = useMemo(() => {
     if (activeTab === "global") return globalRankings;
     if (activeTab === "friends") {
-      // Transform friends data for display
       return friendsData.map((item: any) => ({
         id: item.id || `friend-${item.user_id}`,
         rank: item.rank || 0,
@@ -306,7 +307,7 @@ const LeaderboardScreen = () => {
         isCurrentUser: item.user_id === user?.id,
       }));
     }
-    return globalRankings; // fallback to global
+    return globalRankings;
   }, [activeTab, globalRankings, friendsData, user?.id, t]);
 
   const handleRefresh = async () => {
@@ -316,18 +317,14 @@ const LeaderboardScreen = () => {
 
     isRefreshingRef.current = true;
     try {
-      // Fix global ranks issue first
       await UserService.fixGlobalRanksIssue();
 
-      // Force update all users' real-time PnL data
       await UserService.forceUpdateAllUsersRealTimeData();
 
-      // Force update current user's leaderboard rankings
       if (user?.id) {
         await UserService.updateLeaderboardRankings(user.id);
       }
 
-      // Then refresh the leaderboard data
       await refresh();
       await refreshRank();
       if (activeTab === "friends") {
@@ -340,7 +337,6 @@ const LeaderboardScreen = () => {
     }
   };
 
-  // Header component showing current user's rank and stats
   const LeaderboardHeader = () => (
     <View style={styles.headerContainer}>
       <View style={styles.userRankSection}>
@@ -667,15 +663,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatar: {
-    fontSize: 24,
+    fontSize: 12,
     marginRight: 12,
   },
   nameContainer: {
     flex: 1,
   },
   name: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 13,
     color: "#FFFFFF",
     marginBottom: 2,
   },

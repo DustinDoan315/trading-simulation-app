@@ -134,6 +134,7 @@ export default function RootLayout() {
             await store
               .dispatch(
                 createUser({
+                  id: userId,
                   username,
                   display_name: username,
                   avatar_emoji: "🚀",

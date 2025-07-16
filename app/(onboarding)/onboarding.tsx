@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '@/styles/colors';
 import GradientText from '@/components/GradientText';
 import React, { useCallback, useRef, useState } from 'react';
+import UUIDService from '@/services/UUIDService';
 import { createUser } from '@/features/userSlice';
 import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '@/utils/logger';
@@ -132,9 +133,12 @@ const OnboardingScreen = () => {
     setIsCreating(true);
 
     try {
+      const deviceUUID = await UUIDService.getOrCreateUser();
+
       const username = generateUsername();
       const newUser = await dispatch(
         createUser({
+          id: deviceUUID,
           username,
           display_name: username,
           avatar_emoji: "🚀",
@@ -149,6 +153,7 @@ const OnboardingScreen = () => {
 
         logger.info("New user created successfully", "Onboarding", {
           username: newUser.username,
+          userId: newUser.id,
         });
 
         router.replace("/(tabs)");

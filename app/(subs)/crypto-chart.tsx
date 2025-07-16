@@ -4,10 +4,8 @@ import OrderEntry from '@/components/trading/OrderEntry';
 import React, { useEffect, useRef, useState } from 'react';
 import SymbolHeader from '@/components/crypto/SymbolHeader';
 import TimeframeSelector from '@/components/crypto/TimeframeSelector';
-import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
 import useCryptoAPI from '@/hooks/useCryptoAPI';
 import useHistoricalData from '@/hooks/useHistoricalData';
-import UUIDService from '@/services/UUIDService';
 import { ChartType, Order, TimeframeOption } from '../../types/crypto';
 import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '@/utils/logger';
@@ -17,19 +15,17 @@ import { updateCollectionHolding } from '@/features/dualBalanceSlice';
 import { useDualBalance } from '@/hooks/useDualBalance';
 import { useLanguage } from '@/context/LanguageContext';
 import { useLocalSearchParams } from 'expo-router';
-import { useNotification } from '@/components/ui/Notification';
-import { UserService } from '@/services/UserService';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/context/UserContext';
 import { WebView } from 'react-native-webview';
 import {
   ActivityIndicator,
-  Modal,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import {
@@ -61,6 +57,9 @@ const CryptoChartScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<string>("");
   const [submissionProgress, setSubmissionProgress] = useState(0);
+  const submissionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   const {
     activeContext,
@@ -95,6 +94,10 @@ const CryptoChartScreen = () => {
       setIsSubmitting(false);
       setSubmissionStatus("");
       setSubmissionProgress(0);
+
+      if (submissionTimeoutRef.current) {
+        clearTimeout(submissionTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -123,7 +126,6 @@ const CryptoChartScreen = () => {
         setError(data.message);
       } else if (data.type === "priceSelected") {
       } else if (data.type === "chartInteraction") {
-        // Chart interaction handled silently
       }
     } catch (e: any) {
       logger.error("Error parsing WebView message", "CryptoChart", e);
@@ -176,6 +178,11 @@ const CryptoChartScreen = () => {
     setIsSubmitting(false);
     setSubmissionStatus("");
     setSubmissionProgress(0);
+
+    if (submissionTimeoutRef.current) {
+      clearTimeout(submissionTimeoutRef.current);
+      submissionTimeoutRef.current = null;
+    }
   };
 
   const submitOrder = async (order: Order): Promise<void> => {
@@ -185,6 +192,11 @@ const CryptoChartScreen = () => {
     const startTime = Date.now();
     setSubmissionStatus(t("chart.validatingOrder"));
     setSubmissionProgress(10);
+
+    submissionTimeoutRef.current = setTimeout(() => {
+      console.warn("Order submission timeout - resetting loading state");
+      resetLoadingState();
+    }, 30000);
 
     try {
       const validationContext: OrderValidationContext = {
@@ -239,31 +251,53 @@ const CryptoChartScreen = () => {
       );
       resetLoadingState();
     } catch (error: any) {
-      setSubmissionStatus(t("chart.errorOccurred"));
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.error("Order submission error:", error);
+
       resetLoadingState();
-      await handleUserReinitialization(error, reinitializeUser, () =>
-        submitOrder(order)
-      );
+
+      if (
+        error.message?.includes("User not authenticated") ||
+        error.message?.includes("Failed to initialize user authentication") ||
+        error.message?.includes("User not found")
+      ) {
+        try {
+          setSubmissionStatus(t("chart.reinitializingUser"));
+          await reinitializeUser();
+          setSubmissionStatus(t("chart.retryingOrder"));
+
+          await submitOrder(order);
+        } catch (reinitError: any) {
+          console.error("User reinitialization failed:", reinitError);
+
+          setSubmissionStatus(t("chart.errorOccurred"));
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          resetLoadingState();
+        }
+      } else {
+        setSubmissionStatus(t("chart.errorOccurred"));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        resetLoadingState();
+      }
     }
   };
 
-  const LoadingModal = () => (
-    <Modal
-      visible={isSubmitting}
-      transparent={true}
-      onRequestClose={() => {
-        if (isSubmitting) {
-          resetLoadingState();
-        }
-      }}
-      statusBarTranslucent={true}>
-      <View
+  const LoadingOverlay = () => {
+    if (!isSubmitting) return null;
+
+    return (
+      <TouchableOpacity
         style={styles.loadingOverlay}
-        pointerEvents={isSubmitting ? "auto" : "none"}>
-        <View
+        activeOpacity={1}
+        onPress={() => {
+          console.log("User dismissed loading overlay");
+          resetLoadingState();
+        }}>
+        <TouchableOpacity
           style={styles.loadingContainer}
-          pointerEvents={isSubmitting ? "auto" : "none"}>
+          activeOpacity={1}
+          onPress={(e) => {
+            e.stopPropagation();
+          }}>
           <View style={styles.loadingIconContainer}>
             <ActivityIndicator size="large" color="#6674CC" />
             <View style={styles.loadingIconGlow} />
@@ -296,10 +330,10 @@ const CryptoChartScreen = () => {
             </Text>
             <Text style={styles.contextSymbol}>{symbol}</Text>
           </View>
-        </View>
-      </View>
-    </Modal>
-  );
+        </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -364,7 +398,7 @@ const CryptoChartScreen = () => {
         </View>
       </ScrollView>
 
-      <LoadingModal />
+      <LoadingOverlay />
     </SafeAreaView>
   );
 };
@@ -416,12 +450,17 @@ const styles = StyleSheet.create({
     color: "#9DA3B4",
     fontWeight: "500",
   },
-  // Loading Modal Styles
+  // Loading Overlay Styles
   loadingOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 9999,
   },
   loadingContainer: {
     backgroundColor: "#1A1D2F",

@@ -219,6 +219,8 @@
     "finalizing": "Đang hoàn tất...",
     "orderCompleted": "Lệnh đã hoàn thành thành công!",
     "errorOccurred": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "reinitializingUser": "Đang khởi tạo lại người dùng...",
+    "retryingOrder": "Đang thử lại lệnh...",
     "collectionTrade": "Giao dịch bộ sưu tập",
     "individualTrade": "Giao dịch cá nhân"
   },

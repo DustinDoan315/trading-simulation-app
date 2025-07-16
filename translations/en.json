@@ -219,6 +219,8 @@
     "finalizing": "Finalizing...",
     "orderCompleted": "Order completed successfully!",
     "errorOccurred": "Error occurred. Please try again.",
+    "reinitializingUser": "Reinitializing user...",
+    "retryingOrder": "Retrying order...",
     "collectionTrade": "Collection Trade",
     "individualTrade": "Individual Trade"
   },
