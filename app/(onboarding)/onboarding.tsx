@@ -100,12 +100,10 @@ const OnboardingScreen = () => {
 
   const markOnboardingCompleted = useCallback(async (userId: string) => {
     try {
-      await AsyncStorage.setItem(`@onboarding_completed_${userId}`, "true");
-      logger.info("Onboarding marked as completed", "Onboarding", { userId });
+      await AsyncStorage.setItem(`@onboarding_completed`, "true");
+      logger.info("Onboarding marked as completed");
 
-      const saved = await AsyncStorage.getItem(
-        `@onboarding_completed_${userId}`
-      );
+      const saved = await AsyncStorage.getItem(`@onboarding_completed`);
       logger.info("Verification - onboarding status saved:", "Onboarding", {
         saved,
         userId,

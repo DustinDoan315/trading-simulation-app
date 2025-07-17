@@ -1,8 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '@/styles/colors';
 import React, { useEffect, useState } from 'react';
+import { clearSearchHistory } from '@/features/searchHistorySlice';
+import { forceRefreshAllData } from '@/utils/resetUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { logger } from '@/utils/logger';
+import { persistor } from '@/store';
+import { resetBalance } from '@/features/balanceSlice';
+import { resetFavorites } from '@/features/favoritesSlice';
 import { router } from 'expo-router';
 import { updateUser } from '@/features/userSlice';
 import { useAppDispatch } from '@/store';
@@ -31,7 +36,6 @@ const ProfileScreen = () => {
   const dispatch = useAppDispatch();
   const { user, userStats, loading, error, refreshUser } = useUser();
   const { t } = useLanguage();
-
   const {
     totalBalance,
     totalPnL,
@@ -55,6 +59,7 @@ const ProfileScreen = () => {
     display_name: "",
     avatar_emoji: "",
   });
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -125,6 +130,81 @@ const ProfileScreen = () => {
       avatar_emoji: user?.avatar_emoji || "🚀",
     });
     setEditModalVisible(false);
+    setEditLoading(false); // Ensure loading state is reset when modal closes
+  };
+
+  const handleWaiting = () => {
+    Alert.alert(t("profile.comingSoon"), t("profile.comingSoonDescription"));
+  };
+
+  const handleResetData = async () => {
+    if (!user?.id) return;
+    Alert.alert(
+      t("balance.resetConfirmTitle") || "Reset All Data",
+      t("balance.resetConfirmMessage") ||
+        "Are you sure you want to reset your balance to $100,000?",
+      [
+        {
+          text: t("common.cancel") || "Cancel",
+          style: "cancel",
+        },
+        {
+          text: t("common.confirm") || "Confirm",
+          style: "destructive",
+          onPress: async () => {
+            setResetting(true);
+            try {
+              // Reset Redux state
+              dispatch(resetBalance());
+              dispatch(resetFavorites());
+              dispatch(clearSearchHistory());
+
+              // Reset cloud data but preserve user identity
+              const resetResult = await UserService.resetUserDataToDefault(
+                user.id
+              );
+
+              if (resetResult.success) {
+                try {
+                  // Refresh local data without clearing user ID
+                  await forceRefreshAllData(user.id, dispatch, refreshUser);
+                } catch (refreshError) {
+                  logger.warn(
+                    "Error refreshing data after reset",
+                    "Profile",
+                    refreshError
+                  );
+                }
+                // Purge persisted state after successful reset
+                await persistor.purge();
+                Alert.alert(
+                  t("balance.resetSuccess") || "Reset Successful",
+                  t("balance.resetSuccessMessage") ||
+                    "Your balance has been reset to $100,000"
+                );
+              } else {
+                logger.error("Reset failed", "Profile", resetResult.error);
+                Alert.alert(
+                  t("balance.resetError") || "Reset Failed",
+                  resetResult.error ||
+                    t("balance.resetErrorMessage") ||
+                    "An error occurred during reset"
+                );
+              }
+            } catch (error) {
+              logger.error("Error during user data reset", "Profile", error);
+              Alert.alert(
+                t("balance.resetError") || "Reset Failed",
+                t("balance.resetErrorMessage") ||
+                  "An unexpected error occurred during reset"
+              );
+            } finally {
+              setResetting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const SettingItem = ({
@@ -154,7 +234,7 @@ const ProfileScreen = () => {
         </View>
       </View>
       <View style={styles.settingRight}>
-        {showChevron && (
+        {showChevron && !isBottom && (
           <Ionicons name="chevron-forward" size={16} color="#9DA3B4" />
         )}
       </View>
@@ -173,7 +253,9 @@ const ProfileScreen = () => {
     <View
       style={[
         styles.statCard,
-        { alignItems: isCenter ? "center" : "flex-start" },
+        {
+          alignItems: isCenter ? "center" : "flex-start",
+        },
       ]}>
       <View style={styles.statHeader}>
         <Ionicons name={icon} size={16} color={color} />
@@ -330,14 +412,14 @@ const ProfileScreen = () => {
               icon="settings-outline"
               title={t("profile.settings")}
               subtitle={t("profile.appPreferences")}
-              onPress={() => router.push("/settings" as any)}
+              onPress={handleWaiting}
             />
             <SettingItem
               isBottom={true}
               icon="help-circle-outline"
               title={t("profile.helpSupport")}
               subtitle={t("profile.getHelp")}
-              onPress={() => router.push("/help" as any)}
+              onPress={handleWaiting}
             />
           </View>
         </View>
@@ -351,13 +433,13 @@ const ProfileScreen = () => {
               icon="shield-outline"
               title={t("profile.privacySecurity")}
               subtitle={t("profile.managePrivacy")}
-              onPress={() => router.push("/privacy" as any)}
+              onPress={handleWaiting}
             />
             <SettingItem
               icon="notifications-outline"
               title={t("profile.notifications")}
               subtitle={t("profile.manageAlerts")}
-              onPress={() => router.push("/notifications" as any)}
+              onPress={handleWaiting}
             />
             <SettingItem
               icon="language-outline"
@@ -370,7 +452,7 @@ const ProfileScreen = () => {
               icon="refresh-outline"
               title={t("profile.resetData")}
               subtitle={t("profile.resetToDefault")}
-              onPress={() => router.push("/reset" as any)}
+              onPress={handleResetData}
             />
           </View>
         </View>
@@ -383,17 +465,20 @@ const ProfileScreen = () => {
         )}
       </ScrollView>
 
-      {/* Edit Profile Modal */}
       <Modal
         visible={editModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={handleCancelEdit}>
+        onRequestClose={handleCancelEdit}
+        statusBarTranslucent={true}
+        hardwareAccelerated={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t("profile.editProfile")}</Text>
-              <TouchableOpacity onPress={handleCancelEdit}>
+              <TouchableOpacity
+                onPress={handleCancelEdit}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="close" size={24} color="#9DA3B4" />
               </TouchableOpacity>
             </View>
@@ -411,6 +496,8 @@ const ProfileScreen = () => {
                   }
                   placeholder={t("profile.enterDisplayName")}
                   placeholderTextColor="#8F95B2"
+                  autoCapitalize="words"
+                  autoCorrect={false}
                 />
               </View>
 
@@ -427,13 +514,17 @@ const ProfileScreen = () => {
                   placeholder="🚀"
                   placeholderTextColor="#8F95B2"
                   maxLength={2}
+                  autoCorrect={false}
                 />
               </View>
             </View>
 
             <View style={styles.modalFooter}>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={[
+                  styles.cancelButton,
+                  editLoading && styles.disabledButton,
+                ]}
                 onPress={handleCancelEdit}
                 disabled={editLoading}>
                 <Text style={styles.cancelButtonText}>
@@ -441,7 +532,10 @@ const ProfileScreen = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.saveButton}
+                style={[
+                  styles.saveButton,
+                  editLoading && styles.disabledButton,
+                ]}
                 onPress={handleSaveProfile}
                 disabled={editLoading}>
                 {editLoading ? (
@@ -537,7 +631,7 @@ const styles = StyleSheet.create({
 
   statsContainer: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   statsHeader: {
     flexDirection: "row",
@@ -556,11 +650,13 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "center",
     gap: 12,
   },
   statCard: {
     flex: 1,
     minWidth: "47%",
+    maxWidth: "75%",
     backgroundColor: "#1A1D2F",
     borderRadius: 16,
     padding: 20,
@@ -816,6 +912,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#FFFFFF",
     marginLeft: 12,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });
 

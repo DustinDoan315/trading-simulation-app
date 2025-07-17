@@ -334,7 +334,9 @@
     "failedToUpdateProfile": "Không thể cập nhật hồ sơ. Vui lòng thử lại.",
     "userNotFound": "Không tìm thấy người dùng",
     "loadingProfile": "Đang tải hồ sơ...",
-    "lastUpdated": "Cập nhật lần cuối: {time}"
+    "lastUpdated": "Cập nhật lần cuối: {time}",
+    "comingSoon": "Sắp ra mắt!",
+    "comingSoonDescription": "Tính năng này sẽ sớm ra mắt. Hãy chờ đón nhé!"
   },
   "tradingHistory": {
     "title": "Lịch sử giao dịch",
@@ -356,5 +358,15 @@
     "hoursAgo": "{hours} giờ trước",
     "daysAgo": "{days} ngày trước",
     "token": "Token"
+  },
+  "language": {
+    "title": "Cài đặt ngôn ngữ",
+    "chooseLanguage": "Chọn ngôn ngữ của bạn",
+    "description": "Chọn ngôn ngữ bạn muốn sử dụng cho giao diện ứng dụng. Bạn có thể thay đổi bất cứ lúc nào trong cài đặt hồ sơ.",
+    "currentLanguage": "Ngôn ngữ hiện tại",
+    "changesApplyImmediately": "Thay đổi có hiệu lực ngay lập tức",
+    "languageChanged": "Đã thay đổi ngôn ngữ thành công!",
+    "languageChangeFailed": "Không thể thay đổi ngôn ngữ. Vui lòng thử lại.",
+    "ok": "OK"
   }
 }

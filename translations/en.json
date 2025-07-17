@@ -334,7 +334,9 @@
     "failedToUpdateProfile": "Failed to update profile. Please try again.",
     "userNotFound": "User not found",
     "loadingProfile": "Loading profile...",
-    "lastUpdated": "Last updated: {time}"
+    "lastUpdated": "Last updated: {time}",
+    "comingSoon": "Coming soon!",
+    "comingSoonDescription": "This feature is coming soon. Stay tuned!"
   },
   "tradingHistory": {
     "title": "Trading History",
@@ -356,5 +358,15 @@
     "hoursAgo": "{hours}h ago",
     "daysAgo": "{days}d ago",
     "token": "Token"
+  },
+  "language": {
+    "title": "Language Settings",
+    "chooseLanguage": "Choose Your Language",
+    "description": "Select your preferred language for the app interface. You can change this anytime from your profile settings.",
+    "currentLanguage": "Current Language",
+    "changesApplyImmediately": "Changes apply immediately",
+    "languageChanged": "Language changed successfully!",
+    "languageChangeFailed": "Failed to change language. Please try again.",
+    "ok": "OK"
   }
 }

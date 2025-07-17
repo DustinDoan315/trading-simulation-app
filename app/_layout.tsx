@@ -22,7 +22,6 @@ import { useCallback, useEffect } from 'react';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useFonts } from 'expo-font';
 import { UserProvider } from '@/context/UserContext';
-import { UserService } from '@/services/UserService';
 import 'react-native-reanimated';
 
 
@@ -93,7 +92,7 @@ export default function RootLayout() {
   const checkOnboardingStatus = useCallback(async (userId: string) => {
     try {
       const onboardingCompleted = await AsyncStorage.getItem(
-        `@onboarding_completed_${userId}`
+        `@onboarding_completed`
       );
       logger.info("Checking onboarding status", "AppLayout", {
         userId,

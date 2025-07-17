@@ -1,15 +1,13 @@
 import colors from '@/styles/colors';
-import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { router, Tabs } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Platform,
   StyleSheet,
-  Text,
   TouchableOpacity,
-  View,
-} from "react-native";
+  View
+  } from 'react-native';
+import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 type RouteName =

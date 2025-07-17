@@ -45,9 +45,21 @@ export const forceRefreshAllData = async (
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
+    // Clear AsyncStorage but PRESERVE the user ID in SecureStore
     try {
-      await clearAllCachedData();
-      logger.info("Comprehensively cleared all cached data from AsyncStorage", "resetUtils");
+      const allKeys = await AsyncStorage.getAllKeys();
+      // Filter out user ID related keys to preserve user identity
+      const keysToRemove = allKeys.filter(key => 
+        !key.includes('user_uuid') && 
+        !key.includes('@user_id') && 
+        !key.includes('user_uuid_13') &&
+        !key.includes('user_uuid_12')
+      );
+      
+      if (keysToRemove.length > 0) {
+        await AsyncStorage.multiRemove(keysToRemove);
+        logger.info(`Cleared ${keysToRemove.length} AsyncStorage keys (preserved user ID)`, "resetUtils");
+      }
     } catch (storageError) {
       logger.warn("Error clearing AsyncStorage cache", "resetUtils", storageError);
     }
@@ -61,6 +73,7 @@ export const forceRefreshAllData = async (
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
+    // Ensure user exists in database before trying to load data
     try {
       const userData = await UserService.getUserById(userId);
       if (userData) {
@@ -68,6 +81,7 @@ export const forceRefreshAllData = async (
         logger.info("Updated user data loaded from database and saved to AsyncStorage", "resetUtils");
       } else {
         logger.warn("No user data found in database after reset", "resetUtils");
+        // Don't create a new user here - let the app initialization handle it
       }
     } catch (error) {
       logger.error("Error loading user data from database after reset", "resetUtils", error);
@@ -333,13 +347,11 @@ export const resetOnboardingStatus = async (userId?: string): Promise<void> => {
   try {
     if (userId) {
 
-      await AsyncStorage.removeItem(`@onboarding_completed_${userId}`);
-      console.log(`Onboarding status reset for user: ${userId}`);
+      await AsyncStorage.removeItem(`@onboarding_completed`);
     } else {
       const currentUserId = await AsyncStorage.getItem("@user_id");
       if (currentUserId) {
-        await AsyncStorage.removeItem(`@onboarding_completed_${currentUserId}`);
-        console.log(`Onboarding status reset for current user: ${currentUserId}`);
+        await AsyncStorage.removeItem(`@onboarding_completed`);
       }
     }
   } catch (error) {

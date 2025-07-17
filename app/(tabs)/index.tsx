@@ -1,4 +1,3 @@
-import React, { useEffect, useMemo, useState } from 'react';
 import styles from './styles';
 import { BalanceSection } from '@/components/home/BalanceSection';
 import { CryptoNewsCard } from '@/components/home/CryptoNewsCard';
@@ -7,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { loadBalance } from '@/features/balanceSlice';
 import { RootState, useAppDispatch } from '@/store';
 import { router } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { useHomeData } from '@/hooks/useHomeData';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSelector } from 'react-redux';
