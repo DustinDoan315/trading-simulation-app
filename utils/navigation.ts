@@ -1,5 +1,6 @@
 import { Asset } from '@/types/crypto';
 import { getCryptoIdFromSymbol } from './cryptoMapping';
+import { NON_TRADEABLE_TOKENS } from './constant';
 import { router } from 'expo-router';
 
 export const navigateToCryptoChart = (asset?: Asset) => {
@@ -15,6 +16,13 @@ export const navigateToCryptoChart = (asset?: Asset) => {
       },
     });
   } else {
+    // Check if the asset is a non-tradeable token (like USDT)
+    const assetSymbol = asset.symbol?.toUpperCase();
+    if (assetSymbol && NON_TRADEABLE_TOKENS.includes(assetSymbol as any)) {
+      // Do nothing for non-tradeable tokens like USDT
+      return;
+    }
+
     // Use crypto ID if available, otherwise fallback to symbol mapping
     const cryptoId = asset.cryptoId || getCryptoIdFromSymbol(asset.symbol) || asset.id;
     

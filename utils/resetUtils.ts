@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UUIDService from '@/services/UUIDService';
 import { Alert } from 'react-native';
+import { ASYNC_STORAGE_KEYS } from '@/utils/constant';
 import { AsyncStorageService } from '@/services/AsyncStorageService';
 import { logger } from '@/utils/logger';
 import { ResetService } from '@/services/ResetService';
@@ -347,11 +348,11 @@ export const resetOnboardingStatus = async (userId?: string): Promise<void> => {
   try {
     if (userId) {
 
-      await AsyncStorage.removeItem(`@onboarding_completed`);
-    } else {
-      const currentUserId = await AsyncStorage.getItem("@user_id");
-      if (currentUserId) {
-        await AsyncStorage.removeItem(`@onboarding_completed`);
+              await AsyncStorage.removeItem(ASYNC_STORAGE_KEYS.ONBOARDING_COMPLETED);
+      } else {
+        const currentUserId = await AsyncStorage.getItem(ASYNC_STORAGE_KEYS.USER_ID);
+        if (currentUserId) {
+          await AsyncStorage.removeItem(ASYNC_STORAGE_KEYS.ONBOARDING_COMPLETED);
       }
     }
   } catch (error) {
@@ -361,7 +362,7 @@ export const resetOnboardingStatus = async (userId?: string): Promise<void> => {
 
 export const checkIfNewUser = async (): Promise<boolean> => {
   try {
-    const lastReset = await AsyncStorage.getItem("last_app_reset");
+    const lastReset = await AsyncStorage.getItem(ASYNC_STORAGE_KEYS.LAST_APP_RESET);
 
     if (!lastReset) {
       return true;

@@ -6,6 +6,7 @@ import { Asset } from '@/types/crypto';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { navigateToCryptoChart } from '@/utils/navigation';
+import { NON_TRADEABLE_TOKENS } from '@/utils/constant';
 import { OthersButton } from '@/components/portfolio/OthersButton';
 import { styles } from '@/components/portfolio/styles';
 import { useLanguage } from '@/context/LanguageContext';
@@ -46,6 +47,13 @@ const PortfolioScreen = () => {
 
   const handleAssetPress = useCallback((asset: Asset) => {
     if (asset.isOthers) {
+      return;
+    }
+
+    // Check if the asset is a non-tradeable token (like USDT)
+    const assetSymbol = asset.symbol?.toUpperCase();
+    if (assetSymbol && NON_TRADEABLE_TOKENS.includes(assetSymbol as any)) {
+      // Do nothing for non-tradeable tokens like USDT
       return;
     }
 

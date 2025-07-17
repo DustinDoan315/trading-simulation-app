@@ -176,13 +176,19 @@
     "resetConfirmMessage": "Bạn có chắc muốn đặt lại số dư về $100,000?"
   },
   "cryptoSearch": {
+    "title": "Tìm kiếm tiền mã hóa",
     "searchPlaceholder": "Tìm kiếm tiền mã hóa, bot",
     "cancel": "Huỷ",
     "searchHistory": "Lịch sử tìm kiếm",
     "suggestions": "Gợi ý",
     "results": "Kết quả",
     "noResults": "Không tìm thấy kết quả",
-    "searchFailed": "Tìm kiếm thất bại. Vui lòng thử lại."
+    "searchFailed": "Tìm kiếm thất bại. Vui lòng thử lại.",
+    "popularCryptos": "Tiền mã hóa phổ biến",
+    "searchTips": "Mẹo tìm kiếm",
+    "tip1": "Sử dụng ký hiệu (BTC, ETH) để tìm kiếm nhanh",
+    "tip2": "Tìm kiếm theo tên để có kết quả rộng hơn",
+    "tip3": "Nhấn vào tiền mã hóa phổ biến để bắt đầu giao dịch"
   },
   "error": {
     "title": "Lỗi",

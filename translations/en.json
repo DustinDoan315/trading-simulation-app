@@ -176,13 +176,19 @@
     "resetErrorTitle": "Reset Failed"
   },
   "cryptoSearch": {
+    "title": "Search Crypto",
     "searchPlaceholder": "Search cryptocurrencies, bots",
     "cancel": "Cancel",
     "searchHistory": "Search History",
     "suggestions": "Suggestions",
     "results": "Results",
     "noResults": "No results found",
-    "searchFailed": "Search failed. Please try again."
+    "searchFailed": "Search failed. Please try again.",
+    "popularCryptos": "Popular Cryptocurrencies",
+    "searchTips": "Search Tips",
+    "tip1": "Use symbol (BTC, ETH) for quick search",
+    "tip2": "Search by name for broader results",
+    "tip3": "Tap popular cryptos to start trading"
   },
   "error": {
     "title": "Error",

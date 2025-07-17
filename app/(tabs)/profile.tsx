@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '@/styles/colors';
 import React, { useEffect, useState } from 'react';
+import { ASYNC_STORAGE_KEYS } from '@/utils/constant';
 import { clearSearchHistory } from '@/features/searchHistorySlice';
 import { forceRefreshAllData } from '@/utils/resetUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -294,7 +295,9 @@ const ProfileScreen = () => {
             style={styles.retryButton}
             onPress={async () => {
               try {
-                const userId = await AsyncStorage.getItem("@user_id");
+                const userId = await AsyncStorage.getItem(
+                  ASYNC_STORAGE_KEYS.USER_ID
+                );
                 if (userId) {
                   await refreshUser(userId);
                 }

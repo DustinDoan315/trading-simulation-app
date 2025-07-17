@@ -26,6 +26,11 @@ import 'react-native-reanimated';
 
 
 import {
+  ASYNC_STORAGE_KEYS,
+  BACKGROUND_SYNC_CONFIG,
+  DEFAULT_USER,
+} from "@/utils/constant";
+import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
@@ -92,7 +97,7 @@ export default function RootLayout() {
   const checkOnboardingStatus = useCallback(async (userId: string) => {
     try {
       const onboardingCompleted = await AsyncStorage.getItem(
-        `@onboarding_completed`
+        ASYNC_STORAGE_KEYS.ONBOARDING_COMPLETED
       );
       logger.info("Checking onboarding status", "AppLayout", {
         userId,
@@ -136,8 +141,8 @@ export default function RootLayout() {
                   id: userId,
                   username,
                   display_name: username,
-                  avatar_emoji: "🚀",
-                  usdt_balance: "100000.00",
+                  avatar_emoji: DEFAULT_USER.AVATAR_EMOJI,
+                  usdt_balance: DEFAULT_USER.INITIAL_BALANCE,
                 })
               )
               .unwrap();
@@ -174,10 +179,10 @@ export default function RootLayout() {
       const syncService = BackgroundDataSyncService.getInstance();
 
       syncService.updateConfig({
-        intervalMs: 30000,
-        maxConcurrentUpdates: 5,
-        retryAttempts: 3,
-        retryDelayMs: 5000,
+        intervalMs: BACKGROUND_SYNC_CONFIG.INTERVAL_MS,
+        maxConcurrentUpdates: BACKGROUND_SYNC_CONFIG.MAX_CONCURRENT_UPDATES,
+        retryAttempts: BACKGROUND_SYNC_CONFIG.RETRY_ATTEMPTS,
+        retryDelayMs: BACKGROUND_SYNC_CONFIG.RETRY_DELAY_MS,
       });
 
       await syncService.start();

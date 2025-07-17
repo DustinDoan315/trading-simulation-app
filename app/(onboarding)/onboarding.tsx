@@ -8,6 +8,12 @@ import { logger } from '@/utils/logger';
 import { router } from 'expo-router';
 import { useAppDispatch } from '@/store';
 import {
+  ASYNC_STORAGE_KEYS,
+  DEFAULT_USER,
+  ONBOARDING_SCREENS,
+  USERNAME_GENERATION,
+} from "@/utils/constant";
+import {
   Alert,
   Dimensions,
   FlatList,
@@ -28,27 +34,7 @@ const OnboardingScreen = () => {
   const flatListRef = useRef<FlatList>(null);
   const dispatch = useAppDispatch();
 
-  const screens = [
-    {
-      id: "1",
-      title: "Welcome to Learn Trading",
-      content:
-        "Practice trading with virtual money in a risk-free environment.",
-      image: require("../../assets/images/onboarding.png"),
-    },
-    {
-      id: "2",
-      title: "Learn & Compete",
-      content: "Join trading competitions and climb the leaderboard.",
-      image: require("../../assets/images/rocket.png"),
-    },
-    {
-      id: "3",
-      title: "Track Your Progress",
-      content: "Monitor your portfolio performance and trading statistics.",
-      image: require("../../assets/images/shield.png"),
-    },
-  ];
+  const screens = ONBOARDING_SCREENS;
 
   const renderItem = ({
     item,
@@ -70,26 +56,8 @@ const OnboardingScreen = () => {
   );
 
   const generateUsername = () => {
-    const adjectives = [
-      "Crypto",
-      "Trading",
-      "Digital",
-      "Smart",
-      "Pro",
-      "Elite",
-      "Master",
-      "Legend",
-    ];
-    const nouns = [
-      "Trader",
-      "Investor",
-      "Hodler",
-      "Whale",
-      "Shark",
-      "Guru",
-      "Ninja",
-      "Wizard",
-    ];
+    const adjectives = USERNAME_GENERATION.ADJECTIVES;
+    const nouns = USERNAME_GENERATION.NOUNS;
     const randomNum = Math.floor(Math.random() * 1000);
 
     const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
@@ -100,10 +68,15 @@ const OnboardingScreen = () => {
 
   const markOnboardingCompleted = useCallback(async (userId: string) => {
     try {
-      await AsyncStorage.setItem(`@onboarding_completed`, "true");
+      await AsyncStorage.setItem(
+        ASYNC_STORAGE_KEYS.ONBOARDING_COMPLETED,
+        "true"
+      );
       logger.info("Onboarding marked as completed");
 
-      const saved = await AsyncStorage.getItem(`@onboarding_completed`);
+      const saved = await AsyncStorage.getItem(
+        ASYNC_STORAGE_KEYS.ONBOARDING_COMPLETED
+      );
       logger.info("Verification - onboarding status saved:", "Onboarding", {
         saved,
         userId,
@@ -137,14 +110,14 @@ const OnboardingScreen = () => {
         createUser({
           username,
           display_name: username,
-          avatar_emoji: "🚀",
-          usdt_balance: "100000.00",
+          avatar_emoji: DEFAULT_USER.AVATAR_EMOJI,
+          usdt_balance: DEFAULT_USER.INITIAL_BALANCE,
         })
       ).unwrap();
 
       if (newUser) {
         // Store the cloud-generated UUID
-        await AsyncStorage.setItem("@user_id", newUser.id);
+        await AsyncStorage.setItem(ASYNC_STORAGE_KEYS.USER_ID, newUser.id);
 
         await markOnboardingCompleted(newUser.id);
 
@@ -175,7 +148,9 @@ const OnboardingScreen = () => {
       });
     } else {
       // Check if user already exists (for existing users going through onboarding)
-      const existingUserId = await AsyncStorage.getItem("@user_id");
+      const existingUserId = await AsyncStorage.getItem(
+        ASYNC_STORAGE_KEYS.USER_ID
+      );
 
       logger.info("Handling onboarding completion", "Onboarding", {
         currentIndex,

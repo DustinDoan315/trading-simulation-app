@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UserRepository from '../services/UserRepository';
 import UUIDService from '../services/UUIDService';
+import { ASYNC_STORAGE_KEYS, DEFAULT_BALANCE } from '../utils/constant';
 import { AsyncStorageService } from '../services/AsyncStorageService';
 import {
   calculateTotalPnL,
@@ -10,7 +11,6 @@ import {
   validateAndFixUserData
   } from '../utils/helper';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { DEFAULT_BALANCE } from '../utils/constant';
 import { getCryptoIdFromSymbol, getCryptoImageUrl } from '../utils/cryptoMapping';
 import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
 import { UserService } from '../services/UserService';
@@ -132,7 +132,7 @@ export const loadBalance = createAsyncThunk("balance/load", async () => {
   
   if (!user) {
     try {
-      const userProfileStr = await AsyncStorage.getItem("user_profile");
+      const userProfileStr = await AsyncStorage.getItem(ASYNC_STORAGE_KEYS.USER_PROFILE);
       if (userProfileStr) {
         const userProfile = JSON.parse(userProfileStr);
         if (userProfile.id === uuid) {
