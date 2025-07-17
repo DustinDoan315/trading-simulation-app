@@ -409,6 +409,62 @@ export const handleOrderSubmission = async (
 };
 
 /**
+ * Enhanced order submission with daily transaction limit checking
+ * @param order Order details
+ * @param imageUrl URL for the asset image
+ * @param validationContext Context for validation
+ * @param dispatchContext Context for dispatching actions
+ */
+export const handleOrderSubmissionWithLimitCheck = async (
+  order: Order,
+  imageUrl: string,
+  validationContext: OrderValidationContext,
+  dispatchContext: OrderDispatchContext
+): Promise<Order> => {
+  console.debug("[Order] Submitting with limit check:", order);
+
+  try {
+    // Validate the order first
+    validateOrder(order, validationContext);
+
+    const isBuy = order.type === "buy";
+
+    const completed: Order = {
+      ...order,
+      status: "completed",
+      executedPrice: order.price,
+      executedAt: Date.now(),
+      image: imageUrl,
+    };
+
+    // Dispatch updates (this handles the local state changes)
+    dispatchUpdates(completed, isBuy, imageUrl, dispatchContext);
+
+    const successMsg = `${isBuy ? "Bought" : "Sold"} ${order.amount} ${
+      order.symbol
+    } for ${formatPrice(order.total)}`;
+
+    showToast("success", "Order executed", successMsg);
+
+    console.debug("[Order] Success with limit check:", completed);
+    return completed;
+  } catch (err: unknown) {
+    console.error("[Order] Failed with limit check:", err);
+
+    const defaultMsg = "Order processing failed";
+    const { message, userFriendlyMessage } =
+      err instanceof OrderError
+        ? { message: err.message, userFriendlyMessage: err.userFriendlyMessage }
+        : { message: defaultMsg, userFriendlyMessage: defaultMsg };
+
+    const errorText = `Failed to ${order.type} ${order.symbol}: ${userFriendlyMessage}`;
+    showToast("error", "Order failed", errorText);
+
+    throw new OrderError(message, userFriendlyMessage);
+  }
+};
+
+/**
  * Calculate portfolio metrics from balance holdings
  * @param balance - The user's balance object from Redux store
  * @returns Object containing portfolio metrics

@@ -499,3 +499,36 @@ export interface UpdateFriendStatusParams {
   friend_id: string;
   status: "ACCEPTED" | "REJECTED" | "BLOCKED";
 }
+
+// Daily Transaction Limits
+export interface DailyTransactionLimit {
+  id: string; // UUID
+  user_id: string; // UUID
+  transaction_date: string; // DATE
+  transaction_count: number;
+  daily_limit: number;
+  last_transaction_at?: string; // TIMESTAMP
+  created_at: string; // TIMESTAMP
+  updated_at: string; // TIMESTAMP
+}
+
+export interface CreateDailyTransactionLimitParams {
+  user_id: string;
+  transaction_date?: string; // Defaults to current date
+  daily_limit?: number; // Defaults to 10
+}
+
+export interface UpdateDailyTransactionLimitParams {
+  id: string;
+  transaction_count?: number;
+  daily_limit?: number;
+  last_transaction_at?: string;
+}
+
+export interface DailyLimitStatus {
+  remainingTransactions: number;
+  dailyLimit: number;
+  usedTransactions: number;
+  canTrade: boolean;
+  lastTransactionAt?: string;
+}

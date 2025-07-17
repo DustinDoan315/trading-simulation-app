@@ -11,6 +11,7 @@ import {
 import { Holding } from '../types/crypto';
 import { logger } from '@/utils/logger';
 import { supabase } from './SupabaseService';
+import { UserService } from './UserService';
 
 
 export class DualBalanceService {
@@ -198,7 +199,7 @@ export class DualBalanceService {
         await this.updateCollectionTrade(order, context.collectionId!, userId);
       }
 
-      const transaction = {
+      const transactionParams = {
         user_id: userId,
         type: order.type.toUpperCase() as 'BUY' | 'SELL',
         symbol: symbol,
@@ -208,23 +209,30 @@ export class DualBalanceService {
         fee: fee.toString(),
         order_type: order.orderType?.toUpperCase() as 'MARKET' | 'LIMIT',
         status: 'COMPLETED' as const,
-        collection_id: context.type === 'collection' ? context.collectionId : null,
+        collection_id: context.type === 'collection' ? context.collectionId : undefined,
         usdt_balance_before: balanceBefore.toString(),
         usdt_balance_after: balanceAfter.toString(),
         timestamp: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert([transaction])
-        .select()
-        .single();
+      // Use the enhanced transaction creation with daily limit check
+      const transaction = await UserService.createTransactionWithLimitCheck(transactionParams);
+      
+      if (!transaction) {
+        throw new Error('Failed to create transaction with limit check');
+      }
 
-      if (error) throw error;
+      console.log('✅ Trade executed successfully with limit check:', {
+        transactionId: transaction.id,
+        symbol,
+        type: order.type,
+        amount: quantity,
+        total: totalValue
+      });
 
-      return data;
+      return transaction;
     } catch (error) {
-      logger.error("Error executing trade", "DualBalanceService", error);
+      console.error('❌ Error executing trade with limit check:', error);
       throw error;
     }
   }

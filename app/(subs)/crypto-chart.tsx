@@ -1,5 +1,6 @@
 import Chart from '@/components/crypto/Chart';
 import colors from '@/styles/colors';
+import DailyLimitPopup from '@/components/ui/DailyLimitPopup';
 import OrderEntry from '@/components/trading/OrderEntry';
 import React, { useEffect, useRef, useState } from 'react';
 import SymbolHeader from '@/components/crypto/SymbolHeader';
@@ -9,12 +10,12 @@ import useHistoricalData from '@/hooks/useHistoricalData';
 import { ChartType, Order, TimeframeOption } from '../../types/crypto';
 import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '@/utils/logger';
-import { OrderDispatchContext, OrderValidationContext } from '@/utils/helper';
 import { RootState, useAppDispatch } from '@/store';
 import { updateCollectionHolding } from '@/features/dualBalanceSlice';
 import { useDualBalance } from '@/hooks/useDualBalance';
 import { useLanguage } from '@/context/LanguageContext';
 import { useLocalSearchParams } from 'expo-router';
+import { UserService } from '@/services/UserService';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/context/UserContext';
 import { WebView } from 'react-native-webview';
@@ -29,6 +30,11 @@ import {
   View,
 } from "react-native";
 import {
+  OrderDispatchContext,
+  OrderValidationContext,
+  handleOrderSubmissionWithLimitCheck,
+} from "@/utils/helper";
+import {
   addTradeHistory,
   loadBalance,
   updateHolding,
@@ -42,7 +48,7 @@ import {
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
-  const { reinitializeUser } = useUser();
+  const { user, reinitializeUser } = useUser();
   const { id, symbol, name, image, collectionId, collectionName }: any =
     useLocalSearchParams();
   const { balance } = useSelector((state: RootState) => state.balance);
@@ -57,9 +63,20 @@ const CryptoChartScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<string>("");
   const [submissionProgress, setSubmissionProgress] = useState(0);
+  const [showDailyLimitPopup, setShowDailyLimitPopup] = useState(false);
+  const [dailyLimitData, setDailyLimitData] = useState({
+    usedTransactions: 0,
+    dailyLimit: 10,
+    remainingTransactions: 0,
+  });
   const submissionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+
+  useEffect(() => {
+    console.log("Popup visibility state changed to:", showDailyLimitPopup);
+    console.log("Popup data:", dailyLimitData);
+  }, [showDailyLimitPopup, dailyLimitData]);
 
   const {
     activeContext,
@@ -199,6 +216,34 @@ const CryptoChartScreen = () => {
     }, 30000);
 
     try {
+      setSubmissionStatus(t("chart.checkingDailyLimit"));
+      setSubmissionProgress(15);
+
+      const dailyLimitStatus = await UserService.checkDailyTransactionLimit(
+        user?.id || ""
+      );
+
+      if (!dailyLimitStatus.canTrade) {
+        resetLoadingState();
+
+        setDailyLimitData({
+          usedTransactions: dailyLimitStatus.usedTransactions,
+          dailyLimit: dailyLimitStatus.dailyLimit,
+          remainingTransactions: dailyLimitStatus.remainingTransactions,
+        });
+
+        setTimeout(() => {
+          setShowDailyLimitPopup(true);
+          console.log("Daily limit reached - showing popup with data:", {
+            usedTransactions: dailyLimitStatus.usedTransactions,
+            dailyLimit: dailyLimitStatus.dailyLimit,
+            remainingTransactions: dailyLimitStatus.remainingTransactions,
+          });
+        }, 100);
+
+        return;
+      }
+
       const validationContext: OrderValidationContext = {
         getHoldings: () => currentHoldings,
         getUsdtBalance: () => currentUsdtBalance,
@@ -230,7 +275,7 @@ const CryptoChartScreen = () => {
       setSubmissionStatus(t("chart.processingTransaction"));
       setSubmissionProgress(60);
 
-      await handleOrderSubmission(
+      await handleOrderSubmissionWithLimitCheck(
         order,
         image || "",
         validationContext,
@@ -254,6 +299,48 @@ const CryptoChartScreen = () => {
       console.error("Order submission error:", error);
 
       resetLoadingState();
+
+      if (
+        error.message?.includes("Daily transaction limit reached") ||
+        error.message?.includes("daily transaction limit")
+      ) {
+        let usedTransactions = 10;
+        let dailyLimit = 10;
+        let remainingTransactions = 0;
+
+        const match1 = error.message.match(
+          /used (\d+)\/(\d+) transactions today\. You have (\d+) transactions remaining\./
+        );
+
+        const match2 = error.message.match(
+          /You have used (\d+)\/(\d+) transactions today\. You have (\d+) transactions remaining\./
+        );
+
+        if (match1) {
+          [, usedTransactions, dailyLimit, remainingTransactions] =
+            match1.map(Number);
+        } else if (match2) {
+          [, usedTransactions, dailyLimit, remainingTransactions] =
+            match2.map(Number);
+        }
+
+        setDailyLimitData({
+          usedTransactions,
+          dailyLimit,
+          remainingTransactions,
+        });
+
+        setTimeout(() => {
+          setShowDailyLimitPopup(true);
+          console.log("Daily limit error caught - showing popup with data:", {
+            usedTransactions,
+            dailyLimit,
+            remainingTransactions,
+          });
+        }, 100);
+
+        return;
+      }
 
       if (
         error.message?.includes("User not authenticated") ||
@@ -399,6 +486,17 @@ const CryptoChartScreen = () => {
       </ScrollView>
 
       <LoadingOverlay />
+
+      <DailyLimitPopup
+        visible={showDailyLimitPopup}
+        onClose={() => {
+          console.log("Closing daily limit popup");
+          setShowDailyLimitPopup(false);
+        }}
+        usedTransactions={dailyLimitData.usedTransactions}
+        dailyLimit={dailyLimitData.dailyLimit}
+        remainingTransactions={dailyLimitData.remainingTransactions}
+      />
     </SafeAreaView>
   );
 };
