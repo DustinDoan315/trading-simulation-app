@@ -1,13 +1,15 @@
-import React from "react";
+import Colors from '@/styles/colors';
+import Dimensions from '@/styles/dimensions';
+import React from 'react';
+import Typography from '@/styles/typography';
+import { useLanguage } from '@/context/LanguageContext';
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
   ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
 } from "react-native";
-import Colors from "@/styles/colors";
-import Dimensions from "@/styles/dimensions";
-import Typography from "@/styles/typography";
+
 
 const ActionButton = ({
   type = "buy",
@@ -16,6 +18,8 @@ const ActionButton = ({
   loading = false,
   cryptoSymbol = "BTC",
 }: any) => {
+  const { t } = useLanguage();
+
   const buttonStyle = [
     styles.button,
     type === "buy" ? styles.buyButton : styles.sellButton,
@@ -23,7 +27,8 @@ const ActionButton = ({
   ];
 
   const getButtonLabel = () => {
-    return type === "buy" ? `Mua ${cryptoSymbol}` : `Bán ${cryptoSymbol}`;
+    const action = type === "buy" ? t("trading.buy") : t("trading.sell");
+    return `${action} ${cryptoSymbol}`;
   };
 
   return (

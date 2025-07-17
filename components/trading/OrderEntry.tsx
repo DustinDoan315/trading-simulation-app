@@ -20,6 +20,7 @@ import React, {
   useState,
 } from "react";
 
+
 // Symbol-specific fallback prices
 const getFallbackPrice = (symbol: string): number => {
   const symbolUpper = symbol.toUpperCase();
@@ -84,18 +85,14 @@ const OrderEntry = React.memo(
   }: OrderEntryProps) => {
     const { t } = useLanguage();
 
-    // Extract base symbol from full symbol format (e.g., "SOL/USDT" -> "SOL")
     const baseSymbol = useMemo(() => symbol?.split("/")[0] || symbol, [symbol]);
 
-    // Get real-time price from Redux store
     const realTimePrice = useSelector(
       (state: RootState) => state.cryptoPrices.prices[baseSymbol.toUpperCase()]
     );
 
-    // Use dual balance system for consistent data
     const { currentHoldings } = useDualBalance();
 
-    // Get token balance from dual balance holdings
     const tokenBalance = useMemo(() => {
       const holding =
         currentHoldings[baseSymbol.toUpperCase()] ||
@@ -113,7 +110,6 @@ const OrderEntry = React.memo(
     const [marginEnabled, setMarginEnabled] = useState(false);
     const firstRender = useRef(true);
 
-    // Use real-time price from Redux store, fallback to props, then to symbol-specific default
     const effectivePrice = useMemo(
       () => realTimePrice || currentPrice || getFallbackPrice(baseSymbol),
       [realTimePrice, currentPrice, baseSymbol]
@@ -124,7 +120,6 @@ const OrderEntry = React.memo(
       [selectedTab, availableBalance, tokenBalance]
     );
 
-    // Reset slider when balance changes
     useEffect(() => {
       if (currentBalance > 0) {
         setSliderPosition(100);
@@ -135,7 +130,6 @@ const OrderEntry = React.memo(
       setResetCounter((prev) => prev + 1);
     }, [currentBalance]);
 
-    // Disable sell button if no token balance
     const canSell = useMemo(
       () => selectedTab === "buy" || tokenBalance > 0,
       [selectedTab, tokenBalance]
@@ -147,7 +141,6 @@ const OrderEntry = React.memo(
     const [currentPosition, setCurrentPosition] = useState(0);
     const [resetCounter, setResetCounter] = useState(0);
 
-    // Initialize real-time data service when component mounts
     useEffect(() => {
       const realTimeService = RealTimeDataService.getInstance();
       if (!realTimeService.isActive()) {
@@ -182,9 +175,8 @@ const OrderEntry = React.memo(
 
     const handleAmountChange = useCallback(
       (value: string) => {
-        // Only allow numbers and single decimal point
         const cleanedValue = value.replace(/[^0-9.]/g, "");
-        // Ensure only one decimal point
+
         const parts = cleanedValue.split(".");
         const formattedValue =
           parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 8)}` : parts[0];
@@ -239,7 +231,6 @@ const OrderEntry = React.memo(
 
     return (
       <View style={styles.container}>
-        {/* Enhanced Tab Selector */}
         <View style={styles.tabSection}>
           <TabSelector
             selectedTab={selectedTab}
@@ -249,7 +240,6 @@ const OrderEntry = React.memo(
           />
         </View>
 
-        {/* Balance Display */}
         <View style={styles.balanceSection}>
           <LinearGradient
             colors={["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"]}
@@ -268,7 +258,6 @@ const OrderEntry = React.memo(
           </LinearGradient>
         </View>
 
-        {/* Input Fields Section */}
         <View style={styles.inputSection}>
           <View style={styles.inputRow}>
             <View style={styles.inputContainer}>
@@ -292,7 +281,6 @@ const OrderEntry = React.memo(
           </View>
         </View>
 
-        {/* Amount Slider Section */}
         <View style={styles.sliderSection}>
           <AmountPercentButton
             currentPosition={currentPosition}
@@ -307,7 +295,6 @@ const OrderEntry = React.memo(
           />
         </View>
 
-        {/* Total Calculation */}
         <View style={styles.totalSection}>
           <LinearGradient
             colors={["rgba(102, 116, 204, 0.1)", "rgba(102, 116, 204, 0.05)"]}
@@ -337,7 +324,6 @@ const OrderEntry = React.memo(
           </LinearGradient>
         </View>
 
-        {/* Action Button */}
         <View style={styles.buttonSection}>
           <ActionButton
             type={selectedTab}
