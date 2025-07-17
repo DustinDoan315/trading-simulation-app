@@ -1,6 +1,6 @@
-import React from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Dimensions,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const { width } = Dimensions.get("window");
 
@@ -19,6 +20,8 @@ interface TradingEducationCardProps {
   onPress: () => void;
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
   duration?: string;
+  progress?: number;
+  isCompleted?: boolean;
 }
 
 export const TradingEducationCard: React.FC<TradingEducationCardProps> = ({
@@ -29,6 +32,8 @@ export const TradingEducationCard: React.FC<TradingEducationCardProps> = ({
   onPress,
   difficulty = "Beginner",
   duration = "5 min",
+  progress = 0,
+  isCompleted = false,
 }) => {
   const getDifficultyColor = (level: string) => {
     switch (level) {
@@ -43,9 +48,44 @@ export const TradingEducationCard: React.FC<TradingEducationCardProps> = ({
     }
   };
 
+  const getProgressColor = () => {
+    if (isCompleted) return "#10B981";
+    if (progress > 50) return "#6366F1";
+    return "rgba(255, 255, 255, 0.3)";
+  };
+
+  const getActionText = () => {
+    if (isCompleted) return "Completed";
+    if (progress > 0) return "Continue";
+    return "Start Learning";
+  };
+
+  const getActionIcon = () => {
+    if (isCompleted) return "checkmark-circle";
+    if (progress > 0) return "play";
+    return "arrow-forward";
+  };
+
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <LinearGradient colors={gradientColors} style={styles.gradient}>
+        {progress > 0 && (
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${progress}%`,
+                    backgroundColor: getProgressColor(),
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.progressText}>{progress}%</Text>
+          </View>
+        )}
+
         <View style={styles.header}>
           <View style={styles.iconContainer}>
             <Ionicons name={icon as any} size={24} color="white" />
@@ -61,6 +101,11 @@ export const TradingEducationCard: React.FC<TradingEducationCardProps> = ({
               </Text>
             </View>
             <Text style={styles.durationText}>{duration}</Text>
+            {isCompleted && (
+              <View style={styles.completedBadge}>
+                <Ionicons name="checkmark" size={12} color="white" />
+              </View>
+            )}
           </View>
         </View>
 
@@ -70,8 +115,12 @@ export const TradingEducationCard: React.FC<TradingEducationCardProps> = ({
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.startText}>Start Learning</Text>
-          <Ionicons name="arrow-forward" size={16} color="white" />
+          <Text style={styles.startText}>{getActionText()}</Text>
+          <Ionicons
+            name={getActionIcon() as any}
+            size={16}
+            color={isCompleted ? "#10B981" : "white"}
+          />
         </View>
       </LinearGradient>
     </TouchableOpacity>
@@ -90,6 +139,30 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  progressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 8,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 2,
+  },
+  progressText: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.9)",
+    fontWeight: "600",
+    minWidth: 30,
+    textAlign: "right",
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -106,6 +179,7 @@ const styles = StyleSheet.create({
   },
   metaInfo: {
     alignItems: "flex-end",
+    position: "relative",
   },
   difficultyBadge: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -121,6 +195,17 @@ const styles = StyleSheet.create({
   durationText: {
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.8)",
+  },
+  completedBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#10B981",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
     flex: 1,

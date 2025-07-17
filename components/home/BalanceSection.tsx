@@ -148,8 +148,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   contentContainer: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   headerRow: {
     flexDirection: "row",
@@ -202,7 +202,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
   },
   metricItem: {
     flex: 1,

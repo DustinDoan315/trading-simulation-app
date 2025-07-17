@@ -31,8 +31,8 @@ export default StyleSheet.create({
     paddingBottom: 32,
   },
   welcomeText: {
-    fontSize: 28,
-    fontWeight: "800",
+    fontSize: 26,
+    fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 16,
     letterSpacing: -0.5,

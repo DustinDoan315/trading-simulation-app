@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { TradingEducationCard } from '@/components/home/TradingEducationCard';
+import { useLanguage } from '@/context/LanguageContext';
+import { useLearningData } from '@/hooks/useLearningData';
 import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -13,10 +18,24 @@ import {
   View,
 } from "react-native";
 
+
 const LearnTradingScreen = () => {
-  const [selectedCategory, setSelectedCategory] = useState<
-    "basics" | "technical" | "advanced"
-  >("basics");
+  const { t } = useLanguage();
+  const {
+    modules,
+    categories,
+    selectedCategory,
+    setSelectedCategory,
+    isLoading,
+    error,
+    overallProgress,
+    completedModulesCount,
+    startModule,
+    completeModule,
+    refreshData,
+  } = useLearningData();
+
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleBackPress = () => {
     router.back();
@@ -25,7 +44,7 @@ const LearnTradingScreen = () => {
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "practice":
-        // router.push("/(subs)/crypto-search");
+        router.push("/(subs)/crypto-search");
         break;
       case "portfolio":
         router.push("/(tabs)/portfolio");
@@ -36,153 +55,125 @@ const LearnTradingScreen = () => {
     }
   };
 
-  const learningModules = {
-    basics: [
-      {
-        title: "Crypto Trading Basics",
-        description:
-          "Learn the fundamentals of cryptocurrency trading, including market orders, limit orders, and risk management.",
-        icon: "school",
-        gradientColors: ["#6366F1", "#8B5CF6"],
-        difficulty: "Beginner",
-        duration: "10 min",
-        progress: 0,
-        isCompleted: false,
-      },
-      {
-        title: "Understanding Market Orders",
-        description:
-          "Master the different types of market orders and when to use each one for optimal trading.",
-        icon: "trending-up",
-        gradientColors: ["#8B5CF6", "#EC4899"],
-        difficulty: "Beginner",
-        duration: "8 min",
-        progress: 0,
-        isCompleted: false,
-      },
-      {
-        title: "Risk Management Fundamentals",
-        description:
-          "Learn essential risk management strategies to protect your capital and maximize returns.",
-        icon: "shield-checkmark",
-        gradientColors: ["#EC4899", "#F59E0B"],
-        difficulty: "Beginner",
-        duration: "12 min",
-        progress: 0,
-        isCompleted: false,
-      },
-    ],
-    technical: [
-      {
-        title: "Technical Analysis",
-        description:
-          "Master chart patterns, indicators, and technical analysis tools to make informed trading decisions.",
-        icon: "analytics",
-        gradientColors: ["#6366F1", "#8B5CF6"],
-        difficulty: "Intermediate",
-        duration: "15 min",
-        progress: 0,
-        isCompleted: false,
-      },
-      {
-        title: "Chart Patterns & Trends",
-        description:
-          "Identify key chart patterns and trend analysis techniques for better entry and exit points.",
-        icon: "bar-chart",
-        gradientColors: ["#8B5CF6", "#EC4899"],
-        difficulty: "Intermediate",
-        duration: "18 min",
-        progress: 0,
-        isCompleted: false,
-      },
-      {
-        title: "Trading Indicators",
-        description:
-          "Learn to use popular trading indicators like RSI, MACD, and moving averages effectively.",
-        icon: "speedometer",
-        gradientColors: ["#EC4899", "#F59E0B"],
-        difficulty: "Intermediate",
-        duration: "20 min",
-        progress: 0,
-        isCompleted: false,
-      },
-    ],
-    advanced: [
-      {
-        title: "Advanced Trading Strategies",
-        description:
-          "Explore advanced trading strategies including scalping, swing trading, and position sizing.",
-        icon: "rocket",
-        gradientColors: ["#6366F1", "#8B5CF6"],
-        difficulty: "Advanced",
-        duration: "25 min",
-        progress: 0,
-        isCompleted: false,
-      },
-      {
-        title: "Portfolio Management",
-        description:
-          "Learn advanced portfolio management techniques and diversification strategies.",
-        icon: "pie-chart",
-        gradientColors: ["#8B5CF6", "#EC4899"],
-        difficulty: "Advanced",
-        duration: "22 min",
-        progress: 0,
-        isCompleted: false,
-      },
-      {
-        title: "Psychology of Trading",
-        description:
-          "Master the psychological aspects of trading and develop emotional discipline.",
-        icon: "brain",
-        gradientColors: ["#EC4899", "#F59E0B"],
-        difficulty: "Advanced",
-        duration: "30 min",
-        progress: 0,
-        isCompleted: false,
-      },
-    ],
+  const handleModulePress = async (moduleId: string) => {
+    try {
+      await startModule(moduleId);
+
+      router.push({
+        pathname: "/(subs)/learning-module",
+        params: { moduleId },
+      });
+    } catch (error) {
+      Alert.alert("Error", "Failed to start module. Please try again.");
+    }
   };
 
-  const categories = [
-    { key: "basics", title: "Basics", icon: "school" },
-    { key: "technical", title: "Technical", icon: "analytics" },
-    { key: "advanced", title: "Advanced", icon: "rocket" },
-  ];
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshData();
+    setRefreshing(false);
+  };
+
+  const getFilteredModules = () => {
+    return modules.filter((module) => module.category === selectedCategory);
+  };
+
+  const getSectionTitle = () => {
+    switch (selectedCategory) {
+      case "basics":
+        return t("learning.sections.beginnerModules");
+      case "technical":
+        return t("learning.sections.technicalAnalysis");
+      case "advanced":
+        return t("learning.sections.advancedStrategies");
+      default:
+        return "";
+    }
+  };
+
+  const getCategoryTitle = (key: string) => {
+    return t(`learning.categories.${key}`);
+  };
+
+  if (isLoading && !refreshing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#0F0F23" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6366F1" />
+          <Text style={styles.loadingText}>Loading learning modules...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F23" />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Learn Trading</Text>
+        <Text style={styles.headerTitle}>{t("learning.title")}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
         style={styles.scrollView}
-        showsVerticalScrollIndicator={false}>
-        {/* Welcome Section */}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#6366F1"
+            colors={["#6366F1"]}
+          />
+        }>
         <View style={styles.welcomeSection}>
           <LinearGradient
             colors={["#1F2937", "#374151"]}
             style={styles.welcomeCard}>
             <View style={styles.welcomeContent}>
               <Ionicons name="school" size={48} color="#6366F1" />
-              <Text style={styles.welcomeTitle}>Master Crypto Trading</Text>
-              <Text style={styles.welcomeDescription}>
-                Build your trading skills with our comprehensive learning
-                modules designed for all experience levels.
+              <Text style={styles.welcomeTitle}>
+                {t("learning.masterCrypto")}
               </Text>
+              <Text style={styles.welcomeDescription}>
+                {t("learning.buildSkills")}
+              </Text>
+
+              <View style={styles.progressStats}>
+                <View style={styles.progressItem}>
+                  <Text style={styles.progressValue}>{overallProgress}%</Text>
+                  <Text style={styles.progressLabel}>
+                    {t("learning.stats.overallProgress")}
+                  </Text>
+                </View>
+                <View style={styles.progressDivider} />
+                <View style={styles.progressItem}>
+                  <Text style={styles.progressValue}>
+                    {completedModulesCount}
+                  </Text>
+                  <Text style={styles.progressLabel}>
+                    {t("learning.stats.modulesCompleted")}
+                  </Text>
+                </View>
+              </View>
             </View>
           </LinearGradient>
         </View>
 
-        {/* Category Tabs */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={24} color="#EF4444" />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={refreshData}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.categorySection}>
           <View style={styles.categoryTabs}>
             {categories.map((category) => (
@@ -192,12 +183,12 @@ const LearnTradingScreen = () => {
                   styles.categoryTab,
                   selectedCategory === category.key && styles.categoryTabActive,
                 ]}
-                onPress={() => setSelectedCategory(category.key as any)}>
+                onPress={() => setSelectedCategory(category.key)}>
                 <Ionicons
                   name={category.icon as any}
                   size={20}
                   color={
-                    selectedCategory === category.key ? "#6366F1" : "#9CA3AF"
+                    selectedCategory === category.key ? "#FFFFFF" : "#9CA3AF"
                   }
                 />
                 <Text
@@ -206,8 +197,15 @@ const LearnTradingScreen = () => {
                     selectedCategory === category.key &&
                       styles.categoryTabTextActive,
                   ]}>
-                  {category.title}
+                  {getCategoryTitle(category.key)}
                 </Text>
+                {category.completedCount > 0 && (
+                  <View style={styles.completionBadge}>
+                    <Text style={styles.completionBadgeText}>
+                      {category.completedCount}/{category.moduleCount}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -215,29 +213,36 @@ const LearnTradingScreen = () => {
 
         {/* Learning Modules */}
         <View style={styles.modulesSection}>
-          <Text style={styles.sectionTitle}>
-            {selectedCategory === "basics" && "Beginner Modules"}
-            {selectedCategory === "technical" && "Technical Analysis"}
-            {selectedCategory === "advanced" && "Advanced Strategies"}
-          </Text>
+          <Text style={styles.sectionTitle}>{getSectionTitle()}</Text>
 
-          {learningModules[selectedCategory].map((module, index) => (
-            <TradingEducationCard
-              key={index}
-              title={module.title}
-              description={module.description}
-              icon={module.icon}
-              gradientColors={module.gradientColors}
-              difficulty={module.difficulty}
-              duration={module.duration}
-              onPress={() => handleQuickAction("practice")}
-            />
-          ))}
+          {getFilteredModules().length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="book-outline" size={48} color="#9CA3AF" />
+              <Text style={styles.emptyStateText}>No modules available</Text>
+            </View>
+          ) : (
+            getFilteredModules().map((module) => (
+              <TradingEducationCard
+                key={module.id}
+                title={module.title}
+                description={module.description}
+                icon={module.icon}
+                gradientColors={module.gradientColors}
+                difficulty={module.difficulty}
+                duration={module.duration}
+                progress={module.progress}
+                isCompleted={module.isCompleted}
+                onPress={() => handleModulePress(module.id)}
+              />
+            ))
+          )}
         </View>
 
         {/* Quick Actions */}
         <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Ready to Practice?</Text>
+          <Text style={styles.sectionTitle}>
+            {t("learning.readyToPractice")}
+          </Text>
           <View style={styles.quickActionsGrid}>
             <TouchableOpacity
               style={styles.quickActionCard}
@@ -246,9 +251,11 @@ const LearnTradingScreen = () => {
                 colors={["#6366F1", "#8B5CF6"]}
                 style={styles.quickActionGradient}>
                 <Ionicons name="play" size={24} color="white" />
-                <Text style={styles.quickActionTitle}>Start Trading</Text>
+                <Text style={styles.quickActionTitle}>
+                  {t("learning.startTrading")}
+                </Text>
                 <Text style={styles.quickActionSubtitle}>
-                  Practice what you learned
+                  {t("learning.practiceWhatYouLearned")}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -260,9 +267,11 @@ const LearnTradingScreen = () => {
                 colors={["#8B5CF6", "#EC4899"]}
                 style={styles.quickActionGradient}>
                 <Ionicons name="pie-chart" size={24} color="white" />
-                <Text style={styles.quickActionTitle}>View Portfolio</Text>
+                <Text style={styles.quickActionTitle}>
+                  {t("learning.viewPortfolio")}
+                </Text>
                 <Text style={styles.quickActionSubtitle}>
-                  Track your progress
+                  {t("learning.trackYourProgress")}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -277,6 +286,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#0F0F23",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "#9CA3AF",
+    fontSize: 16,
+    marginTop: 16,
   },
   header: {
     flexDirection: "row",
@@ -335,6 +354,62 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     textAlign: "center",
     lineHeight: 24,
+    marginBottom: 24,
+  },
+  progressStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    borderRadius: 16,
+    padding: 16,
+    width: "100%",
+  },
+  progressItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  progressValue: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#6366F1",
+    marginBottom: 4,
+  },
+  progressLabel: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    textAlign: "center",
+  },
+  progressDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: "rgba(99, 102, 241, 0.3)",
+    marginHorizontal: 16,
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 24,
+    marginBottom: 16,
+  },
+  errorText: {
+    flex: 1,
+    color: "#EF4444",
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  retryButton: {
+    backgroundColor: "#EF4444",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
   },
   categorySection: {
     paddingHorizontal: 24,
@@ -355,12 +430,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     gap: 8,
+    position: "relative",
   },
   categoryTabActive: {
     backgroundColor: "#6366F1",
   },
   categoryTabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: "#9CA3AF",
   },
@@ -368,16 +444,41 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
   },
+  completionBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#10B981",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+  },
+  completionBadgeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "600",
+    textAlign: "center",
+  },
   modulesSection: {
     paddingHorizontal: 24,
     paddingVertical: 24,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "800",
+    fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 20,
     letterSpacing: -0.5,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    color: "#9CA3AF",
+    fontSize: 16,
+    marginTop: 16,
   },
   quickActionsSection: {
     paddingHorizontal: 24,
@@ -390,7 +491,7 @@ const styles = StyleSheet.create({
   },
   quickActionCard: {
     flex: 1,
-    height: 100,
+    minHeight: 100,
     borderRadius: 20,
     overflow: "hidden",
     elevation: 8,
@@ -407,7 +508,7 @@ const styles = StyleSheet.create({
   },
   quickActionTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "600",
     color: "white",
     marginTop: 8,
     textAlign: "center",

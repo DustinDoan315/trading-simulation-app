@@ -7,8 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '@/utils/logger';
 import { navigateToCryptoChart } from '@/utils/navigation';
 import { NON_TRADEABLE_TOKENS } from '@/utils/constant';
+import { RootState, useAppDispatch, useAppSelector } from '../../store';
 import { router } from 'expo-router';
-import { useAppDispatch, useAppSelector } from '../../store';
 import { useLanguage } from '../../context/LanguageContext';
 import {
   Animated,
@@ -50,7 +50,9 @@ export default function CryptoSearch() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>([]);
   const dispatch = useAppDispatch();
-  const searchHistory = useAppSelector((state) => state.searchHistory.items);
+  const searchHistory = useAppSelector(
+    (state: RootState) => state.searchHistory.items
+  );
   const inputRef = useRef<TextInput>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;

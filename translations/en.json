@@ -383,5 +383,47 @@
     "languageChanged": "Language changed successfully!",
     "languageChangeFailed": "Failed to change language. Please try again.",
     "ok": "OK"
+  },
+  "learning": {
+    "title": "Learn Trading",
+    "masterCrypto": "Master Crypto Trading",
+    "buildSkills": "Build your trading skills with our comprehensive learning modules designed for all experience levels.",
+    "categories": {
+      "basics": "Basics",
+      "technical": "Technical",
+      "advanced": "Advanced"
+    },
+    "sections": {
+      "beginnerModules": "Beginner Modules",
+      "technicalAnalysis": "Technical Analysis",
+      "advancedStrategies": "Advanced Strategies"
+    },
+    "readyToPractice": "Ready to Practice?",
+    "startTrading": "Start Trading",
+    "practiceWhatYouLearned": "Practice what you learned",
+    "viewPortfolio": "View Portfolio",
+    "trackYourProgress": "Track your progress",
+    "startLearning": "Start Learning",
+    "continueLearning": "Continue Learning",
+    "moduleCompleted": "Module Completed",
+    "progress": "Progress",
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "actions": {
+      "startModule": "Start Module",
+      "resumeModule": "Resume Module",
+      "completeModule": "Complete Module",
+      "takeQuiz": "Take Quiz",
+      "viewContent": "View Content"
+    },
+    "stats": {
+      "overallProgress": "Overall Progress",
+      "modulesCompleted": "Modules Completed",
+      "timeSpent": "Time Spent",
+      "currentStreak": "Current Streak"
+    }
   }
 }

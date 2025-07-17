@@ -383,5 +383,47 @@
     "languageChanged": "Đã thay đổi ngôn ngữ thành công!",
     "languageChangeFailed": "Không thể thay đổi ngôn ngữ. Vui lòng thử lại.",
     "ok": "OK"
+  },
+  "learning": {
+    "title": "Học giao dịch",
+    "masterCrypto": "Làm chủ giao dịch tiền mã hóa",
+    "buildSkills": "Xây dựng kỹ năng giao dịch với các module học tập toàn diện được thiết kế cho mọi cấp độ kinh nghiệm.",
+    "categories": {
+      "basics": "Cơ bản",
+      "technical": "Kỹ thuật",
+      "advanced": "Nâng cao"
+    },
+    "sections": {
+      "beginnerModules": "Module cơ bản",
+      "technicalAnalysis": "Phân tích kỹ thuật",
+      "advancedStrategies": "Chiến lược nâng cao"
+    },
+    "readyToPractice": "Sẵn sàng thực hành?",
+    "startTrading": "Bắt đầu giao dịch",
+    "practiceWhatYouLearned": "Thực hành những gì bạn đã học",
+    "viewPortfolio": "Xem danh mục",
+    "trackYourProgress": "Theo dõi tiến độ",
+    "startLearning": "Bắt đầu học",
+    "continueLearning": "Tiếp tục học",
+    "moduleCompleted": "Module đã hoàn thành",
+    "progress": "Tiến độ",
+    "difficulty": {
+      "beginner": "Cơ bản",
+      "intermediate": "Trung cấp",
+      "advanced": "Nâng cao"
+    },
+    "actions": {
+      "startModule": "Bắt đầu module",
+      "resumeModule": "Tiếp tục module",
+      "completeModule": "Hoàn thành module",
+      "takeQuiz": "Làm bài kiểm tra",
+      "viewContent": "Xem nội dung"
+    },
+    "stats": {
+      "overallProgress": "Tiến độ tổng thể",
+      "modulesCompleted": "Module đã hoàn thành",
+      "timeSpent": "Thời gian học",
+      "currentStreak": "Chuỗi hiện tại"
+    }
   }
 }
