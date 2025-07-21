@@ -27,6 +27,12 @@ import {
   cryptoNewsService,
 } from "@/services/CryptoNewsService";
 import {
+  ShimmerBalanceSection,
+  ShimmerNewsCard,
+  ShimmerPortfolioCard,
+  ShimmerQuickActions,
+} from "@/components/home/ShimmerHomePlaceholders";
+import {
   calculatePortfolioMetrics,
   formatPnL,
   formatPortfolioValue,
@@ -158,9 +164,27 @@ const HomeScreen = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t("common.loading")}</Text>
-        </View>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.welcomeSection}>
+            <ShimmerBalanceSection />
+          </View>
+          {isNewUser && (
+            <View style={styles.quickActionsSection}>
+              <ShimmerQuickActions />
+            </View>
+          )}
+          <View style={styles.portfolioSection}>
+            <ShimmerPortfolioCard />
+          </View>
+          <View style={styles.insightsSection}>
+            {[1, 2, 3].map((_, idx) => (
+              <ShimmerNewsCard key={idx} />
+            ))}
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }

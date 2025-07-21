@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '@/styles/colors';
 import React, { useEffect, useState } from 'react';
+import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import { ASYNC_STORAGE_KEYS } from '@/utils/constant';
 import { clearSearchHistory } from '@/features/searchHistorySlice';
 import { forceRefreshAllData } from '@/utils/resetUtils';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '@/utils/logger';
 import { persistor } from '@/store';
 import { resetBalance } from '@/features/balanceSlice';
@@ -278,9 +280,183 @@ const ProfileScreen = () => {
   if (loading || realTimeLoading || transactionCountLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6674CC" />
-          <Text style={styles.loadingText}>{t("profile.loadingProfile")}</Text>
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
+            <ShimmerPlaceHolder
+              LinearGradient={LinearGradient}
+              style={{
+                width: 100,
+                height: 100,
+                borderRadius: 50,
+                marginBottom: 16,
+              }}
+            />
+          </View>
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={{ width: 120, height: 28, borderRadius: 8, marginBottom: 8 }}
+          />
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={{ width: 80, height: 16, borderRadius: 6, marginBottom: 8 }}
+          />
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={{
+              width: 100,
+              height: 14,
+              borderRadius: 6,
+              marginBottom: 16,
+            }}
+          />
+        </View>
+        <View style={styles.statsContainer}>
+          <View style={styles.statsHeader}>
+            <ShimmerPlaceHolder
+              LinearGradient={LinearGradient}
+              style={{
+                width: 160,
+                height: 20,
+                borderRadius: 8,
+                marginBottom: 16,
+              }}
+            />
+          </View>
+          <View style={styles.statsGrid}>
+            {[1, 2, 3].map((_, idx) => (
+              <View key={idx} style={styles.statCard}>
+                <ShimmerPlaceHolder
+                  LinearGradient={LinearGradient}
+                  style={{
+                    width: 60,
+                    height: 16,
+                    borderRadius: 8,
+                    marginBottom: 8,
+                  }}
+                />
+                <ShimmerPlaceHolder
+                  LinearGradient={LinearGradient}
+                  style={{
+                    width: 40,
+                    height: 24,
+                    borderRadius: 8,
+                    marginBottom: 4,
+                  }}
+                />
+                <ShimmerPlaceHolder
+                  LinearGradient={LinearGradient}
+                  style={{ width: 60, height: 12, borderRadius: 6 }}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+        <View style={styles.portfolioCard}>
+          <View style={styles.portfolioHeader}>
+            <ShimmerPlaceHolder
+              LinearGradient={LinearGradient}
+              style={{ width: 24, height: 20, borderRadius: 8, marginRight: 8 }}
+            />
+            <ShimmerPlaceHolder
+              LinearGradient={LinearGradient}
+              style={{ width: 100, height: 16, borderRadius: 8 }}
+            />
+          </View>
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={{
+              width: 120,
+              height: 32,
+              borderRadius: 12,
+              marginBottom: 4,
+            }}
+          />
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={{ width: 100, height: 14, borderRadius: 6 }}
+          />
+        </View>
+        <View style={styles.section}>
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={{
+              width: 180,
+              height: 20,
+              borderRadius: 8,
+              marginBottom: 16,
+            }}
+          />
+          <View style={styles.settingsGroup}>
+            {[1, 2, 3, 4].map((_, idx) => (
+              <View key={idx} style={styles.settingItem}>
+                <ShimmerPlaceHolder
+                  LinearGradient={LinearGradient}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    marginRight: 14,
+                  }}
+                />
+                <View style={styles.settingContent}>
+                  <ShimmerPlaceHolder
+                    LinearGradient={LinearGradient}
+                    style={{
+                      width: 100,
+                      height: 16,
+                      borderRadius: 8,
+                      marginBottom: 4,
+                    }}
+                  />
+                  <ShimmerPlaceHolder
+                    LinearGradient={LinearGradient}
+                    style={{ width: 120, height: 13, borderRadius: 6 }}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+        <View style={styles.section}>
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={{
+              width: 180,
+              height: 20,
+              borderRadius: 8,
+              marginBottom: 16,
+            }}
+          />
+          <View style={styles.settingsGroup}>
+            {[1, 2, 3, 4].map((_, idx) => (
+              <View key={idx} style={styles.settingItem}>
+                <ShimmerPlaceHolder
+                  LinearGradient={LinearGradient}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    marginRight: 14,
+                  }}
+                />
+                <View style={styles.settingContent}>
+                  <ShimmerPlaceHolder
+                    LinearGradient={LinearGradient}
+                    style={{
+                      width: 100,
+                      height: 16,
+                      borderRadius: 8,
+                      marginBottom: 4,
+                    }}
+                  />
+                  <ShimmerPlaceHolder
+                    LinearGradient={LinearGradient}
+                    style={{ width: 120, height: 13, borderRadius: 6 }}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
       </SafeAreaView>
     );

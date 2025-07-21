@@ -25,6 +25,10 @@ import React, {
   useRef,
   useState,
 } from "react";
+import {
+  ShimmerLeaderboardHeader,
+  ShimmerLeaderboardItem,
+} from "@/components/shimmer/ShimmerHeaders";
 
 
 const LeaderboardScreen = () => {
@@ -432,9 +436,23 @@ const LeaderboardScreen = () => {
       </View>
 
       <FlatList
-        data={getCurrentData}
-        renderItem={({ item }) => <RankedItem item={item} type={activeTab} />}
-        keyExtractor={(item) => item.id}
+        data={
+          isLoading || rankLoading || friendsLoading
+            ? Array(6).fill({})
+            : getCurrentData
+        }
+        renderItem={({ item, index }) =>
+          isLoading || rankLoading || friendsLoading ? (
+            <ShimmerLeaderboardItem key={index} />
+          ) : (
+            <RankedItem item={item} type={activeTab} />
+          )
+        }
+        keyExtractor={(item, index) =>
+          isLoading || rankLoading || friendsLoading
+            ? `shimmer-${index}`
+            : item.id
+        }
         style={styles.list}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -446,19 +464,25 @@ const LeaderboardScreen = () => {
             colors={["#6674CC"]}
           />
         }
-        ListHeaderComponent={<LeaderboardHeader />}
+        ListHeaderComponent={
+          isLoading || rankLoading || friendsLoading ? (
+            <ShimmerLeaderboardHeader />
+          ) : (
+            <LeaderboardHeader />
+          )
+        }
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
-              {isLoading || friendsLoading
-                ? t("leaderboard.loadingLeaderboard")
-                : activeTab === "friends"
-                ? friendsData.length === 0
-                  ? t("leaderboard.noFriendsFound")
-                  : t("leaderboard.noFriendsWithRankings")
-                : t("leaderboard.noRankingsAvailable")}
-            </Text>
-          </View>
+          isLoading || rankLoading || friendsLoading ? null : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                {activeTab === "friends"
+                  ? friendsData.length === 0
+                    ? t("leaderboard.noFriendsFound")
+                    : t("leaderboard.noFriendsWithRankings")
+                  : t("leaderboard.noRankingsAvailable")}
+              </Text>
+            </View>
+          )
         }
         key={`${activeTab}-${lastUpdated?.getTime() || Date.now()}`}
         extraData={lastUpdated}

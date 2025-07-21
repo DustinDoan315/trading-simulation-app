@@ -1,6 +1,7 @@
 import colors from '@/styles/colors';
 import CryptoListItem from '@/components/crypto/CryptoListItem';
 import React, { useEffect, useRef, useState } from 'react';
+import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { getCryptoIdFromSymbol } from '@/utils/cryptoMapping';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +28,7 @@ import {
   CryptoCurrency,
   searchCryptocurrencies,
 } from "@/services/CryptoService";
+// If you need shared shimmer headers, import from '@/components/shimmer/ShimmerHeaders'
 import {
   addSearchHistory,
   clearSearchHistory,
@@ -225,6 +227,68 @@ export default function CryptoSearch() {
     </LinearGradient>
   );
 
+  // Shimmer for search bar, chips, and list items
+  const ShimmerSearchBar = (
+    <Animated.View
+      style={[
+        styles.searchContainer,
+        {
+          transform: [{ scale: searchBarScale }],
+        },
+      ]}>
+      <LinearGradient
+        colors={["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"]}
+        style={styles.searchBar}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}>
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{ width: 22, height: 22, borderRadius: 11, marginRight: 10 }}
+        />
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{ flex: 1, height: 20, borderRadius: 8 }}
+        />
+      </LinearGradient>
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={{ width: 60, height: 32, borderRadius: 8, marginLeft: 10 }}
+      />
+    </Animated.View>
+  );
+
+  const ShimmerChip = () => (
+    <ShimmerPlaceHolder
+      LinearGradient={LinearGradient}
+      style={{
+        width: width / 2.25,
+        height: 48,
+        borderRadius: 10,
+        marginBottom: 8,
+      }}
+    />
+  );
+
+  const ShimmerListItem = () => (
+    <View
+      style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={{ width: 36, height: 36, borderRadius: 18, marginRight: 12 }}
+      />
+      <View style={{ flex: 1 }}>
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{ width: 100, height: 16, borderRadius: 8, marginBottom: 4 }}
+        />
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{ width: 60, height: 12, borderRadius: 6 }}
+        />
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -248,179 +312,207 @@ export default function CryptoSearch() {
       </Animated.View>
 
       {/* Search Bar */}
-      <Animated.View
-        style={[
-          styles.searchContainer,
-          {
-            transform: [{ scale: searchBarScale }],
-          },
-        ]}>
-        <LinearGradient
-          colors={["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"]}
-          style={styles.searchBar}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}>
-          <Ionicons
-            name="search"
-            size={22}
-            color="#777"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            ref={inputRef}
-            style={styles.searchInput}
-            value={searchText}
-            onChangeText={(text) => {
-              setSearchText(text.toUpperCase());
-              if (text.length >= 3) {
-                searchCryptocurrencies(text, 10).then((results) => {
-                  setSuggestions(results);
-                  setShowSuggestions(true);
-                });
-              } else {
-                setShowSuggestions(false);
-              }
-            }}
-            placeholder={t("cryptoSearch.searchPlaceholder")}
-            placeholderTextColor="#777"
-            autoCapitalize="none"
-            returnKeyType="search"
-            onSubmitEditing={() => handleSearch(searchText)}
-          />
-          {isSearching && (
-            <View style={styles.loadingIndicator}>
-              <Text style={styles.loadingText}>...</Text>
-            </View>
-          )}
-        </LinearGradient>
-        <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
-          <Text style={styles.cancelText}>{t("cryptoSearch.cancel")}</Text>
-        </TouchableOpacity>
-      </Animated.View>
+      {isSearching ? (
+        ShimmerSearchBar
+      ) : (
+        <Animated.View
+          style={[
+            styles.searchContainer,
+            {
+              transform: [{ scale: searchBarScale }],
+            },
+          ]}>
+          <LinearGradient
+            colors={["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"]}
+            style={styles.searchBar}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}>
+            <Ionicons
+              name="search"
+              size={22}
+              color="#777"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              ref={inputRef}
+              style={styles.searchInput}
+              value={searchText}
+              onChangeText={(text) => {
+                setSearchText(text.toUpperCase());
+                if (text.length >= 3) {
+                  searchCryptocurrencies(text, 10).then((results) => {
+                    setSuggestions(results);
+                    setShowSuggestions(true);
+                  });
+                } else {
+                  setShowSuggestions(false);
+                }
+              }}
+              placeholder={t("cryptoSearch.searchPlaceholder")}
+              placeholderTextColor="#777"
+              autoCapitalize="none"
+              returnKeyType="search"
+              onSubmitEditing={() => handleSearch(searchText)}
+            />
+            {isSearching && (
+              <View style={styles.loadingIndicator}>
+                <Text style={styles.loadingText}>...</Text>
+              </View>
+            )}
+          </LinearGradient>
+          <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
+            <Text style={styles.cancelText}>{t("cryptoSearch.cancel")}</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       <ScrollView
         style={styles.contentContainer}
         showsVerticalScrollIndicator={false}>
-        {/* Popular Cryptocurrencies */}
-        {!searchText && searchResults.length === 0 && renderPopularCryptos()}
+        {isSearching ? (
+          <>
+            <View style={styles.popularContainer}>
+              <ShimmerChip />
+              <ShimmerChip />
+            </View>
+            <View style={{ marginTop: 20 }}>
+              {[1, 2, 3, 4].map((_, idx) => (
+                <ShimmerListItem key={idx} />
+              ))}
+            </View>
+          </>
+        ) : (
+          <>
+            {/* Popular Cryptocurrencies */}
+            {!searchText &&
+              searchResults.length === 0 &&
+              renderPopularCryptos()}
 
-        {/* Search History Section */}
-        {searchHistory.length > 0 &&
-          !searchText &&
-          searchResults.length === 0 && (
-            <View style={styles.historyContainer}>
-              <View style={styles.historyHeader}>
-                <View style={styles.sectionHeader}>
-                  <Ionicons name="time-outline" size={20} color="#FFD700" />
-                  <Text style={styles.sectionTitle}>
-                    {t("cryptoSearch.searchHistory")}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={handleClearHistory}
-                  style={styles.clearButton}>
-                  <Feather name="trash-2" size={18} color="#FF6B6B" />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.chipsContainer}>
-                {recentSearches.map((item) => (
-                  <View key={item.id} style={styles.historyChipContainer}>
+            {/* Search History Section */}
+            {searchHistory.length > 0 &&
+              !searchText &&
+              searchResults.length === 0 && (
+                <View style={styles.historyContainer}>
+                  <View style={styles.historyHeader}>
+                    <View style={styles.sectionHeader}>
+                      <Ionicons name="time-outline" size={20} color="#FFD700" />
+                      <Text style={styles.sectionTitle}>
+                        {t("cryptoSearch.searchHistory")}
+                      </Text>
+                    </View>
                     <TouchableOpacity
-                      style={styles.historyChip}
-                      onPress={() => handleHistoryItemPress(item)}>
-                      <Text style={styles.chipText}>{item.text}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.deleteChipButton}
-                      onPress={() =>
-                        dispatch(removeSearchHistoryItem(item.id))
-                      }>
-                      <Ionicons name="close" size={14} color="#777" />
+                      onPress={handleClearHistory}
+                      style={styles.clearButton}>
+                      <Feather name="trash-2" size={18} color="#FF6B6B" />
                     </TouchableOpacity>
                   </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
 
-        {/* Search Tips */}
-        {!searchText && searchResults.length === 0 && renderSearchTips()}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.chipsContainer}>
+                    {recentSearches.map((item) => (
+                      <View key={item.id} style={styles.historyChipContainer}>
+                        <TouchableOpacity
+                          style={styles.historyChip}
+                          onPress={() => handleHistoryItemPress(item)}>
+                          <Text style={styles.chipText}>{item.text}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.deleteChipButton}
+                          onPress={() =>
+                            dispatch(removeSearchHistoryItem(item.id))
+                          }>
+                          <Ionicons name="close" size={14} color="#777" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
 
-        {/* Suggestions Section */}
-        {showSuggestions &&
-          searchResults.length == 0 &&
-          suggestions.length > 0 && (
-            <View style={styles.suggestionsContainer}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name="flash-outline" size={20} color="#4ECDC4" />
-                <Text style={styles.sectionTitle}>
-                  {t("cryptoSearch.suggestions")}
-                </Text>
-              </View>
-              <View style={styles.suggestionsList}>
-                {suggestions.map((crypto) => {
-                  // Check if the crypto is a non-tradeable token (like USDT)
-                  const cryptoSymbol = crypto.symbol?.toUpperCase();
-                  const isNonTradeable =
-                    cryptoSymbol &&
-                    NON_TRADEABLE_TOKENS.includes(cryptoSymbol as any);
+            {/* Search Tips */}
+            {!searchText && searchResults.length === 0 && renderSearchTips()}
 
-                  return (
+            {/* Suggestions Section */}
+            {showSuggestions &&
+              searchResults.length == 0 &&
+              suggestions.length > 0 && (
+                <View style={styles.suggestionsContainer}>
+                  <View style={styles.sectionHeader}>
+                    <Ionicons name="flash-outline" size={20} color="#4ECDC4" />
+                    <Text style={styles.sectionTitle}>
+                      {t("cryptoSearch.suggestions")}
+                    </Text>
+                  </View>
+                  <View style={styles.suggestionsList}>
+                    {suggestions.map((crypto) => {
+                      // Check if the crypto is a non-tradeable token (like USDT)
+                      const cryptoSymbol = crypto.symbol?.toUpperCase();
+                      const isNonTradeable =
+                        cryptoSymbol &&
+                        NON_TRADEABLE_TOKENS.includes(cryptoSymbol as any);
+
+                      return (
+                        <CryptoListItem
+                          key={crypto.id}
+                          crypto={crypto}
+                          onPress={() => {
+                            if (!isNonTradeable) {
+                              setSearchText(crypto.symbol);
+                              handleSearch(crypto.symbol);
+                            }
+                            // Do nothing for non-tradeable tokens
+                          }}
+                        />
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
+            {/* Search Results Section */}
+            {searchResults.length > 0 && (
+              <View style={styles.resultsContainer}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={20}
+                    color="#4ECDC4"
+                  />
+                  <Text style={styles.sectionTitle}>
+                    {t("cryptoSearch.results")}
+                  </Text>
+                  <Text style={styles.resultsCount}>
+                    ({searchResults.length})
+                  </Text>
+                </View>
+                <View style={styles.resultsList}>
+                  {searchResults.map((crypto) => (
                     <CryptoListItem
                       key={crypto.id}
                       crypto={crypto}
                       onPress={() => {
-                        if (!isNonTradeable) {
-                          setSearchText(crypto.symbol);
-                          handleSearch(crypto.symbol);
-                        }
-                        // Do nothing for non-tradeable tokens
+                        goToChart(crypto);
                       }}
                     />
-                  );
-                })}
+                  ))}
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
-        {/* Search Results Section */}
-        {searchResults.length > 0 && (
-          <View style={styles.resultsContainer}>
-            <View style={styles.sectionHeader}>
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={20}
-                color="#4ECDC4"
-              />
-              <Text style={styles.sectionTitle}>
-                {t("cryptoSearch.results")}
-              </Text>
-              <Text style={styles.resultsCount}>({searchResults.length})</Text>
-            </View>
-            <View style={styles.resultsList}>
-              {searchResults.map((crypto) => (
-                <CryptoListItem
-                  key={crypto.id}
-                  crypto={crypto}
-                  onPress={() => {
-                    goToChart(crypto);
-                  }}
+            {/* Error Message */}
+            {searchError && (
+              <View style={styles.errorContainer}>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={24}
+                  color="#FF6B6B"
                 />
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Error Message */}
-        {searchError && (
-          <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle-outline" size={24} color="#FF6B6B" />
-            <Text style={styles.errorText}>{searchError}</Text>
-          </View>
+                <Text style={styles.errorText}>{searchError}</Text>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>

@@ -2,6 +2,7 @@ import AssetItem from '@/components/portfolio/AssetItem';
 import BalanceCard from '@/components/portfolio/BalanceCard';
 import PortfolioHeader from '@/components/portfolio/PortfolioHeader';
 import React, { useCallback, useMemo } from 'react';
+import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import { Asset } from '@/types/crypto';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +24,10 @@ import {
   Text,
   View,
 } from "react-native";
+import {
+  ShimmerBalanceSection,
+  ShimmerPortfolioCard,
+} from "@/components/shimmer/ShimmerHeaders";
 
 
 const { width } = Dimensions.get("window");
@@ -86,14 +91,88 @@ const PortfolioScreen = () => {
 
   const portfolioChangePercent = totalPnLPercentage;
 
-  const ListHeaderComponent = useMemo(
-    () => (
+  const ShimmerHeader = (
+    <View style={styles.enhancedContainer}>
+      <LinearGradient
+        colors={["#1A1D2F", "#131523", "#0F111A"]}
+        style={styles.backgroundGradient}
+      />
+      <View style={styles.headerContainer}>
+        <ShimmerPortfolioCard />
+      </View>
+      <View style={styles.balanceCardContainer}>
+        <ShimmerBalanceSection />
+      </View>
+      <View style={styles.enhancedStatsContainer}>
+        <LinearGradient
+          colors={["rgba(140, 158, 255, 0.1)", "rgba(140, 158, 255, 0.05)"]}
+          style={styles.statsGradient}>
+          <View style={styles.statsHeader}>
+            <Ionicons name="trending-up" size={20} color="#8C9EFF" />
+            <Text style={styles.statsTitle}>
+              {t("portfolio.portfolioPerformance")}
+            </Text>
+          </View>
+          <View style={styles.statRow}>
+            <View style={styles.statItem}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="arrow-up" size={16} color="#4CAF50" />
+              </View>
+              <Text style={styles.statLabel}>{t("portfolio.totalPnL")}</Text>
+              <ShimmerPlaceHolder
+                LinearGradient={LinearGradient}
+                style={{ width: 60, height: 18, borderRadius: 8 }}
+              />
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="analytics" size={16} color="#8C9EFF" />
+              </View>
+              <Text style={styles.statLabel}>
+                {t("portfolio.pnlPercentage")}
+              </Text>
+              <ShimmerPlaceHolder
+                LinearGradient={LinearGradient}
+                style={{ width: 60, height: 18, borderRadius: 8 }}
+              />
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
+      <View style={styles.assetsHeader}>
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{ width: 120, height: 20, borderRadius: 8, marginBottom: 4 }}
+        />
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{ width: 80, height: 14, borderRadius: 7 }}
+        />
+      </View>
+    </View>
+  );
+
+  const ShimmerAssetList = (
+    <View>
+      {[...Array(4)].map((_, idx) => (
+        <View key={idx} style={{ marginBottom: 12 }}>
+          <ShimmerPortfolioCard />
+        </View>
+      ))}
+    </View>
+  );
+
+  const ListHeaderComponent = useMemo(() => {
+    if (loading || userLoading || realTimeLoading) {
+      return ShimmerHeader;
+    }
+    return (
       <View style={styles.enhancedContainer}>
         <LinearGradient
           colors={["#1A1D2F", "#131523", "#0F111A"]}
           style={styles.backgroundGradient}
         />
-
         <View style={styles.headerContainer}>
           <PortfolioHeader
             totalValue={formattedTotalBalance}
@@ -108,7 +187,6 @@ const PortfolioScreen = () => {
             assets={displayAssets}
           />
         </View>
-
         <View style={styles.enhancedStatsContainer}>
           <LinearGradient
             colors={["rgba(140, 158, 255, 0.1)", "rgba(140, 158, 255, 0.05)"]}
@@ -119,7 +197,6 @@ const PortfolioScreen = () => {
                 {t("portfolio.portfolioPerformance")}
               </Text>
             </View>
-
             <View style={styles.statRow}>
               <View style={styles.statItem}>
                 <View style={styles.statIconContainer}>
@@ -138,9 +215,7 @@ const PortfolioScreen = () => {
                   {formattedTotalPnL}
                 </Text>
               </View>
-
               <View style={styles.statDivider} />
-
               <View style={styles.statItem}>
                 <View style={styles.statIconContainer}>
                   <Ionicons name="analytics" size={16} color="#8C9EFF" />
@@ -159,7 +234,6 @@ const PortfolioScreen = () => {
             </View>
           </LinearGradient>
         </View>
-
         {displayAssets.length === 0 && !loading && (
           <View style={styles.welcomeContainer}>
             <LinearGradient
@@ -193,7 +267,6 @@ const PortfolioScreen = () => {
             </LinearGradient>
           </View>
         )}
-
         {displayAssets.length > 0 && (
           <View style={styles.assetsHeader}>
             <Text style={styles.assetsTitle}>{t("portfolio.yourAssets")}</Text>
@@ -206,32 +279,26 @@ const PortfolioScreen = () => {
           </View>
         )}
       </View>
-    ),
-    [
-      formattedTotalBalance,
-      portfolioChangePercent,
-      formattedTotalPnL,
-      displayAssets,
-      user,
-      formattedAvailableBalance,
-      totalPnL,
-      totalPnLPercentage,
-      formattedTotalPnLPercentage,
-      loading,
-      t,
-    ]
-  );
+    );
+  }, [
+    loading,
+    userLoading,
+    realTimeLoading,
+    formattedTotalBalance,
+    portfolioChangePercent,
+    formattedTotalPnL,
+    displayAssets,
+    user,
+    formattedAvailableBalance,
+    totalPnL,
+    totalPnLPercentage,
+    formattedTotalPnLPercentage,
+    t,
+  ]);
 
   const ListEmptyComponent = useMemo(() => {
     if (loading || userLoading || realTimeLoading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8C9EFF" />
-          <Text style={styles.loadingText}>
-            {t("portfolio.loadingPortfolio")}
-          </Text>
-        </View>
-      );
+      return <View style={styles.loadingContainer}>{ShimmerAssetList}</View>;
     }
     if (error) {
       return (
