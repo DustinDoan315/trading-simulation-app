@@ -208,6 +208,7 @@ export interface CreateUserParams {
   usdt_balance?: string;
   total_portfolio_value?: string;
   initial_balance?: string;
+  is_active?: boolean;
 }
 
 export interface UpdateUserParams {
@@ -225,6 +226,7 @@ export interface UpdateUserParams {
   global_rank?: number;
   last_trade_at?: string;
   last_active?: string;
+  is_active?: boolean;
 }
 
 export interface CreatePortfolioParams {

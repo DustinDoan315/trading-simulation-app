@@ -2,12 +2,14 @@ import LeaderboardService from '../services/LeaderboardService';
 import { useCallback, useEffect, useState } from 'react';
 import { UserService } from '../services/UserService';
 
+
 export interface LeaderboardRankingData {
   currentRank: number | null;
   isLoading: boolean;
   error: string | null;
   stats: {
     totalUsers: number;
+    activeUsers: number;
     topPerformer: { userId: string; rank: number; pnl: string } | null;
     averagePnL: number;
   } | null;

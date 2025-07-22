@@ -15,6 +15,9 @@ import {
   getMarketData,
   getUserBalance,
 } from "@/services/CryptoService";
+import { AppState, AppStateStatus } from 'react-native';
+import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 
 
 export function useHomeData() {
@@ -24,6 +27,7 @@ export function useHomeData() {
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [marketData, setMarketData] = useState<CryptoCurrency[]>([]);
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { user } = useUser();
 
   // Get balance from Redux store
   const balance = useSelector((state: RootState) => state.balance.balance);
@@ -116,6 +120,26 @@ export function useHomeData() {
       }
     };
   }, []);
+
+  // Track app state and update user activity
+  useEffect(() => {
+    if (!user?.id) return;
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      try {
+        if (nextAppState === 'active') {
+          await UserService.updateUserActivity(user.id, true);
+        } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+          await UserService.updateUserActivity(user.id, false);
+        }
+      } catch (err) {
+        console.warn('Failed to update user activity:', err);
+      }
+    };
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, [user?.id]);
 
   const trendingCoins = useMemo(() => {
     return [...marketData]

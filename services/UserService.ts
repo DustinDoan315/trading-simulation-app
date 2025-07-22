@@ -44,6 +44,7 @@ export class UserService {
         ...params,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        is_active: params.is_active !== undefined ? params.is_active : true, // default to true
       };
 
       // If id is provided, use it; otherwise let Supabase generate one
@@ -134,6 +135,29 @@ export class UserService {
       if (error) throw error;
     } catch (error) {
       logger.error("Error updating user balance", "UserService", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update user's is_active and last_active status (for app state tracking)
+   * @param userId string
+   * @param isActive boolean
+   */
+  static async updateUserActivity(userId: string, isActive: boolean): Promise<void> {
+    try {
+      const updates = {
+        is_active: isActive,
+        last_active: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase
+        .from("users")
+        .update(updates)
+        .eq("id", userId);
+      if (error) throw error;
+    } catch (error) {
+      logger.error("Error updating user activity", "UserService", error);
       throw error;
     }
   }
@@ -1346,6 +1370,7 @@ export class UserService {
     period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"
   ): Promise<{
     totalUsers: number;
+    activeUsers: number;
     topPerformer: { userId: string; rank: number; pnl: string } | null;
     averagePnL: number;
   }> {
@@ -1362,6 +1387,17 @@ export class UserService {
 
       const rankingsList = rankings || [];
       const totalUsers = rankingsList.length;
+
+      // Get active users count (users active in last 24 hours)
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count: activeUsers, error: activeError } = await supabase
+        .from("users")
+        .select("*", { count: "exact", head: true })
+        .gte("last_active", twentyFourHoursAgo);
+
+      if (activeError) {
+        logger.warn("Error getting active users count:", activeError.message);
+      }
 
       const topPerformer =
         totalUsers > 0
@@ -1382,6 +1418,7 @@ export class UserService {
 
       return {
         totalUsers,
+        activeUsers: activeUsers || 0,
         topPerformer,
         averagePnL,
       };
@@ -1389,6 +1426,7 @@ export class UserService {
       logger.error("Error getting leaderboard stats", "UserService", error);
       return {
         totalUsers: 0,
+        activeUsers: 0,
         topPerformer: null,
         averagePnL: 0,
       };

@@ -22,6 +22,7 @@ export const SUPABASE_SCHEMA = {
     last_trade_at: "TIMESTAMP WITH TIME ZONE",
     join_date: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
     last_active: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+    is_active: "BOOLEAN DEFAULT TRUE", // Indicates if user is currently active in the app
     created_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
     updated_at: "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
   },

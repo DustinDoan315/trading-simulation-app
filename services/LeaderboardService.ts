@@ -358,6 +358,7 @@ class LeaderboardService {
 
   async getLeaderboardStats(period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"): Promise<{
     totalUsers: number;
+    activeUsers: number;
     topPerformer: { userId: string; rank: number; pnl: string } | null;
     averagePnL: number;
   }> {
@@ -365,6 +366,7 @@ class LeaderboardService {
       const rankings = await UserService.getLeaderboard(period, undefined, 1000);
       
       const totalUsers = rankings.length;
+      const activeUsers = await this.getActiveUsersCount();
       const topPerformer = rankings.length > 0 ? {
         userId: rankings[0].user_id,
         rank: rankings[0].rank || 1,
@@ -375,10 +377,28 @@ class LeaderboardService {
         ? rankings.reduce((sum, ranking) => sum + parseFloat(ranking.total_pnl || "0"), 0) / rankings.length
         : 0;
 
-      return { totalUsers, topPerformer, averagePnL };
+      return { totalUsers, activeUsers, topPerformer, averagePnL };
     } catch (error) {
       console.error('Error getting leaderboard stats:', error);
-      return { totalUsers: 0, topPerformer: null, averagePnL: 0 };
+      return { totalUsers: 0, activeUsers: 0, topPerformer: null, averagePnL: 0 };
+    }
+  }
+
+  async getActiveUsersCount(): Promise<number> {
+    try {
+      // Get users who have been active in the last 24 hours
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      
+      const { count, error } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('last_active', twentyFourHoursAgo);
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('Error getting active users count:', error);
+      return 0;
     }
   }
 

@@ -1,29 +1,29 @@
-import * as Linking from 'expo-linking';
-import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import LeaderboardService from '@/services/LeaderboardService';
-import RealTimeDataService from '@/services/RealTimeDataService';
-import scheduler from '@/utils/scheduler';
-import Toast from 'react-native-toast-message';
-import UUIDService from '@/services/UUIDService';
-import { BackgroundDataSyncService } from '@/services/BackgroundDataSyncService';
-import { createUser, fetchUser } from '@/features/userSlice';
-import { initializeApp } from '@/utils/initializeApp';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { logger } from '@/utils/logger';
-import { NotificationProvider } from '@/components/ui/Notification';
-import { Provider } from 'react-redux';
-import { router, Stack } from 'expo-router';
-import { SafeAreaView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { store } from '../store';
-import { updateDailyBalance } from '@/utils/balanceUpdater';
-import { useCallback, useEffect } from 'react';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useFonts } from 'expo-font';
-import { UserProvider } from '@/context/UserContext';
-import 'react-native-reanimated';
-
+import * as Linking from "expo-linking";
+import * as SplashScreen from "expo-splash-screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import LeaderboardService from "@/services/LeaderboardService";
+import RealTimeDataService from "@/services/RealTimeDataService";
+import scheduler from "@/utils/scheduler";
+import Toast from "react-native-toast-message";
+import UUIDService from "@/services/UUIDService";
+import { BackgroundDataSyncService } from "@/services/BackgroundDataSyncService";
+import { createUser, fetchUser } from "@/features/userSlice";
+import { initializeApp } from "@/utils/initializeApp";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { logger } from "@/utils/logger";
+import { NotificationProvider } from "@/components/ui/Notification";
+import { Provider } from "react-redux";
+import { router, Stack } from "expo-router";
+import { SafeAreaView } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { store } from "../store";
+import { updateDailyBalance } from "@/utils/balanceUpdater";
+import { useCallback, useEffect } from "react";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useFonts } from "expo-font";
+import { UserProvider } from "@/context/UserContext";
+import { UserService } from "@/services/UserService";
+import "react-native-reanimated";
 
 import {
   ASYNC_STORAGE_KEYS,
@@ -35,7 +35,6 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-
 
 SplashScreen.preventAutoHideAsync();
 
@@ -56,6 +55,20 @@ export default function RootLayout() {
 
         const userId = await UUIDService.getOrCreateUser();
         await initializeUser(userId);
+
+        // Set user as active when app opens
+        try {
+          await UserService.updateUserActivity(userId, true);
+          logger.info("User activity set to active on app start", "AppLayout", {
+            userId,
+          });
+        } catch (error) {
+          logger.warn(
+            "Failed to update user activity on app start",
+            "AppLayout",
+            { userId, error }
+          );
+        }
 
         await initializeBackgroundSync();
 

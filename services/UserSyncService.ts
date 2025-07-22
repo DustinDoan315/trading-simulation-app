@@ -35,6 +35,7 @@ export class UserSyncService {
           win_rate: userProfile.win_rate || "0.00",
           join_date: userProfile.join_date || createdAt,
           last_active: userProfile.last_active || createdAt,
+          is_active: userProfile.is_active !== undefined ? userProfile.is_active : true,
           created_at: createdAt,
           updated_at: new Date().toISOString(),
         })
@@ -114,6 +115,27 @@ export class UserSyncService {
     } catch (error) {
       console.warn("Failed to ensure user in Supabase:", error);
       return false;
+    }
+  }
+
+  /**
+   * Update user's is_active and last_active status in Supabase (for app state tracking)
+   */
+  static async updateUserActivity(userId: string, isActive: boolean): Promise<void> {
+    try {
+      const updates = {
+        is_active: isActive,
+        last_active: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase
+        .from("users")
+        .update(updates)
+        .eq("id", userId);
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error updating user activity in Supabase:", error);
+      throw error;
     }
   }
 

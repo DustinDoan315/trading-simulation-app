@@ -1,14 +1,16 @@
-import colors from '@/styles/colors';
-import LeaderboardService from '@/services/LeaderboardService';
-import { useBackgroundSync } from '@/hooks/useBackgroundSync';
-import { useFocusEffect } from '@react-navigation/native';
-import { useLanguage } from '@/context/LanguageContext';
-import { useLeaderboardData } from '@/hooks/useLeaderboardData';
-import { useLeaderboardRanking } from '@/hooks/useLeaderboardRanking';
-import { useNotification } from '@/components/ui/Notification';
-import { UserService } from '@/services/UserService';
-import { useUser } from '@/context/UserContext';
+import colors from "@/styles/colors";
+import LeaderboardService from "@/services/LeaderboardService";
+import { useBackgroundSync } from "@/hooks/useBackgroundSync";
+import { useFocusEffect } from "@react-navigation/native";
+import { useLanguage } from "@/context/LanguageContext";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
+import { useLeaderboardRanking } from "@/hooks/useLeaderboardRanking";
+import { useNotification } from "@/components/ui/Notification";
+import { UserService } from "@/services/UserService";
+import { useUser } from "@/context/UserContext";
 import {
+  AppState,
+  AppStateStatus,
   FlatList,
   RefreshControl,
   SafeAreaView,
@@ -29,7 +31,6 @@ import {
   ShimmerLeaderboardHeader,
   ShimmerLeaderboardItem,
 } from "@/components/shimmer/ShimmerHeaders";
-
 
 const LeaderboardScreen = () => {
   const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
@@ -381,7 +382,7 @@ const LeaderboardScreen = () => {
             </Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.totalUsers}</Text>
+            <Text style={styles.statNumber}>{stats.activeUsers}</Text>
             <Text style={styles.statLabel}>
               {activeTab === "friends"
                 ? t("leaderboard.activeGlobal")
@@ -392,6 +393,31 @@ const LeaderboardScreen = () => {
       )}
     </View>
   );
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      try {
+        if (nextAppState === "active") {
+          await UserService.updateUserActivity(user.id, true);
+        } else if (
+          nextAppState === "background" ||
+          nextAppState === "inactive"
+        ) {
+          await UserService.updateUserActivity(user.id, false);
+        }
+      } catch (err) {
+        console.warn("Failed to update user activity:", err);
+      }
+    };
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [user?.id]);
 
   return (
     <SafeAreaView style={styles.container}>
