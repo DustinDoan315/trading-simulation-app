@@ -221,9 +221,7 @@ const DiscoverCollectionsScreen = () => {
 
       {/* Invite Code Section */}
       <View style={styles.inviteSection}>
-        <TouchableOpacity
-          style={styles.inviteToggle}
-          onPress={() => router.push("/(modals)/invite-code-input")}>
+        <TouchableOpacity style={styles.inviteToggle}>
           <Ionicons name="link" size={20} color="#6674CC" />
           <Text style={styles.inviteToggleText}>Join by Invite Code</Text>
           <Ionicons name="chevron-forward" size={20} color="#6674CC" />

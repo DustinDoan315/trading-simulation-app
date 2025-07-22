@@ -77,16 +77,14 @@ interface SyncQueueItem {
 }
 
 export class AsyncStorageService {
-  // Helper function to normalize user IDs for consistent comparison
   private static normalizeUserId(userId: string): string {
     return userId.toLowerCase();
   }
-  // User operations
+
   static async createOrUpdateUser(userData: UserData): Promise<UserData> {
     try {
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
-      
-      // Verify the data was saved correctly
+ 
       const savedData = await AsyncStorage.getItem(USER_KEY);
       
       return userData;
@@ -102,7 +100,6 @@ export class AsyncStorageService {
       if (userData) {
         const user = JSON.parse(userData) as UserData;
         
-        // Use case-insensitive comparison for user ID
         const userIdMatch = this.normalizeUserId(user.id) === this.normalizeUserId(userId);
         
         if (userIdMatch) {
@@ -129,7 +126,6 @@ export class AsyncStorageService {
         user.updated_at = new Date().toISOString();
         await this.createOrUpdateUser(user);
       } else {
-        // Create a new user with the current balance
         const now = new Date().toISOString();
         const newUser: UserData = {
           id: userId,
@@ -160,7 +156,7 @@ export class AsyncStorageService {
     }
   }
 
-  // Portfolio operations
+
   static async getUserPortfolio(user_id: string): Promise<PortfolioData[]> {
     try {
       const portfolioData = await AsyncStorage.getItem(PORTFOLIO_KEY);
@@ -181,11 +177,10 @@ export class AsyncStorageService {
       
       if (existingData) {
         allPortfolio = JSON.parse(existingData) as PortfolioData[];
-        // Remove existing portfolio for this user (case-insensitive)
+    
         allPortfolio = allPortfolio.filter((item) => this.normalizeUserId(item.user_id) !== this.normalizeUserId(user_id));
       }
       
-      // Add new portfolio data
       allPortfolio.push(...portfolio);
       
       await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(allPortfolio));
@@ -202,13 +197,11 @@ export class AsyncStorageService {
       if (existingData) {
         portfolio = JSON.parse(existingData) as PortfolioData[];
       }
-      
-      // Remove existing item with same symbol for this user (case-insensitive)
       portfolio = portfolio.filter((existing) => 
         !(this.normalizeUserId(existing.user_id) === this.normalizeUserId(item.user_id) && existing.symbol === item.symbol)
       );
       
-      // Add new item
+
       portfolio.push(item);
       
       await AsyncStorage.setItem(PORTFOLIO_KEY, JSON.stringify(portfolio));
@@ -226,7 +219,7 @@ export class AsyncStorageService {
       
       let portfolio: PortfolioData[] = JSON.parse(existingData) as PortfolioData[];
       
-      // Find and update the item (case-insensitive)
+     
       const index = portfolio.findIndex((item) => 
         this.normalizeUserId(item.user_id) === this.normalizeUserId(updatedItem.user_id) && item.symbol === updatedItem.symbol
       );
@@ -250,8 +243,7 @@ export class AsyncStorageService {
       }
       
       let portfolio: PortfolioData[] = JSON.parse(existingData) as PortfolioData[];
-      
-      // Remove the item (case-insensitive)
+
       portfolio = portfolio.filter((item) => 
         !(this.normalizeUserId(item.user_id) === this.normalizeUserId(user_id) && item.symbol === symbol)
       );
@@ -262,7 +254,6 @@ export class AsyncStorageService {
     }
   }
 
-  // Transaction operations
   static async getTransactions(user_id: string): Promise<TransactionData[]> {
     try {
       const transactionsData = await AsyncStorage.getItem(TRANSACTIONS_KEY);
@@ -293,7 +284,7 @@ export class AsyncStorageService {
     }
   }
 
-  // Sync queue operations
+
   static async addToSyncQueue(item: SyncQueueItem): Promise<void> {
     try {
       const existingData = await AsyncStorage.getItem(SYNC_QUEUE_KEY);
@@ -332,7 +323,7 @@ export class AsyncStorageService {
       
       let queue: SyncQueueItem[] = JSON.parse(existingData) as SyncQueueItem[];
       
-      // Remove the item
+
       queue = queue.filter((item) => item.id !== itemId);
       
       await AsyncStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
@@ -349,10 +340,8 @@ export class AsyncStorageService {
     }
   }
 
-  // Clear user-specific data (for user reset)
   static async clearUserData(userId: string): Promise<void> {
     try {
-      // Get existing data and remove user-specific entries (case-insensitive)
       const portfolioData = await AsyncStorage.getItem(PORTFOLIO_KEY);
       if (portfolioData) {
         const portfolio = JSON.parse(portfolioData) as PortfolioData[];
@@ -371,10 +360,9 @@ export class AsyncStorageService {
         await AsyncStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(filteredTransactions));
       }
 
-      // Clear user profile
+
       await AsyncStorage.removeItem(USER_KEY);
       
-      // Clear any additional cached data that might be user-specific
       const additionalKeys = [
         'user_balance',
         'user_portfolio', 
@@ -389,7 +377,7 @@ export class AsyncStorageService {
         try {
           await AsyncStorage.removeItem(key);
         } catch (error) {
-          // Silently ignore errors for additional keys
+
         }
       }
     } catch (error) {
@@ -397,11 +385,11 @@ export class AsyncStorageService {
     }
   }
 
-  // Recreate user data if corrupted or missing
+
   static async recreateUserData(userId: string, balance: number = 100000): Promise<UserData> {
     try {
       const now = new Date().toISOString();
-      const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
+      const timestamp = Date.now().toString().slice(-6); 
       const userData: UserData = {
         id: userId,
         username: `user_${userId.slice(0, 8)}_${timestamp}`,
@@ -430,21 +418,19 @@ export class AsyncStorageService {
       throw error;
     }
   }
-
-  // Clear all data from AsyncStorage
   static async clearAllData(): Promise<void> {
     try {
-      // Get all keys
+
       const allKeys = await AsyncStorage.getAllKeys();
       
-      // Clear all keys
+
       await AsyncStorage.multiRemove(allKeys);
     } catch (error) {
       throw error;
     }
   }
 
-  // Get storage info
+
   static async getStorageInfo(): Promise<{ size: number; keys: string[] }> {
     try {
       const keys = await AsyncStorage.getAllKeys();

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { CryptoNewsArticle } from '@/services/CryptoNewsService';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { logger } from '@/utils/logger';
-import { router, useLocalSearchParams } from 'expo-router';
-import { WebView } from 'react-native-webview';
+import { CryptoNewsArticle } from "@/services/CryptoNewsService";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { logger } from "@/utils/logger";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { WebView } from "react-native-webview";
 import {
   ActivityIndicator,
   Dimensions,
@@ -15,7 +15,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 
 const { width, height } = Dimensions.get("window");
 

@@ -59,7 +59,8 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactCompiler": true
     },
     "extra": {
       "SECURE_STORE_PREFIX": "trading_sim_",

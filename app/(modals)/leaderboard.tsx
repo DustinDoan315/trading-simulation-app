@@ -1,7 +1,7 @@
 import colors from "@/styles/colors";
-import React, { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 import { useNotification } from "@/components/ui/Notification";
 import {
@@ -22,7 +22,6 @@ const LeaderboardModal = () => {
 
   const { showNotification } = useNotification();
 
-  // Initialize leaderboard data with real-time updates
   const {
     data: leaderboardData,
     refresh,
@@ -35,7 +34,6 @@ const LeaderboardModal = () => {
     limit: 50,
   });
 
-  // Update filters when needed
   useEffect(() => {
     updateFilters({
       period: "ALL_TIME",
@@ -43,7 +41,6 @@ const LeaderboardModal = () => {
     });
   }, [updateFilters]);
 
-  // Show error notification if there's an error
   useEffect(() => {
     if (error) {
       showNotification({
@@ -53,7 +50,6 @@ const LeaderboardModal = () => {
     }
   }, [error, showNotification]);
 
-  // Transform real-time data for display
   const transformLeaderboardData = (data: any[], type: string) => {
     return data.map((item, index) => {
       if (type === "collections") {
@@ -175,12 +171,6 @@ const LeaderboardModal = () => {
     </View>
   );
 
-  const getCurrentData = () => {
-    if (activeTab === "global") return globalRankings;
-    if (activeTab === "friends") return friendsRankings;
-    return collectionRankings;
-  };
-
   const getCurrentDataTyped = () => {
     if (activeTab === "global") return globalRankings;
     if (activeTab === "friends") return friendsRankings;
@@ -261,7 +251,6 @@ const LeaderboardModal = () => {
         }
       />
 
-      {/* Last Updated Indicator */}
       {lastUpdated && (
         <View style={styles.lastUpdatedContainer}>
           <Text style={styles.lastUpdatedText}>

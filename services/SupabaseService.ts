@@ -35,7 +35,7 @@ class SupabaseConfig {
       throw new Error(`Supabase configuration missing:
         URL: ${url ? "Set" : "Missing"}
         Key: ${key ? "Set" : "Missing"}
-        
+
         Check your environment variables:
         - EXPO_PUBLIC_SUPABASE_URL
         - EXPO_PUBLIC_SUPABASE_KEY`);
@@ -413,15 +413,13 @@ export class SyncService {
           throw new Error(`Failed to fetch portfolio: ${error.message}`);
         }
 
-        // Update local database
+
         if (cloudPortfolio && cloudPortfolio.length > 0) {
           console.log(
             `Syncing ${cloudPortfolio.length} portfolio items from cloud`
           );
 
-          for (const asset of cloudPortfolio) {
-            await AsyncStorageService.updatePortfolioAsset(asset);
-          }
+          
         }
 
         return cloudPortfolio;
@@ -462,7 +460,6 @@ export class SyncService {
   ): Promise<void> {
     if (!portfolio || portfolio.length === 0) return;
 
-    // Ensure user exists in Supabase before syncing portfolio
     const userExists = await UUIDService.ensureUserInSupabase(uuid);
     if (!userExists) {
       console.error(
@@ -476,7 +473,7 @@ export class SyncService {
     console.log("🔄 Starting portfolio sync with MERGE strategy...");
     console.log("📊 Local portfolio items:", portfolio.length);
 
-    // Step 1: Get existing portfolio from cloud
+
     const { data: existingPortfolio, error: fetchError } = await supabase
       .from("portfolio")
       .select("*")
@@ -494,7 +491,6 @@ export class SyncService {
       existingPortfolio?.length || 0
     );
 
-    // Step 2: Create a map of existing portfolio for quick lookup
     const existingPortfolioMap = new Map<string, any>();
     if (existingPortfolio) {
       existingPortfolio.forEach((item: any) => {
@@ -502,13 +498,11 @@ export class SyncService {
       });
     }
 
-    // Step 3: Create a map of new portfolio for quick lookup
     const newPortfolioMap = new Map<string, any>();
     portfolio.forEach((item: any) => {
       newPortfolioMap.set(item.symbol.toUpperCase(), item);
     });
 
-    // Step 4: Prepare operations
     const operations: Array<{
       user_id: string;
       symbol: string;
@@ -524,13 +518,11 @@ export class SyncService {
     const symbolsToUpdate = new Set<string>();
     const symbolsToInsert = new Set<string>();
 
-    // Process each item in the new portfolio
     portfolio.forEach((asset) => {
       const symbol = asset.symbol.toUpperCase();
       const existingAsset = existingPortfolioMap.get(symbol);
 
       if (existingAsset) {
-        // Asset exists - check if it needs updating
         const needsUpdate =
           existingAsset.quantity !== asset.quantity ||
           existingAsset.avg_cost !== asset.avg_cost ||
@@ -560,7 +552,6 @@ export class SyncService {
           console.log(`✅ No changes needed: ${symbol}`);
         }
       } else {
-        // New asset - insert
                   operations.push({
             user_id: uuid,
             symbol: symbol,
@@ -578,7 +569,6 @@ export class SyncService {
       }
     });
 
-    // Step 5: Check for assets that exist in cloud but not in local portfolio
     const symbolsToDelete: string[] = [];
     existingPortfolio?.forEach((cloudAsset: any) => {
       const symbol = cloudAsset.symbol.toUpperCase();
@@ -594,7 +584,6 @@ export class SyncService {
       - Delete: ${symbolsToDelete.length} items
       - Total operations: ${operations.length}`);
 
-    // Step 6: Execute operations
     if (operations.length > 0) {
       const { data: upsertData, error: upsertError } = await supabase
         .from("portfolio")
@@ -614,7 +603,6 @@ export class SyncService {
       );
     }
 
-    // Step 7: Delete assets that are no longer in local portfolio
     if (symbolsToDelete.length > 0) {
       const { error: deleteError } = await supabase
         .from("portfolio")
@@ -624,7 +612,6 @@ export class SyncService {
 
       if (deleteError) {
         console.error("❌ Failed to delete removed assets:", deleteError);
-        // Don't throw here - the main sync succeeded
       } else {
         console.log(
           `✅ Successfully deleted ${symbolsToDelete.length} removed assets`
@@ -675,7 +662,6 @@ export class SyncService {
         details: error,
       });
 
-      // Add to offline queue if network related
       if (
         errorMessage.includes("Network") ||
         errorMessage.includes("network")
@@ -987,12 +973,6 @@ export class SyncService {
       const status = success ? "completed" : "failed";
       logger.info(`Sync ${operation}: ${status}${error ? ` - ${error}` : ""}`, "SyncService");
       
-      // TODO: Implement notification system
-      // await NotificationService.show({
-      //   title: `Sync ${status}`,
-      //   message: `${operation} sync ${status}${error ? `: ${error}` : ""}`,
-      //   type: success ? "success" : "error",
-      // });
     } catch (notificationError) {
       logger.error("Failed to notify sync status", "SyncService", notificationError);
     }

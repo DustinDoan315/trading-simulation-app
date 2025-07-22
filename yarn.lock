@@ -1093,7 +1093,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/types@npm:^7.0.0, @babel/types@npm:^7.20.0, @babel/types@npm:^7.20.7, @babel/types@npm:^7.25.2, @babel/types@npm:^7.27.1, @babel/types@npm:^7.27.3, @babel/types@npm:^7.27.6, @babel/types@npm:^7.28.0, @babel/types@npm:^7.3.3":
+"@babel/types@npm:^7.0.0, @babel/types@npm:^7.20.0, @babel/types@npm:^7.20.7, @babel/types@npm:^7.25.2, @babel/types@npm:^7.26.0, @babel/types@npm:^7.27.1, @babel/types@npm:^7.27.3, @babel/types@npm:^7.27.6, @babel/types@npm:^7.28.0, @babel/types@npm:^7.3.3":
   version: 7.28.1
   resolution: "@babel/types@npm:7.28.1"
   dependencies:
@@ -3300,6 +3300,15 @@ __metadata:
   peerDependencies:
     "@babel/core": ^7.4.0 || ^8.0.0-0 <8.0.0
   checksum: ed1932fa9a31e0752fd10ebf48ab9513a654987cab1182890839523cb898559d24ae0578fdc475d9f995390420e64eeaa4b0427045b56949dace3c725bc66dbb
+  languageName: node
+  linkType: hard
+
+"babel-plugin-react-compiler@npm:^19.1.0-rc.2":
+  version: 19.1.0-rc.2
+  resolution: "babel-plugin-react-compiler@npm:19.1.0-rc.2"
+  dependencies:
+    "@babel/types": ^7.26.0
+  checksum: cfb156ee8c5f18dda947e42139ccd6951c8d37a1d3ad88fed25e2dfd84bc90d19758e9763ba3b3a3cb92c5a49ee19eceaf936a4d1e280979ace5f0630e824e04
   languageName: node
   linkType: hard
 
@@ -10199,6 +10208,7 @@ __metadata:
   resolution: "trading-simulation-app@workspace:."
   dependencies:
     "@babel/core": ^7.25.2
+    "@babel/plugin-transform-react-jsx": ^7.27.1
     "@expo/config-plugins": ~10.1.1
     "@expo/vector-icons": ^14.0.2
     "@react-native-async-storage/async-storage": 2.1.2
@@ -10212,6 +10222,7 @@ __metadata:
     "@types/jest": ^29.5.12
     "@types/react": ~19.0.10
     "@types/react-test-renderer": ^18.3.0
+    babel-plugin-react-compiler: ^19.1.0-rc.2
     bip39: ^3.1.0
     date-fns: ^4.1.0
     date-fns-tz: ^3.2.0

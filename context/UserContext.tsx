@@ -1,7 +1,7 @@
-import UUIDService from '@/services/UUIDService';
-import { logger } from '@/utils/logger';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { User } from '@/types/database';
+import UUIDService from "@/services/UUIDService";
+import { logger } from "@/utils/logger";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { User } from "@/types/database";
 import React, {
   ReactNode,
   createContext,
@@ -18,7 +18,6 @@ import {
   fetchUser,
   fetchUserStats,
 } from "@/features/userSlice";
-
 
 interface UserContextType {
   user: User | null;
@@ -62,7 +61,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const refreshUserData = useCallback(
     async (userId: string) => {
       try {
-        // Fetch all user-related data in parallel
         await Promise.all([
           dispatch(fetchUser(userId)),
           dispatch(fetchUserStats(userId)),
@@ -81,24 +79,20 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     try {
       logger.info("Re-initializing user data", "UserContext");
 
-      // Get or create user UUID
       const userId = await UUIDService.getOrCreateUser();
 
-      // Try to fetch existing user first
       try {
         await dispatch(fetchUser(userId)).unwrap();
         logger.info("Existing user fetched successfully", "UserContext");
 
-        // Refresh all user data
         await refreshUserData(userId);
       } catch (error) {
-        // If user doesn't exist, create a new one
         logger.info("User not found, creating new user", "UserContext");
-        const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
+        const timestamp = Date.now().toString().slice(-6);
         const username = `user_${userId.slice(0, 8)}_${timestamp}`;
         await dispatch(
           createUser({
-            id: userId, // Use the device UUID
+            id: userId,
             username,
             display_name: username,
             avatar_emoji: "🚀",

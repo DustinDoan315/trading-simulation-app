@@ -1,12 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
-import { logger } from '@/utils/logger';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { Ionicons } from "@expo/vector-icons";
+import { logger } from "@/utils/logger";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   Alert,
   Animated,
-  Dimensions,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -14,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 
 interface LanguageOption {
   code: "en" | "vi";
@@ -105,7 +103,7 @@ const LanguageScreen = () => {
           },
         ]
       );
-    } catch (error) {
+    } catch (error: any) {
       logger.error("Error changing language,LanguageScreen", error);
       Alert.alert(
         t("error.title") || "Error",
