@@ -1,5 +1,5 @@
 {
-  "name": "trading-simulation-app",
+  "name": "crypto-trading-simulator",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {

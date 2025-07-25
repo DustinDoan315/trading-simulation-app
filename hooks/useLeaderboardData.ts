@@ -14,11 +14,11 @@ export const useLeaderboardData = (initialFilters: LeaderboardFilters): UseLeade
   const [data, setData] = useState<LeaderboardData>(LeaderboardService.getInstance().getData());
   const [filters, setFilters] = useState<LeaderboardFilters>(initialFilters);
 
-  // Subscribe to leaderboard service updates
+  
   useEffect(() => {
     const unsubscribe = LeaderboardService.getInstance().subscribe(setData);
     
-    // Load initial data
+
     LeaderboardService.getInstance().loadLeaderboardData(filters);
 
     return () => {
@@ -26,22 +26,21 @@ export const useLeaderboardData = (initialFilters: LeaderboardFilters): UseLeade
     };
   }, []);
 
-  // Update filters and reload data
+  
   const updateFilters = useCallback(async (newFilters: LeaderboardFilters) => {
     setFilters(newFilters);
     await LeaderboardService.getInstance().updateFilters(newFilters);
   }, []);
 
-  // Manual refresh
+ 
   const refresh = useCallback(async () => {
     await LeaderboardService.getInstance().refresh(filters);
   }, [filters]);
 
-  // Cleanup on unmount
+
   useEffect(() => {
     return () => {
-      // Don't cleanup the service here as it might be used by other components
-      // The service will be cleaned up when the app is unmounted
+
     };
   }, []);
 

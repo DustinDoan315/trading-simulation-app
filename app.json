@@ -1,23 +1,42 @@
 {
   "expo": {
-    "name": "trading-simulation-app",
-    "slug": "trading-simulation-app",
+    "name": "Crypto Trading Simulator",
+    "slug": "crypto-trading-simulator",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/rocket.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "description": "Learn cryptocurrency trading with virtual money in a completely risk-free simulation environment. Practice trading strategies, track portfolio performance, and compete with other traders - all without using real money. Perfect for beginners learning crypto trading fundamentals.",
+    "keywords": [
+      "trading",
+      "simulation",
+      "crypto",
+      "education",
+      "practice",
+      "virtual",
+      "demo",
+      "learning",
+      "portfolio",
+      "cryptocurrency"
+    ],
+    "privacy": "https://cryptotradingsimulator.app/privacy",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dustindoan.trading-simulation-app"
+      "bundleIdentifier": "com.dustindoan.crypto-trading-simulator",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera access is used to scan QR codes for joining trading collections and sharing invite codes.",
+        "NSMicrophoneUsageDescription": "Microphone access is used for voice commands in trading practice sessions."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dustindoan.tradingsimulationapp",
+      "package": "com.dustindoan.cryptotradingsimulator",
+      "permissions": ["CAMERA", "RECORD_AUDIO"],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -53,8 +72,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes",
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes for joining trading collections",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice commands in practice sessions"
         }
       ]
     ],
@@ -63,7 +82,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "SECURE_STORE_PREFIX": "trading_sim_",
+      "SECURE_STORE_PREFIX": "crypto_sim_",
       "router": {},
       "eas": {
         "projectId": "ff964db9-1fa1-4563-98c5-478459b0c294"

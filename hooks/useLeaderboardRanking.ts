@@ -53,12 +53,10 @@ export const useLeaderboardRanking = (
     }
   }, [userId, period, leaderboardService]);
 
-  // Refresh rank data
   const refreshRank = useCallback(async () => {
     await loadCurrentRank();
   }, [loadCurrentRank]);
 
-  // Initialize leaderboard rankings (run once to set up initial rankings)
   const initializeRankings = useCallback(async () => {
     setData(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -74,7 +72,6 @@ export const useLeaderboardRanking = (
     }
   }, [loadCurrentRank]);
 
-  // Recalculate all ranks
   const recalculateAllRanks = useCallback(async () => {
     setData(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -90,7 +87,6 @@ export const useLeaderboardRanking = (
     }
   }, [leaderboardService, loadCurrentRank]);
 
-  // Load data on mount and when dependencies change
   useEffect(() => {
     loadCurrentRank();
   }, [loadCurrentRank]);

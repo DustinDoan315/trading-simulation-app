@@ -1,3 +1,4 @@
+import { AppState, AppStateStatus } from 'react-native';
 import { enhancedCryptoService } from '@/services/EnhancedCryptoService';
 import { loadBalance, resetBalance, updateCurrentPrice } from '@/features/balanceSlice';
 import { RootState, useAppDispatch } from '@/store';
@@ -9,15 +10,14 @@ import {
   useRef,
   useState
   } from 'react';
+import { UserService } from '@/services/UserService';
 import { useSelector } from 'react-redux';
+import { useUser } from '@/context/UserContext';
 import {
   CryptoCurrency,
   getMarketData,
   getUserBalance,
 } from "@/services/CryptoService";
-import { AppState, AppStateStatus } from 'react-native';
-import { UserService } from '@/services/UserService';
-import { useUser } from '@/context/UserContext';
 
 
 export function useHomeData() {
@@ -29,17 +29,14 @@ export function useHomeData() {
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user } = useUser();
 
-  // Get balance from Redux store
   const balance = useSelector((state: RootState) => state.balance.balance);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Load balance first
       dispatch(loadBalance());
       
-      // Fetch market data using enhanced service for better caching
       const market = await enhancedCryptoService.getMarketData(false, 10, true);
 
       const sortMarket = market.sort(
@@ -50,7 +47,6 @@ export function useHomeData() {
 
       setMarketData(sortMarket);
 
-      // Update Redux store with latest prices
       sortMarket.forEach((coin: CryptoCurrency) => {
         dispatch(
           updatePrice({
@@ -69,19 +65,16 @@ export function useHomeData() {
     }
   }, [dispatch]);
 
-  // Update portfolio prices with real-time market data (debounced)
   const updatePortfolioPrices = useCallback(() => {
     if (!balance || !balance.holdings || marketData.length === 0) return;
 
-    // Clear existing timeout
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
 
-    // Debounce portfolio updates to prevent excessive leaderboard updates
     updateTimeoutRef.current = setTimeout(() => {
       Object.keys(balance.holdings).forEach((symbol) => {
-        if (symbol === "USDT") return; // Skip USDT as it's always 1:1
+        if (symbol === "USDT") return; 
 
         const marketCoin = marketData.find(
           (coin) => coin.symbol.toUpperCase() === symbol
@@ -95,24 +88,17 @@ export function useHomeData() {
             })
           );
           
-          // The updateCurrentPrice action will automatically:
-          // 1. Update the portfolio with new prices
-          // 2. Recalculate P&L
-          // 3. Update the users table with real-time values
-          // 4. Trigger leaderboard updates
         }
       });
-    }, 3000); // 3 second debounce to prevent excessive updates
+    }, 3000);
   }, [balance, marketData, dispatch]);
 
-  // Update portfolio prices when market data changes
   useEffect(() => {
     if (marketData.length > 0 && balance?.holdings) {
       updatePortfolioPrices();
     }
   }, [marketData, balance?.holdings, updatePortfolioPrices]);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (updateTimeoutRef.current) {
@@ -121,7 +107,6 @@ export function useHomeData() {
     };
   }, []);
 
-  // Track app state and update user activity
   useEffect(() => {
     if (!user?.id) return;
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {

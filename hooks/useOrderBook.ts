@@ -34,28 +34,23 @@ const getFallbackPrice = (symbol: string): number => {
     case 'LTC':
       return 70;
     default:
-      return 100; // Generic fallback
+      return 100; 
   }
 };
 
 export default function useOrderBook(symbol: string = "BTC") {
-  // Extract base symbol from full symbol format (e.g., "SOL/USDT" -> "SOL")
   const baseSymbol = useMemo(() => symbol?.split('/')[0] || symbol, [symbol]);
   
-  // Get real-time price from Redux store
   const realTimePrice = useSelector(
     (state: RootState) => state.cryptoPrices.prices[baseSymbol.toUpperCase()]
   );
 
-  // Debug: Get all prices from Redux store
   const allPrices = useSelector((state: RootState) => state.cryptoPrices.prices);
 
-  // Use real-time price or fallback to symbol-specific default
   const basePrice = useMemo(() => realTimePrice || getFallbackPrice(baseSymbol), [realTimePrice, baseSymbol]);
 
-  // Generate initial orders
   const generateInitialOrders = useCallback((basePrice: number) => {
-    const spread = basePrice * 0.0005; // 0.05% spread
+    const spread = basePrice * 0.0005;
     const askOrders = Array(5)
       .fill(0)
       .map((_, i) => ({
@@ -75,7 +70,7 @@ export default function useOrderBook(symbol: string = "BTC") {
 
   const initialOrders = useMemo(() => generateInitialOrders(basePrice), [generateInitialOrders, basePrice]);
 
-  // Initial state
+
   const [askOrders, setAskOrders] = useState<OrderBookEntry[]>(
     initialOrders.askOrders
   );
@@ -83,7 +78,6 @@ export default function useOrderBook(symbol: string = "BTC") {
     initialOrders.bidOrders
   );
 
-  // Helper function to simulate price changes
   const simulatePriceChange = useCallback((currentPrice: string, range: number = 0.2) => {
     const numericPrice = parseFloat(currentPrice);
     const variation = (Math.random() * 2 - 1) * range;
@@ -92,7 +86,6 @@ export default function useOrderBook(symbol: string = "BTC") {
     return newPrice.toFixed(decimalPlaces);
   }, []);
 
-  // Update orders when real-time price changes
   useEffect(() => {
     if (realTimePrice && realTimePrice !== basePrice) {
       console.log("useOrderBook: Updating orders with new real-time price:", realTimePrice);
@@ -102,7 +95,6 @@ export default function useOrderBook(symbol: string = "BTC") {
     }
   }, [realTimePrice, symbol, basePrice, generateInitialOrders]);
 
-  // Update orders periodically for simulation
   useEffect(() => {
     const updateInterval = setInterval(() => {
       // Update Ask Orders

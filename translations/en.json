@@ -11,20 +11,20 @@
   },
   "home": {
     "welcomeBack": "Welcome back, {name}! 👋",
-    "welcomeToApp": "Welcome to Trading Simulator! 🚀",
-    "welcomeSubtext": "Master trading with zero risk",
-    "trades": "trades",
+    "welcomeToApp": "Welcome to Crypto Trading Simulator! 🚀",
+    "welcomeSubtext": "Practice trading with virtual money - zero risk",
+    "trades": "simulated trades",
     "newTrader": "New Trader",
     "getStarted": "Get Started",
     "learnTrading": "Learn Trading",
     "learnTradingSubtitle": "Master the basics",
     "practice": "Practice",
-    "practiceSubtitle": "Start trading",
+    "practiceSubtitle": "Start virtual trading",
     "watchlist": "Watchlist",
     "watchlistSubtitle": "Track favorites",
     "portfolio": "Portfolio",
     "portfolioSubtitle": "Track progress",
-    "portfolioSummary": "Portfolio Summary",
+    "portfolioSummary": "Virtual Portfolio Summary",
     "totalValue": "Total Value",
     "assets": "Assets",
     "totalPnL": "Total P&L",
@@ -153,8 +153,8 @@
     "status": "Status"
   },
   "balance": {
-    "yourBalance": "Your balance",
-    "totalPortfolio": "Total Portfolio",
+    "yourBalance": "Your virtual balance",
+    "totalPortfolio": "Total Virtual Portfolio",
     "totalPnL": "Total P&L",
     "percentage": "Percentage",
     "available": "Available",
@@ -162,17 +162,17 @@
     "reset": "Reset",
     "resetting": "Resetting...",
     "resetBalance": "Reset All Data",
-    "resetConfirmation": "This will reset ALL your data including:\n\n• Portfolio and balance\n• Transaction history\n• Favorites and search history\n• Local and cloud data\n\nThis action cannot be undone.",
-    "resettingMessage": "Resetting all data to default values. This may take a moment...",
+    "resetConfirmation": "This will reset ALL your simulation data including:\n\n• Virtual portfolio and balance\n• Simulated transaction history\n• Favorites and search history\n• Local and cloud data\n\nThis action cannot be undone.",
+    "resettingMessage": "Resetting all simulation data to default values. This may take a moment...",
     "resetSuccess": "Reset Successful",
-    "resetMessage": "Your balance has been reset to $100,000",
+    "resetMessage": "Your virtual balance has been reset to $100,000",
     "resetError": "Reset Failed",
     "resetErrorMessage": "Failed to reset data. Please try again.",
     "resetButton": "Reset All Data",
     "resetConfirmTitle": "Reset All Data",
-    "resetConfirmMessage": "Are you sure you want to reset your balance to $100,000?",
+    "resetConfirmMessage": "Are you sure you want to reset your virtual balance to $100,000?",
     "resetSuccessTitle": "Reset Successful",
-    "resetSuccessMessage": "Your balance has been reset to $100,000",
+    "resetSuccessMessage": "Your virtual balance has been reset to $100,000",
     "resetErrorTitle": "Reset Failed"
   },
   "cryptoSearch": {
@@ -289,23 +289,23 @@
     "continue": "Continue",
     "getStarted": "Get Started",
     "creatingAccount": "Creating Account...",
-    "joinThousands": "Join thousands of traders worldwide",
+    "joinThousands": "Join thousands of learners worldwide",
     "progress": "{current} of {total}",
     "screens": {
       "welcome": {
-        "title": "Welcome to Trading Simulator",
-        "subtitle": "Your Gateway to Smart Trading",
-        "content": "Master the art of trading with virtual money in a completely risk-free environment. Learn, practice, and perfect your strategies."
+        "title": "Welcome to Crypto Trading Simulator",
+        "subtitle": "Your Gateway to Risk-Free Learning",
+        "content": "Master the art of cryptocurrency trading with virtual money in a completely risk-free environment. Learn, practice, and perfect your strategies without any financial risk."
       },
       "learn": {
-        "title": "Learn & Compete",
-        "subtitle": "Join the Trading Community",
-        "content": "Participate in exciting trading competitions, climb the leaderboard, and challenge yourself against traders worldwide."
+        "title": "Learn & Practice",
+        "subtitle": "Join the Learning Community",
+        "content": "Participate in exciting virtual trading competitions, climb the leaderboard, and challenge yourself against other learners worldwide."
       },
       "track": {
         "title": "Track Your Progress",
-        "subtitle": "Monitor Your Success",
-        "content": "Get detailed insights into your portfolio performance, trading statistics, and track your journey to becoming a trading expert."
+        "subtitle": "Monitor Your Learning Journey",
+        "content": "Get detailed insights into your virtual portfolio performance, trading statistics, and track your journey to becoming a trading expert."
       }
     }
   },

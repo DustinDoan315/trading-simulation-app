@@ -3,6 +3,7 @@ import colors from '@/styles/colors';
 import DailyLimitPopup from '@/components/ui/DailyLimitPopup';
 import OrderEntry from '@/components/trading/OrderEntry';
 import React, { useEffect, useRef, useState } from 'react';
+import SimulationDisclaimer from '@/components/common/SimulationDisclaimer';
 import SymbolHeader from '@/components/crypto/SymbolHeader';
 import TimeframeSelector from '@/components/crypto/TimeframeSelector';
 import useCryptoAPI from '@/hooks/useCryptoAPI';
@@ -44,7 +45,6 @@ import {
   handleOrderSubmission,
   handleUserReinitialization,
 } from "@/utils/helper";
-
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
@@ -443,6 +443,8 @@ const CryptoChartScreen = () => {
           showIndicators={showIndicators}
           toggleIndicators={toggleIndicators}
         />
+
+        <SimulationDisclaimer variant="compact" />
 
         <Chart
           webViewRef={webViewRef}

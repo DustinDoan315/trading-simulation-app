@@ -1,15 +1,27 @@
-# Trading Simulation App
+# Crypto Trading Simulator
 
-A React Native application for cryptocurrency trading simulation with real-time data, portfolio management, and social trading features.
+A React Native application for **virtual cryptocurrency trading simulation** with real-time market data, portfolio management, and social learning features. **This app is for educational purposes only - no real money is involved.**
+
+## ⚠️ Important Notice
+
+**This is a simulation app for educational purposes only:**
+
+- No real money is involved in any transactions
+- All trading activities use virtual currency
+- Real market prices are used for educational realism only
+- No actual cryptocurrency is bought, sold, or stored
+- Designed for learning and practice purposes
 
 ## Features
 
-- Real-time cryptocurrency price tracking
-- Portfolio management with P&L calculations
-- Social trading through collections
+- **Virtual Trading Simulation**: Practice trading with virtual money
+- Real-time cryptocurrency price tracking (for educational purposes)
+- Virtual portfolio management with P&L calculations
+- Social learning through collections
 - Leaderboards and rankings
 - Multi-language support (English/Vietnamese)
 - Dark theme UI
+- Comprehensive learning modules
 
 ## Authentication Fix
 

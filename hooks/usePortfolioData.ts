@@ -11,7 +11,6 @@ import { useRealTimeBalance } from './useRealTimeBalance';
 import { useSelector } from 'react-redux';
 
 
-// Optimized selector with better memoization
 const selectPortfolioData = createSelector(
   (state: RootState) => state.balance.balance,
   (state: RootState) => state.balance.changeValue,
@@ -31,14 +30,12 @@ export const usePortfolioData = () => {
   const [error, setError] = useState<string | null>(null);
   const [visibleLowValueCount, setVisibleLowValueCount] = useState(5);
 
-  // Use real-time balance hook for live updates
   const realTimeBalance = useRealTimeBalance();
 
   const loadMoreLowValueTokens = useCallback(() => {
     setVisibleLowValueCount((prev) => prev + 5);
   }, []);
 
-  // Memoized asset processing with real-time data
   const processedData = useMemo((): PortfolioData => {
     const { holdings, totalInUSD } = portfolioState;
 
@@ -53,14 +50,12 @@ export const usePortfolioData = () => {
       };
     }
 
-    // Group holdings by symbol (case-insensitive) to merge duplicates
     const groupedHoldings = new Map<string, Holding>();
     
     holdings.forEach(([id, holding]: [string, Holding]) => {
       const symbolKey = holding.symbol?.toUpperCase() || holding.name?.toUpperCase() || 'UNKNOWN';
       
       if (groupedHoldings.has(symbolKey)) {
-        // Merge with existing holding
         const existing = groupedHoldings.get(symbolKey)!;
         const totalAmount = existing.amount + holding.amount;
         const totalValue = existing.valueInUSD + holding.valueInUSD;
@@ -69,11 +64,9 @@ export const usePortfolioData = () => {
           ...existing,
           amount: totalAmount,
           valueInUSD: totalValue,
-          // Use the first non-zero averageBuyPrice, or calculate weighted average
           averageBuyPrice: existing.averageBuyPrice || holding.averageBuyPrice,
         });
       } else {
-        // Add new holding
         groupedHoldings.set(symbolKey, holding);
       }
     });

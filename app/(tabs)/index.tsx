@@ -1,3 +1,4 @@
+import SimulationDisclaimer from '@/components/common/SimulationDisclaimer';
 import styles from './styles';
 import { BalanceSection } from '@/components/home/BalanceSection';
 import { CryptoNewsCard } from '@/components/home/CryptoNewsCard';
@@ -38,7 +39,6 @@ import {
   formatPortfolioValue,
   getPnLColor,
 } from "@/utils/helper";
-
 
 const HomeScreen = () => {
   const dispatch = useAppDispatch();
@@ -238,6 +238,8 @@ const HomeScreen = () => {
             </>
           )}
         </Animated.View>
+
+        <SimulationDisclaimer variant="banner" />
 
         <BalanceSection
           balance={balanceForDisplay}
