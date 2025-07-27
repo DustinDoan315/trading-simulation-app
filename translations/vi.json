@@ -282,7 +282,15 @@
     "noFriendsWithRankings": "Chưa có bạn bè nào có xếp hạng. Bắt đầu giao dịch để xuất hiện trên bảng xếp hạng!",
     "lastUpdated": "Cập nhật lần cuối: {time}",
     "unknownUser": "Người dùng không xác định",
-    "unknownCollection": "Bộ sưu tập không xác định"
+    "unknownCollection": "Bộ sưu tập không xác định",
+    "active": "ĐANG HOẠT ĐỘNG",
+    "live": "TRỰC TIẾP",
+    "onlineNow": "Đang trực tuyến",
+    "lastSeen": "Lần cuối hoạt động lúc {time}",
+    "justNow": "Vừa xong",
+    "minutesAgo": "{minutes} phút trước",
+    "hoursAgo": "{hours} giờ trước",
+    "daysAgo": "{days} ngày trước"
   },
   "onboarding": {
     "skip": "Bỏ qua",

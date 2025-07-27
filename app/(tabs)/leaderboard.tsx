@@ -160,6 +160,17 @@ const LeaderboardScreen = () => {
             isMyCollection: item.is_my_collection || false,
           };
         } else {
+          // Check if user is active (active in last 5 minutes)
+          const lastActive = item.users?.last_active
+            ? new Date(item.users.last_active)
+            : null;
+          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+          const isActive = lastActive && lastActive > fiveMinutesAgo;
+
+          // Check if user is very active (active in last 1 minute)
+          const oneMinuteAgo = new Date(Date.now() - 1 * 60 * 1000);
+          const isVeryActive = lastActive && lastActive > oneMinuteAgo;
+
           return {
             id: item.id || `user-${index}`,
             rank: item.rank || index + 1,
@@ -172,6 +183,9 @@ const LeaderboardScreen = () => {
             percentage: parseFloat(item.percentage_return || "0"),
             portfolio: parseFloat(item.portfolio_value || "0"),
             isCurrentUser: item.user_id === user?.id,
+            isActive: isActive,
+            isVeryActive: isVeryActive,
+            lastActive: lastActive,
           };
         }
       });
@@ -215,6 +229,22 @@ const LeaderboardScreen = () => {
     return colors.text.secondary;
   };
 
+  const formatTimeSince = (date: Date) => {
+    const now = new Date();
+    const diffInMinutes = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60)
+    );
+
+    if (diffInMinutes < 1) return t("leaderboard.justNow");
+    if (diffInMinutes < 60)
+      return t("leaderboard.minutesAgo", { minutes: diffInMinutes });
+    if (diffInMinutes < 1440)
+      return t("leaderboard.hoursAgo", {
+        hours: Math.floor(diffInMinutes / 60),
+      });
+    return t("leaderboard.daysAgo", { days: Math.floor(diffInMinutes / 1440) });
+  };
+
   const RankedItem = ({ item, type }: any) => (
     <View
       style={[styles.rankedItem, item.isCurrentUser && styles.currentUserItem]}>
@@ -232,24 +262,43 @@ const LeaderboardScreen = () => {
             {item.rank}
           </Text>
         </View>
+        {item.isActive && (
+          <View style={styles.activeIndicator}>
+            <View
+              style={[
+                styles.activeDot,
+                item.isVeryActive && styles.veryActiveDot,
+              ]}
+            />
+          </View>
+        )}
       </View>
 
       <View style={styles.infoSection}>
         <View style={styles.userInfo}>
           <Text style={styles.avatar}>{item.avatar}</Text>
           <View style={styles.nameContainer}>
-            <Text
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              style={[
-                styles.name,
-                item.isCurrentUser && styles.currentUserName,
-              ]}>
-              {item.name}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[
+                  styles.name,
+                  item.isCurrentUser && styles.currentUserName,
+                ]}>
+                {item.name}
+              </Text>
+            </View>
             {type === "collections" && (
               <Text style={styles.members}>
                 {item.members} {t("leaderboard.members")}
+              </Text>
+            )}
+            {!type.includes("collections") && item.lastActive && (
+              <Text style={styles.lastActiveText}>
+                {item.isActive
+                  ? t("leaderboard.onlineNow")
+                  : formatTimeSince(item.lastActive)}
               </Text>
             )}
           </View>
@@ -298,19 +347,35 @@ const LeaderboardScreen = () => {
   const getCurrentData = useMemo(() => {
     if (activeTab === "global") return globalRankings;
     if (activeTab === "friends") {
-      return friendsData.map((item: any) => ({
-        id: item.id || `friend-${item.user_id}`,
-        rank: item.rank || 0,
-        name:
-          item.users?.display_name ||
-          item.users?.username ||
-          t("leaderboard.unknownUser"),
-        avatar: item.users?.avatar_emoji || "👤",
-        pnl: parseFloat(item.total_pnl || "0"),
-        percentage: parseFloat(item.percentage_return || "0"),
-        portfolio: parseFloat(item.portfolio_value || "0"),
-        isCurrentUser: item.user_id === user?.id,
-      }));
+      return friendsData.map((item: any) => {
+        // Check if user is active (active in last 5 minutes)
+        const lastActive = item.users?.last_active
+          ? new Date(item.users.last_active)
+          : null;
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const isActive = lastActive && lastActive > fiveMinutesAgo;
+
+        // Check if user is very active (active in last 1 minute)
+        const oneMinuteAgo = new Date(Date.now() - 1 * 60 * 1000);
+        const isVeryActive = lastActive && lastActive > oneMinuteAgo;
+
+        return {
+          id: item.id || `friend-${item.user_id}`,
+          rank: item.rank || 0,
+          name:
+            item.users?.display_name ||
+            item.users?.username ||
+            t("leaderboard.unknownUser"),
+          avatar: item.users?.avatar_emoji || "👤",
+          pnl: parseFloat(item.total_pnl || "0"),
+          percentage: parseFloat(item.percentage_return || "0"),
+          portfolio: parseFloat(item.portfolio_value || "0"),
+          isCurrentUser: item.user_id === user?.id,
+          isActive: isActive,
+          isVeryActive: isVeryActive,
+          lastActive: lastActive,
+        };
+      });
     }
     return globalRankings;
   }, [activeTab, globalRankings, friendsData, user?.id, t]);
@@ -419,22 +484,25 @@ const LeaderboardScreen = () => {
     };
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const activityRefreshInterval = setInterval(async () => {
+      try {
+        await UserService.updateUserActivity(user.id, true);
+      } catch (err) {
+        console.warn("Failed to update user activity:", err);
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(activityRefreshInterval);
+    };
+  }, [user?.id]);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#121212" />
-
-      {/* <View style={styles.header}>
-        <Text style={styles.title}>Leaderboards</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={[styles.syncButton, styles.syncButtonDisabled]}
-            onPress={() =>
-              console.log("🔄 Background sync disabled - manual refresh only")
-            }>
-            <Text style={styles.syncButtonText}>⏸️</Text>
-          </TouchableOpacity>
-        </View>
-      </View> */}
 
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -537,11 +605,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 16,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "bold",
     color: "#FFFFFF",
   },
@@ -563,8 +631,8 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: "row",
-    marginHorizontal: 20,
-    marginVertical: 20,
+    marginHorizontal: 16,
+    marginVertical: 16,
     backgroundColor: "#1A1D2F",
     borderRadius: 16,
     padding: 6,
@@ -604,10 +672,10 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   headerContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 16,
     backgroundColor: "#1A1D2F",
-    marginHorizontal: 20,
+    marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 16,
   },
@@ -665,10 +733,10 @@ const styles = StyleSheet.create({
   rankedItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 16,
     backgroundColor: "#1A1D2F",
-    marginHorizontal: 20,
+    marginHorizontal: 16,
     marginBottom: 8,
     borderRadius: 16,
     shadowColor: "#000",
@@ -719,6 +787,12 @@ const styles = StyleSheet.create({
   nameContainer: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    maxWidth: "80%",
+  },
   name: {
     fontSize: 13,
     color: "#FFFFFF",
@@ -728,21 +802,65 @@ const styles = StyleSheet.create({
     color: "#6674CC",
     fontWeight: "700",
   },
+  activeBadge: {
+    backgroundColor: "#6674CC",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginLeft: 8,
+  },
+  activeBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+  },
   members: {
     fontSize: 12,
     color: "#9DA3B4",
+  },
+  lastActiveText: {
+    fontSize: 12,
+    color: "#9DA3B4",
+    marginTop: 4,
+  },
+  activeIndicator: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#4CAF50",
+    borderWidth: 2,
+    borderColor: "#131523",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  activeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#FFFFFF",
+  },
+  veryActiveDot: {
+    backgroundColor: "#FFD700",
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.5,
+    shadowRadius: 2,
+    elevation: 2,
   },
   statsContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   statItem: {
-    alignItems: "center",
+    alignItems: "flex-end",
     marginLeft: 16,
   },
   statValue: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "500",
     marginBottom: 2,
   },
   emptyState: {
@@ -753,7 +871,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyStateText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#9DA3B4",
     textAlign: "center",
     lineHeight: 24,
@@ -782,6 +900,14 @@ const styles = StyleSheet.create({
     color: "#F9335D",
     textAlign: "center",
     marginTop: 4,
+  },
+  veryActiveBadge: {
+    backgroundColor: "#FFD700",
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });
 

@@ -1,24 +1,24 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import colors from '@/styles/colors';
-import React, { useEffect, useState } from 'react';
-import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
-import { ASYNC_STORAGE_KEYS } from '@/utils/constant';
-import { clearSearchHistory } from '@/features/searchHistorySlice';
-import { forceRefreshAllData } from '@/utils/resetUtils';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { logger } from '@/utils/logger';
-import { persistor } from '@/store';
-import { resetBalance } from '@/features/balanceSlice';
-import { resetFavorites } from '@/features/favoritesSlice';
-import { router } from 'expo-router';
-import { updateUser } from '@/features/userSlice';
-import { useAppDispatch } from '@/store';
-import { useLanguage } from '@/context/LanguageContext';
-import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
-import { UserService } from '@/services/UserService';
-import { useTransactionCount } from '@/hooks/useTransactionCount';
-import { useUser } from '@/context/UserContext';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import colors from "@/styles/colors";
+import React, { useEffect, useState } from "react";
+import ShimmerPlaceHolder from "react-native-shimmer-placeholder";
+import { ASYNC_STORAGE_KEYS } from "@/utils/constant";
+import { clearSearchHistory } from "@/features/searchHistorySlice";
+import { forceRefreshAllData } from "@/utils/resetUtils";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { logger } from "@/utils/logger";
+import { persistor } from "@/store";
+import { resetBalance } from "@/features/balanceSlice";
+import { resetFavorites } from "@/features/favoritesSlice";
+import { router } from "expo-router";
+import { updateUser } from "@/features/userSlice";
+import { useAppDispatch } from "@/store";
+import { useLanguage } from "@/context/LanguageContext";
+import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
+import { UserService } from "@/services/UserService";
+import { useTransactionCount } from "@/hooks/useTransactionCount";
+import { useUser } from "@/context/UserContext";
 import {
   ActivityIndicator,
   Alert,
@@ -33,7 +33,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
@@ -237,7 +236,7 @@ const ProfileScreen = () => {
         </View>
       </View>
       <View style={styles.settingRight}>
-        {showChevron && !isBottom && (
+        {showChevron && (
           <Ionicons name="chevron-forward" size={16} color="#9DA3B4" />
         )}
       </View>

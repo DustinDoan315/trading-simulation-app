@@ -1,10 +1,9 @@
-import React from 'react';
-import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
-import { Dimensions, StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from "react";
+import ShimmerPlaceHolder from "react-native-shimmer-placeholder";
+import { Dimensions, StyleSheet, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
-
-const { width } = Dimensions.get("window");
+const { width: screenWidth } = Dimensions.get("window");
 
 export const ShimmerBalanceSection = () => (
   <View style={styles.balanceSection}>
@@ -180,25 +179,112 @@ export const ShimmerLeaderboardItem = () => (
   </View>
 );
 
+export const ShimmerWatchlistStatsCard = () => (
+  <View style={watchlistStyles.statsCard}>
+    <View style={watchlistStyles.statsHeader}>
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={watchlistStyles.statsTitle}
+      />
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={watchlistStyles.statsBadge}
+      />
+    </View>
+    <View style={watchlistStyles.statsGrid}>
+      {[1, 2, 3].map((_, idx) => (
+        <View key={idx} style={watchlistStyles.statItem}>
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={watchlistStyles.statIconContainer}
+          />
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={watchlistStyles.statValue}
+          />
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={watchlistStyles.statLabel}
+          />
+        </View>
+      ))}
+    </View>
+  </View>
+);
+
+export const ShimmerWatchlistItem = () => (
+  <View style={watchlistStyles.watchlistItem}>
+    <View style={watchlistStyles.itemLeft}>
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={watchlistStyles.cryptoIcon}
+      />
+      <View style={watchlistStyles.cryptoInfo}>
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={watchlistStyles.cryptoName}
+        />
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={watchlistStyles.cryptoSymbol}
+        />
+      </View>
+    </View>
+    <View style={watchlistStyles.itemRight}>
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={watchlistStyles.priceValue}
+      />
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={watchlistStyles.priceChange}
+      />
+    </View>
+  </View>
+);
+
+export const ShimmerWatchlistEmptyState = () => (
+  <View style={watchlistStyles.emptyState}>
+    <View style={watchlistStyles.emptyStateCard}>
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={watchlistStyles.emptyStateIcon}
+      />
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={watchlistStyles.emptyStateTitle}
+      />
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={watchlistStyles.emptyStateDescription}
+      />
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={watchlistStyles.emptyStateButton}
+      />
+    </View>
+  </View>
+);
+
 const styles = StyleSheet.create({
   balanceSection: {
     marginVertical: 16,
     alignItems: "center",
   },
   balanceTitle: {
-    width: width * 0.4,
+    width: screenWidth * 0.4,
     height: 18,
     borderRadius: 8,
     marginBottom: 8,
   },
   balanceAmount: {
-    width: width * 0.6,
+    width: screenWidth * 0.6,
     height: 32,
     borderRadius: 12,
     marginBottom: 8,
   },
   balanceSub: {
-    width: width * 0.3,
+    width: screenWidth * 0.3,
     height: 14,
     borderRadius: 7,
   },
@@ -214,13 +300,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   portfolioValue: {
-    width: width * 0.25,
+    width: screenWidth * 0.25,
     height: 20,
     borderRadius: 8,
     marginRight: 12,
   },
   portfolioLabel: {
-    width: width * 0.2,
+    width: screenWidth * 0.2,
     height: 14,
     borderRadius: 7,
   },
@@ -259,7 +345,7 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   quickActionCard: {
-    width: width * 0.42,
+    width: screenWidth * 0.42,
     height: 100,
     backgroundColor: "#23263A",
     borderRadius: 14,
@@ -353,5 +439,154 @@ const leaderboardStyles = StyleSheet.create({
   statItem: {
     alignItems: "center",
     marginLeft: 16,
+  },
+});
+
+const watchlistStyles = StyleSheet.create({
+  statsCard: {
+    borderRadius: 24,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: "rgba(102, 126, 234, 0.15)",
+    elevation: 12,
+    shadowColor: "#667eea",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+  },
+  statsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  statsTitle: {
+    width: 120,
+    height: 18,
+    borderRadius: 8,
+  },
+  statsBadge: {
+    width: 80,
+    height: 24,
+    borderRadius: 12,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  statIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  statValue: {
+    width: 40,
+    height: 26,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  statLabel: {
+    width: 50,
+    height: 11,
+    borderRadius: 6,
+  },
+  watchlistItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "rgba(102, 126, 234, 0.05)",
+    marginBottom: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(102, 126, 234, 0.1)",
+  },
+  itemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cryptoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 12,
+  },
+  cryptoInfo: {
+    flex: 1,
+  },
+  cryptoName: {
+    width: 80,
+    height: 16,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  cryptoSymbol: {
+    width: 60,
+    height: 12,
+    borderRadius: 6,
+  },
+  itemRight: {
+    alignItems: "flex-end",
+  },
+  priceValue: {
+    width: 80,
+    height: 18,
+    borderRadius: 9,
+    marginBottom: 4,
+  },
+  priceChange: {
+    width: 60,
+    height: 14,
+    borderRadius: 7,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 80,
+  },
+  emptyStateCard: {
+    alignItems: "center",
+    padding: 48,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: "rgba(102, 126, 234, 0.2)",
+    elevation: 16,
+    shadowColor: "#667eea",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    width: screenWidth - 48,
+  },
+  emptyStateIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 20,
+  },
+  emptyStateTitle: {
+    width: "90%",
+    height: 20,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  emptyStateDescription: {
+    width: "70%",
+    height: 14,
+    borderRadius: 7,
+    marginBottom: 20,
+  },
+  emptyStateButton: {
+    width: "80%",
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#007BFF",
   },
 });

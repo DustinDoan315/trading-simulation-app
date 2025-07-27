@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { AddButton } from '@/components/home/AddButton';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { navigateToCryptoChart } from '@/utils/navigation';
-import { router } from 'expo-router';
-import { useAppSelector } from '@/store';
-import { useHomeData } from '@/hooks/useHomeData';
-import { useLanguage } from '@/context/LanguageContext';
-import { WatchListSection } from '@/components/home/WatchlistSection';
+import React, { useState } from "react";
+import { AddButton } from "@/components/home/AddButton";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { navigateToCryptoChart } from "@/utils/navigation";
+import { router } from "expo-router";
+import { useAppSelector } from "@/store";
+import { useHomeData } from "@/hooks/useHomeData";
+import { useLanguage } from "@/context/LanguageContext";
+import { WatchListSection } from "@/components/home/WatchlistSection";
 import {
   Dimensions,
   RefreshControl,
@@ -18,13 +18,17 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
+import {
+  ShimmerWatchlistEmptyState,
+  ShimmerWatchlistItem,
+  ShimmerWatchlistStatsCard,
+} from "@/components/shimmer/ShimmerHeaders";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const WatchlistScreen = () => {
   const { t } = useLanguage();
-  const { trending, onRefresh } = useHomeData();
+  const { trending, onRefresh, loading } = useHomeData();
   const [refreshing, setRefreshing] = useState(false);
   const favoriteIds = useAppSelector((state) => state.favorites.favoriteIds);
 
@@ -53,6 +57,29 @@ const WatchlistScreen = () => {
   const decliningCount = filteredList.filter(
     (crypto) => crypto.price_change_percentage_24h < 0
   ).length;
+
+  // Show shimmer loading when data is loading or refreshing
+  if (loading || refreshing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.watchlistContainer}>
+            <View style={styles.statsSection}>
+              <ShimmerWatchlistStatsCard />
+            </View>
+            <View style={styles.watchlistSection}>
+              {[1, 2, 3, 4, 5].map((_, idx) => (
+                <ShimmerWatchlistItem key={idx} />
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -172,7 +199,7 @@ const WatchlistScreen = () => {
             <View style={styles.watchlistSection}>
               <WatchListSection
                 title=""
-                cryptoList={trending}
+                cryptoList={filteredList}
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
                 onItemPress={handleItemPress}

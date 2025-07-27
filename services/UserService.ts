@@ -1,7 +1,7 @@
-import { AsyncStorageService } from './AsyncStorageService';
-import { DEFAULT_BALANCE } from '@/utils/constant';
-import { logger } from '@/utils/logger';
-import { supabase } from './SupabaseService';
+import { AsyncStorageService } from "./AsyncStorageService";
+import { DEFAULT_BALANCE } from "@/utils/constant";
+import { logger } from "@/utils/logger";
+import { supabase } from "./SupabaseService";
 import {
   Collection,
   CollectionMember,
@@ -28,7 +28,6 @@ import {
   User,
   UserWithStats,
 } from "../types/database";
-
 
 // Global debouncing for leaderboard updates
 let leaderboardUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -144,7 +143,10 @@ export class UserService {
    * @param userId string
    * @param isActive boolean
    */
-  static async updateUserActivity(userId: string, isActive: boolean): Promise<void> {
+  static async updateUserActivity(
+    userId: string,
+    isActive: boolean
+  ): Promise<void> {
     try {
       const updates = {
         is_active: isActive,
@@ -516,10 +518,17 @@ export class UserService {
           .insert([ownerMemberData]);
 
         if (memberError) {
-          logger.error("Error adding owner as member", "UserService", memberError);
+          logger.error(
+            "Error adding owner as member",
+            "UserService",
+            memberError
+          );
           // Don't throw error here as collection was created successfully
         } else {
-          logger.info("Owner automatically added as collection member", "UserService");
+          logger.info(
+            "Owner automatically added as collection member",
+            "UserService"
+          );
         }
       }
 
@@ -650,7 +659,11 @@ export class UserService {
         balance: collection.starting_balance,
       });
     } catch (error) {
-      logger.error("Error joining collection by invite code", "UserService", error);
+      logger.error(
+        "Error joining collection by invite code",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -707,7 +720,10 @@ export class UserService {
 
       // If no members found, ensure the owner is included
       if (members.length === 0 && collection.owner_id) {
-        logger.warn("No members found, ensuring owner is included", "UserService");
+        logger.warn(
+          "No members found, ensuring owner is included",
+          "UserService"
+        );
 
         // Get owner user details
         const ownerUser = await this.getUserById(collection.owner_id);
@@ -764,7 +780,11 @@ export class UserService {
 
       if (updateError) throw updateError;
     } catch (error) {
-      logger.error("Error updating collection member count", "UserService", error);
+      logger.error(
+        "Error updating collection member count",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -861,7 +881,9 @@ export class UserService {
             avatar_emoji,
             total_pnl,
             total_pnl_percentage,
-            total_portfolio_value
+            total_portfolio_value,
+            last_active,
+            is_active
           )
         `
         )
@@ -930,41 +952,38 @@ export class UserService {
   }
 
   // Leaderboard Update Methods
-  private static updateTimeout: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  private static updateTimeout: Map<string, ReturnType<typeof setTimeout>> =
+    new Map();
 
   static async updateLeaderboardRankings(userId: string): Promise<void> {
     const now = Date.now();
-    
+
     // Check if we're already updating
     if (isUpdatingLeaderboard) {
-      
       return;
     }
-    
+
     // Check if we're in cooldown period
     if (now - lastLeaderboardUpdate < LEADERBOARD_UPDATE_COOLDOWN) {
-      
       return;
     }
-    
+
     // Clear existing timeout
     if (leaderboardUpdateTimeout) {
       clearTimeout(leaderboardUpdateTimeout);
     }
-    
+
     // Set new timeout for debounced update
     leaderboardUpdateTimeout = setTimeout(async () => {
       if (isUpdatingLeaderboard) {
-       
         return;
       }
-      
+
       isUpdatingLeaderboard = true;
-      
+
       try {
-       
         lastLeaderboardUpdate = Date.now();
-        
+
         const user = await this.getUserById(userId);
         if (!user) {
           console.error("❌ User not found for leaderboard update:", userId);
@@ -973,17 +992,23 @@ export class UserService {
 
         // Get current portfolio data
         const portfolio = await this.getPortfolio(userId);
-        const totalPortfolioValue = parseFloat(user.total_portfolio_value || "0");
-        
+        const totalPortfolioValue = parseFloat(
+          user.total_portfolio_value || "0"
+        );
+
         // Calculate real PnL from portfolio data
         let totalPnL = 0;
-        const initialBalance = parseFloat(user.initial_balance || DEFAULT_BALANCE.toString());
-        
+        const initialBalance = parseFloat(
+          user.initial_balance || DEFAULT_BALANCE.toString()
+        );
+
         portfolio.forEach((item) => {
           const quantity = parseFloat(item.quantity || "0");
-          const currentPrice = parseFloat(item.current_price || item.avg_cost || "0");
+          const currentPrice = parseFloat(
+            item.current_price || item.avg_cost || "0"
+          );
           const avgCost = parseFloat(item.avg_cost || "0");
-          
+
           // Calculate P&L for non-USDT items
           if (item.symbol.toUpperCase() !== "USDT") {
             const totalValue = quantity * currentPrice;
@@ -992,15 +1017,19 @@ export class UserService {
             totalPnL += itemPnL;
           }
         });
-        
+
         // Calculate P&L percentage
-        const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
-        
-       
+        const totalPnLPercentage =
+          initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
 
         // Calculate ALL_TIME rankings only
-        const calculatedRank = await this.calculateUserRank(userId, "ALL_TIME", totalPnL, totalPortfolioValue);
-        
+        const calculatedRank = await this.calculateUserRank(
+          userId,
+          "ALL_TIME",
+          totalPnL,
+          totalPortfolioValue
+        );
+
         // Update user's PnL data and global rank in the users table
         await this.updateUser(userId, {
           total_pnl: totalPnL.toString(),
@@ -1018,8 +1047,6 @@ export class UserService {
           total_trades: portfolio.length,
           rank: calculatedRank,
         });
-
-       
       } catch (error) {
         console.error("❌ Error updating leaderboard rankings:", error);
         // Reset cooldown on error so we can retry
@@ -1132,7 +1159,11 @@ export class UserService {
 
       if (error) throw error;
     } catch (error) {
-      logger.error("Error removing user from leaderboard", "UserService", error);
+      logger.error(
+        "Error removing user from leaderboard",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -1161,7 +1192,11 @@ export class UserService {
         );
       }
     } catch (error) {
-      logger.error("Error checking user leaderboard status", "UserService", error);
+      logger.error(
+        "Error checking user leaderboard status",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -1191,7 +1226,10 @@ export class UserService {
   // Initialize leaderboard rankings for all users (run once to set up initial rankings)
   static async initializeLeaderboardRankings(): Promise<void> {
     try {
-      logger.info("Initializing leaderboard rankings for all users...", "UserService");
+      logger.info(
+        "Initializing leaderboard rankings for all users...",
+        "UserService"
+      );
 
       // First, clean up any duplicate or old entries (remove WEEKLY and MONTHLY entries)
       await this.cleanupLeaderboardRankings();
@@ -1204,7 +1242,10 @@ export class UserService {
       if (usersError) throw usersError;
 
       if (!users || users.length === 0) {
-        logger.info("No users found for leaderboard initialization", "UserService");
+        logger.info(
+          "No users found for leaderboard initialization",
+          "UserService"
+        );
         return;
       }
 
@@ -1213,7 +1254,11 @@ export class UserService {
         try {
           await this.updateLeaderboardRankings(user.id);
         } catch (error) {
-          logger.error(`Error updating rankings for user ${user.id}`, "UserService", error);
+          logger.error(
+            `Error updating rankings for user ${user.id}`,
+            "UserService",
+            error
+          );
           // Continue with other users even if one fails
         }
       }
@@ -1223,7 +1268,11 @@ export class UserService {
         "UserService"
       );
     } catch (error) {
-      logger.error("Error initializing leaderboard rankings", "UserService", error);
+      logger.error(
+        "Error initializing leaderboard rankings",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -1240,9 +1289,16 @@ export class UserService {
         .in("period", ["WEEKLY", "MONTHLY"]);
 
       if (deleteError) {
-        logger.error("Error cleaning up leaderboard rankings", "UserService", deleteError);
+        logger.error(
+          "Error cleaning up leaderboard rankings",
+          "UserService",
+          deleteError
+        );
       } else {
-        logger.info("Cleaned up WEEKLY and MONTHLY leaderboard entries", "UserService");
+        logger.info(
+          "Cleaned up WEEKLY and MONTHLY leaderboard entries",
+          "UserService"
+        );
       }
 
       // Remove duplicate entries for the same user (keep only the latest)
@@ -1254,7 +1310,11 @@ export class UserService {
         .order("created_at", { ascending: false });
 
       if (duplicateError) {
-        logger.error("Error finding duplicate entries", "UserService", duplicateError);
+        logger.error(
+          "Error finding duplicate entries",
+          "UserService",
+          duplicateError
+        );
         return;
       }
 
@@ -1280,9 +1340,16 @@ export class UserService {
             .is("collection_id", null);
 
           if (deleteDuplicatesError) {
-            logger.error("Error deleting duplicate entries", "UserService", deleteDuplicatesError);
+            logger.error(
+              "Error deleting duplicate entries",
+              "UserService",
+              deleteDuplicatesError
+            );
           } else {
-            logger.info(`Deleted ${toDelete.length} duplicate leaderboard entries`, "UserService");
+            logger.info(
+              `Deleted ${toDelete.length} duplicate leaderboard entries`,
+              "UserService"
+            );
           }
         }
       }
@@ -1295,16 +1362,22 @@ export class UserService {
         .is("collection_id", null);
 
       if (rankingsError) {
-        logger.error("Error getting users with rankings", "UserService", rankingsError);
+        logger.error(
+          "Error getting users with rankings",
+          "UserService",
+          rankingsError
+        );
         return;
       }
 
-      const usersWithRankingsSet = new Set(usersWithRankings?.map(r => r.user_id) || []);
-      
+      const usersWithRankingsSet = new Set(
+        usersWithRankings?.map((r) => r.user_id) || []
+      );
+
       // Update users who don't have rankings to have null global_rank
       if (usersWithRankingsSet.size > 0) {
         const usersWithRankingsArray = Array.from(usersWithRankingsSet);
-        
+
         // Use a more reliable approach by first getting all users, then filtering
         try {
           const { data: allUsers, error: fetchError } = await supabase
@@ -1312,42 +1385,66 @@ export class UserService {
             .select("id");
 
           if (fetchError) {
-            logger.error("Error fetching users for global_rank reset", "UserService", fetchError);
+            logger.error(
+              "Error fetching users for global_rank reset",
+              "UserService",
+              fetchError
+            );
           } else {
             // Filter out users who have rankings
-            const usersWithoutRankings = allUsers?.filter(user => !usersWithRankingsSet.has(user.id)) || [];
-            
+            const usersWithoutRankings =
+              allUsers?.filter((user) => !usersWithRankingsSet.has(user.id)) ||
+              [];
+
             if (usersWithoutRankings.length > 0) {
               // Update each user individually to avoid complex query syntax
               let successCount = 0;
               let errorCount = 0;
-              
+
               for (const user of usersWithoutRankings) {
                 try {
                   const { error: updateError } = await supabase
                     .from("users")
                     .update({ global_rank: null })
                     .eq("id", user.id);
-                  
+
                   if (updateError) {
-                    logger.error(`Error updating global_rank for user ${user.id}`, "UserService", updateError);
+                    logger.error(
+                      `Error updating global_rank for user ${user.id}`,
+                      "UserService",
+                      updateError
+                    );
                     errorCount++;
                   } else {
                     successCount++;
                   }
                 } catch (error) {
-                  logger.error(`Error updating global_rank for user ${user.id}`, "UserService", error);
+                  logger.error(
+                    `Error updating global_rank for user ${user.id}`,
+                    "UserService",
+                    error
+                  );
                   errorCount++;
                 }
               }
-              
-              logger.info(`Reset global_rank for ${successCount} users, ${errorCount} errors`, "UserService");
+
+              logger.info(
+                `Reset global_rank for ${successCount} users, ${errorCount} errors`,
+                "UserService"
+              );
             } else {
-              logger.info("No users found without rankings to reset", "UserService");
+              logger.info(
+                "No users found without rankings to reset",
+                "UserService"
+              );
             }
           }
         } catch (error) {
-          logger.error("Error in global_rank reset process", "UserService", error);
+          logger.error(
+            "Error in global_rank reset process",
+            "UserService",
+            error
+          );
         }
       } else {
         const { error: resetError } = await supabase
@@ -1355,16 +1452,22 @@ export class UserService {
           .update({ global_rank: null });
 
         if (resetError) {
-          logger.error("Error resetting global_rank for all users", "UserService", resetError);
+          logger.error(
+            "Error resetting global_rank for all users",
+            "UserService",
+            resetError
+          );
         } else {
-          logger.info("Reset global_rank for all users (no rankings found)", "UserService");
+          logger.info(
+            "Reset global_rank for all users (no rankings found)",
+            "UserService"
+          );
         }
       }
     } catch (error) {
       logger.error("Error during leaderboard cleanup", "UserService", error);
     }
   }
-
 
   static async getLeaderboardStats(
     period: "WEEKLY" | "MONTHLY" | "ALL_TIME" = "ALL_TIME"
@@ -1375,7 +1478,6 @@ export class UserService {
     averagePnL: number;
   }> {
     try {
-
       const { data: rankings, error } = await supabase
         .from("leaderboard_rankings")
         .select("user_id, rank, total_pnl")
@@ -1389,7 +1491,9 @@ export class UserService {
       const totalUsers = rankingsList.length;
 
       // Get active users count (users active in last 24 hours)
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const twentyFourHoursAgo = new Date(
+        Date.now() - 24 * 60 * 60 * 1000
+      ).toISOString();
       const { count: activeUsers, error: activeError } = await supabase
         .from("users")
         .select("*", { count: "exact", head: true })
@@ -1452,47 +1556,58 @@ export class UserService {
         .is("collection_id", params.collection_id || null);
 
       if (deleteError) {
-        logger.warn("Error deleting existing leaderboard entries", "UserService", deleteError);
-     
+        logger.warn(
+          "Error deleting existing leaderboard entries",
+          "UserService",
+          deleteError
+        );
       }
 
       const rankingData = {
         user_id: params.user_id,
         period: params.period,
         total_pnl: params.total_pnl,
-        percentage_return: params.total_pnl_percentage, 
-        portfolio_value: params.total_portfolio_value, 
-        trade_count: params.total_trades, 
+        percentage_return: params.total_pnl_percentage,
+        portfolio_value: params.total_portfolio_value,
+        trade_count: params.total_trades,
         rank: params.rank,
         collection_id: params.collection_id || null,
         calculated_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
-
       const { error } = await supabase
         .from("leaderboard_rankings")
         .insert([rankingData]);
-      
-      if (error) {
 
-        if (error.code === '23505') { 
-          logger.warn("Unique constraint violation, trying update instead", "UserService", error);
-          
+      if (error) {
+        if (error.code === "23505") {
+          logger.warn(
+            "Unique constraint violation, trying update instead",
+            "UserService",
+            error
+          );
+
           const { error: updateError } = await supabase
             .from("leaderboard_rankings")
             .update(rankingData)
             .eq("user_id", params.user_id)
             .eq("period", params.period)
             .is("collection_id", params.collection_id || null);
-          
+
           if (updateError) throw updateError;
-          logger.info(`Updated leaderboard ranking for user ${params.user_id}`, "UserService");
+          logger.info(
+            `Updated leaderboard ranking for user ${params.user_id}`,
+            "UserService"
+          );
         } else {
           throw error;
         }
       } else {
-        logger.info(`Created new leaderboard ranking for user ${params.user_id}`, "UserService");
+        logger.info(
+          `Created new leaderboard ranking for user ${params.user_id}`,
+          "UserService"
+        );
       }
     } catch (error) {
       logger.error("Error upserting leaderboard ranking", "UserService", error);
@@ -1503,7 +1618,7 @@ export class UserService {
   // Daily Transaction Limit Operations
   static async getDailyTransactionLimit(
     userId: string,
-    date: string = new Date().toISOString().split('T')[0]
+    date: string = new Date().toISOString().split("T")[0]
   ): Promise<DailyTransactionLimit | null> {
     try {
       const { data, error } = await supabase
@@ -1516,7 +1631,11 @@ export class UserService {
       if (error && error.code !== "PGRST116") throw error;
       return data;
     } catch (error) {
-      logger.error("Error fetching daily transaction limit", "UserService", error);
+      logger.error(
+        "Error fetching daily transaction limit",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -1525,7 +1644,8 @@ export class UserService {
     params: CreateDailyTransactionLimitParams
   ): Promise<DailyTransactionLimit | null> {
     try {
-      const transactionDate = params.transaction_date || new Date().toISOString().split('T')[0];
+      const transactionDate =
+        params.transaction_date || new Date().toISOString().split("T")[0];
       const dailyLimit = params.daily_limit || 10;
 
       const limitData = {
@@ -1546,34 +1666,41 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      logger.error("Error creating daily transaction limit", "UserService", error);
+      logger.error(
+        "Error creating daily transaction limit",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
 
   static async getOrCreateDailyTransactionLimit(
     userId: string,
-    date: string = new Date().toISOString().split('T')[0]
+    date: string = new Date().toISOString().split("T")[0]
   ): Promise<DailyTransactionLimit> {
     try {
       let limit = await this.getDailyTransactionLimit(userId, date);
-      
+
       if (!limit) {
         limit = await this.createDailyTransactionLimit({
           user_id: userId,
           transaction_date: date,
         });
       }
-      
+
       if (!limit) {
         throw new Error("Failed to create daily transaction limit");
       }
-      
+
       return limit;
     } catch (error: any) {
-
       if (error.code === "42501") {
-        logger.warn("RLS policy error for daily transaction limits, using mock data", "UserService", error);
+        logger.warn(
+          "RLS policy error for daily transaction limits, using mock data",
+          "UserService",
+          error
+        );
         return {
           id: "app-authorized-id",
           user_id: userId,
@@ -1585,22 +1712,29 @@ export class UserService {
           updated_at: new Date().toISOString(),
         };
       }
-      
-      logger.error("Error getting or creating daily transaction limit", "UserService", error);
+
+      logger.error(
+        "Error getting or creating daily transaction limit",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
 
   static async checkDailyTransactionLimit(
     userId: string,
-    date: string = new Date().toISOString().split('T')[0]
+    date: string = new Date().toISOString().split("T")[0]
   ): Promise<DailyLimitStatus> {
     try {
       const limit = await this.getOrCreateDailyTransactionLimit(userId, date);
-      
-      const remainingTransactions = Math.max(0, limit.daily_limit - limit.transaction_count);
+
+      const remainingTransactions = Math.max(
+        0,
+        limit.daily_limit - limit.transaction_count
+      );
       const canTrade = remainingTransactions > 0;
-      
+
       return {
         remainingTransactions,
         dailyLimit: limit.daily_limit,
@@ -1609,9 +1743,12 @@ export class UserService {
         lastTransactionAt: limit.last_transaction_at,
       };
     } catch (error: any) {
-
       if (error.code === "42501") {
-        logger.warn("RLS policy error for daily transaction limits, allowing unlimited trading", "UserService", error);
+        logger.warn(
+          "RLS policy error for daily transaction limits, allowing unlimited trading",
+          "UserService",
+          error
+        );
         return {
           remainingTransactions: 999,
           dailyLimit: 999,
@@ -1620,63 +1757,90 @@ export class UserService {
           lastTransactionAt: undefined,
         };
       }
-      
-      logger.error("Error checking daily transaction limit", "UserService", error);
+
+      logger.error(
+        "Error checking daily transaction limit",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
 
   static async incrementDailyTransactionCount(
     userId: string,
-    date: string = new Date().toISOString().split('T')[0]
+    date: string = new Date().toISOString().split("T")[0]
   ): Promise<boolean> {
     try {
       // First check if we can increment
       const status = await this.checkDailyTransactionLimit(userId, date);
-      
+
       if (!status.canTrade) {
-        logger.warn(`User ${userId} has reached daily transaction limit`, "UserService");
+        logger.warn(
+          `User ${userId} has reached daily transaction limit`,
+          "UserService"
+        );
         return false;
       }
 
       // Use the database function to increment safely
-      const { data, error } = await supabase.rpc('increment_daily_transaction_count', {
-        p_user_id: userId,
-        p_date: date
-      });
+      const { data, error } = await supabase.rpc(
+        "increment_daily_transaction_count",
+        {
+          p_user_id: userId,
+          p_date: date,
+        }
+      );
 
       if (error) throw error;
-      
+
       const success = data as boolean;
-      
+
       if (success) {
-        logger.info(`Incremented daily transaction count for user ${userId}`, "UserService");
+        logger.info(
+          `Incremented daily transaction count for user ${userId}`,
+          "UserService"
+        );
       } else {
-        logger.warn(`Failed to increment daily transaction count for user ${userId}`, "UserService");
+        logger.warn(
+          `Failed to increment daily transaction count for user ${userId}`,
+          "UserService"
+        );
       }
-      
+
       return success;
     } catch (error) {
-      logger.error("Error incrementing daily transaction count", "UserService", error);
+      logger.error(
+        "Error incrementing daily transaction count",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
 
   static async resetDailyTransactionLimit(
     userId: string,
-    date: string = new Date().toISOString().split('T')[0]
+    date: string = new Date().toISOString().split("T")[0]
   ): Promise<void> {
     try {
-      const { error } = await supabase.rpc('reset_daily_transaction_limit', {
+      const { error } = await supabase.rpc("reset_daily_transaction_limit", {
         p_user_id: userId,
-        p_date: date
+        p_date: date,
       });
 
       if (error) throw error;
-      
-      logger.info(`Reset daily transaction limit for user ${userId} on ${date}`, "UserService");
+
+      logger.info(
+        `Reset daily transaction limit for user ${userId} on ${date}`,
+        "UserService"
+      );
     } catch (error) {
-      logger.error("Error resetting daily transaction limit", "UserService", error);
+      logger.error(
+        "Error resetting daily transaction limit",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -1701,7 +1865,11 @@ export class UserService {
       if (error) throw error;
       return data;
     } catch (error) {
-      logger.error("Error updating daily transaction limit", "UserService", error);
+      logger.error(
+        "Error updating daily transaction limit",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -1709,20 +1877,23 @@ export class UserService {
   static async increaseDailyLimit(
     userId: string,
     additionalTransactions: number,
-    date: string = new Date().toISOString().split('T')[0]
+    date: string = new Date().toISOString().split("T")[0]
   ): Promise<DailyTransactionLimit | null> {
     try {
       const limit = await this.getOrCreateDailyTransactionLimit(userId, date);
-      
+
       const newLimit = limit.daily_limit + additionalTransactions;
-      
+
       const updatedLimit = await this.updateDailyTransactionLimit(userId, {
         id: limit.id,
         daily_limit: newLimit,
       });
-      
-      logger.info(`Increased daily limit for user ${userId} by ${additionalTransactions}`, "UserService");
-      
+
+      logger.info(
+        `Increased daily limit for user ${userId} by ${additionalTransactions}`,
+        "UserService"
+      );
+
       return updatedLimit;
     } catch (error) {
       logger.error("Error increasing daily limit", "UserService", error);
@@ -1730,27 +1901,36 @@ export class UserService {
     }
   }
 
-static async createTransactionWithLimitCheck(
+  static async createTransactionWithLimitCheck(
     params: CreateTransactionParams
   ): Promise<Transaction | null> {
     try {
-      
-      const canTrade = await this.incrementDailyTransactionCount(params.user_id);
-      
+      const canTrade = await this.incrementDailyTransactionCount(
+        params.user_id
+      );
+
       if (!canTrade) {
-        throw new Error("Daily transaction limit reached. You have used all your daily transactions.");
+        throw new Error(
+          "Daily transaction limit reached. You have used all your daily transactions."
+        );
       }
 
-      
       const transaction = await this.createTransaction(params);
-      
+
       if (transaction) {
-        logger.info(`Transaction created successfully for user ${params.user_id}`, "UserService");
+        logger.info(
+          `Transaction created successfully for user ${params.user_id}`,
+          "UserService"
+        );
       }
-      
+
       return transaction;
     } catch (error) {
-      logger.error("Error creating transaction with limit check", "UserService", error);
+      logger.error(
+        "Error creating transaction with limit check",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -1789,7 +1969,10 @@ static async createTransactionWithLimitCheck(
     };
 
     try {
-      logger.info(`Starting user data reset for user: ${userId}`, "UserService");
+      logger.info(
+        `Starting user data reset for user: ${userId}`,
+        "UserService"
+      );
 
       // Step 1: Clear portfolio data
       try {
@@ -1799,7 +1982,11 @@ static async createTransactionWithLimitCheck(
           .eq("user_id", userId);
 
         if (portfolioError) {
-          logger.error("Error clearing portfolio data", "UserService", portfolioError);
+          logger.error(
+            "Error clearing portfolio data",
+            "UserService",
+            portfolioError
+          );
           result.success = false;
           result.error = `Portfolio clear failed: ${portfolioError.message}`;
         } else {
@@ -1820,9 +2007,16 @@ static async createTransactionWithLimitCheck(
           .eq("user_id", userId);
 
         if (transactionError) {
-          logger.error("Error clearing transaction data", "UserService", transactionError);
+          logger.error(
+            "Error clearing transaction data",
+            "UserService",
+            transactionError
+          );
           // Don't fail the entire reset if transactions fail
-          logger.warn("Transaction clear failed, but continuing with reset", "UserService");
+          logger.warn(
+            "Transaction clear failed, but continuing with reset",
+            "UserService"
+          );
         } else {
           result.details.transactions = true;
           logger.info("Transaction data cleared successfully", "UserService");
@@ -1830,7 +2024,10 @@ static async createTransactionWithLimitCheck(
       } catch (error) {
         logger.error("Error clearing transaction data", "UserService", error);
         // Don't fail the entire reset if transactions fail
-        logger.warn("Transaction clear failed, but continuing with reset", "UserService");
+        logger.warn(
+          "Transaction clear failed, but continuing with reset",
+          "UserService"
+        );
       }
 
       // Step 3: Clear favorites
@@ -1841,9 +2038,16 @@ static async createTransactionWithLimitCheck(
           .eq("user_id", userId);
 
         if (favoritesError) {
-          logger.error("Error clearing favorites data", "UserService", favoritesError);
+          logger.error(
+            "Error clearing favorites data",
+            "UserService",
+            favoritesError
+          );
           // Don't fail the entire reset if favorites fail
-          logger.warn("Favorites clear failed, but continuing with reset", "UserService");
+          logger.warn(
+            "Favorites clear failed, but continuing with reset",
+            "UserService"
+          );
         } else {
           result.details.favorites = true;
           logger.info("Favorites data cleared successfully", "UserService");
@@ -1851,7 +2055,10 @@ static async createTransactionWithLimitCheck(
       } catch (error) {
         logger.error("Error clearing favorites data", "UserService", error);
         // Don't fail the entire reset if favorites fail
-        logger.warn("Favorites clear failed, but continuing with reset", "UserService");
+        logger.warn(
+          "Favorites clear failed, but continuing with reset",
+          "UserService"
+        );
       }
 
       // Step 4: Remove from leaderboard rankings
@@ -1862,17 +2069,30 @@ static async createTransactionWithLimitCheck(
           .eq("user_id", userId);
 
         if (leaderboardError) {
-          logger.error("Error removing from leaderboard", "UserService", leaderboardError);
+          logger.error(
+            "Error removing from leaderboard",
+            "UserService",
+            leaderboardError
+          );
           // Don't fail the entire reset if leaderboard fails
-          logger.warn("Leaderboard removal failed, but continuing with reset", "UserService");
+          logger.warn(
+            "Leaderboard removal failed, but continuing with reset",
+            "UserService"
+          );
         } else {
           result.details.leaderboard = true;
-          logger.info("User removed from leaderboard successfully", "UserService");
+          logger.info(
+            "User removed from leaderboard successfully",
+            "UserService"
+          );
         }
       } catch (error) {
         logger.error("Error removing from leaderboard", "UserService", error);
         // Don't fail the entire reset if leaderboard fails
-        logger.warn("Leaderboard removal failed, but continuing with reset", "UserService");
+        logger.warn(
+          "Leaderboard removal failed, but continuing with reset",
+          "UserService"
+        );
       }
 
       // Step 5: Reset user profile to default values
@@ -1898,13 +2118,20 @@ static async createTransactionWithLimitCheck(
           .eq("id", userId);
 
         if (userError) {
-          logger.error("Error resetting user profile", "UserService", userError);
+          logger.error(
+            "Error resetting user profile",
+            "UserService",
+            userError
+          );
           result.success = false;
           result.error = `User profile reset failed: ${userError.message}`;
         } else {
           result.details.userProfile = true;
-          logger.info("User profile reset to default successfully", "UserService");
-          
+          logger.info(
+            "User profile reset to default successfully",
+            "UserService"
+          );
+
           // Step 6: Update AsyncStorage with the reset user data
           try {
             const resetUserData = {
@@ -1928,11 +2155,18 @@ static async createTransactionWithLimitCheck(
               created_at: new Date().toISOString(),
               updated_at: defaultUserData.updated_at,
             };
-            
+
             await AsyncStorageService.createOrUpdateUser(resetUserData);
-            logger.info("AsyncStorage updated with reset user data", "UserService");
+            logger.info(
+              "AsyncStorage updated with reset user data",
+              "UserService"
+            );
           } catch (asyncStorageError) {
-            logger.warn("Failed to update AsyncStorage with reset data", "UserService", asyncStorageError);
+            logger.warn(
+              "Failed to update AsyncStorage with reset data",
+              "UserService",
+              asyncStorageError
+            );
             // Don't fail the reset if AsyncStorage update fails
           }
         }
@@ -1943,9 +2177,17 @@ static async createTransactionWithLimitCheck(
       }
 
       if (result.success) {
-        logger.info(`User data reset completed successfully for user: ${userId}`, "UserService", result.details);
+        logger.info(
+          `User data reset completed successfully for user: ${userId}`,
+          "UserService",
+          result.details
+        );
       } else {
-        logger.error(`User data reset failed for user: ${userId}`, "UserService", result.error);
+        logger.error(
+          `User data reset failed for user: ${userId}`,
+          "UserService",
+          result.error
+        );
       }
 
       return result;
@@ -1962,11 +2204,21 @@ static async createTransactionWithLimitCheck(
   // Static method to manually refresh leaderboard rankings (for testing real-time updates)
   static async refreshLeaderboardRankings(userId: string): Promise<void> {
     try {
-      logger.info(`Manually refreshing leaderboard rankings for user ${userId}`, "UserService");
+      logger.info(
+        `Manually refreshing leaderboard rankings for user ${userId}`,
+        "UserService"
+      );
       await this.updateLeaderboardRankings(userId);
-      logger.info(`Leaderboard rankings refreshed for user ${userId}`, "UserService");
+      logger.info(
+        `Leaderboard rankings refreshed for user ${userId}`,
+        "UserService"
+      );
     } catch (error) {
-      logger.error(`Error refreshing leaderboard rankings for user ${userId}`, "UserService", error);
+      logger.error(
+        `Error refreshing leaderboard rankings for user ${userId}`,
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -1974,8 +2226,11 @@ static async createTransactionWithLimitCheck(
   // Static method to refresh all users' leaderboard rankings
   static async refreshAllLeaderboardRankings(): Promise<void> {
     try {
-      logger.info("Refreshing leaderboard rankings for all users", "UserService");
-      
+      logger.info(
+        "Refreshing leaderboard rankings for all users",
+        "UserService"
+      );
+
       // Get all users
       const { data: users, error: usersError } = await supabase
         .from("users")
@@ -1993,7 +2248,11 @@ static async createTransactionWithLimitCheck(
         try {
           await this.updateLeaderboardRankings(user.id);
         } catch (error) {
-          logger.error(`Error updating rankings for user ${user.id}`, "UserService", error);
+          logger.error(
+            `Error updating rankings for user ${user.id}`,
+            "UserService",
+            error
+          );
           // Continue with other users even if one fails
         }
       }
@@ -2003,7 +2262,11 @@ static async createTransactionWithLimitCheck(
         "UserService"
       );
     } catch (error) {
-      logger.error("Error refreshing all leaderboard rankings", "UserService", error);
+      logger.error(
+        "Error refreshing all leaderboard rankings",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -2011,8 +2274,11 @@ static async createTransactionWithLimitCheck(
   // Static method to sync global_rank from leaderboard_rankings to users table
   static async syncGlobalRanksFromLeaderboard(): Promise<void> {
     try {
-      logger.info("Syncing global ranks from leaderboard to users table", "UserService");
-      
+      logger.info(
+        "Syncing global ranks from leaderboard to users table",
+        "UserService"
+      );
+
       // Get all leaderboard rankings for ALL_TIME period, sorted by rank
       const { data: rankings, error } = await supabase
         .from("leaderboard_rankings")
@@ -2040,13 +2306,21 @@ static async createTransactionWithLimitCheck(
             .eq("id", ranking.user_id);
 
           if (updateError) {
-            logger.error(`Error updating global_rank for user ${ranking.user_id}`, "UserService", updateError);
+            logger.error(
+              `Error updating global_rank for user ${ranking.user_id}`,
+              "UserService",
+              updateError
+            );
             errorCount++;
           } else {
             successCount++;
           }
         } catch (error) {
-          logger.error(`Error updating global_rank for user ${ranking.user_id}`, "UserService", error);
+          logger.error(
+            `Error updating global_rank for user ${ranking.user_id}`,
+            "UserService",
+            error
+          );
           errorCount++;
         }
       }
@@ -2056,7 +2330,11 @@ static async createTransactionWithLimitCheck(
         "UserService"
       );
     } catch (error) {
-      logger.error("Error syncing global ranks from leaderboard", "UserService", error);
+      logger.error(
+        "Error syncing global ranks from leaderboard",
+        "UserService",
+        error
+      );
       throw error;
     }
   }
@@ -2065,16 +2343,16 @@ static async createTransactionWithLimitCheck(
   static async fixGlobalRanksIssue(): Promise<void> {
     try {
       logger.info("Fixing global ranks issue...", "UserService");
-      
+
       // Step 1: Clean up leaderboard rankings
       await this.cleanupLeaderboardRankings();
-      
+
       // Step 2: Recalculate all ranks
       await this.recalculateAllRanks();
-      
+
       // Step 3: Sync global ranks from leaderboard to users table
       await this.syncGlobalRanksFromLeaderboard();
-      
+
       logger.info("Global ranks issue fixed successfully", "UserService");
     } catch (error) {
       logger.error("Error fixing global ranks issue", "UserService", error);
@@ -2088,7 +2366,7 @@ static async createTransactionWithLimitCheck(
   static async forceUpdateAllUsersRealTimeData(): Promise<void> {
     try {
       logger.info("Force updating all users' real-time data", "UserService");
-      
+
       // Get all users
       const { data: users, error: usersError } = await supabase
         .from("users")
@@ -2125,7 +2403,8 @@ static async createTransactionWithLimitCheck(
             await this.updateUser(user.id, {
               total_pnl: "0",
               total_pnl_percentage: "0",
-              total_portfolio_value: userData.initial_balance || (DEFAULT_BALANCE.toString() + ".00"),
+              total_portfolio_value:
+                userData.initial_balance || DEFAULT_BALANCE.toString() + ".00",
               global_rank: null, // Users who haven't traded shouldn't have a rank
             } as any);
             successCount++;
@@ -2135,16 +2414,20 @@ static async createTransactionWithLimitCheck(
           // Calculate real-time P&L and portfolio value
           let totalPnL = 0;
           let totalPortfolioValue = 0;
-          const initialBalance = parseFloat(userData.initial_balance || DEFAULT_BALANCE.toString());
+          const initialBalance = parseFloat(
+            userData.initial_balance || DEFAULT_BALANCE.toString()
+          );
 
           portfolio.forEach((item) => {
             const quantity = parseFloat(item.quantity || "0");
-            const currentPrice = parseFloat(item.current_price || item.avg_cost || "0");
+            const currentPrice = parseFloat(
+              item.current_price || item.avg_cost || "0"
+            );
             const avgCost = parseFloat(item.avg_cost || "0");
             const totalValue = quantity * currentPrice;
-            
+
             totalPortfolioValue += totalValue;
-            
+
             // Calculate P&L for non-USDT items
             if (item.symbol.toUpperCase() !== "USDT") {
               const costBasis = quantity * avgCost;
@@ -2154,10 +2437,16 @@ static async createTransactionWithLimitCheck(
           });
 
           // Calculate P&L percentage
-          const totalPnLPercentage = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
+          const totalPnLPercentage =
+            initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
 
           // Calculate user's rank
-          const calculatedRank = await this.calculateUserRank(user.id, "ALL_TIME", totalPnL, totalPortfolioValue);
+          const calculatedRank = await this.calculateUserRank(
+            user.id,
+            "ALL_TIME",
+            totalPnL,
+            totalPortfolioValue
+          );
 
           // Update user with real-time calculated values including global rank
           await this.updateUser(user.id, {
@@ -2173,7 +2462,11 @@ static async createTransactionWithLimitCheck(
             "UserService"
           );
         } catch (error) {
-          logger.error(`Error updating real-time data for user ${user.id}`, "UserService", error);
+          logger.error(
+            `Error updating real-time data for user ${user.id}`,
+            "UserService",
+            error
+          );
           errorCount++;
         }
       }
@@ -2183,7 +2476,11 @@ static async createTransactionWithLimitCheck(
         "UserService"
       );
     } catch (error) {
-      logger.error("Error force updating all users' real-time data", "UserService", error);
+      logger.error(
+        "Error force updating all users' real-time data",
+        "UserService",
+        error
+      );
       throw error;
     }
   }

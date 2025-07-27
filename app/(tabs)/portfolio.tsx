@@ -1,20 +1,20 @@
-import AssetItem from '@/components/portfolio/AssetItem';
-import BalanceCard from '@/components/portfolio/BalanceCard';
-import PortfolioHeader from '@/components/portfolio/PortfolioHeader';
-import React, { useCallback, useMemo } from 'react';
-import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
-import { Asset } from '@/types/crypto';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { navigateToCryptoChart } from '@/utils/navigation';
-import { NON_TRADEABLE_TOKENS } from '@/utils/constant';
-import { OthersButton } from '@/components/portfolio/OthersButton';
-import { styles } from '@/components/portfolio/styles';
-import { useLanguage } from '@/context/LanguageContext';
-import { usePortfolioData } from '@/hooks/usePortfolioData';
-import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUser } from '@/context/UserContext';
+import AssetItem from "@/components/portfolio/AssetItem";
+import BalanceCard from "@/components/portfolio/BalanceCard";
+import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
+import React, { useCallback, useMemo } from "react";
+import ShimmerPlaceHolder from "react-native-shimmer-placeholder";
+import { Asset } from "@/types/crypto";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { navigateToCryptoChart } from "@/utils/navigation";
+import { NON_TRADEABLE_TOKENS } from "@/utils/constant";
+import { OthersButton } from "@/components/portfolio/OthersButton";
+import { styles } from "@/components/portfolio/styles";
+import { useLanguage } from "@/context/LanguageContext";
+import { usePortfolioData } from "@/hooks/usePortfolioData";
+import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useUser } from "@/context/UserContext";
 import {
   ActivityIndicator,
   Dimensions,
@@ -28,7 +28,6 @@ import {
   ShimmerBalanceSection,
   ShimmerPortfolioCard,
 } from "@/components/shimmer/ShimmerHeaders";
-
 
 const { width } = Dimensions.get("window");
 

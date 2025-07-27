@@ -42,7 +42,7 @@
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.0.1",
-    "expo": "53.0.19",
+    "expo": "53.0.20",
     "expo-application": "^6.1.5",
     "expo-blur": "~14.1.5",
     "expo-camera": "~16.1.10",
@@ -108,5 +108,20 @@
       "yarn type-check",
       "yarn lint:fix"
     ]
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "redux-persist",
+          "@react-native-community/cli",
+          "bip39",
+          "date-fns-tz",
+          "dotenv",
+          "reflect-metadata"
+        ],
+        "listUnknownPackages": false
+      }
+    }
   }
 }

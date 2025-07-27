@@ -282,7 +282,15 @@
     "noFriendsWithRankings": "No friends with rankings yet. Start trading to appear on the leaderboard!",
     "lastUpdated": "Last updated: {time}",
     "unknownUser": "Unknown User",
-    "unknownCollection": "Unknown Collection"
+    "unknownCollection": "Unknown Collection",
+    "active": "ACTIVE",
+    "live": "LIVE",
+    "onlineNow": "Online now",
+    "lastSeen": "Last seen at {time}",
+    "justNow": "Just now",
+    "minutesAgo": "{minutes}m ago",
+    "hoursAgo": "{hours}h ago",
+    "daysAgo": "{days}d ago"
   },
   "onboarding": {
     "skip": "Skip",

@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   container: {
@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,
-    paddingHorizontal: 15,
+    paddingHorizontal: 12,
   },
   errorText: {
     color: "white",
@@ -19,11 +19,11 @@ export const styles = StyleSheet.create({
     marginTop: 20,
   },
   enhancedContainer: {
-    position: 'relative',
+    position: "relative",
     paddingBottom: 20,
   },
   backgroundGradient: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -31,37 +31,37 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
   },
   headerContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     paddingTop: 12,
   },
   balanceCardContainer: {
     marginBottom: 10,
   },
   enhancedStatsContainer: {
-    marginHorizontal: 20,
+    marginHorizontal: 12,
     marginBottom: 10,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   statsGradient: {
     padding: 14,
     borderRadius: 16,
   },
   statsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   statsTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
     marginLeft: 8,
   },
   statRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: 'center',
+    alignItems: "center",
   },
   statItem: {
     alignItems: "center",
@@ -71,16 +71,16 @@ export const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(140, 158, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(140, 158, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 8,
   },
   statLabel: {
     fontSize: 12,
     color: "#9DA3B4",
     marginBottom: 4,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   statValue: {
     fontSize: 16,
@@ -90,60 +90,59 @@ export const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(140, 158, 255, 0.2)',
+    backgroundColor: "rgba(140, 158, 255, 0.2)",
     marginHorizontal: 20,
   },
-  // Welcome Section Styles
   welcomeContainer: {
-    marginHorizontal: 20,
+    marginHorizontal: 12,
     marginBottom: 10,
     borderRadius: 20,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   welcomeGradient: {
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 20,
   },
   welcomeTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginTop: 16,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   welcomeSubtitle: {
     fontSize: 14,
-    color: '#9DA3B4',
-    textAlign: 'center',
+    color: "#9DA3B4",
+    textAlign: "center",
     lineHeight: 20,
     marginBottom: 24,
   },
   welcomeStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   welcomeStat: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
   welcomeStatValue: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#8C9EFF',
+    fontWeight: "bold",
+    color: "#8C9EFF",
     marginBottom: 4,
   },
   welcomeStatLabel: {
     fontSize: 12,
-    color: '#9DA3B4',
-    fontWeight: '500',
+    color: "#9DA3B4",
+    fontWeight: "500",
   },
   welcomeStatDivider: {
     width: 1,
     height: 30,
-    backgroundColor: 'rgba(140, 158, 255, 0.2)',
+    backgroundColor: "rgba(140, 158, 255, 0.2)",
     marginHorizontal: 20,
   },
   // Assets Header Styles
@@ -154,38 +153,38 @@ export const styles = StyleSheet.create({
   },
   assetsTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   assetsSubtitle: {
     fontSize: 14,
-    color: '#9DA3B4',
+    color: "#9DA3B4",
   },
   // Loading and Error States
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   loadingText: {
-    color: '#8C9EFF',
+    color: "#8C9EFF",
     fontSize: 16,
     marginTop: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   // Enhanced AssetItem styles
   enhancedAssetContainer: {
     marginVertical: 8,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -197,7 +196,7 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 18,
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     borderRadius: 16,
   },
   leftSection: {
@@ -206,7 +205,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   imageContainer: {
-    position: 'relative',
+    position: "relative",
     marginRight: 12,
   },
   image: {
@@ -215,14 +214,14 @@ export const styles = StyleSheet.create({
     borderRadius: 22,
   },
   imageBorder: {
-    position: 'absolute',
+    position: "absolute",
     top: -2,
     left: -2,
     right: -2,
     bottom: -2,
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: 'rgba(140, 158, 255, 0.2)',
+    borderColor: "rgba(140, 158, 255, 0.2)",
   },
   nameContainer: {
     flex: 1,
@@ -236,7 +235,7 @@ export const styles = StyleSheet.create({
   amount: {
     fontSize: 14,
     color: "#9DA3B4",
-    fontWeight: '500',
+    fontWeight: "500",
   },
   rightSection: {
     alignItems: "flex-end",
@@ -248,34 +247,34 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
   },
   percentageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
   percentageIndicator: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(140, 158, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(140, 158, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 6,
   },
   percentage: {
     fontSize: 14,
     color: "#8C9EFF",
-    fontWeight: '600',
+    fontWeight: "600",
   },
   pnlContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   pnlIndicator: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 4,
   },
   pnlValue: {
@@ -285,7 +284,7 @@ export const styles = StyleSheet.create({
   },
   pnlPercentage: {
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   // OthersButton styles
   othersContainer: {

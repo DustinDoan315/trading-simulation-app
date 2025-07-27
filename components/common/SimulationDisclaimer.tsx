@@ -1,9 +1,8 @@
-import colors from '@/styles/colors';
-import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, Text, View } from 'react-native';
-
+import colors from "@/styles/colors";
+import React from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet, Text, View } from "react-native";
 
 interface SimulationDisclaimerProps {
   variant?: "compact" | "full" | "banner";
@@ -120,6 +119,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     marginVertical: 8,
+    marginHorizontal: 20,
   },
   bannerContent: {
     flexDirection: "row",

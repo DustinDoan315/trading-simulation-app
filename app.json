@@ -9,19 +9,6 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "description": "Learn cryptocurrency trading with virtual money in a completely risk-free simulation environment. Practice trading strategies, track portfolio performance, and compete with other traders - all without using real money. Perfect for beginners learning crypto trading fundamentals.",
-    "keywords": [
-      "trading",
-      "simulation",
-      "crypto",
-      "education",
-      "practice",
-      "virtual",
-      "demo",
-      "learning",
-      "portfolio",
-      "cryptocurrency"
-    ],
-    "privacy": "https://cryptotradingsimulator.app/privacy",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.dustindoan.crypto-trading-simulator",
