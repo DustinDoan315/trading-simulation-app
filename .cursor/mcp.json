@@ -1,7 +1,11 @@
 {
   "mcpServers": {
     "RadonAi": {
+<<<<<<< Updated upstream
       "url": "http://127.0.0.1:62061/mcp",
+=======
+      "url": "http://127.0.0.1:49347/mcp",
+>>>>>>> Stashed changes
       "type": "http"
     }
   }
