@@ -1,30 +1,7 @@
-import * as Linking from 'expo-linking';
-import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import LeaderboardService from '@/services/LeaderboardService';
-import RealTimeDataService from '@/services/RealTimeDataService';
-import scheduler from '@/utils/scheduler';
-import Toast from 'react-native-toast-message';
-import UUIDService from '@/services/UUIDService';
-import { BackgroundDataSyncService } from '@/services/BackgroundDataSyncService';
-import { createUser, fetchUser } from '@/features/userSlice';
-import { initializeApp } from '@/utils/initializeApp';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { logger } from '@/utils/logger';
-import { NotificationProvider } from '@/components/ui/Notification';
-import { Provider } from 'react-redux';
-import { router, Stack } from 'expo-router';
-import { SafeAreaView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { store } from '../store';
-import { updateDailyBalance } from '@/utils/balanceUpdater';
-import { useCallback, useEffect } from 'react';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useFonts } from 'expo-font';
-import { UserProvider } from '@/context/UserContext';
-import { UserService } from '@/services/UserService';
-import 'react-native-reanimated';
+import "react-native-reanimated";
 
+import * as Linking from "expo-linking";
+import * as SplashScreen from "expo-splash-screen";
 
 import {
   ASYNC_STORAGE_KEYS,
@@ -36,7 +13,30 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { Stack, router } from "expo-router";
+import { createUser, fetchUser } from "@/features/userSlice";
+import { useCallback, useEffect } from "react";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BackgroundDataSyncService } from "@/services/BackgroundDataSyncService";
+import { LanguageProvider } from "@/context/LanguageContext";
+import LeaderboardService from "@/services/LeaderboardService";
+import { NotificationProvider } from "@/components/ui/Notification";
+import { Provider } from "react-redux";
+import RealTimeDataService from "@/services/RealTimeDataService";
+import { SafeAreaView } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import Toast from "react-native-toast-message";
+import UUIDService from "@/services/UUIDService";
+import { UserProvider } from "@/context/UserContext";
+import { UserService } from "@/services/UserService";
+import { initializeApp } from "@/utils/initializeApp";
+import { logger } from "@/utils/logger";
+import scheduler from "@/utils/scheduler";
+import { store } from "../store";
+import { updateDailyBalance } from "@/utils/balanceUpdater";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useFonts } from "expo-font";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -118,7 +118,7 @@ export default function RootLayout() {
         onboardingCompleted,
         isCompleted: onboardingCompleted === "true",
       });
-      return onboardingCompleted !== "true";
+      return onboardingCompleted == "true";
     } catch (error) {
       logger.error("Error checking onboarding status", "AppLayout", error);
       return false;
