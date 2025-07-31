@@ -12,6 +12,6 @@ expo-env.d.ts
 .expo/devices.json
 .tamagui
 android
-ios
+# ios
 .cursor/mcp.json
 yarn.lock
