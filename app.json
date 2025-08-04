@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Crypto Trading Simulator",
-    "slug": "crypto-trading-simulator",
-    "version": "1.0.0",
+    "name": "CoinPilot",
+    "slug": "trading-simulation-app",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/rocket.png",
     "scheme": "myapp",
@@ -11,7 +11,7 @@
     "description": "Learn cryptocurrency trading with virtual money in a completely risk-free simulation environment. Practice trading strategies, track portfolio performance, and compete with other traders - all without using real money. Perfect for beginners learning crypto trading fundamentals.",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dustindoan.crypto-trading-simulator",
+      "bundleIdentifier": "com.dustindoan.coinpilot",
       "infoPlist": {
         "NSCameraUsageDescription": "Camera access is used to scan QR codes for joining trading collections and sharing invite codes.",
         "NSMicrophoneUsageDescription": "Microphone access is used for voice commands in trading practice sessions."
@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dustindoan.cryptotradingsimulator",
+      "package": "com.dustindoan.coinpilot",
       "permissions": ["CAMERA", "RECORD_AUDIO"],
       "intentFilters": [
         {
@@ -62,7 +62,8 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes for joining trading collections",
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice commands in practice sessions"
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

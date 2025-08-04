@@ -13,17 +13,34 @@
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "store",
+      "ios": {
+        "credentialsSource": "remote",
+        "buildConfiguration": "Release"
+      },
+      "env": {
+        "ENVIRONMENT": "production"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "distribution": "store",
+      "ios": {
+        "credentialsSource": "remote",
+        "buildConfiguration": "Release"
+      },
+      "env": {
+        "ENVIRONMENT": "production"
+      }
     }
   },
   "submit": {
     "production": {
-      "appleId": "doankhanhdong3105@gmail.com",
-      "ascAppId": "6749346922",
-      "appleTeamId": "6SXWS6JV43"
+      "ios": {
+        "appleId": "doankhanhdong3105@gmail.com",
+        "ascAppId": "6749532810",
+        "appleTeamId": "6SXWS6JV43"
+      }
     }
   }
 }

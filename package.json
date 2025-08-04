@@ -14,15 +14,7 @@
     "web": "expo start --web",
     "web:optimized": "NODE_ENV=production expo start --web",
     "build:analyze": "NODE_ENV=production expo export --platform web",
-    "test": "jest --watchAll",
-    "fastlane:build-dev": "cd ios && fastlane build_dev",
-    "fastlane:install-dev": "cd ios && fastlane install_dev",
-    "fastlane:build-simulator": "cd ios && fastlane build_simulator",
-    "fastlane:test": "cd ios && fastlane test",
-    "fastlane:screenshots": "cd ios && fastlane screenshots",
-    "fastlane:clean": "cd ios && fastlane clean",
-    "fastlane:setup": "cd ios && fastlane setup_dev",
-    "fastlane:lanes": "cd ios && fastlane lanes"
+    "test": "jest --watchAll"
   },
   "jest": {
     "preset": "jest-expo"
@@ -44,6 +36,7 @@
     "dotenv": "^17.0.1",
     "expo": "53.0.20",
     "expo-application": "^6.1.5",
+    "expo-asset": "~11.1.7",
     "expo-blur": "~14.1.5",
     "expo-camera": "~16.1.10",
     "expo-clipboard": "~7.1.5",

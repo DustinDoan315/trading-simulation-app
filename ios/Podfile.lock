@@ -11,7 +11,7 @@ PODS:
   - EXJSONUtils (0.15.0)
   - EXManifests (0.16.6):
     - ExpoModulesCore
-  - Expo (53.0.19):
+  - Expo (53.0.20):
     - DoubleConversion
     - ExpoModulesCore
     - glog
@@ -277,7 +277,7 @@ PODS:
     - ExpoModulesCore
   - ExpoBlur (14.1.5):
     - ExpoModulesCore
-  - ExpoCamera (16.1.10):
+  - ExpoCamera (16.1.11):
     - ExpoModulesCore
     - ZXingObjC/OneD
     - ZXingObjC/PDF417
@@ -291,7 +291,7 @@ PODS:
     - ExpoModulesCore
   - ExpoHaptics (14.1.4):
     - ExpoModulesCore
-  - ExpoHead (5.1.3):
+  - ExpoHead (5.1.4):
     - ExpoModulesCore
   - ExpoImageManipulator (13.1.7):
     - EXImageLoader
@@ -306,7 +306,7 @@ PODS:
   - ExpoMediaLibrary (17.1.7):
     - ExpoModulesCore
     - React-Core
-  - ExpoModulesCore (2.4.2):
+  - ExpoModulesCore (2.5.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2770,26 +2770,26 @@ SPEC CHECKSUMS:
   EXImageLoader: ab4fcf9240cf3636a83c00e3fc5229d692899428
   EXJSONUtils: 1d3e4590438c3ee593684186007028a14b3686cd
   EXManifests: f4cc4a62ee4f1c8a9cf2bb79d325eac6cb9f5684
-  Expo: 6e2b482fa24909b52b80ba00271e6d7742c1ef9f
+  Expo: 666a397fcb608d72b019e16ba139b74e93e0b7d7
   expo-dev-client: f1b99dfea0c9174d2e4ec96c2c5461587dda1e86
   expo-dev-launcher: 27e8eba58d52b2f471b0c4001b0535a1c0b5610d
   expo-dev-menu: 2868212810f6651bc5c30e72c636ef64de31ec6b
   expo-dev-menu-interface: 609c35ae8b97479cdd4c9e23c8cf6adc44beea0e
   ExpoAsset: 7bdbbacf4e6752ae6e3cf70555cee076f6229e6e
   ExpoBlur: 846780b2c90f59e964b9a50385d4deb67174ebfb
-  ExpoCamera: 0bf2f7b19a15815c009ee86d8ac1acc840ac2b3c
+  ExpoCamera: fc1ab0e1c665b543a307c577df107e37cc2edc8e
   ExpoClipboard: 6b9aae54fd48a579473fb101051ad693435b9294
   ExpoCrypto: fcb6a8a08d1929f346cb95eb05a8f7818627177a
   ExpoFileSystem: 9681caebda23fa1b38a12a9c68b2bade7072ce20
   ExpoFont: 091a47eeaa1b30b0b760aa1d0a2e7814e8bf6fe6
   ExpoHaptics: 68c215e070f660e0a29c45dcda4f60eeff08aefb
-  ExpoHead: 9929511f8f28f2b41294c39fa66760ac74742078
+  ExpoHead: 7c1893efc8dc79570bdcbdadce175723f4c037ec
   ExpoImageManipulator: 094b748056f2654d5d7813370c910e20ef3d79b4
   ExpoKeepAwake: e8dedc115d9f6f24b153ccd2d1d8efcdfd68a527
   ExpoLinearGradient: ce334cff9859da4635c1d8eff6e291b11b04ccbb
   ExpoLinking: 343a89ea864a851831fd4495e8aea01cf0f6a36f
   ExpoMediaLibrary: 68f0c81280fe7efef3588ab498dae313b85932e9
-  ExpoModulesCore: 33476f0f608d791bbaf263af22a00d3b8877f6bc
+  ExpoModulesCore: 16f74d8df26d7e4b6bf7eb3d0effaf0f15df7b80
   ExpoSecureStore: 3148869ad24ab94f9e0c5777c7941d7a37d60399
   ExpoSplashScreen: 6f9213be0c60f2756a2f8220c36f4b90c55e3dbd
   ExpoSymbols: bd4e20b0b6a9dbacc31dd7c861e0d6d01b56e1f2
@@ -2879,6 +2879,6 @@ SPEC CHECKSUMS:
   Yoga: 357d74ecf46ef5be0234a0a2b08a9f728b37d93f
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: 3577abdd1803b1206c561c1559a2ed26a8154d6b
+PODFILE CHECKSUM: 48b806c25f2e6e610298322016b6788038963df6
 
 COCOAPODS: 1.16.2
