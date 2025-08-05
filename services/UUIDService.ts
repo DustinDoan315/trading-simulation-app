@@ -4,7 +4,6 @@ import { AsyncStorageService } from "./AsyncStorageService";
 import { getDeviceUUID } from "@/utils/deviceUtils";
 import { isInvalidUUIDFormat, validateUUIDFormat } from "@/utils/fixUUIDIssue";
 import { logger } from "@/utils/logger";
-import { UserSyncService } from "./UserSyncService";
 
 // Enhanced UUIDService.ts
 
@@ -139,6 +138,7 @@ class UUIDService {
       const userProfileStr = await AsyncStorage.getItem(USER_PROFILE_KEY);
       if (userProfileStr) {
         const userProfile = JSON.parse(userProfileStr);
+        const { UserSyncService } = await import("./UserSyncService");
         return await UserSyncService.ensureUserInSupabase(uuid, userProfile);
       } else {
         // Create default user profile
@@ -161,6 +161,7 @@ class UUIDService {
           created_at: now,
           updated_at: now,
         };
+        const { UserSyncService } = await import("./UserSyncService");
         const syncResult = await UserSyncService.syncUserToCloud(userProfile);
         return syncResult.success;
       }
@@ -200,6 +201,7 @@ export async function initializeUserProfile() {
     }
 
     // Step 3: Ensure user exists in Supabase
+    const { UserSyncService } = await import("./UserSyncService");
     const result = await UserSyncService.syncUserToCloud(userProfile);
     if (result.success) {
       logger.info("User profile initialized in Supabase", "UUIDService");
