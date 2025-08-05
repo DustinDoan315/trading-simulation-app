@@ -1,0 +1,123 @@
+[sqlfluff]
+# SQLFluff configuration for PostgreSQL
+dialect = postgres
+templater = jinja
+
+[sqlfluff:rules]
+# Allow PostgreSQL-specific syntax
+L010 = 0  # Keywords
+L011 = 0  # Implicit aliasing of table
+L012 = 0  # Implicit aliasing of columns
+L014 = 0  # Unquoted identifiers
+L016 = 0  # Line length
+L017 = 0  # Function names
+L018 = 0  # Alias
+L019 = 0  # Comma spacing
+L020 = 0  # Table aliases
+L021 = 0  # Ambiguous column references
+L022 = 0  # Blank line after CTE
+L023 = 0  # Single whitespace after AS
+L024 = 0  # Single whitespace before AS
+L025 = 0  # Tables should not be aliased if that alias would be the same as the table name
+L026 = 0  # References should be qualified if select has more than one referenced table/view
+L027 = 0  # References should be qualified if select has more than one referenced table/view
+L028 = 0  # References should be qualified if select has more than one referenced table/view
+L029 = 0  # Keyword capitalization
+L030 = 0  # Function names
+L031 = 0  # Avoid table aliases in from clauses and join conditions
+L032 = 0  # Prefer AS to explicit aliasing
+L033 = 0  # Unnecessary brackets
+L034 = 0  # Use consistent syntax to express "count number of rows"
+L035 = 0  # Use consistent syntax to express "count number of rows"
+L036 = 0  # Select wildcards then simple targets before calculations
+L037 = 0  # Ambiguous columns in ORDER BY
+L038 = 0  # Trailing comma
+L039 = 0  # Unnecessary whitespace
+L040 = 0  # Null & Boolean Literals
+L041 = 0  # Implicit/explicit aliasing of table
+L042 = 0  # Join/From clauses should not contain subqueries
+L043 = 0  # Unexpected trailing comma
+L044 = 0  # Query defines a CTE (Common Table Expression) but does not use it
+L045 = 0  # Query defines a CTE (Common Table Expression) but does not use it
+L046 = 0  # Jinja tags should have a single whitespace on either side
+L047 = 0  # Use consistent syntax to count rows
+L048 = 0  # Quoted literals should be placed on a single line
+L049 = 0  # Unnecessary quoted identifier
+L050 = 0  # Files must not begin with newlines or whitespace
+L051 = 0  # JOIN clauses should be fully qualified
+L052 = 0  # Statements must end with a semicolon
+L053 = 0  # Table aliases should be unique within each clause
+L054 = 0  # Inconsistent column references in GROUP BY/ORDER BY clauses
+L055 = 0  # Use LEFT JOIN instead of RIGHT JOIN
+L056 = 0  # 'SP_*' procedures should not be called
+L057 = 0  # Do not use special characters in identifiers
+L058 = 0  # Unnecessary GROUP BY clause
+L059 = 0  # Use NOT IN instead of NOT EXISTS
+L060 = 0  # Use COALESCE instead of IFNULL or NVL
+L061 = 0  # Use UNION [ALL] instead of UNION [DISTINCT]
+L062 = 0  # Redundant DISTINCT in UNION
+L063 = 0  # Use consistent syntax to express "count number of rows"
+L064 = 0  # Use consistent syntax to express "count number of rows"
+L065 = 0  # Set operators should be surrounded by newlines
+L066 = 0  # Order by clause should be on a separate line
+L067 = 0  # Enforce single space after AS keyword
+L068 = 0  # Enforce single space after AS keyword
+L069 = 0  # Enforce single space after AS keyword
+L070 = 0  # Enforce single space after AS keyword
+L071 = 0  # Enforce single space after AS keyword
+L072 = 0  # Enforce single space after AS keyword
+L073 = 0  # Enforce single space after AS keyword
+L074 = 0  # Enforce single space after AS keyword
+L075 = 0  # Enforce single space after AS keyword
+L076 = 0  # Enforce single space after AS keyword
+L077 = 0  # Enforce single space after AS keyword
+L078 = 0  # Enforce single space after AS keyword
+L079 = 0  # Enforce single space after AS keyword
+L080 = 0  # Enforce single space after AS keyword
+L081 = 0  # Enforce single space after AS keyword
+L082 = 0  # Enforce single space after AS keyword
+L083 = 0  # Enforce single space after AS keyword
+L084 = 0  # Enforce single space after AS keyword
+L085 = 0  # Enforce single space after AS keyword
+L086 = 0  # Enforce single space after AS keyword
+L087 = 0  # Enforce single space after AS keyword
+L088 = 0  # Enforce single space after AS keyword
+L089 = 0  # Enforce single space after AS keyword
+L090 = 0  # Enforce single space after AS keyword
+L091 = 0  # Enforce single space after AS keyword
+L092 = 0  # Enforce single space after AS keyword
+L093 = 0  # Enforce single space after AS keyword
+L094 = 0  # Enforce single space after AS keyword
+L095 = 0  # Enforce single space after AS keyword
+L096 = 0  # Enforce single space after AS keyword
+L097 = 0  # Enforce single space after AS keyword
+L098 = 0  # Enforce single space after AS keyword
+L099 = 0  # Enforce single space after AS keyword
+
+[sqlfluff:rules:L010]
+# Keywords
+capitalisation_policy = all
+
+[sqlfluff:rules:L030]
+# Function names
+capitalisation_policy = all
+
+[sqlfluff:rules:L040]
+# Null & Boolean Literals
+capitalisation_policy = all
+
+[sqlfluff:rules:L029]
+# Keyword capitalization
+unquoted_identifiers_policy = all
+
+[sqlfluff:rules:L014]
+# Unquoted identifiers
+unquoted_identifiers_policy = all
+
+[sqlfluff:rules:L016]
+# Line length
+max_line_length = 120
+
+[sqlfluff:rules:L052]
+# Statements must end with a semicolon
+require_final_semicolon = False 

@@ -1,11 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-import NetInfo from '@react-native-community/netinfo';
-import UUIDService from './UUIDService';
-import { AsyncStorageService } from './AsyncStorageService';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { logger } from '@/utils/logger';
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import NetInfo from "@react-native-community/netinfo";
+import UUIDService from "./UUIDService";
+import { AsyncStorageService } from "./AsyncStorageService";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/utils/logger";
 
 interface SyncResult<T = unknown> {
   success: boolean;
@@ -63,7 +62,7 @@ class SupabaseConfig {
 
 const initializeSupabase = (): SupabaseClient => {
   const config = SupabaseConfig.getConfig();
-  
+
   logger.info("Initializing Supabase", "SupabaseService", {
     url: config.url,
     hasKey: !!config.key,
@@ -157,7 +156,10 @@ class OfflineQueue {
       }
 
       await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
-      logger.info(`Added operation to queue: ${operation.type}`, "OfflineQueue");
+      logger.info(
+        `Added operation to queue: ${operation.type}`,
+        "OfflineQueue"
+      );
     } catch (error) {
       logger.error("Failed to add operation to queue", "OfflineQueue", error);
     }
@@ -179,7 +181,11 @@ class OfflineQueue {
       const filteredQueue = queue.filter((op) => op.id !== operationId);
       await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(filteredQueue));
     } catch (error) {
-      logger.error("Failed to remove operation from queue", "OfflineQueue", error);
+      logger.error(
+        "Failed to remove operation from queue",
+        "OfflineQueue",
+        error
+      );
     }
   }
 
@@ -258,7 +264,7 @@ export class SyncService {
   static async testConnection(): Promise<SyncResult<boolean>> {
     try {
       logger.info("Testing Supabase connection", "SyncService");
-      
+
       const networkStatus = await NetworkUtils.getNetworkStatus();
       if (!networkStatus.isConnected) {
         return {
@@ -284,7 +290,8 @@ export class SyncService {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       logger.error("Connection test failed", "SyncService", errorMessage);
       return {
         success: false,
@@ -304,10 +311,13 @@ export class SyncService {
 
     while (attempt <= maxRetries) {
       try {
-        logger.info(`${context} - Attempt ${attempt}/${maxRetries}`, "SyncService");
-        
+        logger.info(
+          `${context} - Attempt ${attempt}/${maxRetries}`,
+          "SyncService"
+        );
+
         const result = await operation();
-        
+
         logger.info(`${context} completed successfully`, "SyncService");
         return result;
       } catch (error) {
@@ -317,7 +327,7 @@ export class SyncService {
 
         const delay = this.RETRY_CONFIG.baseDelay * Math.pow(2, attempt - 1);
         logger.info(`Retrying ${context} in ${delay}ms`, "SyncService");
-        
+
         await new Promise((resolve) => setTimeout(resolve, delay));
         attempt++;
       }
@@ -413,13 +423,10 @@ export class SyncService {
           throw new Error(`Failed to fetch portfolio: ${error.message}`);
         }
 
-
         if (cloudPortfolio && cloudPortfolio.length > 0) {
           console.log(
             `Syncing ${cloudPortfolio.length} portfolio items from cloud`
           );
-
-          
         }
 
         return cloudPortfolio;
@@ -472,7 +479,6 @@ export class SyncService {
 
     console.log("🔄 Starting portfolio sync with MERGE strategy...");
     console.log("📊 Local portfolio items:", portfolio.length);
-
 
     const { data: existingPortfolio, error: fetchError } = await supabase
       .from("portfolio")
@@ -534,25 +540,7 @@ export class SyncService {
           existingAsset.image_url !== (asset.image || null);
 
         if (needsUpdate) {
-                  operations.push({
-          user_id: uuid,
-          symbol: symbol,
-          quantity: asset.quantity,
-          avg_cost: asset.avg_cost,
-          current_price: asset.current_price || "0",
-          total_value: asset.total_value || "0",
-          profit_loss: asset.profit_loss || "0",
-          profit_loss_percent: asset.profit_loss_percent || "0",
-          image_url: asset.image || null,
-          last_updated: new Date().toISOString(),
-        });
-          symbolsToUpdate.add(symbol);
-          console.log(`🔄 Will update: ${symbol}`);
-        } else {
-          console.log(`✅ No changes needed: ${symbol}`);
-        }
-      } else {
-                  operations.push({
+          operations.push({
             user_id: uuid,
             symbol: symbol,
             quantity: asset.quantity,
@@ -564,6 +552,24 @@ export class SyncService {
             image_url: asset.image || null,
             last_updated: new Date().toISOString(),
           });
+          symbolsToUpdate.add(symbol);
+          console.log(`🔄 Will update: ${symbol}`);
+        } else {
+          console.log(`✅ No changes needed: ${symbol}`);
+        }
+      } else {
+        operations.push({
+          user_id: uuid,
+          symbol: symbol,
+          quantity: asset.quantity,
+          avg_cost: asset.avg_cost,
+          current_price: asset.current_price || "0",
+          total_value: asset.total_value || "0",
+          profit_loss: asset.profit_loss || "0",
+          profit_loss_percent: asset.profit_loss_percent || "0",
+          image_url: asset.image || null,
+          last_updated: new Date().toISOString(),
+        });
         symbolsToInsert.add(symbol);
         console.log(`➕ Will insert: ${symbol}`);
       }
@@ -653,10 +659,15 @@ export class SyncService {
         timestamp: new Date().toISOString(),
       };
 
-      logger.info("Portfolio sync completed successfully", "SyncService", successResult);
+      logger.info(
+        "Portfolio sync completed successfully",
+        "SyncService",
+        successResult
+      );
       return successResult;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       logger.error("Portfolio sync failed", "SyncService", {
         error: errorMessage,
         details: error,
@@ -666,7 +677,10 @@ export class SyncService {
         errorMessage.includes("Network") ||
         errorMessage.includes("network")
       ) {
-        logger.info("Adding to offline queue due to network error", "SyncService");
+        logger.info(
+          "Adding to offline queue due to network error",
+          "SyncService"
+        );
         await OfflineQueue.addToQueue({
           type: "portfolio_sync",
           payload: { uuid, portfolio },
@@ -688,7 +702,10 @@ export class SyncService {
   }
 
   static async clearUserPortfolio(uuid: string): Promise<SyncResult> {
-    logger.warn("clearUserPortfolio is deprecated. Use MERGE strategy instead.", "SyncService");
+    logger.warn(
+      "clearUserPortfolio is deprecated. Use MERGE strategy instead.",
+      "SyncService"
+    );
 
     try {
       logger.info("Clearing portfolio data for user", "SyncService", { uuid });
@@ -714,7 +731,8 @@ export class SyncService {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       logger.error("Error clearing portfolio", "SyncService", errorMessage);
       return {
         success: false,
@@ -761,7 +779,8 @@ export class SyncService {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       logger.error("Collections sync failed", "SyncService", errorMessage);
       await this.updateSyncStatus("collectionsSync", "failed", errorMessage);
 
@@ -796,7 +815,11 @@ export class SyncService {
         rules: c.rules,
       }));
     } catch (error) {
-      logger.error("Failed to sync collections from cloud", "SyncService", error);
+      logger.error(
+        "Failed to sync collections from cloud",
+        "SyncService",
+        error
+      );
       return [];
     }
   }
@@ -804,7 +827,7 @@ export class SyncService {
   static async processOfflineQueue(): Promise<SyncResult> {
     try {
       const queue = await OfflineQueue.getQueue();
-      
+
       if (queue.length === 0) {
         return {
           success: true,
@@ -813,7 +836,10 @@ export class SyncService {
         };
       }
 
-      logger.info(`Processing ${queue.length} queued operations`, "SyncService");
+      logger.info(
+        `Processing ${queue.length} queued operations`,
+        "SyncService"
+      );
 
       const results = [];
       for (const operation of queue) {
@@ -889,8 +915,13 @@ export class SyncService {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      logger.error("Failed to process offline queue", "SyncService", errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      logger.error(
+        "Failed to process offline queue",
+        "SyncService",
+        errorMessage
+      );
       return {
         success: false,
         error: errorMessage,
@@ -923,7 +954,10 @@ export class SyncService {
         throw error;
       }
 
-      logger.info(`User USDT balance updated in Supabase: ${newBalance}`, "SyncService");
+      logger.info(
+        `User USDT balance updated in Supabase: ${newBalance}`,
+        "SyncService"
+      );
     } catch (error) {
       logger.error("Supabase update error", "SyncService", error);
       throw error;
@@ -959,7 +993,11 @@ export class SyncService {
         { usdtBalance, totalPortfolioValue, totalPnL, totalPnLPercentage }
       );
     } catch (error) {
-      logger.error("Error in updateUserBalanceAndPortfolioValue", "SyncService", error);
+      logger.error(
+        "Error in updateUserBalanceAndPortfolioValue",
+        "SyncService",
+        error
+      );
       throw error;
     }
   }
@@ -971,10 +1009,16 @@ export class SyncService {
   ): Promise<void> {
     try {
       const status = success ? "completed" : "failed";
-      logger.info(`Sync ${operation}: ${status}${error ? ` - ${error}` : ""}`, "SyncService");
-      
+      logger.info(
+        `Sync ${operation}: ${status}${error ? ` - ${error}` : ""}`,
+        "SyncService"
+      );
     } catch (notificationError) {
-      logger.error("Failed to notify sync status", "SyncService", notificationError);
+      logger.error(
+        "Failed to notify sync status",
+        "SyncService",
+        notificationError
+      );
     }
   }
 

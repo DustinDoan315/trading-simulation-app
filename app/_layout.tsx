@@ -1,7 +1,29 @@
-import "react-native-reanimated";
-
 import * as Linking from "expo-linking";
 import * as SplashScreen from "expo-splash-screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import LeaderboardService from "@/services/LeaderboardService";
+import RealTimeDataService from "@/services/RealTimeDataService";
+import scheduler from "@/utils/scheduler";
+import Toast from "react-native-toast-message";
+import UUIDService from "@/services/UUIDService";
+import { BackgroundDataSyncService } from "@/services/BackgroundDataSyncService";
+import { createUser, fetchUser } from "@/features/userSlice";
+import { initializeApp } from "@/utils/initializeApp";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { logger } from "@/utils/logger";
+import { NotificationProvider } from "@/components/ui/Notification";
+import { Provider } from "react-redux";
+import { router, Stack } from "expo-router";
+import { SafeAreaView } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { store } from "../store";
+import { updateDailyBalance } from "@/utils/balanceUpdater";
+import { useCallback, useEffect } from "react";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useFonts } from "expo-font";
+import { UserProvider } from "@/context/UserContext";
+import { UserService } from "@/services/UserService";
+import "react-native-reanimated";
 
 import {
   ASYNC_STORAGE_KEYS,
@@ -13,30 +35,6 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack, router } from "expo-router";
-import { createUser, fetchUser } from "@/features/userSlice";
-import { useCallback, useEffect } from "react";
-
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BackgroundDataSyncService } from "@/services/BackgroundDataSyncService";
-import { LanguageProvider } from "@/context/LanguageContext";
-import LeaderboardService from "@/services/LeaderboardService";
-import { NotificationProvider } from "@/components/ui/Notification";
-import { Provider } from "react-redux";
-import RealTimeDataService from "@/services/RealTimeDataService";
-import { SafeAreaView } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import Toast from "react-native-toast-message";
-import UUIDService from "@/services/UUIDService";
-import { UserProvider } from "@/context/UserContext";
-import { UserService } from "@/services/UserService";
-import { initializeApp } from "@/utils/initializeApp";
-import { logger } from "@/utils/logger";
-import scheduler from "@/utils/scheduler";
-import { store } from "../store";
-import { updateDailyBalance } from "@/utils/balanceUpdater";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { useFonts } from "expo-font";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -134,36 +132,74 @@ export default function RootLayout() {
         let isNewUser = false;
 
         if (userData?.currentUser) {
-          logger.info("User data loaded successfully from Redux", "AppLayout");
+          logger.info("User data loaded successfully from Redux", "AppLayout", {
+            userId: userData.currentUser.id,
+            username: userData.currentUser.username,
+          });
         } else {
           logger.warn(
-            "No user data found in Redux store, initializing user",
-            "AppLayout"
+            "No user data found in Redux store, checking database",
+            "AppLayout",
+            { userId }
           );
 
           try {
+            // Try to fetch existing user from database
             await store.dispatch(fetchUser(userId)).unwrap();
-            logger.info("Existing user fetched successfully", "AppLayout");
+            logger.info(
+              "Existing user fetched successfully from database",
+              "AppLayout",
+              { userId }
+            );
           } catch (error) {
-            logger.info("User not found, creating new user", "AppLayout");
+            logger.info(
+              "User not found in database, creating new user",
+              "AppLayout",
+              { userId }
+            );
             isNewUser = true;
             const timestamp = Date.now().toString().slice(-6);
             const username = `user_${userId.slice(0, 8)}_${timestamp}`;
-            await store
-              .dispatch(
-                createUser({
-                  id: userId,
-                  username,
-                  display_name: username,
-                  avatar_emoji: DEFAULT_USER.AVATAR_EMOJI,
-                  usdt_balance: DEFAULT_USER.INITIAL_BALANCE,
-                })
-              )
-              .unwrap();
+
+            try {
+              const newUser = await store
+                .dispatch(
+                  createUser({
+                    id: userId, // Use the existing UUID from UUIDService
+                    username,
+                    display_name: username,
+                    avatar_emoji: DEFAULT_USER.AVATAR_EMOJI,
+                    usdt_balance: DEFAULT_USER.INITIAL_BALANCE,
+                  })
+                )
+                .unwrap();
+              logger.info(
+                "New user created successfully in database",
+                "AppLayout",
+                {
+                  userId: newUser?.id || userId,
+                  username: newUser?.username || username,
+                }
+              );
+            } catch (createError) {
+              logger.error("Failed to create user in database", "AppLayout", {
+                userId,
+                error: createError,
+              });
+              // If creation fails, still proceed with onboarding
+              isNewUser = true;
+            }
           }
         }
 
         const hasCompletedOnboarding = await checkOnboardingStatus(userId);
+
+        logger.info("User initialization completed", "AppLayout", {
+          userId,
+          isNewUser,
+          hasCompletedOnboarding,
+          userExistsInRedux: !!userData?.currentUser,
+        });
 
         if (isNewUser || !hasCompletedOnboarding) {
           logger.info("Redirecting to onboarding", "AppLayout", {
@@ -174,12 +210,13 @@ export default function RootLayout() {
         } else {
           logger.info(
             "User has completed onboarding, going to main app",
-            "AppLayout"
+            "AppLayout",
+            { userId }
           );
           router.replace("/(tabs)");
         }
       } catch (error) {
-        logger.error("Error initializing user", "AppLayout", error);
+        logger.error("Error initializing user", "AppLayout", { userId, error });
         router.replace("/(onboarding)/onboarding");
       }
     },

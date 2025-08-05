@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_trade_at TIMESTAMP WITH TIME ZONE,
     join_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_active TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -223,6 +224,7 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_global_rank ON users(global_rank);
 CREATE INDEX IF NOT EXISTS idx_users_total_pnl ON users(total_pnl DESC);
 CREATE INDEX IF NOT EXISTS idx_users_last_active ON users(last_active);
+CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 
 -- Portfolio indexes
 CREATE INDEX IF NOT EXISTS idx_portfolio_user_symbol ON portfolio(user_id, symbol);
@@ -726,7 +728,7 @@ CREATE POLICY "Owners can delete their collections" ON collections
 
 -- Collection members policies
 CREATE POLICY "Members can view collection membership" ON collection_members 
-    FOR SELECT USING (auth.uid() = user_id OR EXISTS (SELECT 1 FROM collection_members cm WHERE cm.collection_id = collection_members.collection_id AND cm.user_id = auth.uid()) OR auth.role() = 'service_role');
+    FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role');
 
 CREATE POLICY "Users can join collections" ON collection_members 
     FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.role() = 'service_role');

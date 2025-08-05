@@ -1,12 +1,14 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import colors from '@/styles/colors';
-import GradientText from '@/components/GradientText';
-import React, { useCallback, useRef, useState } from 'react';
-import { createUser } from '@/features/userSlice';
-import { LinearGradient } from 'expo-linear-gradient';
-import { logger } from '@/utils/logger';
-import { router } from 'expo-router';
-import { useAppDispatch } from '@/store';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import colors from "@/styles/colors";
+import GradientText from "@/components/GradientText";
+import React, { useCallback, useRef, useState } from "react";
+import UUIDService from "@/services/UUIDService";
+import { createUser, fetchUser } from "@/features/userSlice";
+import { LinearGradient } from "expo-linear-gradient";
+import { logger } from "@/utils/logger";
+import { router } from "expo-router";
+import { store } from "@/store";
+import { useAppDispatch } from "@/store";
 import {
   ASYNC_STORAGE_KEYS,
   DEFAULT_USER,
@@ -24,7 +26,6 @@ import {
   Text,
   View,
 } from "react-native";
-
 
 const { width } = Dimensions.get("window");
 
@@ -103,11 +104,63 @@ const OnboardingScreen = () => {
     setIsCreating(true);
 
     try {
-      const username = generateUsername();
+      // Get the existing user ID from UUIDService instead of creating a new one
+      const existingUserId = await UUIDService.getOrCreateUser();
 
-      // Create user without providing ID - let Supabase generate UUID
+      logger.info("Starting account creation process", "Onboarding", {
+        existingUserId,
+      });
+
+      // Check if user already exists in Redux store
+      const userData = store.getState().user;
+
+      if (userData?.currentUser) {
+        logger.info(
+          "User already exists in Redux store, skipping creation",
+          "Onboarding",
+          {
+            userId: userData.currentUser.id,
+            username: userData.currentUser.username,
+          }
+        );
+        await markOnboardingCompleted(userData.currentUser.id);
+        router.replace("/(tabs)");
+        return;
+      }
+
+      // Try to fetch existing user from database
+      try {
+        await store.dispatch(fetchUser(existingUserId)).unwrap();
+        logger.info(
+          "Existing user fetched successfully from database",
+          "Onboarding",
+          {
+            userId: existingUserId,
+          }
+        );
+        await markOnboardingCompleted(existingUserId);
+        router.replace("/(tabs)");
+        return;
+      } catch (error) {
+        logger.info(
+          "User not found in database, creating new user",
+          "Onboarding",
+          {
+            userId: existingUserId,
+          }
+        );
+      }
+
+      // Create user with the existing UUID
+      const username = generateUsername();
+      logger.info("Creating new user with existing UUID", "Onboarding", {
+        userId: existingUserId,
+        username,
+      });
+
       const newUser = await dispatch(
         createUser({
+          id: existingUserId, // Use the existing UUID
           username,
           display_name: username,
           avatar_emoji: DEFAULT_USER.AVATAR_EMOJI,
@@ -116,20 +169,23 @@ const OnboardingScreen = () => {
       ).unwrap();
 
       if (newUser) {
-        // Store the cloud-generated UUID
-        await AsyncStorage.setItem(ASYNC_STORAGE_KEYS.USER_ID, newUser.id);
-
         await markOnboardingCompleted(newUser.id);
 
-        logger.info("New user created successfully", "Onboarding", {
-          username: newUser.username,
-          userId: newUser.id,
-        });
+        logger.info(
+          "New user created successfully with existing UUID",
+          "Onboarding",
+          {
+            username: newUser.username,
+            userId: newUser.id,
+          }
+        );
 
         router.replace("/(tabs)");
+      } else {
+        throw new Error("Failed to create user - no user returned");
       }
     } catch (error) {
-      logger.error("Error creating user", "Onboarding", error);
+      logger.error("Error creating user", "Onboarding", { error });
       Alert.alert("Error", "Failed to create account. Please try again.", [
         { text: "OK" },
       ]);
@@ -147,10 +203,8 @@ const OnboardingScreen = () => {
         animated: true,
       });
     } else {
-      // Check if user already exists (for existing users going through onboarding)
-      const existingUserId = await AsyncStorage.getItem(
-        ASYNC_STORAGE_KEYS.USER_ID
-      );
+      // Always use the existing user ID from UUIDService
+      const existingUserId = await UUIDService.getOrCreateUser();
 
       logger.info("Handling onboarding completion", "Onboarding", {
         currentIndex,
@@ -158,16 +212,24 @@ const OnboardingScreen = () => {
         isLastScreen: currentIndex === screens.length - 1,
       });
 
-      if (existingUserId) {
-        // Existing user - just mark onboarding as completed
-        logger.info("Existing user completing onboarding", "Onboarding", {
-          existingUserId,
-        });
-        await markOnboardingCompleted(existingUserId);
+      // Check if user already exists in Redux store
+      const userData = store.getState().user;
+
+      if (userData?.currentUser) {
+        logger.info(
+          "User already exists in Redux store, completing onboarding",
+          "Onboarding",
+          {
+            userId: userData.currentUser.id,
+          }
+        );
+        await markOnboardingCompleted(userData.currentUser.id);
         router.replace("/(tabs)");
       } else {
-        // New user - create account
-        logger.info("New user creating account", "Onboarding");
+        // Create account with existing UUID
+        logger.info("Creating account with existing UUID", "Onboarding", {
+          existingUserId,
+        });
         handleCreateAccount();
       }
     }

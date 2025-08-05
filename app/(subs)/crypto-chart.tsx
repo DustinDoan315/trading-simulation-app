@@ -1,25 +1,25 @@
-import Chart from '@/components/crypto/Chart';
-import colors from '@/styles/colors';
-import DailyLimitPopup from '@/components/ui/DailyLimitPopup';
-import OrderEntry from '@/components/trading/OrderEntry';
-import React, { useEffect, useRef, useState } from 'react';
-import SimulationDisclaimer from '@/components/common/SimulationDisclaimer';
-import SymbolHeader from '@/components/crypto/SymbolHeader';
-import TimeframeSelector from '@/components/crypto/TimeframeSelector';
-import useCryptoAPI from '@/hooks/useCryptoAPI';
-import useHistoricalData from '@/hooks/useHistoricalData';
-import { ChartType, Order, TimeframeOption } from '../../types/crypto';
-import { LinearGradient } from 'expo-linear-gradient';
-import { logger } from '@/utils/logger';
-import { RootState, useAppDispatch } from '@/store';
-import { updateCollectionHolding } from '@/features/dualBalanceSlice';
-import { useDualBalance } from '@/hooks/useDualBalance';
-import { useLanguage } from '@/context/LanguageContext';
-import { useLocalSearchParams } from 'expo-router';
-import { UserService } from '@/services/UserService';
-import { useSelector } from 'react-redux';
-import { useUser } from '@/context/UserContext';
-import { WebView } from 'react-native-webview';
+import Chart from "@/components/crypto/Chart";
+import colors from "@/styles/colors";
+import DailyLimitPopup from "@/components/ui/DailyLimitPopup";
+import OrderEntry from "@/components/trading/OrderEntry";
+import React, { useEffect, useRef, useState } from "react";
+import SimulationDisclaimer from "@/components/common/SimulationDisclaimer";
+import SymbolHeader from "@/components/crypto/SymbolHeader";
+import TimeframeSelector from "@/components/crypto/TimeframeSelector";
+import useCryptoAPI from "@/hooks/useCryptoAPI";
+import useHistoricalData from "@/hooks/useHistoricalData";
+import { ChartType, Order, TimeframeOption } from "../../types/crypto";
+import { LinearGradient } from "expo-linear-gradient";
+import { logger } from "@/utils/logger";
+import { RootState, useAppDispatch } from "@/store";
+import { updateCollectionHolding } from "@/features/dualBalanceSlice";
+import { useDualBalance } from "@/hooks/useDualBalance";
+import { useLanguage } from "@/context/LanguageContext";
+import { useLocalSearchParams } from "expo-router";
+import { UserService } from "@/services/UserService";
+import { useSelector } from "react-redux";
+import { useUser } from "@/context/UserContext";
+import { WebView } from "react-native-webview";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -345,7 +345,8 @@ const CryptoChartScreen = () => {
       if (
         error.message?.includes("User not authenticated") ||
         error.message?.includes("Failed to initialize user authentication") ||
-        error.message?.includes("User not found")
+        error.message?.includes("User not found") ||
+        error.message?.includes("User creation failed")
       ) {
         try {
           setSubmissionStatus(t("chart.reinitializingUser"));
@@ -356,8 +357,16 @@ const CryptoChartScreen = () => {
         } catch (reinitError: any) {
           console.error("User reinitialization failed:", reinitError);
 
-          setSubmissionStatus(t("chart.errorOccurred"));
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Provide more specific error message
+          if (reinitError.message?.includes("User creation failed")) {
+            setSubmissionStatus(
+              "Failed to create user account. Please try again."
+            );
+          } else {
+            setSubmissionStatus(t("chart.errorOccurred"));
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 3000));
           resetLoadingState();
         }
       } else {

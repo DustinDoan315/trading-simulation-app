@@ -4,7 +4,7 @@
     "slug": "trading-simulation-app",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/rocket.png",
+    "icon": "./assets/images/splashscreen.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -19,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/splashscreen.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.dustindoan.coinpilot",
@@ -41,7 +41,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/splashscreen.png"
     },
     "plugins": [
       "expo-router",
@@ -51,7 +51,7 @@
           "image": "./assets/images/splashscreen.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "transparent"
         }
       ],
       "expo-font",
@@ -70,7 +70,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "SECURE_STORE_PREFIX": "crypto_sim_",
+      "SECURE_STORE_PREFIX": "cointpilot_",
       "router": {},
       "eas": {
         "projectId": "ff964db9-1fa1-4563-98c5-478459b0c294"

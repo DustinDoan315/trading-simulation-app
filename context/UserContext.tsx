@@ -1,5 +1,6 @@
 import UUIDService from "@/services/UUIDService";
 import { logger } from "@/utils/logger";
+import { store } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { User } from "@/types/database";
 import React, {
@@ -79,6 +80,33 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     try {
       logger.info("Re-initializing user data", "UserContext");
 
+      // Check if user already exists in Redux store
+      const userData = store.getState().user;
+      if (userData?.currentUser) {
+        logger.info(
+          "User exists in Redux store, verifying Supabase existence",
+          "UserContext",
+          {
+            userId: userData.currentUser.id,
+          }
+        );
+
+        // Verify user exists in Supabase
+        try {
+          await dispatch(fetchUser(userData.currentUser.id)).unwrap();
+          logger.info("User verified in Supabase", "UserContext");
+          return;
+        } catch (error) {
+          logger.warn(
+            "User exists in Redux but not in Supabase, will recreate",
+            "UserContext",
+            { userId: userData.currentUser.id, error }
+          );
+          // Clear the user from Redux so we can recreate them
+          dispatch(clearUser());
+        }
+      }
+
       const userId = await UUIDService.getOrCreateUser();
 
       try {
@@ -87,7 +115,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
         await refreshUserData(userId);
       } catch (error) {
-        logger.info("User not found, creating new user", "UserContext");
+        logger.info(
+          "User not found in database, creating new user",
+          "UserContext",
+          { userId }
+        );
         const timestamp = Date.now().toString().slice(-6);
         const username = `user_${userId.slice(0, 8)}_${timestamp}`;
         await dispatch(
