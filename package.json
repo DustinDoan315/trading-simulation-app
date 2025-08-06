@@ -10,6 +10,7 @@
     "validate-sql": "node ./scripts/validate-sql.js",
     "fix-db-schema": "node ./scripts/fix-database-schema.js",
     "test-dual-balance": "node ./scripts/test-dual-balance.js",
+    "deploy-testflight": "node ./scripts/deploy-testflight.js",
     "android": "expo run:android",
     "android:optimized": "NODE_ENV=production expo run:android",
     "ios": "expo run:ios",

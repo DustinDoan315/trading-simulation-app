@@ -1,10 +1,11 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
-import NetInfo from "@react-native-community/netinfo";
-import UUIDService from "./UUIDService";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "@/utils/logger";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import NetInfo from '@react-native-community/netinfo';
+import UUIDService from './UUIDService';
+import { AsyncStorageService } from './AsyncStorageService';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { logger } from '@/utils/logger';
+
 
 interface SyncResult<T = unknown> {
   success: boolean;
@@ -31,6 +32,11 @@ interface QueuedOperation {
 class SupabaseConfig {
   private static validateConfig(url: string, key: string): void {
     if (!url || !key) {
+      logger.warn("Supabase configuration missing, app will run in offline mode", "SupabaseService", {
+        hasUrl: !!url,
+        hasKey: !!key
+      });
+      
       throw new Error(`Supabase configuration missing:
         URL: ${url ? "Set" : "Missing"}
         Key: ${key ? "Set" : "Missing"}
@@ -60,40 +66,54 @@ class SupabaseConfig {
   }
 }
 
-const initializeSupabase = (): SupabaseClient => {
-  const config = SupabaseConfig.getConfig();
+const initializeSupabase = (): SupabaseClient | null => {
+  try {
+    const config = SupabaseConfig.getConfig();
 
-  logger.info("Initializing Supabase", "SupabaseService", {
-    url: config.url,
-    hasKey: !!config.key,
-  });
+    logger.info("Initializing Supabase", "SupabaseService", {
+      url: config.url,
+      hasKey: !!config.key,
+    });
 
-  const supabase = createClient(config.url, config.key, {
-    auth: {
-      storage: AsyncStorage,
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,
-    },
-    global: {
-      headers: {
-        "x-client-info": "react-native-app",
+    const supabase = createClient(config.url, config.key, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
       },
-    },
-    db: {
-      schema: "public",
-    },
-    realtime: {
-      params: {
-        eventsPerSecond: 10,
+      global: {
+        headers: {
+          "x-client-info": "react-native-app",
+        },
       },
-    },
-  });
+      db: {
+        schema: "public",
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+    });
 
-  return supabase;
+    return supabase;
+  } catch (error) {
+    logger.error("Failed to initialize Supabase, app will run in offline mode", "SupabaseService", error);
+    return null;
+  }
 };
 
 export const supabase = initializeSupabase();
+
+// Helper function to check if Supabase is available
+const checkSupabaseAvailable = (): boolean => {
+  if (!supabase) {
+    logger.warn("Supabase not available, operation skipped", "SupabaseService");
+    return false;
+  }
+  return true;
+};
 
 class NetworkUtils {
   static async getNetworkStatus(): Promise<NetworkStatus> {
@@ -265,6 +285,14 @@ export class SyncService {
     try {
       logger.info("Testing Supabase connection", "SyncService");
 
+      if (!supabase) {
+        return {
+          success: false,
+          error: "Supabase not initialized",
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       const networkStatus = await NetworkUtils.getNetworkStatus();
       if (!networkStatus.isConnected) {
         return {
@@ -414,6 +442,9 @@ export class SyncService {
 
       const result = await this.executeWithRetry(async () => {
         // Get cloud data with proper error handling
+        if (!supabase) {
+          throw new Error("Supabase not available");
+        }
         const { data: cloudPortfolio, error } = await supabase
           .from("portfolio")
           .select("*")
