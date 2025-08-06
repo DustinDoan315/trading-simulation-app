@@ -13,7 +13,7 @@
     "welcomeBack": "Welcome back, {name}! 👋",
     "welcomeToApp": "Welcome to Crypto Trading Simulator! 🚀",
     "welcomeSubtext": "Practice trading with virtual money - zero risk",
-    "trades": "simulated trades",
+    "trades": "trades",
     "newTrader": "New Trader",
     "getStarted": "Get Started",
     "learnTrading": "Learn Trading",
@@ -125,7 +125,14 @@
     "errorTitle": "Order failed",
     "errorMessage": "Failed to {action} {symbol}: {message}",
     "actionBought": "Bought",
-    "actionSold": "Sold"
+    "actionSold": "Sold",
+    "insufficientBalanceTitle": "Insufficient Balance",
+    "insufficientUsdtMessage": "Insufficient USDT balance.\n\nYou have: {currentBalance} USDT\nRequired: {requiredAmount} USDT\nShortfall: {shortfall} USDT\n\nPlease reduce your order amount or add more USDT to your balance.",
+    "insufficientCryptoMessage": "Insufficient {symbol} balance.\n\nYou have: {currentAmount} {symbol}\nRequired: {requiredAmount} {symbol}\n\nPlease reduce your sell amount or check your portfolio.",
+    "orderFailedTitle": "Order Failed",
+    "unexpectedError": "An unexpected error occurred while processing your order.",
+    "transactionFailed": "Failed to process your transaction. Please try again.",
+    "selectToken": "Please select a cryptocurrency to trade."
   },
   "transaction": {
     "title": "Transaction",

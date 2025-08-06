@@ -10,6 +10,7 @@ export interface LeaderboardData {
   isLoading: boolean;
   error: string | null;
   lastUpdated: Date | null;
+  activeUsers?: number;
 }
 
 export interface LeaderboardFilters {
@@ -30,6 +31,7 @@ class LeaderboardService {
     isLoading: false,
     error: null,
     lastUpdated: null,
+    activeUsers: 0,
   };
   private isSubscribed = false;
   private updateTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -39,6 +41,7 @@ class LeaderboardService {
   private userUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
   private lastFetchTime: number = 0;
   private readonly FETCH_COOLDOWN = 5000;
+  private activeUsersRefreshInterval: ReturnType<typeof setInterval> | null = null;
 
   private constructor() {}
 
@@ -99,16 +102,18 @@ class LeaderboardService {
       
       this.currentFilters = filters;
 
-      const [globalData, friendsData, collectionsData] = await Promise.all([
+      const [globalData, friendsData, collectionsData, activeUsers] = await Promise.all([
         this.fetchGlobalLeaderboard(filters),
         this.fetchFriendsLeaderboard(filters),
         this.fetchCollectionsLeaderboard(filters),
+        this.getActiveUsersCount(),
       ]);
 
       this.updateData({
         global: globalData,
         friends: friendsData,
         collections: collectionsData,
+        activeUsers: activeUsers,
         isLoading: false,
         lastUpdated: new Date(),
       });
@@ -206,7 +211,89 @@ class LeaderboardService {
   private setupRealtimeSubscriptions(filters: LeaderboardFilters): void {
     this.cleanupChannels();
     
-    this.isSubscribed = false;
+    try {
+      // Subscribe to leaderboard_rankings table changes
+      const leaderboardChannel = supabase
+        .channel('leaderboard-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'leaderboard_rankings',
+          },
+          (payload) => this.handleLeaderboardUpdate(payload, filters)
+        )
+        .subscribe();
+
+      // Subscribe to users table changes (for activity updates)
+      const usersChannel = supabase
+        .channel('user-activity-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'users',
+            filter: 'last_active=neq.null',
+          },
+          (payload) => this.handleUserUpdate(payload, filters)
+        )
+        .subscribe();
+
+      // Subscribe to portfolio table changes
+      const portfolioChannel = supabase
+        .channel('portfolio-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'portfolio',
+          },
+          (payload) => this.handlePortfolioUpdate(payload, filters)
+        )
+        .subscribe();
+
+      this.channels.set('leaderboard', leaderboardChannel);
+      this.channels.set('users', usersChannel);
+      this.channels.set('portfolio', portfolioChannel);
+      
+      this.isSubscribed = true;
+      
+      console.log('LeaderboardService: Real-time subscriptions established');
+      
+      // Start periodic active users refresh
+      this.startActiveUsersRefresh();
+    } catch (error) {
+      console.error('Error setting up real-time subscriptions:', error);
+      this.isSubscribed = false;
+    }
+  }
+
+  private startActiveUsersRefresh(): void {
+    if (this.activeUsersRefreshInterval) {
+      clearInterval(this.activeUsersRefreshInterval);
+    }
+    
+    // Refresh active users count every 30 seconds
+    this.activeUsersRefreshInterval = setInterval(async () => {
+      try {
+        await this.refreshActiveUsersCount();
+      } catch (error) {
+        console.error('Error in periodic active users refresh:', error);
+      }
+    }, 30000);
+    
+    console.log('LeaderboardService: Started periodic active users refresh');
+  }
+
+  private stopActiveUsersRefresh(): void {
+    if (this.activeUsersRefreshInterval) {
+      clearInterval(this.activeUsersRefreshInterval);
+      this.activeUsersRefreshInterval = null;
+      console.log('LeaderboardService: Stopped periodic active users refresh');
+    }
   }
 
   private async handleLeaderboardUpdate(payload: any, filters: LeaderboardFilters): Promise<void> {
@@ -289,6 +376,7 @@ class LeaderboardService {
     try {
       this.cleanupChannels();
       this.isSubscribed = false;
+      this.stopActiveUsersRefresh(); // Stop periodic refresh on cleanup
       
       if (this.updateTimeout) {
         clearTimeout(this.updateTimeout);
@@ -402,42 +490,54 @@ class LeaderboardService {
     }
   }
 
-  cleanup(): void {
+  async refreshActiveUsersCount(): Promise<void> {
     try {
-      this.cleanupChannels();
-      
-      if (this.updateTimeout) {
-        clearTimeout(this.updateTimeout);
-        this.updateTimeout = null;
-      }
-      
-      if (this.refreshTimeout) {
-        clearTimeout(this.refreshTimeout);
-        this.refreshTimeout = null;
-      }
-      
-      if (this.leaderboardUpdateTimeout) {
-        clearTimeout(this.leaderboardUpdateTimeout);
-        this.leaderboardUpdateTimeout = null;
-      }
-      
-      if (this.portfolioUpdateTimeout) {
-        clearTimeout(this.portfolioUpdateTimeout);
-        this.portfolioUpdateTimeout = null;
-      }
-      
-      if (this.userUpdateTimeout) {
-        clearTimeout(this.userUpdateTimeout);
-        this.userUpdateTimeout = null;
-      }
-      
-      this.subscribers.clear();
-      this.isSubscribed = false;
-      
-      console.log('LeaderboardService: Cleanup completed');
+      const activeUsers = await this.getActiveUsersCount();
+      this.updateData({
+        activeUsers: activeUsers,
+        lastUpdated: new Date(),
+      });
+      console.log(`LeaderboardService: Active users count refreshed to ${activeUsers}`);
     } catch (error) {
-      console.error('Error during cleanup:', error);
+      console.error('Error refreshing active users count:', error);
     }
+  }
+
+  async refreshActiveUsers(): Promise<void> {
+    await this.refreshActiveUsersCount();
+  }
+
+  cleanup(): void {
+    this.cleanupChannels();
+    this.isSubscribed = false;
+    this.stopActiveUsersRefresh();
+    
+    if (this.updateTimeout) {
+      clearTimeout(this.updateTimeout);
+      this.updateTimeout = null;
+    }
+    
+    if (this.refreshTimeout) {
+      clearTimeout(this.refreshTimeout);
+      this.refreshTimeout = null;
+    }
+    
+    if (this.leaderboardUpdateTimeout) {
+      clearTimeout(this.leaderboardUpdateTimeout);
+      this.leaderboardUpdateTimeout = null;
+    }
+    
+    if (this.portfolioUpdateTimeout) {
+      clearTimeout(this.portfolioUpdateTimeout);
+      this.portfolioUpdateTimeout = null;
+    }
+    
+    if (this.userUpdateTimeout) {
+      clearTimeout(this.userUpdateTimeout);
+      this.userUpdateTimeout = null;
+    }
+    
+    console.log('LeaderboardService: Cleanup completed');
   }
 
   static async cleanupAndRefreshData(): Promise<void> {

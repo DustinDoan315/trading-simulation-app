@@ -1,5 +1,5 @@
-import React from 'react';
-import { Stack } from 'expo-router';
+import React from "react";
+import { Stack } from "expo-router";
 
 export default function ModalsLayout() {
   return (
@@ -14,6 +14,7 @@ export default function ModalsLayout() {
       <Stack.Screen name="collection-detail" />
       <Stack.Screen name="create-collection" />
       <Stack.Screen name="discover-collections" />
+      <Stack.Screen name="edit-profile" />
       <Stack.Screen name="invite-code-scanner" />
       <Stack.Screen name="join-collection" />
       <Stack.Screen name="leaderboard" />

@@ -1,9 +1,9 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import UUIDService from "./UUIDService";
-import { Holding } from "../types/crypto";
-import { logger } from "@/utils/logger";
-import { supabase } from "./SupabaseService";
-import { UserService } from "./UserService";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import UUIDService from './UUIDService';
+import { Holding } from '../types/crypto';
+import { logger } from '@/utils/logger';
+import { supabase } from './SupabaseService';
+import { UserService } from './UserService';
 import {
   CollectionBalance,
   CollectionPortfolio,
@@ -13,6 +13,7 @@ import {
   TradingContext,
   Transaction,
 } from "../types/database";
+
 
 export class DualBalanceService {
   /**
@@ -325,6 +326,33 @@ export class DualBalanceService {
       const price = order.price;
       const totalValue = order.total;
       const fee = order.fees || 0;
+
+      // Validate balance before proceeding with transaction
+      if (isBuy) {
+        const individualBalance = await this.getIndividualBalance(userId);
+        if (individualBalance.usdtBalance < totalValue) {
+          throw new Error(`Insufficient USDT balance. You have ${individualBalance.usdtBalance} USDT, trying to spend ${totalValue} USDT`);
+        }
+      } else {
+        // For sell orders, check if user has sufficient crypto balance
+        const portfolio = await UserService.getPortfolio(userId);
+        const cryptoHolding = portfolio.find(item => 
+          item.symbol.toUpperCase() === symbol.toUpperCase()
+        );
+        
+        if (!cryptoHolding || cryptoHolding.quantity < quantity) {
+          throw new Error(`Insufficient ${symbol} balance. You have ${cryptoHolding?.quantity || 0} ${symbol}, trying to sell ${quantity} ${symbol}`);
+        }
+      }
+
+      // Additional validation to ensure quantity is positive
+      if (quantity <= 0) {
+        throw new Error(`Invalid quantity: ${quantity}. Quantity must be greater than 0.`);
+      }
+
+      if (totalValue <= 0) {
+        throw new Error(`Invalid total value: ${totalValue}. Total value must be greater than 0.`);
+      }
 
       let balanceBefore: number;
       let balanceAfter: number;

@@ -1,13 +1,13 @@
-import colors from "@/styles/colors";
-import LeaderboardService from "@/services/LeaderboardService";
-import { useBackgroundSync } from "@/hooks/useBackgroundSync";
-import { useFocusEffect } from "@react-navigation/native";
-import { useLanguage } from "@/context/LanguageContext";
-import { useLeaderboardData } from "@/hooks/useLeaderboardData";
-import { useLeaderboardRanking } from "@/hooks/useLeaderboardRanking";
-import { useNotification } from "@/components/ui/Notification";
-import { UserService } from "@/services/UserService";
-import { useUser } from "@/context/UserContext";
+import colors from '@/styles/colors';
+import LeaderboardService from '@/services/LeaderboardService';
+import { useBackgroundSync } from '@/hooks/useBackgroundSync';
+import { useFocusEffect } from '@react-navigation/native';
+import { useLanguage } from '@/context/LanguageContext';
+import { useLeaderboardData } from '@/hooks/useLeaderboardData';
+import { useLeaderboardRanking } from '@/hooks/useLeaderboardRanking';
+import { useNotification } from '@/components/ui/Notification';
+import { UserService } from '@/services/UserService';
+import { useUser } from '@/context/UserContext';
 import {
   AppState,
   AppStateStatus,
@@ -32,15 +32,15 @@ import {
   ShimmerLeaderboardItem,
 } from "@/components/shimmer/ShimmerHeaders";
 
+
 const LeaderboardScreen = () => {
   const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
-  const hasInitialized = useRef(false);
+
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRefreshingRef = useRef(false);
 
   const { showNotification } = useNotification();
   const { user } = useUser();
-  const { syncStatus, isEnabled, toggleSync } = useBackgroundSync();
   const { t } = useLanguage();
 
   const {
@@ -100,34 +100,6 @@ const LeaderboardScreen = () => {
     });
   }, [updateFilters]);
 
-  const debouncedRefresh = useCallback(async () => {
-    if (isRefreshingRef.current) {
-      return;
-    }
-
-    if (refreshTimeoutRef.current) {
-      clearTimeout(refreshTimeoutRef.current);
-    }
-
-    refreshTimeoutRef.current = setTimeout(async () => {
-      if (isRefreshingRef.current) return;
-
-      isRefreshingRef.current = true;
-      try {
-        await refresh();
-        await refreshRank();
-
-        if (activeTab === "friends") {
-          await loadFriendsData();
-        }
-      } catch (error) {
-        console.error("Error during debounced refresh:", error);
-      } finally {
-        isRefreshingRef.current = false;
-      }
-    }, 1000);
-  }, [user?.id, activeTab, refresh, refreshRank, loadFriendsData]);
-
   useEffect(() => {
     return () => {
       if (refreshTimeoutRef.current) {
@@ -136,7 +108,6 @@ const LeaderboardScreen = () => {
     };
   }, []);
 
-  // Show error notification if there's an error
   useEffect(() => {
     if (error) {
       showNotification({
@@ -146,7 +117,6 @@ const LeaderboardScreen = () => {
     }
   }, [error, showNotification]);
 
-  // Transform real-time data for display (memoized to prevent unnecessary re-renders)
   const transformLeaderboardData = useCallback(
     (data: any[], type: string) => {
       return data.map((item, index) => {
@@ -397,6 +367,11 @@ const LeaderboardScreen = () => {
 
       await refresh();
       await refreshRank();
+
+      // Also refresh active users count
+      const leaderboardService = LeaderboardService.getInstance();
+      await leaderboardService.refreshActiveUsers();
+
       if (activeTab === "friends") {
         await loadFriendsData();
       }
@@ -428,10 +403,12 @@ const LeaderboardScreen = () => {
         </View>
       </View>
 
-      {stats && (
+      {(stats || leaderboardData.activeUsers !== undefined) && (
         <View style={styles.statsSection}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.totalUsers}</Text>
+            <Text style={styles.statNumber}>
+              {stats?.totalUsers || leaderboardData.global.length}
+            </Text>
             <Text style={styles.statLabel}>
               {activeTab === "friends"
                 ? t("leaderboard.globalTraders")
@@ -440,18 +417,10 @@ const LeaderboardScreen = () => {
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
-              {stats.topPerformer ? `#${stats.topPerformer.rank}` : "—"}
+              {leaderboardData.activeUsers || stats?.activeUsers || 0}
             </Text>
             <Text style={styles.statLabel}>
-              {t("leaderboard.topPerformer")}
-            </Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.activeUsers}</Text>
-            <Text style={styles.statLabel}>
-              {activeTab === "friends"
-                ? t("leaderboard.activeGlobal")
-                : t("leaderboard.activeTraders")}
+              {t("leaderboard.activeTraders")}
             </Text>
           </View>
         </View>

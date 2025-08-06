@@ -179,7 +179,7 @@ export interface OrderDispatchContext {
 }
 
 /** Throws OrderError on validation failure */
-function validateOrder(order: Order, context: OrderValidationContext): void {
+export function validateOrder(order: Order, context: OrderValidationContext): void {
   console.log("🔍 Validating order:", {
     symbol: order.symbol,
     type: order.type,
@@ -424,8 +424,9 @@ export const handleOrderSubmissionWithLimitCheck = async (
   console.debug("[Order] Submitting with limit check:", order);
 
   try {
-    // Validate the order first
-    validateOrder(order, validationContext);
+    // Note: Balance validation is now handled in DualBalanceService.executeTrade
+    // before the transaction is created, so we skip validateOrder here to avoid
+    // duplicate validation and potential race conditions
 
     const isBuy = order.type === "buy";
 

@@ -1,27 +1,28 @@
-import Chart from "@/components/crypto/Chart";
-import colors from "@/styles/colors";
-import DailyLimitPopup from "@/components/ui/DailyLimitPopup";
-import OrderEntry from "@/components/trading/OrderEntry";
-import React, { useEffect, useRef, useState } from "react";
-import SimulationDisclaimer from "@/components/common/SimulationDisclaimer";
-import SymbolHeader from "@/components/crypto/SymbolHeader";
-import TimeframeSelector from "@/components/crypto/TimeframeSelector";
-import useCryptoAPI from "@/hooks/useCryptoAPI";
-import useHistoricalData from "@/hooks/useHistoricalData";
-import { ChartType, Order, TimeframeOption } from "../../types/crypto";
-import { LinearGradient } from "expo-linear-gradient";
-import { logger } from "@/utils/logger";
-import { RootState, useAppDispatch } from "@/store";
-import { updateCollectionHolding } from "@/features/dualBalanceSlice";
-import { useDualBalance } from "@/hooks/useDualBalance";
-import { useLanguage } from "@/context/LanguageContext";
-import { useLocalSearchParams } from "expo-router";
-import { UserService } from "@/services/UserService";
-import { useSelector } from "react-redux";
-import { useUser } from "@/context/UserContext";
-import { WebView } from "react-native-webview";
+import Chart from '@/components/crypto/Chart';
+import colors from '@/styles/colors';
+import DailyLimitPopup from '@/components/ui/DailyLimitPopup';
+import OrderEntry from '@/components/trading/OrderEntry';
+import React, { useEffect, useRef, useState } from 'react';
+import SymbolHeader from '@/components/crypto/SymbolHeader';
+import TimeframeSelector from '@/components/crypto/TimeframeSelector';
+import useCryptoAPI from '@/hooks/useCryptoAPI';
+import useHistoricalData from '@/hooks/useHistoricalData';
+import { ChartType, Order, TimeframeOption } from '../../types/crypto';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
+import { RootState, useAppDispatch } from '@/store';
+import { router } from 'expo-router';
+import { updateCollectionHolding } from '@/features/dualBalanceSlice';
+import { useDualBalance } from '@/hooks/useDualBalance';
+import { useLanguage } from '@/context/LanguageContext';
+import { useLocalSearchParams } from 'expo-router';
+import { UserService } from '@/services/UserService';
+import { useSelector } from 'react-redux';
+import { useUser } from '@/context/UserContext';
+import { WebView } from 'react-native-webview';
 import {
   ActivityIndicator,
+  Alert,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -45,6 +46,7 @@ import {
   handleOrderSubmission,
   handleUserReinitialization,
 } from "@/utils/helper";
+
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
@@ -216,8 +218,22 @@ const CryptoChartScreen = () => {
     }, 30000);
 
     try {
-      setSubmissionStatus(t("chart.checkingDailyLimit"));
+      // First validate the order (balance, amounts, etc.) before checking daily limits
+      setSubmissionStatus(t("chart.validatingOrder"));
       setSubmissionProgress(15);
+
+      const validationContext: OrderValidationContext = {
+        getHoldings: () => currentHoldings,
+        getUsdtBalance: () => currentUsdtBalance,
+      };
+
+      // Note: Balance validation is now handled in DualBalanceService.executeTrade
+      // before the transaction is created, so we skip validateOrder here to avoid
+      // duplicate validation and potential race conditions
+
+      // Only check daily limit after order validation passes
+      setSubmissionStatus(t("chart.checkingDailyLimit"));
+      setSubmissionProgress(25);
 
       const dailyLimitStatus = await UserService.checkDailyTransactionLimit(
         user?.id || ""
@@ -244,11 +260,6 @@ const CryptoChartScreen = () => {
         return;
       }
 
-      const validationContext: OrderValidationContext = {
-        getHoldings: () => currentHoldings,
-        getUsdtBalance: () => currentUsdtBalance,
-      };
-
       const dispatchContext: OrderDispatchContext = {
         addTradeHistory: (order) => dispatch(addTradeHistory(order)),
         updateHolding: (payload) => {
@@ -268,12 +279,12 @@ const CryptoChartScreen = () => {
       };
 
       setSubmissionStatus(t("chart.executingTrade"));
-      setSubmissionProgress(30);
+      setSubmissionProgress(40);
 
       await executeTradeInContext(order);
 
       setSubmissionStatus(t("chart.processingTransaction"));
-      setSubmissionProgress(60);
+      setSubmissionProgress(70);
 
       await handleOrderSubmissionWithLimitCheck(
         order,
@@ -300,6 +311,97 @@ const CryptoChartScreen = () => {
 
       resetLoadingState();
 
+      // Handle insufficient balance errors
+      if (
+        error.message?.includes("Insufficient USDT balance") ||
+        (error.message?.includes("Insufficient") &&
+          error.message?.includes("balance"))
+      ) {
+        // Extract balance information from error message
+        const balanceMatch = error.message.match(
+          /You have ([\d.]+) USDT, trying to spend ([\d.]+) USDT/
+        );
+        const cryptoMatch = error.message.match(
+          /You have ([\d.]+) (\w+), trying to sell ([\d.]+) \w+/
+        );
+
+        let alertMessage = error.message;
+
+        if (balanceMatch) {
+          const [, currentBalance, requiredAmount] = balanceMatch;
+          const shortfall =
+            parseFloat(requiredAmount) - parseFloat(currentBalance);
+          alertMessage = t("order.insufficientUsdtMessage", {
+            currentBalance: parseFloat(currentBalance).toFixed(2),
+            requiredAmount: parseFloat(requiredAmount).toFixed(2),
+            shortfall: shortfall.toFixed(2),
+          });
+        } else if (cryptoMatch) {
+          const [, currentAmount, symbol, requiredAmount] = cryptoMatch;
+          alertMessage = t("order.insufficientCryptoMessage", {
+            symbol,
+            currentAmount: parseFloat(currentAmount).toFixed(6),
+            requiredAmount: parseFloat(requiredAmount).toFixed(6),
+          });
+        }
+
+        Alert.alert(t("order.insufficientBalanceTitle"), alertMessage, [
+          {
+            text: "OK",
+            style: "default",
+          },
+        ]);
+        return;
+      }
+
+      // Handle validation errors
+      if (
+        error.message?.includes("Invalid quantity") ||
+        error.message?.includes("Invalid total value")
+      ) {
+        Alert.alert(t("order.orderFailedTitle"), error.message, [
+          {
+            text: "OK",
+            style: "default",
+          },
+        ]);
+        return;
+      }
+
+      // Handle transaction creation errors
+      if (error.message?.includes("Failed to create transaction")) {
+        Alert.alert(t("order.orderFailedTitle"), t("order.transactionFailed"), [
+          {
+            text: "OK",
+            style: "default",
+          },
+        ]);
+        return;
+      }
+
+      // Handle token selection errors
+      if (error.message?.includes("No token selected")) {
+        Alert.alert(t("order.orderFailedTitle"), t("order.selectToken"), [
+          {
+            text: "OK",
+            style: "default",
+          },
+        ]);
+        return;
+      }
+
+      // Handle minimum amount errors
+      if (error.message?.includes("Minimum order amount")) {
+        Alert.alert(t("order.orderFailedTitle"), error.message, [
+          {
+            text: "OK",
+            style: "default",
+          },
+        ]);
+        return;
+      }
+
+      // Handle daily transaction limit errors
       if (
         error.message?.includes("Daily transaction limit reached") ||
         error.message?.includes("daily transaction limit")
@@ -342,6 +444,7 @@ const CryptoChartScreen = () => {
         return;
       }
 
+      // Handle user authentication errors
       if (
         error.message?.includes("User not authenticated") ||
         error.message?.includes("Failed to initialize user authentication") ||
@@ -370,6 +473,16 @@ const CryptoChartScreen = () => {
           resetLoadingState();
         }
       } else {
+        // Handle other generic errors with a user-friendly alert
+        const errorMessage = error.message || t("order.unexpectedError");
+
+        Alert.alert(t("order.orderFailedTitle"), errorMessage, [
+          {
+            text: "OK",
+            style: "default",
+          },
+        ]);
+
         setSubmissionStatus(t("chart.errorOccurred"));
         await new Promise((resolve) => setTimeout(resolve, 2000));
         resetLoadingState();
@@ -444,6 +557,7 @@ const CryptoChartScreen = () => {
           chartType={chartType}
           toggleChartType={toggleChartType}
           toggleIndicators={toggleIndicators}
+          onBackPress={() => router.back()}
         />
 
         <TimeframeSelector
@@ -452,8 +566,6 @@ const CryptoChartScreen = () => {
           showIndicators={showIndicators}
           toggleIndicators={toggleIndicators}
         />
-
-        <SimulationDisclaimer variant="compact" />
 
         <Chart
           webViewRef={webViewRef}

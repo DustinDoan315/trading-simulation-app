@@ -136,6 +136,7 @@ export const resetUserDataToDefault = async (userId: string): Promise<{
     favorites: boolean;
     leaderboard: boolean;
     userProfile: boolean;
+    dailyLimits: boolean;
   };
 }> => {
   try {
@@ -162,6 +163,7 @@ export const resetUserDataToDefault = async (userId: string): Promise<{
         favorites: false,
         leaderboard: false,
         userProfile: false,
+        dailyLimits: false,
       },
     };
   }

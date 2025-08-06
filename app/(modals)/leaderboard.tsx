@@ -1,9 +1,10 @@
-import colors from "@/styles/colors";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { useLeaderboardData } from "@/hooks/useLeaderboardData";
-import { useNotification } from "@/components/ui/Notification";
+import colors from '@/styles/colors';
+import LeaderboardService from '@/services/LeaderboardService';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { useLeaderboardData } from '@/hooks/useLeaderboardData';
+import { useNotification } from '@/components/ui/Notification';
 import {
   FlatList,
   RefreshControl,
@@ -14,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const LeaderboardModal = () => {
   const [activeTab, setActiveTab] = useState<
@@ -33,6 +35,17 @@ const LeaderboardModal = () => {
     period: "ALL_TIME",
     limit: 50,
   });
+
+  const handleRefresh = async () => {
+    try {
+      await refresh();
+      // Also refresh active users count
+      const leaderboardService = LeaderboardService.getInstance();
+      await leaderboardService.refreshActiveUsers();
+    } catch (error) {
+      console.error("Error refreshing leaderboard:", error);
+    }
+  };
 
   useEffect(() => {
     updateFilters({
@@ -227,6 +240,30 @@ const LeaderboardModal = () => {
         </TouchableOpacity>
       </View>
 
+      {/* Stats Section */}
+      {leaderboardData.activeUsers !== undefined && (
+        <View style={styles.statsSection}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {leaderboardData.global.length}
+            </Text>
+            <Text style={styles.statsLabel}>Total Traders</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{leaderboardData.activeUsers}</Text>
+            <Text style={styles.statsLabel}>Active Traders</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {leaderboardData.global.length > 0
+                ? `#${leaderboardData.global[0]?.rank || 1}`
+                : "—"}
+            </Text>
+            <Text style={styles.statsLabel}>Top Performer</Text>
+          </View>
+        </View>
+      )}
+
       <FlatList
         data={getCurrentDataTyped()}
         keyExtractor={(item) => item.id}
@@ -237,7 +274,7 @@ const LeaderboardModal = () => {
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
-            onRefresh={refresh}
+            onRefresh={handleRefresh}
             tintColor="#6674CC"
             colors={["#6674CC"]}
           />
@@ -420,6 +457,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#9DA3B4",
     textAlign: "center",
+  },
+  statsSection: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: "#1A1D2F",
+    borderRadius: 16,
+    padding: 16,
+  },
+  statCard: {
+    alignItems: "center",
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 8,
+  },
+  statsLabel: {
+    fontSize: 12,
+    color: "#9DA3B4",
   },
 });
 

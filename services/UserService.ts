@@ -1,7 +1,7 @@
-import { AsyncStorageService } from "./AsyncStorageService";
-import { DEFAULT_BALANCE } from "@/utils/constant";
-import { logger } from "@/utils/logger";
-import { supabase } from "./SupabaseService";
+import { AsyncStorageService } from './AsyncStorageService';
+import { DEFAULT_BALANCE } from '@/utils/constant';
+import { logger } from '@/utils/logger';
+import { supabase } from './SupabaseService';
 import {
   Collection,
   CollectionMember,
@@ -28,6 +28,7 @@ import {
   User,
   UserWithStats,
 } from "../types/database";
+
 
 // Global debouncing for leaderboard updates
 let leaderboardUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -2032,6 +2033,7 @@ export class UserService {
       favorites: boolean;
       leaderboard: boolean;
       userProfile: boolean;
+      dailyLimits: boolean;
     };
   }> {
     const result: {
@@ -2043,6 +2045,7 @@ export class UserService {
         favorites: boolean;
         leaderboard: boolean;
         userProfile: boolean;
+        dailyLimits: boolean;
       };
     } = {
       success: true,
@@ -2052,6 +2055,7 @@ export class UserService {
         favorites: false,
         leaderboard: false,
         userProfile: false,
+        dailyLimits: false,
       },
     };
 
@@ -2182,7 +2186,41 @@ export class UserService {
         );
       }
 
-      // Step 5: Reset user profile to default values
+      // Step 5: Reset all daily transaction limits for the user
+      try {
+        const { error: dailyLimitsError } = await supabase
+          .from("daily_transaction_limits")
+          .delete()
+          .eq("user_id", userId);
+
+        if (dailyLimitsError) {
+          logger.error(
+            "Error clearing daily transaction limits",
+            "UserService",
+            dailyLimitsError
+          );
+          // Don't fail the entire reset if daily limits fail
+          logger.warn(
+            "Daily limits clear failed, but continuing with reset",
+            "UserService"
+          );
+        } else {
+          result.details.dailyLimits = true;
+          logger.info(
+            "Daily transaction limits cleared successfully",
+            "UserService"
+          );
+        }
+      } catch (error) {
+        logger.error("Error clearing daily transaction limits", "UserService", error);
+        // Don't fail the entire reset if daily limits fail
+        logger.warn(
+          "Daily limits clear failed, but continuing with reset",
+          "UserService"
+        );
+      }
+
+      // Step 6: Reset user profile to default values
       try {
         const defaultUserData = {
           usdt_balance: DEFAULT_BALANCE.toString() + ".00",
@@ -2219,7 +2257,7 @@ export class UserService {
             "UserService"
           );
 
-          // Step 6: Update AsyncStorage with the reset user data
+          // Step 7: Update AsyncStorage with the reset user data
           try {
             const resetUserData = {
               id: userId,
@@ -2568,6 +2606,92 @@ export class UserService {
         "UserService",
         error
       );
+      throw error;
+    }
+  }
+
+  // Reset all daily transaction limits for all users at midnight using Supabase function
+  static async resetAllDailyTransactionLimits(): Promise<void> {
+    try {
+      logger.info("Starting daily reset of all transaction limits via Supabase function", "UserService");
+
+      // Call the Supabase function to reset all daily limits
+      const { data, error } = await supabase.rpc("reset_all_daily_transaction_limits");
+
+      if (error) {
+        logger.error("Error calling Supabase reset function", "UserService", error);
+        throw error;
+      }
+
+      if (data) {
+        logger.info("Daily reset completed successfully", "UserService", {
+          resetCount: data.reset_count,
+          errorCount: data.error_count,
+          message: data.message,
+        });
+      } else {
+        logger.warn("No data returned from daily reset function", "UserService");
+      }
+    } catch (error) {
+      logger.error("Error in daily reset of transaction limits", "UserService", error);
+      throw error;
+    }
+  }
+
+  // Reset daily transaction limits for a specific date
+  static async resetDailyTransactionLimitsForDate(targetDate: string): Promise<void> {
+    try {
+      logger.info(`Starting reset of transaction limits for date: ${targetDate}`, "UserService");
+
+      // Call the Supabase function to reset daily limits for specific date
+      const { data, error } = await supabase.rpc("reset_daily_transaction_limits_for_date", {
+        target_date: targetDate,
+      });
+
+      if (error) {
+        logger.error("Error calling Supabase reset function for date", "UserService", error);
+        throw error;
+      }
+
+      if (data) {
+        logger.info("Date-specific reset completed successfully", "UserService", {
+          targetDate: data.target_date,
+          resetCount: data.reset_count,
+          errorCount: data.error_count,
+          message: data.message,
+        });
+      } else {
+        logger.warn("No data returned from date-specific reset function", "UserService");
+      }
+    } catch (error) {
+      logger.error("Error in date-specific reset of transaction limits", "UserService", error);
+      throw error;
+    }
+  }
+
+  // Clean up old daily transaction limit records
+  static async cleanupOldDailyTransactionLimits(): Promise<void> {
+    try {
+      logger.info("Starting cleanup of old daily transaction limit records", "UserService");
+
+      // Call the Supabase function to clean up old records
+      const { data, error } = await supabase.rpc("cleanup_old_daily_transaction_limits");
+
+      if (error) {
+        logger.error("Error calling Supabase cleanup function", "UserService", error);
+        throw error;
+      }
+
+      if (data) {
+        logger.info("Cleanup completed successfully", "UserService", {
+          deletedCount: data.deleted_count,
+          message: data.message,
+        });
+      } else {
+        logger.warn("No data returned from cleanup function", "UserService");
+      }
+    } catch (error) {
+      logger.error("Error in cleanup of old daily transaction limits", "UserService", error);
       throw error;
     }
   }

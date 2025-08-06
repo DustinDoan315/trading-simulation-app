@@ -22,14 +22,12 @@ import { useUser } from "@/context/UserContext";
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -53,27 +51,15 @@ const ProfileScreen = () => {
   const { transactionCount, loading: transactionCountLoading } =
     useTransactionCount(user?.id);
 
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editLoading, setEditLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [editForm, setEditForm] = useState({
-    display_name: "",
-    avatar_emoji: "",
-  });
   const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setEditForm({
-        display_name: user.display_name || "",
-        avatar_emoji: user.avatar_emoji || "🚀",
-      });
-      if (!lastUpdated) {
-        setLastUpdated(new Date());
-      }
+    if (user && !lastUpdated) {
+      setLastUpdated(new Date());
     }
-  }, [user]);
+  }, [user, lastUpdated]);
 
   const handleRefresh = async () => {
     if (!user?.id) return;
@@ -95,44 +81,17 @@ const ProfileScreen = () => {
   };
 
   const handleEditProfile = () => {
-    setEditModalVisible(true);
-  };
-
-  const handleSaveProfile = async () => {
     if (!user) return;
-
-    try {
-      setEditLoading(true);
-
-      const updateParams = {
-        id: user.id,
-        display_name: editForm.display_name.trim() || undefined,
-        avatar_emoji: editForm.avatar_emoji.trim() || "🚀",
-      };
-
-      await dispatch(
-        updateUser({ id: user.id, params: updateParams })
-      ).unwrap();
-
-      await UserService.updateUser(user.id, updateParams);
-
-      setEditModalVisible(false);
-      Alert.alert(t("success.title"), t("profile.profileUpdatedSuccessfully"));
-    } catch (error) {
-      logger.error("Error updating profile", "Profile", error);
-      Alert.alert(t("error.title"), t("profile.failedToUpdateProfile"));
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditForm({
-      display_name: user?.display_name || "",
-      avatar_emoji: user?.avatar_emoji || "🚀",
+    
+    // Navigate to dedicated edit profile screen
+    router.push({
+      pathname: "/(modals)/edit-profile" as any,
+      params: {
+        userId: user.id,
+        display_name: user.display_name || "",
+        avatar_emoji: user.avatar_emoji || "🚀",
+      },
     });
-    setEditModalVisible(false);
-    setEditLoading(false); // Ensure loading state is reset when modal closes
   };
 
   const handleWaiting = () => {
@@ -642,90 +601,6 @@ const ProfileScreen = () => {
           </Text>
         )}
       </ScrollView>
-
-      <Modal
-        visible={editModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={handleCancelEdit}
-        statusBarTranslucent={true}
-        hardwareAccelerated={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t("profile.editProfile")}</Text>
-              <TouchableOpacity
-                onPress={handleCancelEdit}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close" size={24} color="#9DA3B4" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  {t("profile.displayName")}
-                </Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={editForm.display_name}
-                  onChangeText={(text) =>
-                    setEditForm({ ...editForm, display_name: text })
-                  }
-                  placeholder={t("profile.enterDisplayName")}
-                  placeholderTextColor="#8F95B2"
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  {t("profile.avatarEmoji")}
-                </Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={editForm.avatar_emoji}
-                  onChangeText={(text) =>
-                    setEditForm({ ...editForm, avatar_emoji: text })
-                  }
-                  placeholder="🚀"
-                  placeholderTextColor="#8F95B2"
-                  maxLength={2}
-                  autoCorrect={false}
-                />
-              </View>
-            </View>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[
-                  styles.cancelButton,
-                  editLoading && styles.disabledButton,
-                ]}
-                onPress={handleCancelEdit}
-                disabled={editLoading}>
-                <Text style={styles.cancelButtonText}>
-                  {t("common.cancel")}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  editLoading && styles.disabledButton,
-                ]}
-                onPress={handleSaveProfile}
-                disabled={editLoading}>
-                {editLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.saveButtonText}>{t("profile.save")}</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -982,83 +857,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#FFFFFF",
-  },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "#1A1D2F",
-    borderRadius: 20,
-    padding: 24,
-    width: "90%",
-    maxWidth: 400,
-    borderWidth: 1,
-    borderColor: "#2A2E42",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  modalBody: {
-    marginBottom: 24,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#9DA3B4",
-    marginBottom: 8,
-  },
-  textInput: {
-    backgroundColor: "#131523",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#2A2E42",
-  },
-  modalFooter: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#262A3F",
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#9DA3B4",
-  },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#6674CC",
-    alignItems: "center",
-  },
-  saveButtonText: {
     fontSize: 16,
     fontWeight: "500",
     color: "#FFFFFF",

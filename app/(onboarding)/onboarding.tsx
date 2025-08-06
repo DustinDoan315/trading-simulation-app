@@ -1,14 +1,13 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import colors from "@/styles/colors";
-import GradientText from "@/components/GradientText";
-import React, { useCallback, useRef, useState } from "react";
-import UUIDService from "@/services/UUIDService";
-import { createUser, fetchUser } from "@/features/userSlice";
-import { LinearGradient } from "expo-linear-gradient";
-import { logger } from "@/utils/logger";
-import { router } from "expo-router";
-import { store } from "@/store";
-import { useAppDispatch } from "@/store";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import colors from '@/styles/colors';
+import GradientText from '@/components/GradientText';
+import UUIDService from '@/services/UUIDService';
+import { createUser, fetchUser } from '@/features/userSlice';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
+import { router } from 'expo-router';
+import { store, useAppDispatch } from '@/store';
+import { useCallback, useRef, useState } from 'react';
 import {
   ASYNC_STORAGE_KEYS,
   DEFAULT_USER,
@@ -26,6 +25,7 @@ import {
   Text,
   View,
 } from "react-native";
+
 
 const { width } = Dimensions.get("window");
 
@@ -82,10 +82,6 @@ const OnboardingScreen = () => {
         saved,
         userId,
       });
-
-      Alert.alert("Success", `Onboarding completed for user: ${userId}`, [
-        { text: "OK" },
-      ]);
     } catch (error) {
       logger.error(
         "Error marking onboarding as completed",

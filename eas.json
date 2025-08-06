@@ -10,6 +10,10 @@
       "ios": {
         "enterpriseProvisioning": "adhoc",
         "credentialsSource": "remote"
+      },
+      "env": {
+        "ENVIRONMENT": "development",
+        "EXPO_PUBLIC_NEWS_API_KEY": "0b2bddf9eef5407eb519f8b389b06c38"
       }
     },
     "preview": {
@@ -19,7 +23,8 @@
         "buildConfiguration": "Release"
       },
       "env": {
-        "ENVIRONMENT": "production"
+        "ENVIRONMENT": "production",
+        "EXPO_PUBLIC_NEWS_API_KEY": "0b2bddf9eef5407eb519f8b389b06c38"
       }
     },
     "production": {
@@ -30,7 +35,8 @@
         "buildConfiguration": "Release"
       },
       "env": {
-        "ENVIRONMENT": "production"
+        "ENVIRONMENT": "production",
+        "EXPO_PUBLIC_NEWS_API_KEY": "0b2bddf9eef5407eb519f8b389b06c38"
       }
     }
   },

@@ -31,7 +31,7 @@ export default StyleSheet.create({
     paddingBottom: 32,
   },
   welcomeText: {
-    fontSize: 26,
+    fontSize: 18,
     fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 16,
@@ -69,6 +69,7 @@ export default StyleSheet.create({
   },
   newUserBadge: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     backgroundColor: "rgba(236, 72, 153, 0.15)",
     paddingHorizontal: 14,

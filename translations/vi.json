@@ -125,7 +125,14 @@
     "errorTitle": "Lỗi thực hiện lệnh",
     "errorMessage": "Không thể {action} {symbol}: {message}",
     "actionBought": "Đã mua",
-    "actionSold": "Đã bán"
+    "actionSold": "Đã bán",
+    "insufficientBalanceTitle": "Số dư không đủ",
+    "insufficientUsdtMessage": "Số dư USDT không đủ.\n\nBạn có: {currentBalance} USDT\nCần: {requiredAmount} USDT\nThiếu: {shortfall} USDT\n\nVui lòng giảm số lượng lệnh hoặc thêm USDT vào số dư.",
+    "insufficientCryptoMessage": "Số dư {symbol} không đủ.\n\nBạn có: {currentAmount} {symbol}\nCần: {requiredAmount} {symbol}\n\nVui lòng giảm số lượng bán hoặc kiểm tra danh mục.",
+    "orderFailedTitle": "Lệnh thất bại",
+    "unexpectedError": "Đã xảy ra lỗi không mong muốn khi xử lý lệnh của bạn.",
+    "transactionFailed": "Không thể xử lý giao dịch của bạn. Vui lòng thử lại.",
+    "selectToken": "Vui lòng chọn một loại tiền mã hóa để giao dịch."
   },
   "transaction": {
     "title": "Giao dịch",

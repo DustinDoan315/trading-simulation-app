@@ -168,18 +168,6 @@ export default function CryptoSearch() {
         icon: "🔷",
         gradient: ["#627EEA", "#4ECDC4"] as const,
       },
-      {
-        symbol: "BNB",
-        name: "BNB",
-        icon: "🟠",
-        gradient: ["#F3BA2F", "#FF6B6B"] as const,
-      },
-      {
-        symbol: "AVAX",
-        name: "Avalanche",
-        icon: "🔴",
-        gradient: ["#E84142", "#FF8E53"] as const,
-      },
     ];
 
     return (

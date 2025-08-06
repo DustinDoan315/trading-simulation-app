@@ -1,9 +1,15 @@
-import React from "react";
-import { ChartType } from "../../types/crypto";
-import { Feather, Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { router } from "expo-router";
-import { useLanguage } from "../../context/LanguageContext";
+import React from 'react';
+import { ChartType } from '../../types/crypto';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+  } from 'react-native';
+import { useLanguage } from '../../context/LanguageContext';
+
 
 interface SymbolHeaderProps {
   priceChange: string;
@@ -11,6 +17,7 @@ interface SymbolHeaderProps {
   chartType: ChartType;
   toggleChartType: () => void;
   toggleIndicators: () => void;
+  onBackPress?: () => void;
 }
 
 const SymbolHeader = ({
@@ -19,27 +26,41 @@ const SymbolHeader = ({
   symbol,
   toggleChartType,
   toggleIndicators,
+  onBackPress,
 }: SymbolHeaderProps) => {
   const { t } = useLanguage();
   const showListCrypto = () => {
     router.push("/(subs)/crypto-list");
   };
 
+  const handleBackPress = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <View style={styles.symbolContainer}>
-      <TouchableOpacity onPress={showListCrypto} style={styles.symbolLeft}>
-        <Text style={styles.symbolText}>{`${symbol}`}</Text>
-        <TouchableOpacity>
-          <Ionicons name="chevron-down" size={16} color="white" />
+      <View style={styles.symbolLeft}>
+        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text
-          style={[
-            styles.priceChangeText,
-            { color: priceChange.includes("+") ? "#4ADE80" : "#FF4D4F" },
-          ]}>
-          {priceChange}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={showListCrypto} style={styles.symbolSection}>
+          <Text style={styles.symbolText}>{`${symbol}`}</Text>
+          <TouchableOpacity>
+            <Ionicons name="chevron-down" size={16} color="white" />
+          </TouchableOpacity>
+          <Text
+            style={[
+              styles.priceChangeText,
+              { color: priceChange.includes("+") ? "#4ADE80" : "#FF4D4F" },
+            ]}>
+            {priceChange}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.symbolRight}>
         <TouchableOpacity
           style={styles.iconButton}
@@ -76,6 +97,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   symbolLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  backButton: {
+    marginRight: 12,
+    padding: 4,
+  },
+  symbolSection: {
     flexDirection: "row",
     alignItems: "center",
   },
