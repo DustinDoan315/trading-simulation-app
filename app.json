@@ -4,6 +4,9 @@
     "slug": "trading-simulation-app",
     "version": "1.0.1",
     "orientation": "portrait",
+    "ios": {
+      "buildNumber": "2"
+    },
     "icon": "./assets/images/splashscreen.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
