@@ -5,6 +5,7 @@
 
 
 The following build commands failed:
-	CompileAssetCatalogVariant thinned /Users/mobiledeveloper/Library/Developer/Xcode/DerivedData/tradingsimulationapp-afhvykbvptdlfjcyldymlcvkawzf/Build/Products/Debug-iphonesimulator/tradingsimulationapp.app /Users/mobiledeveloper/Desktop/ReactNative/trading-simulation-app/ios/tradingsimulationapp/Images.xcassets (in target 'tradingsimulationapp' from project 'tradingsimulationapp')
-	Building workspace tradingsimulationapp with scheme tradingsimulationapp and configuration Debug
-(2 failures)
+	ScanDependencies /Users/mobiledeveloper/Library/Developer/Xcode/DerivedData/CoinPilot-euttseipdnswlebtefukldnojapn/Build/Intermediates.noindex/Pods.build/Release-iphonesimulator/RCT-Folly.build/Objects-normal/x86_64/RCT-Folly-dummy.o /Users/mobiledeveloper/Desktop/ReactNative/trading-simulation-app/ios/Pods/Target\ Support\ Files/RCT-Folly/RCT-Folly-dummy.m normal x86_64 objective-c com.apple.compilers.llvm.clang.1_0.compiler (in target 'RCT-Folly' from project 'Pods')
+	ScanDependencies /Users/mobiledeveloper/Library/Developer/Xcode/DerivedData/CoinPilot-euttseipdnswlebtefukldnojapn/Build/Intermediates.noindex/Pods.build/Release-iphonesimulator/RCT-Folly.build/Objects-normal/arm64/RCT-Folly-dummy.o /Users/mobiledeveloper/Desktop/ReactNative/trading-simulation-app/ios/Pods/Target\ Support\ Files/RCT-Folly/RCT-Folly-dummy.m normal arm64 objective-c com.apple.compilers.llvm.clang.1_0.compiler (in target 'RCT-Folly' from project 'Pods')
+	Building workspace CoinPilot with scheme CoinPilot and configuration Release
+(3 failures)
