@@ -5,9 +5,9 @@
     "version": "1.0.1",
     "orientation": "portrait",
     "ios": {
-      "buildNumber": "2"
+      "buildNumber": "3"
     },
-    "icon": "./assets/images/splashscreen.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -78,8 +78,10 @@
       "eas": {
         "projectId": "ff964db9-1fa1-4563-98c5-478459b0c294"
       },
-      "NEWS_API_KEY": "0b2bddf9eef5407eb519f8b389b06c38",
-      "ENVIRONMENT": "development"
+      "ENVIRONMENT": "production",
+      "EXPO_PUBLIC_NEWS_API_KEY": "0b2bddf9eef5407eb519f8b389b06c38",
+      "EXPO_PUBLIC_SUPABASE_URL": "https://qmiafrudmawctuazhluz.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtaWFmcnVkbWF3Y3R1YXpobHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDMzMTksImV4cCI6MjA2OTk3OTMxOX0.Oii5ylUbfJWe5OhLzZjMG0zBLUrrs2CRrtXhwTTCkVk"
     },
     "owner": "dustindoan"
   }

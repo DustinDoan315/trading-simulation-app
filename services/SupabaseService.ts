@@ -43,7 +43,7 @@ class SupabaseConfig {
 
         Check your environment variables:
         - EXPO_PUBLIC_SUPABASE_URL
-        - EXPO_PUBLIC_SUPABASE_KEY`);
+        - EXPO_PUBLIC_SUPABASE_ANON_KEY`);
     }
 
     if (!url.startsWith("https://") && !url.startsWith("http://")) {
@@ -58,7 +58,7 @@ class SupabaseConfig {
       "";
     const key =
       Constants.expoConfig?.extra?.SUPABASE_ANON_KEY ||
-      process.env.EXPO_PUBLIC_SUPABASE_KEY ||
+      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
       "";
 
     this.validateConfig(url, key);
