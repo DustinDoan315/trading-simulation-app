@@ -12,11 +12,11 @@ install! 'cocoapods',
   :deterministic_uuids => false
 
 # Explicitly specify the Xcode project to avoid ambiguity
-project 'CoinPilot.xcodeproj'
+project 'CryptoStar.xcodeproj'
 
 prepare_react_native_project!
 
-target 'CoinPilot' do
+target 'CryptoStar' do
   use_expo_modules!
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'

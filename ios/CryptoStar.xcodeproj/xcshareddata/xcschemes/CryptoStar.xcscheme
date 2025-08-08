@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "CoinPilot.app"
-               BlueprintName = "CoinPilot"
-               ReferencedContainer = "container:CoinPilot.xcodeproj">
+               BuildableName = "CryptoStar.app"
+               BlueprintName = "CryptoStar"
+               ReferencedContainer = "container:CryptoStar.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "CoinPilotTests.xctest"
-               BlueprintName = "CoinPilotTests"
-               ReferencedContainer = "container:CoinPilot.xcodeproj">
+               BuildableName = "CryptoStarTests.xctest"
+               BlueprintName = "CryptoStarTests"
+               ReferencedContainer = "container:CryptoStar.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "CoinPilot.app"
-            BlueprintName = "CoinPilot"
-            ReferencedContainer = "container:CoinPilot.xcodeproj">
+            BuildableName = "CryptoStar.app"
+            BlueprintName = "CryptoStar"
+            ReferencedContainer = "container:CryptoStar.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "CoinPilot.app"
-            BlueprintName = "CoinPilot"
-            ReferencedContainer = "container:CoinPilot.xcodeproj">
+            BuildableName = "CryptoStar.app"
+            BlueprintName = "CryptoStar"
+            ReferencedContainer = "container:CryptoStar.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

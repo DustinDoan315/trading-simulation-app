@@ -2907,9 +2907,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"CoinPilot@workspace:.":
+"CryptoStar@workspace:.":
   version: 0.0.0-use.local
-  resolution: "CoinPilot@workspace:."
+  resolution: "CryptoStar@workspace:."
   dependencies:
     "@babel/core": ^7.25.2
     "@babel/plugin-transform-react-jsx": ^7.27.1

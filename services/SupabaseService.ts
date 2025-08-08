@@ -52,14 +52,37 @@ class SupabaseConfig {
   }
 
   static getConfig() {
+    // First try Constants.expoConfig.extra with EXPO_PUBLIC prefix (matches app.json)
     const url =
+      Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ||
       Constants.expoConfig?.extra?.SUPABASE_URL ||
       process.env.EXPO_PUBLIC_SUPABASE_URL ||
       "";
     const key =
+      Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
       Constants.expoConfig?.extra?.SUPABASE_ANON_KEY ||
       process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
       "";
+
+    // Debug logging to help troubleshoot configuration issues
+    logger.info("Supabase configuration sources:", "SupabaseConfig", {
+      fromExpoConfigExtra: {
+        url: !!Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL,
+        key: !!Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      },
+      fromProcessEnv: {
+        url: !!process.env.EXPO_PUBLIC_SUPABASE_URL,
+        key: !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      },
+      finalValues: {
+        hasUrl: !!url,
+        hasKey: !!key,
+        urlSource: url === Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ? 'expo-config' : 
+                  url === process.env.EXPO_PUBLIC_SUPABASE_URL ? 'process-env' : 'unknown',
+        keySource: key === Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'expo-config' : 
+                  key === process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'process-env' : 'unknown'
+      }
+    });
 
     this.validateConfig(url, key);
     return { url, key };
