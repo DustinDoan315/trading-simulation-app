@@ -1,11 +1,2 @@
---- xcodebuild: WARNING: Using the first of multiple matching destinations:
-{ platform:iOS Simulator, id:981211F7-103C-4DD8-B321-FD5D6B993C37, OS:18.3.1, name:iPhone 15 }
-{ platform:iOS Simulator, id:981211F7-103C-4DD8-B321-FD5D6B993C37, OS:18.3.1, name:iPhone 15 }
-** BUILD FAILED **
-
-
-The following build commands failed:
-	ScanDependencies /Users/mobiledeveloper/Library/Developer/Xcode/DerivedData/CoinPilot-euttseipdnswlebtefukldnojapn/Build/Intermediates.noindex/Pods.build/Release-iphonesimulator/RCT-Folly.build/Objects-normal/x86_64/RCT-Folly-dummy.o /Users/mobiledeveloper/Desktop/ReactNative/trading-simulation-app/ios/Pods/Target\ Support\ Files/RCT-Folly/RCT-Folly-dummy.m normal x86_64 objective-c com.apple.compilers.llvm.clang.1_0.compiler (in target 'RCT-Folly' from project 'Pods')
-	ScanDependencies /Users/mobiledeveloper/Library/Developer/Xcode/DerivedData/CoinPilot-euttseipdnswlebtefukldnojapn/Build/Intermediates.noindex/Pods.build/Release-iphonesimulator/RCT-Folly.build/Objects-normal/arm64/RCT-Folly-dummy.o /Users/mobiledeveloper/Desktop/ReactNative/trading-simulation-app/ios/Pods/Target\ Support\ Files/RCT-Folly/RCT-Folly-dummy.m normal arm64 objective-c com.apple.compilers.llvm.clang.1_0.compiler (in target 'RCT-Folly' from project 'Pods')
-	Building workspace CoinPilot with scheme CoinPilot and configuration Release
-(3 failures)
+2025-08-12 10:57:56.884 xcodebuild[30679:3337312] Writing error result bundle to /var/folders/hd/_13f48bj7d95jpktkcmbn1380000gn/T/ResultBundle_2025-12-08_10-57-0056.xcresult
+xcodebuild: error: The workspace named "CryptoStar" does not contain a scheme named "TokenTutor". The "-list" option can be used to find the names of the schemes in the workspace.

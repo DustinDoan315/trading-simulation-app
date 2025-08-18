@@ -10,26 +10,26 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		38AFD9C5A405454E09E2AB24 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DB765DEE4E9944C576E2E1 /* ExpoModulesProvider.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		62C9140A1BD6BB05C1A497CB /* libPods-CryptoStar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 83A54308A68500E3C04AC87A /* libPods-CryptoStar.a */; };
+		62C9140A1BD6BB05C1A497CB /* libPods-TokenTutor.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 83A54308A68500E3C04AC87A /* libPods-TokenTutor.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		C034AD6D81F0EE0673921073 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 77305FC21181D3BB96BD2622 /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0B43C622547C5C6F96F5F1F2 /* Pods-CryptoStar.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoStar.debug.xcconfig"; path = "Target Support Files/Pods-CryptoStar/Pods-CryptoStar.debug.xcconfig"; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* CryptoStar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CryptoStar.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = CryptoStar/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = CryptoStar/Info.plist; sourceTree = "<group>"; };
-		77305FC21181D3BB96BD2622 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = CryptoStar/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		83A54308A68500E3C04AC87A /* libPods-CryptoStar.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptoStar.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		84DB765DEE4E9944C576E2E1 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-CryptoStar/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = CryptoStar/SplashScreen.storyboard; sourceTree = "<group>"; };
+		0B43C622547C5C6F96F5F1F2 /* Pods-TokenTutor.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokenTutor.debug.xcconfig"; path = "Target Support Files/Pods-TokenTutor/Pods-TokenTutor.debug.xcconfig"; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* TokenTutor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TokenTutor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = TokenTutor/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = TokenTutor/Info.plist; sourceTree = "<group>"; };
+		77305FC21181D3BB96BD2622 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = TokenTutor/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		83A54308A68500E3C04AC87A /* libPods-TokenTutor.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TokenTutor.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		84DB765DEE4E9944C576E2E1 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-TokenTutor/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = TokenTutor/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		D011C8434DFD78B9B82B97E5 /* Pods-CryptoStar.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoStar.release.xcconfig"; path = "Target Support Files/Pods-CryptoStar/Pods-CryptoStar.release.xcconfig"; sourceTree = "<group>"; };
+		D011C8434DFD78B9B82B97E5 /* Pods-TokenTutor.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokenTutor.release.xcconfig"; path = "Target Support Files/Pods-TokenTutor/Pods-TokenTutor.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = CryptoStar/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* CryptoStar-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "CryptoStar-Bridging-Header.h"; path = "CryptoStar/CryptoStar-Bridging-Header.h"; sourceTree = "<group>"; };
+		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = TokenTutor/AppDelegate.swift; sourceTree = "<group>"; };
+		F11748442D0722820044C1D9 /* TokenTutor-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "TokenTutor-Bridging-Header.h"; path = "TokenTutor/TokenTutor-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,32 +37,32 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				62C9140A1BD6BB05C1A497CB /* libPods-CryptoStar.a in Frameworks */,
+				62C9140A1BD6BB05C1A497CB /* libPods-TokenTutor.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* CryptoStar */ = {
+		13B07FAE1A68108700A75B9A /* TokenTutor */ = {
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				F11748442D0722820044C1D9 /* CryptoStar-Bridging-Header.h */,
+				F11748442D0722820044C1D9 /* TokenTutor-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				77305FC21181D3BB96BD2622 /* PrivacyInfo.xcprivacy */,
 			);
-			name = CryptoStar;
+			name = TokenTutor;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				83A54308A68500E3C04AC87A /* libPods-CryptoStar.a */,
+				83A54308A68500E3C04AC87A /* libPods-TokenTutor.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -70,7 +70,7 @@
 		3660AAC39339155514642BAB /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				B351617B93C8D5BE7BC98326 /* CryptoStar */,
+				B351617B93C8D5BE7BC98326 /* TokenTutor */,
 			);
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
@@ -78,8 +78,8 @@
 		790EDB06D6A7377E65E5BBF0 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				0B43C622547C5C6F96F5F1F2 /* Pods-CryptoStar.debug.xcconfig */,
-				D011C8434DFD78B9B82B97E5 /* Pods-CryptoStar.release.xcconfig */,
+				0B43C622547C5C6F96F5F1F2 /* Pods-TokenTutor.debug.xcconfig */,
+				D011C8434DFD78B9B82B97E5 /* Pods-TokenTutor.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -94,7 +94,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* CryptoStar */,
+				13B07FAE1A68108700A75B9A /* TokenTutor */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -109,17 +109,17 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* CryptoStar.app */,
+				13B07F961A680F5B00A75B9A /* TokenTutor.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B351617B93C8D5BE7BC98326 /* CryptoStar */ = {
+		B351617B93C8D5BE7BC98326 /* TokenTutor */ = {
 			isa = PBXGroup;
 			children = (
 				84DB765DEE4E9944C576E2E1 /* ExpoModulesProvider.swift */,
 			);
-			name = CryptoStar;
+			name = TokenTutor;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -128,15 +128,15 @@
 				BB2F792C24A3F905000567C9 /* Expo.plist */,
 			);
 			name = Supporting;
-			path = CryptoStar/Supporting;
+			path = TokenTutor/Supporting;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* CryptoStar */ = {
+		13B07F861A680F5B00A75B9A /* TokenTutor */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "CryptoStar" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "TokenTutor" */;
 			buildPhases = (
 				D0DF85EA315A8920E712E73E /* [CP] Check Pods Manifest.lock */,
 				D18DF9E03CE3A1589E50C4E0 /* [Expo] Configure project */,
@@ -151,9 +151,9 @@
 			);
 			dependencies = (
 			);
-			name = CryptoStar;
-			productName = CryptoStar;
-			productReference = 13B07F961A680F5B00A75B9A /* CryptoStar.app */;
+			name = TokenTutor;
+			productName = TokenTutor;
+			productReference = 13B07F961A680F5B00A75B9A /* TokenTutor.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -169,7 +169,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "CryptoStar" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "TokenTutor" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -182,7 +182,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* CryptoStar */,
+				13B07F861A680F5B00A75B9A /* TokenTutor */,
 			);
 		};
 /* End PBXProject section */
@@ -223,7 +223,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-CryptoStar/Pods-CryptoStar-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-TokenTutor/Pods-TokenTutor-frameworks.sh",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -232,7 +232,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-CryptoStar/Pods-CryptoStar-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TokenTutor/Pods-TokenTutor-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		AC03C68D1F754D1B4E923726 /* [CP] Copy Pods Resources */ = {
@@ -241,7 +241,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-CryptoStar/Pods-CryptoStar-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-TokenTutor/Pods-TokenTutor-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
@@ -280,7 +280,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-CryptoStar/Pods-CryptoStar-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TokenTutor/Pods-TokenTutor-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		D0DF85EA315A8920E712E73E /* [CP] Check Pods Manifest.lock */ = {
@@ -298,7 +298,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-CryptoStar-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-TokenTutor-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -322,7 +322,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-CryptoStar/expo-configure-project.sh\"\n";
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-TokenTutor/expo-configure-project.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -341,12 +341,14 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B43C622547C5C6F96F5F1F2 /* Pods-CryptoStar.debug.xcconfig */;
+			baseConfigurationReference = 0B43C622547C5C6F96F5F1F2 /* Pods-TokenTutor.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = CryptoStar/CryptoStar.entitlements;
+				CODE_SIGN_ENTITLEMENTS = TokenTutor/TokenTutor.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 6SXWS6JV43;
 				ENABLE_BITCODE = NO;
@@ -354,7 +356,7 @@
 					"$(inherited)",
 					"FB_SONARKIT_ENABLED=1",
 				);
-				INFOPLIST_FILE = CryptoStar/Info.plist;
+				INFOPLIST_FILE = TokenTutor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -367,9 +369,10 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.dustindoan.cryptostar;
-				PRODUCT_NAME = CryptoStar;
-				SWIFT_OBJC_BRIDGING_HEADER = "CryptoStar/CryptoStar-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.dustindoan.tokentutor;
+				PRODUCT_NAME = TokenTutor;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "TokenTutor/TokenTutor-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -379,15 +382,17 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D011C8434DFD78B9B82B97E5 /* Pods-CryptoStar.release.xcconfig */;
+			baseConfigurationReference = D011C8434DFD78B9B82B97E5 /* Pods-TokenTutor.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = CryptoStar/CryptoStar.entitlements;
+				CODE_SIGN_ENTITLEMENTS = TokenTutor/TokenTutor.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 6SXWS6JV43;
-				INFOPLIST_FILE = CryptoStar/Info.plist;
+				INFOPLIST_FILE = TokenTutor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -400,9 +405,10 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.dustindoan.cryptostar;
-				PRODUCT_NAME = CryptoStar;
-				SWIFT_OBJC_BRIDGING_HEADER = "CryptoStar/CryptoStar-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.dustindoan.tokentutor;
+				PRODUCT_NAME = TokenTutor;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "TokenTutor/TokenTutor-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
@@ -464,10 +470,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -522,10 +525,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
@@ -536,7 +536,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "CryptoStar" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "TokenTutor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -545,7 +545,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "CryptoStar" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "TokenTutor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

@@ -1,12 +1,9 @@
 {
   "expo": {
-    "name": "CryptoStar",
+    "name": "TokenTutor",
     "slug": "trading-simulation-app",
     "version": "1.0.1",
     "orientation": "portrait",
-    "ios": {
-      "buildNumber": "3"
-    },
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
@@ -14,7 +11,8 @@
     "description": "Learn cryptocurrency trading with virtual money in a completely risk-free simulation environment. Practice trading strategies, track portfolio performance, and compete with other traders - all without using real money. Perfect for beginners learning crypto trading fundamentals.",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dustindoan.cryptostar",
+      "bundleIdentifier": "com.dustindoan.tokentutor",
+      "buildNumber": "3",
       "infoPlist": {
         "NSCameraUsageDescription": "Camera access is used to scan QR codes for joining trading collections and sharing invite codes.",
         "NSMicrophoneUsageDescription": "Microphone access is used for voice commands in trading practice sessions."
@@ -25,7 +23,7 @@
         "foregroundImage": "./assets/images/splashscreen.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dustindoan.cryptostar",
+      "package": "com.dustindoan.tokentutor",
       "permissions": ["CAMERA", "RECORD_AUDIO"],
       "intentFilters": [
         {
@@ -73,7 +71,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "SECURE_STORE_PREFIX": "cryptostar_",
+      "SECURE_STORE_PREFIX": "tokentutor_",
       "router": {},
       "eas": {
         "projectId": "ff964db9-1fa1-4563-98c5-478459b0c294"
