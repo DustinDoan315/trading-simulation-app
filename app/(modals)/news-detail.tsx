@@ -1,10 +1,11 @@
-import { CryptoNewsArticle } from "@/services/CryptoNewsService";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { logger } from "@/utils/logger";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { WebView } from "react-native-webview";
+import { CryptoNewsArticle } from '@/services/CryptoNewsService';
+import { ensureHttpsUrl } from '@/utils/helper';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { WebView } from 'react-native-webview';
 import {
   ActivityIndicator,
   Dimensions,
@@ -16,6 +17,7 @@ import {
   View,
 } from "react-native";
 
+
 const { width, height } = Dimensions.get("window");
 
 const NewsDetailScreen = () => {
@@ -26,6 +28,7 @@ const NewsDetailScreen = () => {
   const [article, setArticle] = useState<CryptoNewsArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [webViewLoading, setWebViewLoading] = useState(true);
+  const [webViewError, setWebViewError] = useState<string | null>(null);
 
   useEffect(() => {
     loadArticle();
@@ -50,10 +53,31 @@ const NewsDetailScreen = () => {
 
   const handleWebViewLoadStart = () => {
     setWebViewLoading(true);
+    setWebViewError(null); // Clear any previous errors
   };
 
   const handleWebViewLoadEnd = () => {
     setWebViewLoading(false);
+  };
+
+  const handleWebViewError = (syntheticEvent: any) => {
+    const { nativeEvent } = syntheticEvent;
+    const errorMessage = nativeEvent.description || "Failed to load article";
+    
+    logger.error("WebView error loading news article", "NewsDetailScreen", {
+      url: article?.url,
+      httpsUrl: article ? ensureHttpsUrl(article.url) : undefined,
+      error: errorMessage,
+    });
+    
+    setWebViewLoading(false);
+    setWebViewError(errorMessage);
+  };
+
+  const handleRetryLoad = () => {
+    setWebViewError(null);
+    setWebViewLoading(true);
+    // The WebView will automatically reload when the error state is cleared
   };
 
   if (loading) {
@@ -132,11 +156,12 @@ const NewsDetailScreen = () => {
       </View>
 
       <WebView
-        source={{ uri: article.url }}
+        source={{ uri: ensureHttpsUrl(article.url) }}
         style={styles.webView}
         startInLoadingState={true}
         onLoadStart={handleWebViewLoadStart}
         onLoadEnd={handleWebViewLoadEnd}
+        onError={handleWebViewError}
         renderLoading={() => (
           <View style={styles.webViewLoading}>
             <ActivityIndicator size="large" color="#6366F1" />
@@ -145,10 +170,44 @@ const NewsDetailScreen = () => {
         )}
       />
 
-      {webViewLoading && (
+      {webViewLoading && !webViewError && (
         <View style={styles.webViewLoadingOverlay}>
           <ActivityIndicator size="large" color="#6366F1" />
           <Text style={styles.webViewLoadingText}>Loading article...</Text>
+        </View>
+      )}
+
+      {webViewError && (
+        <View style={styles.webViewErrorOverlay}>
+          <View style={styles.errorCard}>
+            <View style={styles.errorIconContainer}>
+              <Ionicons name="alert-circle" size={48} color="#EF4444" />
+            </View>
+            <Text style={styles.errorTitle}>Failed to Load Article</Text>
+            <Text style={styles.errorText}>
+              {webViewError.includes("App Transport Security") 
+                ? "This article uses an insecure connection that couldn't be automatically fixed."
+                : "Unable to load the article. This might be due to network issues or the website being unavailable."
+              }
+            </Text>
+            <View style={styles.errorActions}>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={handleRetryLoad}>
+                <LinearGradient
+                  colors={["#6366F1", "#4F46E5"]}
+                  style={styles.retryButtonGradient}>
+                  <Ionicons name="refresh" size={20} color="white" />
+                  <Text style={styles.retryButtonText}>Try Again</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.back()}>
+                <Text style={styles.backButtonText}>Go Back</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -314,6 +373,40 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     marginTop: 16,
     fontWeight: "500",
+  },
+  webViewErrorOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(15, 15, 35, 0.95)",
+    paddingHorizontal: 40,
+  },
+  errorActions: {
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 24,
+  },
+  retryButton: {
+    width: "100%",
+  },
+  retryButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 16,
+    gap: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "white",
   },
 });
 

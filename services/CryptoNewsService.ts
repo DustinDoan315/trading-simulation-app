@@ -1,4 +1,5 @@
 import { configService } from '@/utils/config';
+import { ensureHttpsUrl } from '@/utils/helper';
 import { logger } from '@/utils/logger';
 import { waitForAppInitialization } from '@/utils/initializeApp';
 
@@ -91,12 +92,12 @@ class CryptoNewsService {
           description: article.description || "No description available",
           content:
             article.content || article.description || "No content available",
-          url: article.url || "",
+          url: ensureHttpsUrl(article.url || ""),
           image: this.validateAndFixImageUrl(article.urlToImage),
           publishedAt: article.publishedAt || new Date().toISOString(),
           source: {
             name: article.source?.name || "Unknown Source",
-            url: article.source?.url || "",
+            url: ensureHttpsUrl(article.source?.url || ""),
           },
           sentiment: this.analyzeSentiment(
             (article.title || "") + " " + (article.description || "")

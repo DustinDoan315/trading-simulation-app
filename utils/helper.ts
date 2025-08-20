@@ -684,6 +684,27 @@ export const calculateTotalPnLPercentage = (totalPnL: number, initialBalance: nu
 };
 
 /**
+ * Ensure URL uses HTTPS protocol for iOS App Transport Security compliance
+ * @param url - The URL to validate and fix
+ * @returns HTTPS URL or the original URL if it's not HTTP/HTTPS
+ */
+export const ensureHttpsUrl = (url: string): string => {
+  if (!url || typeof url !== 'string') {
+    return url;
+  }
+
+  // If it's an HTTP URL, convert to HTTPS
+  if (url.startsWith('http://')) {
+    const httpsUrl = url.replace('http://', 'https://');
+    logger.info(`Converted HTTP to HTTPS: ${url} -> ${httpsUrl}`, "helper");
+    return httpsUrl;
+  }
+
+  // Return as-is if already HTTPS or not HTTP-based
+  return url;
+};
+
+/**
  * Validate and fix user data consistency
  * This function ensures all required fields are present and calculates missing values
  */
