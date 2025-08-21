@@ -1,7 +1,14 @@
-import React from "react";
-import { View, Text, StyleSheet, Pressable, Image } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import React from 'react';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View
+  } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+
 
 const ImportWalletScreen = () => {
   const createNewWallet = () => {
@@ -16,9 +23,7 @@ const ImportWalletScreen = () => {
       />
       <Text style={styles.title}>Wallet Setup</Text>
       <View style={styles.buttonContainer}>
-        <Pressable style={styles.button}>
-          <Text style={styles.buttonText}>Import Using Seed Phrase</Text>
-        </Pressable>
+
         <LinearGradient
           style={styles.createBtnLinear}
           colors={["#8AD4EC", "#EF96FF", "#FF56A9", "#FFAA6C"]}

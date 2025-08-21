@@ -1,24 +1,24 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import colors from "@/styles/colors";
-import React, { useEffect, useState } from "react";
-import ShimmerPlaceHolder from "react-native-shimmer-placeholder";
-import { ASYNC_STORAGE_KEYS } from "@/utils/constant";
-import { clearSearchHistory } from "@/features/searchHistorySlice";
-import { forceRefreshAllData } from "@/utils/resetUtils";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { logger } from "@/utils/logger";
-import { persistor } from "@/store";
-import { resetBalance } from "@/features/balanceSlice";
-import { resetFavorites } from "@/features/favoritesSlice";
-import { router } from "expo-router";
-import { updateUser } from "@/features/userSlice";
-import { useAppDispatch } from "@/store";
-import { useLanguage } from "@/context/LanguageContext";
-import { useRealTimeBalance } from "@/hooks/useRealTimeBalance";
-import { UserService } from "@/services/UserService";
-import { useTransactionCount } from "@/hooks/useTransactionCount";
-import { useUser } from "@/context/UserContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import colors from '@/styles/colors';
+import React, { useEffect, useState } from 'react';
+import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
+import { ASYNC_STORAGE_KEYS } from '@/utils/constant';
+import { clearSearchHistory } from '@/features/searchHistorySlice';
+import { forceRefreshAllData } from '@/utils/resetUtils';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
+import { persistor } from '@/store';
+import { resetBalance } from '@/features/balanceSlice';
+import { resetFavorites } from '@/features/favoritesSlice';
+import { router } from 'expo-router';
+import { updateUser } from '@/features/userSlice';
+import { useAppDispatch } from '@/store';
+import { useLanguage } from '@/context/LanguageContext';
+import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
+import { UserService } from '@/services/UserService';
+import { useTransactionCount } from '@/hooks/useTransactionCount';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -31,6 +31,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const ProfileScreen = () => {
   const dispatch = useAppDispatch();
@@ -94,9 +95,7 @@ const ProfileScreen = () => {
     });
   };
 
-  const handleWaiting = () => {
-    Alert.alert(t("profile.comingSoon"), t("profile.comingSoonDescription"));
-  };
+
 
   const handleResetData = async () => {
     if (!user?.id) return;
@@ -545,19 +544,7 @@ const ProfileScreen = () => {
               subtitle={t("profile.seeYourRanking")}
               onPress={() => router.push("/leaderboard" as any)}
             />
-            <SettingItem
-              icon="settings-outline"
-              title={t("profile.settings")}
-              subtitle={t("profile.appPreferences")}
-              onPress={handleWaiting}
-            />
-            <SettingItem
-              isBottom={true}
-              icon="help-circle-outline"
-              title={t("profile.helpSupport")}
-              subtitle={t("profile.getHelp")}
-              onPress={handleWaiting}
-            />
+
           </View>
         </View>
 
@@ -566,18 +553,6 @@ const ProfileScreen = () => {
             {t("profile.accountManagement")}
           </Text>
           <View style={styles.settingsGroup}>
-            <SettingItem
-              icon="shield-outline"
-              title={t("profile.privacySecurity")}
-              subtitle={t("profile.managePrivacy")}
-              onPress={handleWaiting}
-            />
-            <SettingItem
-              icon="notifications-outline"
-              title={t("profile.notifications")}
-              subtitle={t("profile.manageAlerts")}
-              onPress={handleWaiting}
-            />
             <SettingItem
               icon="language-outline"
               title={t("profile.language")}

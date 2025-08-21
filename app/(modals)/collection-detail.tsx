@@ -1,15 +1,20 @@
-import InviteCodeQR from "@/components/collections/InviteCodeQR";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import TradingContextIndicator from "@/components/trading/TradingContextIndicator";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { RootState } from "@/store";
-import { router, useLocalSearchParams } from "expo-router";
-import { useCollectionDetail } from "@/hooks/useCollectionDetail";
-import { useCollectionsData } from "@/hooks/useCollectionsData";
-import { useDualBalance } from "@/hooks/useDualBalance";
-import { useSelector } from "react-redux";
-import { useUser } from "@/context/UserContext";
+import InviteCodeQR from '@/components/collections/InviteCodeQR';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+  } from 'react';
+import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { RootState } from '@/store';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useCollectionDetail } from '@/hooks/useCollectionDetail';
+import { useCollectionsData } from '@/hooks/useCollectionsData';
+import { useDualBalance } from '@/hooks/useDualBalance';
+import { useSelector } from 'react-redux';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +27,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 const CollectionDetailScreen = () => {
   const { user } = useUser();
@@ -140,31 +146,7 @@ const CollectionDetailScreen = () => {
     );
   }, [collection.name, collection.id, leaveCollection]);
 
-  const handleEditCollection = useCallback(() => {
-    // TODO: Navigate to edit collection screen
-    Alert.alert("Edit Collection", "Edit functionality coming soon!");
-  }, []);
 
-  const handleDeleteCollection = useCallback(() => {
-    Alert.alert(
-      "Delete Collection",
-      `Are you sure you want to delete "${collection.name}"? This action cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            // TODO: Implement delete collection
-            Alert.alert(
-              "Delete Collection",
-              "Delete functionality coming soon!"
-            );
-          },
-        },
-      ]
-    );
-  }, [collection.name]);
 
   const handleStartTrading = useCallback(() => {
     // Navigate to trading screen with collection context
@@ -222,13 +204,7 @@ const CollectionDetailScreen = () => {
                   "What would you like to do?",
                   [
                     { text: "Cancel", style: "cancel" },
-                    { text: "Edit", onPress: handleEditCollection },
                     { text: "Share Invite", onPress: handleShareInvite },
-                    {
-                      text: "Delete",
-                      style: "destructive",
-                      onPress: handleDeleteCollection,
-                    },
                   ]
                 );
               } else {

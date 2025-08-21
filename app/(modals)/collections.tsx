@@ -15,45 +15,8 @@ import {
 const CollectionsModal = () => {
   const [activeTab, setActiveTab] = useState<"my" | "joined">("my");
 
-  const myCollections = [
-    {
-      id: "1",
-      name: "Crypto Masters",
-      members: 12,
-      isPublic: true,
-      totalValue: 150000,
-      rank: 1,
-    },
-    {
-      id: "2",
-      name: "DeFi Enthusiasts",
-      members: 8,
-      isPublic: false,
-      totalValue: 95000,
-      rank: 3,
-    },
-  ];
-
-  const joinedCollections = [
-    {
-      id: "3",
-      name: "Moonshot Hunters",
-      members: 45,
-      isPublic: true,
-      totalValue: 89000,
-      rank: 15,
-      owner: "TradeMaster",
-    },
-    {
-      id: "4",
-      name: "Safe Traders",
-      members: 28,
-      isPublic: true,
-      totalValue: 112000,
-      rank: 8,
-      owner: "CryptoGuru",
-    },
-  ];
+  const myCollections: any[] = [];
+  const joinedCollections: any[] = [];
 
   const handleCreateCollection = () => {
     router.push("/(modals)/create-collection");

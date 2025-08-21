@@ -49,9 +49,7 @@ const SymbolHeader = ({
         </TouchableOpacity>
         <TouchableOpacity onPress={showListCrypto} style={styles.symbolSection}>
           <Text style={styles.symbolText}>{`${symbol}`}</Text>
-          <TouchableOpacity>
-            <Ionicons name="chevron-down" size={16} color="white" />
-          </TouchableOpacity>
+          <Ionicons name="chevron-down" size={16} color="white" />
           <Text
             style={[
               styles.priceChangeText,
@@ -78,11 +76,7 @@ const SymbolHeader = ({
           accessibilityLabel={t("chart.indicators")}>
           <Feather name="layers" size={22} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.iconButton}
-          accessibilityLabel={t("common.moreOptions")}>
-          <Feather name="more-vertical" size={22} color="white" />
-        </TouchableOpacity>
+
       </View>
     </View>
   );

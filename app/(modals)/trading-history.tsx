@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 
+
 const TradingHistoryModal = () => {
   const dispatch = useAppDispatch();
   const { user, transactions, loading, error, refreshUserData } = useUser();
@@ -349,9 +350,7 @@ const TradingHistoryModal = () => {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.title}>{t("tradingHistory.title")}</Text>
-        <TouchableOpacity style={styles.exportButton}>
-          <Ionicons name="download-outline" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+
       </View>
 
       {/* Time Period Filter */}

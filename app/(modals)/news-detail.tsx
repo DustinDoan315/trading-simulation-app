@@ -148,11 +148,7 @@ const NewsDetailScreen = () => {
             {article.title}
           </Text>
         </View>
-        <TouchableOpacity style={styles.shareButton}>
-          <View style={styles.shareButtonInner}>
-            <Ionicons name="share-outline" size={24} color="white" />
-          </View>
-        </TouchableOpacity>
+
       </View>
 
       <WebView
@@ -337,14 +333,7 @@ const styles = StyleSheet.create({
     color: "white",
     lineHeight: 20,
   },
-  shareButton: {
-    marginLeft: 16,
-  },
-  shareButtonInner: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 12,
-    padding: 8,
-  },
+
   webView: {
     flex: 1,
   },

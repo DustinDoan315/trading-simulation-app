@@ -1,3 +1,13 @@
+import CollectionItem from '@/components/collections/CollectionItem';
+import EmptyState from '@/components/collections/EmptyState';
+import React, { useCallback, useEffect, useState } from 'react';
+import { CollectionData, useCollectionsData } from '@/hooks/useCollectionsData';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@/utils/logger';
+import { router, useFocusEffect } from 'expo-router';
+import { useLanguage } from '@/context/LanguageContext';
+import { useUser } from '@/context/UserContext';
 import {
   ActivityIndicator,
   Alert,
@@ -10,17 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { CollectionData, useCollectionsData } from "@/hooks/useCollectionsData";
-import React, { useCallback, useEffect, useState } from "react";
-import { router, useFocusEffect } from "expo-router";
 
-import CollectionItem from "@/components/collections/CollectionItem";
-import EmptyState from "@/components/collections/EmptyState";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { logger } from "@/utils/logger";
-import { useLanguage } from "@/context/LanguageContext";
-import { useUser } from "@/context/UserContext";
 
 const CollectionsScreen = () => {
   const [activeTab, setActiveTab] = useState<"my" | "joined">("my");
@@ -120,10 +120,8 @@ const CollectionsScreen = () => {
           text: t("common.delete") || "Delete",
           style: "destructive",
           onPress: () => {
-            logger.info("Delete collection", "CollectionsTab", {
-              collectionId: collection.id,
-            });
-            // TODO: Implement delete functionality
+            // Remove this functionality until properly implemented
+            Alert.alert("Feature Unavailable", "This feature is temporarily disabled.");
           },
         },
       ]

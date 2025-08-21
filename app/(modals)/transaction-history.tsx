@@ -157,9 +157,7 @@ const TransactionHistoryScreen = () => {
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.title}>Transaction History</Text>
-        <TouchableOpacity>
-          <Ionicons name="filter" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
+
       </View>
 
       {/* Search Bar */}
