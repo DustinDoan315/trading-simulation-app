@@ -49,14 +49,7 @@ export default function SubLayout() {
           title: "crypto-list",
         }}
       />
-      <Stack.Screen
-        name="learn-trading"
-        options={{
-          headerShown: false,
-          presentation: "card",
-          title: "learn-trading",
-        }}
-      />
+
     </Stack>
   );
 }

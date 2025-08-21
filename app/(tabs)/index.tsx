@@ -137,9 +137,6 @@ const HomeScreen = () => {
 
   const handleQuickAction = (action: string) => {
     switch (action) {
-      case "learn":
-        router.push("/(subs)/learn-trading");
-        break;
       case "practice":
         router.push("/(subs)/crypto-search");
         break;
@@ -256,21 +253,7 @@ const HomeScreen = () => {
               {t("home.getStarted")}
             </Text>
             <View style={styles.quickActionsGrid}>
-              <TouchableOpacity
-                style={styles.quickActionCard}
-                onPress={() => handleQuickAction("learn")}>
-                <LinearGradient
-                  colors={["#6366F1", "#8B5CF6"]}
-                  style={styles.quickActionGradient}>
-                  <Ionicons name="school" size={28} color="white" />
-                  <Text style={styles.quickActionTitle}>
-                    {t("home.learnTrading")}
-                  </Text>
-                  <Text style={styles.quickActionSubtitle}>
-                    {t("home.learnTradingSubtitle")}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
+
 
               <TouchableOpacity
                 style={styles.quickActionCard}
