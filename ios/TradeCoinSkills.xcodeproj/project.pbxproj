@@ -10,26 +10,26 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		38AFD9C5A405454E09E2AB24 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DB765DEE4E9944C576E2E1 /* ExpoModulesProvider.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		62C9140A1BD6BB05C1A497CB /* libPods-TokenTutor.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 83A54308A68500E3C04AC87A /* libPods-TokenTutor.a */; };
+		62C9140A1BD6BB05C1A497CB /* libPods-TradeCoinSkills.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 83A54308A68500E3C04AC87A /* libPods-TradeCoinSkills.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		C034AD6D81F0EE0673921073 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 77305FC21181D3BB96BD2622 /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0B43C622547C5C6F96F5F1F2 /* Pods-TokenTutor.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokenTutor.debug.xcconfig"; path = "Target Support Files/Pods-TokenTutor/Pods-TokenTutor.debug.xcconfig"; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* TokenTutor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TokenTutor.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = TokenTutor/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = TokenTutor/Info.plist; sourceTree = "<group>"; };
-		77305FC21181D3BB96BD2622 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = TokenTutor/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		83A54308A68500E3C04AC87A /* libPods-TokenTutor.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TokenTutor.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		84DB765DEE4E9944C576E2E1 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-TokenTutor/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = TokenTutor/SplashScreen.storyboard; sourceTree = "<group>"; };
+		0B43C622547C5C6F96F5F1F2 /* Pods-TradeCoinSkills.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TradeCoinSkills.debug.xcconfig"; path = "Target Support Files/Pods-TradeCoinSkills/Pods-TradeCoinSkills.debug.xcconfig"; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* TradeCoinSkills.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TradeCoinSkills.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = TradeCoinSkills/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = TradeCoinSkills/Info.plist; sourceTree = "<group>"; };
+		77305FC21181D3BB96BD2622 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = TradeCoinSkills/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		83A54308A68500E3C04AC87A /* libPods-TradeCoinSkills.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TradeCoinSkills.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		84DB765DEE4E9944C576E2E1 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-TradeCoinSkills/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = TradeCoinSkills/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		D011C8434DFD78B9B82B97E5 /* Pods-TokenTutor.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokenTutor.release.xcconfig"; path = "Target Support Files/Pods-TokenTutor/Pods-TokenTutor.release.xcconfig"; sourceTree = "<group>"; };
+		D011C8434DFD78B9B82B97E5 /* Pods-TradeCoinSkills.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TradeCoinSkills.release.xcconfig"; path = "Target Support Files/Pods-TradeCoinSkills/Pods-TradeCoinSkills.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = TokenTutor/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* TokenTutor-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "TokenTutor-Bridging-Header.h"; path = "TokenTutor/TokenTutor-Bridging-Header.h"; sourceTree = "<group>"; };
+		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = TradeCoinSkills/AppDelegate.swift; sourceTree = "<group>"; };
+		F11748442D0722820044C1D9 /* TradeCoinSkills-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "TradeCoinSkills-Bridging-Header.h"; path = "TradeCoinSkills/TradeCoinSkills-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,32 +37,32 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				62C9140A1BD6BB05C1A497CB /* libPods-TokenTutor.a in Frameworks */,
+				62C9140A1BD6BB05C1A497CB /* libPods-TradeCoinSkills.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* TokenTutor */ = {
+		13B07FAE1A68108700A75B9A /* TradeCoinSkills */ = {
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				F11748442D0722820044C1D9 /* TokenTutor-Bridging-Header.h */,
+				F11748442D0722820044C1D9 /* TradeCoinSkills-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				77305FC21181D3BB96BD2622 /* PrivacyInfo.xcprivacy */,
 			);
-			name = TokenTutor;
+			name = TradeCoinSkills;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				83A54308A68500E3C04AC87A /* libPods-TokenTutor.a */,
+				83A54308A68500E3C04AC87A /* libPods-TradeCoinSkills.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -70,7 +70,7 @@
 		3660AAC39339155514642BAB /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				B351617B93C8D5BE7BC98326 /* TokenTutor */,
+				B351617B93C8D5BE7BC98326 /* TradeCoinSkills */,
 			);
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
@@ -78,8 +78,8 @@
 		790EDB06D6A7377E65E5BBF0 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				0B43C622547C5C6F96F5F1F2 /* Pods-TokenTutor.debug.xcconfig */,
-				D011C8434DFD78B9B82B97E5 /* Pods-TokenTutor.release.xcconfig */,
+				0B43C622547C5C6F96F5F1F2 /* Pods-TradeCoinSkills.debug.xcconfig */,
+				D011C8434DFD78B9B82B97E5 /* Pods-TradeCoinSkills.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -94,7 +94,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* TokenTutor */,
+				13B07FAE1A68108700A75B9A /* TradeCoinSkills */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -109,17 +109,17 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* TokenTutor.app */,
+				13B07F961A680F5B00A75B9A /* TradeCoinSkills.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B351617B93C8D5BE7BC98326 /* TokenTutor */ = {
+		B351617B93C8D5BE7BC98326 /* TradeCoinSkills */ = {
 			isa = PBXGroup;
 			children = (
 				84DB765DEE4E9944C576E2E1 /* ExpoModulesProvider.swift */,
 			);
-			name = TokenTutor;
+			name = TradeCoinSkills;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -128,15 +128,15 @@
 				BB2F792C24A3F905000567C9 /* Expo.plist */,
 			);
 			name = Supporting;
-			path = TokenTutor/Supporting;
+			path = TradeCoinSkills/Supporting;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* TokenTutor */ = {
+		13B07F861A680F5B00A75B9A /* TradeCoinSkills */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "TokenTutor" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "TradeCoinSkills" */;
 			buildPhases = (
 				D0DF85EA315A8920E712E73E /* [CP] Check Pods Manifest.lock */,
 				D18DF9E03CE3A1589E50C4E0 /* [Expo] Configure project */,
@@ -151,9 +151,9 @@
 			);
 			dependencies = (
 			);
-			name = TokenTutor;
-			productName = TokenTutor;
-			productReference = 13B07F961A680F5B00A75B9A /* TokenTutor.app */;
+			name = TradeCoinSkills;
+			productName = TradeCoinSkills;
+			productReference = 13B07F961A680F5B00A75B9A /* TradeCoinSkills.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -169,7 +169,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "TokenTutor" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "TradeCoinSkills" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -182,7 +182,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* TokenTutor */,
+				13B07F861A680F5B00A75B9A /* TradeCoinSkills */,
 			);
 		};
 /* End PBXProject section */
@@ -223,7 +223,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-TokenTutor/Pods-TokenTutor-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-TradeCoinSkills/Pods-TradeCoinSkills-frameworks.sh",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -232,7 +232,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TokenTutor/Pods-TokenTutor-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TradeCoinSkills/Pods-TradeCoinSkills-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		AC03C68D1F754D1B4E923726 /* [CP] Copy Pods Resources */ = {
@@ -241,7 +241,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-TokenTutor/Pods-TokenTutor-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-TradeCoinSkills/Pods-TradeCoinSkills-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
@@ -280,7 +280,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TokenTutor/Pods-TokenTutor-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TradeCoinSkills/Pods-TradeCoinSkills-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		D0DF85EA315A8920E712E73E /* [CP] Check Pods Manifest.lock */ = {
@@ -298,7 +298,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-TokenTutor-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-TradeCoinSkills-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -322,7 +322,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-TokenTutor/expo-configure-project.sh\"\n";
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-TradeCoinSkills/expo-configure-project.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -341,16 +341,16 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B43C622547C5C6F96F5F1F2 /* Pods-TokenTutor.debug.xcconfig */;
+			baseConfigurationReference = 0B43C622547C5C6F96F5F1F2 /* Pods-TradeCoinSkills.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = TokenTutor/TokenTutor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = TradeCoinSkills/TradeCoinSkills.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 6SXWS6JV43;
 				ENABLE_BITCODE = NO;
@@ -358,7 +358,7 @@
 					"$(inherited)",
 					"FB_SONARKIT_ENABLED=1",
 				);
-				INFOPLIST_FILE = TokenTutor/Info.plist;
+				INFOPLIST_FILE = TradeCoinSkills/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -371,11 +371,11 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.dustindoan.tokentutor;
-				PRODUCT_NAME = TokenTutor;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dustindoan.tradecoinskills;
+				PRODUCT_NAME = TradeCoinSkills;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "*[expo] com.dustindoan.tokentutor AppStore 2025-08-19T03:30:20.856Z";
-				SWIFT_OBJC_BRIDGING_HEADER = "TokenTutor/TokenTutor-Bridging-Header.h";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "*[expo] com.dustindoan.tradecoinskills AppStore 2025-08-19T03:30:20.856Z";
+				SWIFT_OBJC_BRIDGING_HEADER = "TradeCoinSkills/TradeCoinSkills-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -385,19 +385,19 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D011C8434DFD78B9B82B97E5 /* Pods-TokenTutor.release.xcconfig */;
+			baseConfigurationReference = D011C8434DFD78B9B82B97E5 /* Pods-TradeCoinSkills.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = TokenTutor/TokenTutor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = TradeCoinSkills/TradeCoinSkills.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 6SXWS6JV43;
-				INFOPLIST_FILE = TokenTutor/Info.plist;
+				INFOPLIST_FILE = TradeCoinSkills/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -410,11 +410,11 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.dustindoan.tokentutor;
-				PRODUCT_NAME = TokenTutor;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dustindoan.tradecoinskills;
+				PRODUCT_NAME = TradeCoinSkills;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "*[expo] com.dustindoan.tokentutor AppStore 2025-08-19T03:30:20.856Z";
-				SWIFT_OBJC_BRIDGING_HEADER = "TokenTutor/TokenTutor-Bridging-Header.h";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "*[expo] com.dustindoan.tradecoinskills AppStore 2025-08-19T03:30:20.856Z";
+				SWIFT_OBJC_BRIDGING_HEADER = "TradeCoinSkills/TradeCoinSkills-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
@@ -476,7 +476,10 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -531,7 +534,10 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
@@ -542,7 +548,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "TokenTutor" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "TradeCoinSkills" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -551,7 +557,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "TokenTutor" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "TradeCoinSkills" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>TokenTutor</string>
+	<string>Trade Coin Skills</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -28,7 +28,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>myapp</string>
-				<string>com.dustindoan.tokentutor</string>
+				<string>com.dustindoan.tradecoinskills</string>
 			</array>
 		</dict>
 		<dict>
@@ -39,7 +39,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>3</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
 	<key>LSRequiresIPhoneOS</key>

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TokenTutor",
+    "name": "Trade Coin Skills",
     "slug": "trading-simulation-app",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -8,10 +8,10 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "description": "Learn cryptocurrency trading with virtual money in a completely risk-free simulation environment. Practice trading strategies, track portfolio performance, and compete with other traders - all without using real money. Perfect for beginners learning crypto trading fundamentals.",
+    "description": "Master cryptocurrency trading skills with virtual money in a completely risk-free simulation environment. Practice trading strategies, track portfolio performance, and compete with other traders - all without using real money. Perfect for beginners developing essential crypto trading skills.",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dustindoan.tokentutor",
+      "bundleIdentifier": "com.dustindoan.tradecoinskills",
       "buildNumber": "3",
       "infoPlist": {
         "NSCameraUsageDescription": "Camera access is used to scan QR codes for joining trading collections and sharing invite codes.",
@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/images/splashscreen.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dustindoan.tokentutor",
+      "package": "com.dustindoan.tradecoinskills",
       "permissions": ["CAMERA", "RECORD_AUDIO"],
       "intentFilters": [
         {
@@ -71,7 +71,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "SECURE_STORE_PREFIX": "tokentutor_",
+      "SECURE_STORE_PREFIX": "tradecoinskills_",
       "router": {},
       "eas": {
         "projectId": "ff964db9-1fa1-4563-98c5-478459b0c294"
