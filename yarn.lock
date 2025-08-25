@@ -1190,7 +1190,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@expo/code-signing-certificates@npm:^0.0.5":
+"@expo/code-signing-certificates@npm:0.0.5, @expo/code-signing-certificates@npm:^0.0.5":
   version: 0.0.5
   resolution: "@expo/code-signing-certificates@npm:0.0.5"
   dependencies:
@@ -2907,9 +2907,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"CryptoStar@workspace:.":
+"Trade Coin Skills@workspace:.":
   version: 0.0.0-use.local
-  resolution: "CryptoStar@workspace:."
+  resolution: "Trade Coin Skills@workspace:."
   dependencies:
     "@babel/core": ^7.25.2
     "@babel/plugin-transform-react-jsx": ^7.27.1
@@ -2953,6 +2953,7 @@ __metadata:
     expo-status-bar: ~2.2.3
     expo-symbols: ~0.4.5
     expo-system-ui: ~5.0.10
+    expo-updates: ^0.28.17
     expo-web-browser: ~14.2.0
     husky: ^8.0.3
     jest: ^29.2.1
@@ -3223,6 +3224,13 @@ __metadata:
   version: 1.2.7
   resolution: "appdirsjs@npm:1.2.7"
   checksum: 3411b4e31edf8687ad69638ef81b92b4889ad31e527b673a364990c28c99b6b8c3ea81b2b2b636d5b08e166a18706c4464fd8436b298f85384d499ba6b8dc4b7
+  languageName: node
+  linkType: hard
+
+"arg@npm:4.1.0":
+  version: 4.1.0
+  resolution: "arg@npm:4.1.0"
+  checksum: ea97513bf27aa5f2acf5dadf41501108fe786631fdd9d33f373174631800b57f85272dbf8190e937008a02b38d5c2f679514146f89a23123d8cb4ba30e8c066c
   languageName: node
   linkType: hard
 
@@ -5065,6 +5073,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-eas-client@npm:~0.14.4":
+  version: 0.14.4
+  resolution: "expo-eas-client@npm:0.14.4"
+  checksum: 3b9347b5cc94612c6fb9798e0351efefeea8e4b09c48b9a1c69cbae002eb2952f0ae32f3fdb7c6491dc74b6a8b415977c67ef6906b1f58a71677802ac272e6de
+  languageName: node
+  linkType: hard
+
 "expo-file-system@npm:~18.1.11":
   version: 18.1.11
   resolution: "expo-file-system@npm:18.1.11"
@@ -5275,6 +5290,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-structured-headers@npm:~4.1.0":
+  version: 4.1.0
+  resolution: "expo-structured-headers@npm:4.1.0"
+  checksum: 9e3139f50dc983b6db4483b8b68d45f6830b41a03b0fa00662a8d544e04784d1412b26aff91b61e4148b7ceb5a47195c2c034a1ea0ac97e49fc02cfd2342dd61
+  languageName: node
+  linkType: hard
+
 "expo-symbols@npm:~0.4.5":
   version: 0.4.5
   resolution: "expo-symbols@npm:0.4.5"
@@ -5310,6 +5332,32 @@ __metadata:
   peerDependencies:
     expo: "*"
   checksum: 35eedfd77b1f76638a32fa016e4783d5ae5622144e599136f68b5703c09747626f4cc2d3b8de57f266a1323be23343a9ff1b3e541648b756f0a52456625afb52
+  languageName: node
+  linkType: hard
+
+"expo-updates@npm:^0.28.17":
+  version: 0.28.17
+  resolution: "expo-updates@npm:0.28.17"
+  dependencies:
+    "@expo/code-signing-certificates": 0.0.5
+    "@expo/config": ~11.0.13
+    "@expo/config-plugins": ~10.1.2
+    "@expo/spawn-async": ^1.7.2
+    arg: 4.1.0
+    chalk: ^4.1.2
+    expo-eas-client: ~0.14.4
+    expo-manifests: ~0.16.6
+    expo-structured-headers: ~4.1.0
+    expo-updates-interface: ~1.1.0
+    glob: ^10.4.2
+    ignore: ^5.3.1
+    resolve-from: ^5.0.0
+  peerDependencies:
+    expo: "*"
+    react: "*"
+  bin:
+    expo-updates: bin/cli.js
+  checksum: ce0ad1a62b0d9b424c87ca3b71b114e60a9827db2c61a95271652c785d71d439e508c12319202f4044ae1118453ae527ad09b005af8fafdcda79a08037a0dd55
   languageName: node
   linkType: hard
 

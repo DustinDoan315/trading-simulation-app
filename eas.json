@@ -21,12 +21,13 @@
     "preview": {
       "autoIncrement": true,
       "distribution": "store",
+      "channel": "staging",
       "ios": {
         "credentialsSource": "remote",
         "buildConfiguration": "Release"
       },
       "env": {
-        "ENVIRONMENT": "production",
+        "ENVIRONMENT": "staging",
         "EXPO_PUBLIC_NEWS_API_KEY": "0b2bddf9eef5407eb519f8b389b06c38",
         "EXPO_PUBLIC_SUPABASE_URL": "https://qmiafrudmawctuazhluz.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtaWFmcnVkbWF3Y3R1YXpobHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDMzMTksImV4cCI6MjA2OTk3OTMxOX0.Oii5ylUbfJWe5OhLzZjMG0zBLUrrs2CRrtXhwTTCkVk"
@@ -35,6 +36,7 @@
     "production": {
       "autoIncrement": true,
       "distribution": "store",
+      "channel": "production",
       "ios": {
         "credentialsSource": "remote",
         "buildConfiguration": "Release"
@@ -53,6 +55,26 @@
         "appleId": "doankhanhdong3105@gmail.com",
         "ascAppId": "6749532810",
         "appleTeamId": "6SXWS6JV43"
+      }
+    }
+  },
+  "update": {
+    "staging": {
+      "channel": "staging",
+      "env": {
+        "ENVIRONMENT": "staging",
+        "EXPO_PUBLIC_NEWS_API_KEY": "0b2bddf9eef5407eb519f8b389b06c38",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://qmiafrudmawctuazhluz.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtaWFmcnVkbWF3Y3R1YXpobHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDMzMTksImV4cCI6MjA2OTk3OTMxOX0.Oii5ylUbfJWe5OhLzZjMG0zBLUrrs2CRrtXhwTTCkVk"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "env": {
+        "ENVIRONMENT": "production",
+        "EXPO_PUBLIC_NEWS_API_KEY": "0b2bddf9eef5407eb519f8b389b06c38",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://qmiafrudmawctuazhluz.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtaWFmcnVkbWF3Y3R1YXpobHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDMzMTksImV4cCI6MjA2OTk3OTMxOX0.Oii5ylUbfJWe5OhLzZjMG0zBLUrrs2CRrtXhwTTCkVk"
       }
     }
   }

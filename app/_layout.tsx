@@ -21,6 +21,7 @@ import { updateDailyBalance } from '@/utils/balanceUpdater';
 import { useCallback, useEffect } from 'react';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useFonts } from 'expo-font';
+import { useOTAUpdates } from '@/hooks/useOTAUpdates';
 import { UserProvider } from '@/context/UserContext';
 import { UserService } from '@/services/UserService';
 import 'react-native-reanimated';
@@ -44,6 +45,18 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+  });
+
+  // Initialize OTA updates
+  const { 
+    isEnabled: otaEnabled, 
+    channel: otaChannel, 
+    error: otaError 
+  } = useOTAUpdates({
+    checkOnMount: true,
+    showUpdateAvailableAlert: true,
+    autoRestart: false,
+    checkInterval: 300000, // Check every 5 minutes
   });
 
   useEffect(() => {
@@ -85,6 +98,20 @@ export default function RootLayout() {
         await initializeBackgroundSync();
 
         setupDeepLinking();
+
+        // Log OTA update information
+        if (otaEnabled) {
+          logger.info("OTA Updates enabled", "AppLayout", {
+            channel: otaChannel,
+            isEnabled: otaEnabled,
+          });
+        } else {
+          logger.info("OTA Updates disabled (development mode)", "AppLayout");
+        }
+
+        if (otaError) {
+          logger.error("OTA Update error", "AppLayout", { error: otaError });
+        }
 
         return () => {
           scheduler.clear();

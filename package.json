@@ -18,7 +18,13 @@
     "web": "expo start --web",
     "web:optimized": "NODE_ENV=production expo start --web",
     "build:analyze": "NODE_ENV=production expo export --platform web",
-    "test": "jest --watchAll"
+    "test": "jest --watchAll",
+    "update:staging": "eas update --branch main --message \"Staging update\"",
+    "update:production": "eas update --branch production --message \"Production update\"",
+    "publish:staging": "eas update --channel staging --message \"Staging update: $(git log -1 --pretty=format:'%s')\"",
+    "publish:production": "eas update --channel production --message \"Production update: $(git log -1 --pretty=format:'%s')\"",
+    "build:staging": "eas build --platform all --profile preview",
+    "build:production": "eas build --platform all --profile production"
   },
   "jest": {
     "preset": "jest-expo"
@@ -59,6 +65,7 @@
     "expo-status-bar": "~2.2.3",
     "expo-symbols": "~0.4.5",
     "expo-system-ui": "~5.0.10",
+    "expo-updates": "^0.28.17",
     "expo-web-browser": "~14.2.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",

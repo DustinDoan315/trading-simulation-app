@@ -70,6 +70,12 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 30000,
+      "url": "https://u.expo.dev/ff964db9-1fa1-4563-98c5-478459b0c294"
+    },
     "extra": {
       "SECURE_STORE_PREFIX": "tradecoinskills_",
       "router": {},
