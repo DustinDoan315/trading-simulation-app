@@ -1,12 +1,10 @@
+import AchievementService from './AchievementService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import UUIDService from './UUIDService';
-import { Holding } from '../types/crypto';
 import { logger } from '@/utils/logger';
 import { supabase } from './SupabaseService';
 import { UserService } from './UserService';
 import {
   CollectionBalance,
-  CollectionPortfolio,
   CombinedPnLResult,
   IndividualBalance,
   PnLResult,
@@ -16,13 +14,19 @@ import {
 
 
 export class DualBalanceService {
-  /**
-   * Ensures that a user exists in Supabase before executing trades
-   * This method should be called before any trade operations
-   */
+  private static getSupabase() {
+    if (!supabase) {
+      throw new Error('Supabase not initialized');
+    }
+    return supabase;
+  }
+
   static async ensureUserExists(userId: string): Promise<void> {
     try {
       // Check if user exists in Supabase
+      if (!supabase) {
+        throw new Error('Supabase not initialized');
+      }
       const { data: user, error } = await supabase
         .from("users")
         .select("id")
@@ -91,6 +95,9 @@ export class DualBalanceService {
     userId: string
   ): Promise<IndividualBalance> {
     try {
+      if (!supabase) {
+        throw new Error('Supabase not initialized');
+      }
       const { data: user, error } = await supabase
         .from("users")
         .select("*")
@@ -99,7 +106,6 @@ export class DualBalanceService {
 
       if (error) throw error;
 
-      // If user doesn't exist, create a default user or return default balance
       if (!user) {
         logger.warn(
           `User ${userId} not found, returning default balance`,
@@ -418,6 +424,14 @@ export class DualBalanceService {
         amount: quantity,
         total: totalValue,
       });
+
+      // Check achievements after successful trade
+      try {
+        await this.checkTradeAchievements(userId, order, transaction);
+      } catch (achievementError) {
+        logger.error('Error checking achievements:', achievementError);
+        // Don't fail the trade if achievement checking fails
+      }
 
       return transaction;
     } catch (error) {
@@ -920,5 +934,70 @@ export class DualBalanceService {
       totalCombinedPnL,
       totalCombinedPnLPercentage,
     };
+  }
+
+  /**
+   * Check and update achievements after a successful trade
+   */
+  private static async checkTradeAchievements(
+    userId: string,
+    order: any,
+    transaction: Transaction
+  ): Promise<void> {
+    try {
+      const achievementService = AchievementService.getInstance();
+
+      // Get user stats for achievement checking
+      const { data: user } = await supabase
+        .from('users')
+        .select('total_trades, total_pnl, total_buy_volume, total_sell_volume, win_rate, total_portfolio_value')
+        .eq('id', userId)
+        .single();
+
+      if (!user) return;
+
+      // Calculate trade data for achievements
+      const tradeData = {
+        profit: parseFloat(user.total_pnl),
+        volume: parseFloat(user.total_buy_volume) + parseFloat(user.total_sell_volume),
+        winRate: parseFloat(user.win_rate),
+        totalTrades: user.total_trades,
+        portfolioValue: parseFloat(user.total_portfolio_value),
+      };
+
+      // Check trading achievements
+      await achievementService.checkTradingAchievements(userId, tradeData);
+
+      // Check for first trade achievement
+      if (user.total_trades === 1) {
+        await achievementService.updateAchievementProgress(userId, 'first_trade', 1);
+      }
+
+      // Check for profit achievements
+      if (tradeData.profit > 0) {
+        await achievementService.updateAchievementProgress(userId, 'first_profit', tradeData.profit);
+      }
+
+      // Check for volume achievements
+      if (tradeData.volume > 0) {
+        await achievementService.updateAchievementProgress(userId, 'volume_100k', tradeData.volume);
+      }
+
+      // Check for portfolio value achievements
+      if (tradeData.portfolioValue > 0) {
+        await achievementService.updateAchievementProgress(userId, 'portfolio_200k', tradeData.portfolioValue);
+      }
+
+      logger.info('Achievement check completed for trade', {
+        userId,
+        symbol: order.symbol,
+        type: order.type,
+        totalTrades: user.total_trades,
+      });
+
+    } catch (error) {
+      logger.error('Error checking trade achievements:', error);
+      // Don't throw error to avoid breaking the trade flow
+    }
   }
 }

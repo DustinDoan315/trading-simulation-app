@@ -164,10 +164,11 @@ const OrderEntry = React.memo(
       setResetCounter((prev) => prev + 1);
     }, [selectedTab]);
 
-    const handleSliderChange = useCallback((position: any) => {
-      setSliderPosition(position);
-      setAmount(formatAmount(position));
-    }, []);
+    const handleSliderChange = useCallback((calculatedAmount: number) => {
+      const percentagePosition = currentBalance > 0 ? (calculatedAmount / currentBalance) * 100 : 0;
+      setSliderPosition(percentagePosition);
+      setAmount(formatAmount(calculatedAmount));
+    }, [currentBalance]);
 
     const handlePriceChange = useCallback((value: any) => {
       setPrice(value);

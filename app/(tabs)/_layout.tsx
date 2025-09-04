@@ -1,11 +1,11 @@
 import colors from '@/styles/colors';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Platform,
-  StyleSheet,
-  TouchableOpacity,
-  View
-  } from 'react-native';
+    Platform,
+    StyleSheet,
+    TouchableOpacity,
+    View
+    } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,7 @@ type RouteName =
   | "collections"
   | "leaderboard"
   | "watchlist"
+  | "achievements"
   | "profile";
 
 type IconMapping = {
@@ -46,6 +47,10 @@ const ICON_MAP: IconMapping = {
     inactive: "star-outline",
     active: "star",
   },
+  achievements: {
+    inactive: "trophy-outline",
+    active: "trophy",
+  },
   profile: {
     inactive: "person-outline",
     active: "person",
@@ -63,6 +68,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
       route.name === "portfolio" ||
       route.name === "leaderboard" ||
       route.name === "watchlist" ||
+      route.name === "achievements" ||
       route.name === "profile"
     ) {
       orderedRoutes.push(route);
@@ -75,6 +81,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
       "portfolio",
       "leaderboard",
       "watchlist",
+      "achievements",
       "profile",
     ];
     return (
@@ -159,6 +166,13 @@ export default function TabLayout() {
         name="watchlist"
         options={{
           title: "Watchlist",
+        }}
+      />
+
+      <Tabs.Screen
+        name="achievements"
+        options={{
+          title: "Achievements",
         }}
       />
 
