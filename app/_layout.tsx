@@ -51,7 +51,8 @@ export default function RootLayout() {
   const { 
     isEnabled: otaEnabled, 
     channel: otaChannel, 
-    error: otaError 
+    error: otaError,
+    isExpoGo
   } = useOTAUpdates({
     checkOnMount: true,
     showUpdateAvailableAlert: true,
@@ -100,16 +101,18 @@ export default function RootLayout() {
         setupDeepLinking();
 
         // Log OTA update information
-        if (otaEnabled) {
+        if (isExpoGo) {
+          logger.info("Running in Expo Go - OTA updates not available", "AppLayout");
+        } else if (otaEnabled) {
           logger.info("OTA Updates enabled", "AppLayout", {
             channel: otaChannel,
             isEnabled: otaEnabled,
           });
         } else {
-          logger.info("OTA Updates disabled (development mode)", "AppLayout");
+          logger.info("OTA Updates disabled", "AppLayout");
         }
 
-        if (otaError) {
+        if (otaError && !isExpoGo) {
           logger.error("OTA Update error", "AppLayout", { error: otaError });
         }
 

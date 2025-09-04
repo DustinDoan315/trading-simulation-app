@@ -1,15 +1,19 @@
-import React from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Dimensions,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 
+
 const { width } = Dimensions.get("window");
+const isTablet = width > 768;
+const isSmallScreen = width < 375;
 
 interface AchievementCardProps {
   title: string;
@@ -37,20 +41,24 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
   return (
     <TouchableOpacity
       style={[styles.container, isCompleted && styles.completedContainer]}
-      onPress={onPress}>
+      onPress={onPress}
+      activeOpacity={0.8}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
       <LinearGradient
         colors={isCompleted ? ["#4BB543", "#45A03D"] : ["#1A1D2F", "#2A2D3F"]}
-        style={styles.gradient}>
+        style={styles.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
             <Ionicons
               name={icon as any}
-              size={24}
+              size={isTablet ? 28 : 24}
               color={isCompleted ? "white" : "#6262D9"}
             />
             {isCompleted && (
               <View style={styles.completedBadge}>
-                <Ionicons name="checkmark" size={12} color="white" />
+                <Ionicons name="checkmark" size={isTablet ? 14 : 12} color="white" />
               </View>
             )}
           </View>
@@ -85,7 +93,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
           </Text>
           {reward && (
             <View style={styles.rewardContainer}>
-              <Ionicons name="gift" size={14} color="#FFD700" />
+              <Ionicons name="gift" size={isTablet ? 16 : 14} color="#FFD700" />
               <Text style={styles.rewardText}>{reward}</Text>
             </View>
           )}
@@ -102,7 +110,9 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
               : `${Math.round(progressPercentage)}% Complete`}
           </Text>
           {!isCompleted && (
-            <Ionicons name="arrow-forward" size={16} color="#6262D9" />
+            <View style={styles.actionButton}>
+              <Ionicons name="arrow-forward" size={isTablet ? 18 : 16} color="#6262D9" />
+            </View>
           )}
         </View>
       </LinearGradient>
@@ -112,11 +122,22 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: width - 40,
-    height: 120,
-    borderRadius: 16,
+    width: width - (isTablet ? 64 : 40),
+    height: isTablet ? 70 : 60,
+    borderRadius: isTablet ? 20 : 16,
     overflow: "hidden",
-    marginBottom: 12,
+    marginBottom: isTablet ? 12 : 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   completedContainer: {
     borderWidth: 2,
@@ -124,71 +145,73 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
-    padding: 16,
+    padding: isTablet ? 10 : 8,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: isTablet ? 16 : 12,
   },
   iconContainer: {
     position: "relative",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: isTablet ? 48 : 40,
+    height: isTablet ? 48 : 40,
+    borderRadius: isTablet ? 24 : 20,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
   completedBadge: {
     position: "absolute",
-    top: -2,
-    right: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    top: isTablet ? -3 : -2,
+    right: isTablet ? -3 : -2,
+    width: isTablet ? 20 : 16,
+    height: isTablet ? 20 : 16,
+    borderRadius: isTablet ? 10 : 8,
     backgroundColor: "#4BB543",
     justifyContent: "center",
     alignItems: "center",
   },
   progressContainer: {
     alignItems: "flex-end",
-    minWidth: 80,
+    minWidth: isTablet ? 100 : 80,
   },
   progressText: {
-    fontSize: 12,
+    fontSize: isTablet ? 14 : 12,
     color: "#9DA3B4",
-    marginBottom: 4,
+    marginBottom: isTablet ? 6 : 4,
   },
   progressBar: {
-    width: 60,
-    height: 4,
+    width: isTablet ? 80 : 60,
+    height: isTablet ? 6 : 4,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 2,
+    borderRadius: isTablet ? 3 : 2,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    borderRadius: 2,
+    borderRadius: isTablet ? 3 : 2,
   },
   content: {
     flex: 1,
+    marginBottom: isTablet ? 12 : 8,
   },
   title: {
-    fontSize: 16,
+    fontSize: isTablet ? 18 : 16,
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 4,
+    marginBottom: isTablet ? 6 : 4,
+    lineHeight: isTablet ? 24 : 20,
   },
   completedTitle: {
     color: "#FFFFFF",
   },
   description: {
-    fontSize: 12,
+    fontSize: isTablet ? 14 : 12,
     color: "#9DA3B4",
-    lineHeight: 16,
-    marginBottom: 6,
+    lineHeight: isTablet ? 20 : 16,
+    marginBottom: isTablet ? 8 : 6,
   },
   completedDescription: {
     color: "rgba(255, 255, 255, 0.8)",
@@ -196,10 +219,10 @@ const styles = StyleSheet.create({
   rewardContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: isTablet ? 6 : 4,
   },
   rewardText: {
-    fontSize: 11,
+    fontSize: isTablet ? 13 : 11,
     color: "#FFD700",
     fontWeight: "600",
   },
@@ -207,14 +230,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: isTablet ? 12 : 8,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: isTablet ? 14 : 12,
     color: "#6262D9",
     fontWeight: "600",
   },
   completedStatusText: {
     color: "#4BB543",
+  },
+  actionButton: {
+    padding: isTablet ? 8 : 6,
   },
 });

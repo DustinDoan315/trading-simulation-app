@@ -37,8 +37,20 @@ export const useOTAUpdates = (options: UseOTAUpdatesOptions = {}) => {
   });
 
   const checkForUpdates = async (): Promise<boolean> => {
+    // Check if we're running in Expo Go or if updates are disabled
     if (!Updates.isEnabled) {
       console.log('Updates are not enabled');
+      return false;
+    }
+
+    // Check if we're in development mode (Expo Go)
+    if (__DEV__ && !Updates.isEmbeddedLaunch) {
+      console.log('OTA updates are not available in Expo Go. Use a development build to test OTA functionality.');
+      setUpdateInfo(prev => ({ 
+        ...prev, 
+        isChecking: false, 
+        error: 'OTA updates are not available in Expo Go. Use a development build to test OTA functionality.'
+      }));
       return false;
     }
 
@@ -80,8 +92,20 @@ export const useOTAUpdates = (options: UseOTAUpdatesOptions = {}) => {
   };
 
   const downloadAndInstallUpdate = async (): Promise<boolean> => {
+    // Check if we're running in Expo Go or if updates are disabled
     if (!Updates.isEnabled) {
       console.log('Updates are not enabled');
+      return false;
+    }
+
+    // Check if we're in development mode (Expo Go)
+    if (__DEV__ && !Updates.isEmbeddedLaunch) {
+      console.log('OTA updates are not available in Expo Go. Use a development build to test OTA functionality.');
+      setUpdateInfo(prev => ({ 
+        ...prev, 
+        isDownloading: false, 
+        error: 'OTA updates are not available in Expo Go. Use a development build to test OTA functionality.'
+      }));
       return false;
     }
 
@@ -133,6 +157,18 @@ export const useOTAUpdates = (options: UseOTAUpdatesOptions = {}) => {
   };
 
   const restartApp = async () => {
+    // Check if we're running in Expo Go or if updates are disabled
+    if (!Updates.isEnabled) {
+      console.log('Updates are not enabled');
+      return;
+    }
+
+    // Check if we're in development mode (Expo Go)
+    if (__DEV__ && !Updates.isEmbeddedLaunch) {
+      console.log('OTA updates are not available in Expo Go. Use a development build to test OTA functionality.');
+      return;
+    }
+
     try {
       await Updates.reloadAsync();
     } catch (error) {
@@ -176,14 +212,14 @@ export const useOTAUpdates = (options: UseOTAUpdatesOptions = {}) => {
 
   // Check for updates on mount
   useEffect(() => {
-    if (checkOnMount && Platform.OS !== 'web') {
+    if (checkOnMount && Platform.OS !== 'web' && Updates.isEnabled && !(__DEV__ && !Updates.isEmbeddedLaunch)) {
       checkForUpdates();
     }
   }, [checkOnMount]);
 
   // Set up interval checking
   useEffect(() => {
-    if (checkInterval > 0 && Platform.OS !== 'web') {
+    if (checkInterval > 0 && Platform.OS !== 'web' && Updates.isEnabled && !(__DEV__ && !Updates.isEmbeddedLaunch)) {
       const interval = setInterval(() => {
         if (!updateInfo.isChecking && !updateInfo.isDownloading) {
           checkForUpdates();
@@ -203,6 +239,7 @@ export const useOTAUpdates = (options: UseOTAUpdatesOptions = {}) => {
     channel: Updates.channel,
     updateId: Updates.updateId,
     createdAt: Updates.createdAt,
+    isExpoGo: __DEV__ && !Updates.isEmbeddedLaunch,
   };
 };
 

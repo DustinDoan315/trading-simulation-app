@@ -1,11 +1,11 @@
 import colors from '@/styles/colors';
 import { Ionicons } from '@expo/vector-icons';
 import {
-    Platform,
-    StyleSheet,
-    TouchableOpacity,
-    View
-    } from 'react-native';
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View
+  } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -48,8 +48,8 @@ const ICON_MAP: IconMapping = {
     active: "star",
   },
   achievements: {
-    inactive: "trophy-outline",
-    active: "trophy",
+    inactive: "ribbon-outline",
+    active: "ribbon",
   },
   profile: {
     inactive: "person-outline",

@@ -1,18 +1,18 @@
-import colors from '@/styles/colors';
 import React, { useEffect, useRef } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   Animated,
   Dimensions,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-} from 'react-native';
+  View
+  } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 
 const { width } = Dimensions.get('window');
+const isTablet = width > 768;
 
 interface AchievementNotificationProps {
   visible: boolean;
@@ -21,7 +21,7 @@ interface AchievementNotificationProps {
   icon: string;
   reward?: string;
   onClose: () => void;
-  onPress?: () => void;
+  onPress: () => void;
 }
 
 export const AchievementNotification: React.FC<AchievementNotificationProps> = ({
@@ -39,16 +39,15 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
 
   useEffect(() => {
     if (visible) {
-      // Slide in animation
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
-          duration: 500,
+          duration: 400,
           useNativeDriver: true,
         }),
         Animated.timing(scaleAnim, {
           toValue: 1,
-          duration: 500,
+          duration: 400,
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnim, {
@@ -58,10 +57,10 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
         }),
       ]).start();
 
-      // Auto hide after 4 seconds
+      // Auto-hide after 5 seconds
       const timer = setTimeout(() => {
         hideNotification();
-      }, 4000);
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
@@ -111,7 +110,7 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
         <TouchableOpacity
           style={styles.closeButton}
           onPress={hideNotification}>
-          <Ionicons name="close" size={20} color="white" />
+          <Ionicons name="close" size={isTablet ? 24 : 20} color="white" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -119,9 +118,9 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
           onPress={onPress}
           activeOpacity={0.8}>
           <View style={styles.iconContainer}>
-            <Ionicons name={icon as any} size={32} color="white" />
+            <Ionicons name={icon as any} size={isTablet ? 40 : 32} color="white" />
             <View style={styles.sparkleContainer}>
-              <Ionicons name="sparkles" size={16} color="#FFD700" />
+              <Ionicons name="sparkles" size={isTablet ? 20 : 16} color="#FFD700" />
             </View>
           </View>
 
@@ -130,14 +129,14 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
             <Text style={styles.description}>{description}</Text>
             {reward && (
               <View style={styles.rewardContainer}>
-                <Ionicons name="gift" size={16} color="#FFD700" />
+                <Ionicons name="gift" size={isTablet ? 18 : 16} color="#FFD700" />
                 <Text style={styles.rewardText}>{reward}</Text>
               </View>
             )}
           </View>
 
           <View style={styles.arrowContainer}>
-            <Ionicons name="arrow-forward" size={20} color="white" />
+            <Ionicons name="arrow-forward" size={isTablet ? 24 : 20} color="white" />
           </View>
         </TouchableOpacity>
 
@@ -163,30 +162,30 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 60,
-    left: 20,
-    right: 20,
+    top: isTablet ? 80 : 60,
+    left: isTablet ? 32 : 20,
+    right: isTablet ? 32 : 20,
     zIndex: 1000,
   },
   gradient: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 20 : 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: isTablet ? 6 : 4,
     },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowRadius: isTablet ? 12 : 8,
+    elevation: isTablet ? 10 : 8,
   },
   closeButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: isTablet ? 12 : 8,
+    right: isTablet ? 12 : 8,
+    width: isTablet ? 32 : 24,
+    height: isTablet ? 32 : 24,
+    borderRadius: isTablet ? 16 : 12,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -198,48 +197,49 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     position: 'relative',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: isTablet ? 64 : 48,
+    height: isTablet ? 64 : 48,
+    borderRadius: isTablet ? 32 : 24,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: isTablet ? 16 : 12,
   },
   sparkleContainer: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: isTablet ? -6 : -4,
+    right: isTablet ? -6 : -4,
   },
   textContainer: {
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: isTablet ? 20 : 16,
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: 4,
+    marginBottom: isTablet ? 6 : 4,
+    lineHeight: isTablet ? 26 : 20,
   },
   description: {
-    fontSize: 14,
+    fontSize: isTablet ? 16 : 14,
     color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 18,
+    lineHeight: isTablet ? 22 : 18,
   },
   rewardContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: isTablet ? 8 : 6,
   },
   rewardText: {
-    fontSize: 12,
+    fontSize: isTablet ? 14 : 12,
     color: '#FFD700',
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: isTablet ? 6 : 4,
   },
   arrowContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: isTablet ? 40 : 32,
+    height: isTablet ? 40 : 32,
+    borderRadius: isTablet ? 20 : 16,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -249,10 +249,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 3,
+    height: isTablet ? 4 : 3,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: isTablet ? 20 : 16,
+    borderBottomRightRadius: isTablet ? 20 : 16,
     overflow: 'hidden',
   },
   progressFill: {

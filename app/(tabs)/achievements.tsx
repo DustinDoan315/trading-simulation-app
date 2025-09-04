@@ -7,6 +7,8 @@ import { useAchievements } from '@/hooks/useAchievements';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotification } from '@/components/ui/Notification';
 import {
+  Dimensions,
+  Platform,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -18,6 +20,10 @@ import {
   ViewStyle,
 } from 'react-native';
 
+
+const { width, height } = Dimensions.get('window');
+const isTablet = width > 768;
+const isSmallScreen = width < 375;
 
 const AchievementsScreen = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'milestone' | 'badge' | 'daily' | 'special'>('all');
@@ -61,157 +67,179 @@ const AchievementsScreen = () => {
     return getAchievementsByCategory(activeTab);
   };
 
-  const renderAchievementCard = (userAchievement: any) => {
-    const achievement = userAchievement.achievement;
-    if (!achievement) return null;
+  const renderAchievementCard = (userAchievement: any) => (
+    <AchievementCard
+      key={userAchievement.id}
+      title={userAchievement.title}
+      description={userAchievement.description}
+      icon={userAchievement.icon}
+      progress={userAchievement.progress}
+      maxProgress={userAchievement.maxProgress}
+      isCompleted={userAchievement.isCompleted}
+      reward={userAchievement.reward}
+      onPress={() => handleClaimReward(userAchievement.id)}
+    />
+  );
 
-    return (
-      <AchievementCard
-        key={userAchievement.id}
-        title={achievement.title}
-        description={achievement.description}
-        icon={achievement.icon}
-        progress={parseFloat(userAchievement.progress)}
-        maxProgress={parseFloat(userAchievement.max_progress)}
-        isCompleted={userAchievement.is_completed}
-        reward={userAchievement.is_completed && !userAchievement.reward_claimed ? 
-          achievement.reward_description || achievement.reward_value : undefined}
-        onPress={() => {
-          if (userAchievement.is_completed && !userAchievement.reward_claimed) {
-            handleClaimReward(userAchievement.achievement_id);
-          }
-        }}
-      />
-    );
-  };
-
-  const renderDailyChallengeCard = (userDailyChallenge: any) => {
-    const challenge = userDailyChallenge.challenge;
-    if (!challenge) return null;
-
-    const progress = parseFloat(userDailyChallenge.progress);
-    const target = parseFloat(challenge.target_value);
-    const progressPercentage = Math.min((progress / target) * 100, 100);
-
-    return (
-      <TouchableOpacity
-        key={userDailyChallenge.id}
-        style={[styles.challengeCard, userDailyChallenge.is_completed && styles.completedChallengeCard]}
-        onPress={() => {
-          if (userDailyChallenge.is_completed && !userDailyChallenge.reward_claimed) {
-            // Handle claim reward
-          }
-        }}>
-        <LinearGradient
-          colors={userDailyChallenge.is_completed ? ['#4BB543', '#45A03D'] : ['#1A1D2F', '#2A2D3F']}
-          style={styles.challengeGradient}>
-          <View style={styles.challengeHeader}>
-            <View style={styles.challengeIconContainer}>
+  const renderDailyChallengeCard = (challenge: any) => (
+    <View key={challenge.id} style={[styles.challengeCard, challenge.isCompleted && styles.completedChallengeCard]}>
+      <LinearGradient
+        colors={challenge.isCompleted 
+          ? ['#4BB543', '#45A03D', '#3A8A33'] 
+          : ['#2A2D3F', '#1A1D2F', '#0F1118']}
+        style={styles.challengeGradient}>
+        <View style={styles.challengeHeader}>
+          <View style={styles.challengeIconContainer}>
+            <LinearGradient
+              colors={challenge.isCompleted 
+                ? ['#4BB543', '#45A03D'] 
+                : ['#6262D9', '#4A4AC8']}
+              style={styles.challengeIconGradient}>
               <Ionicons
                 name={challenge.icon as any}
-                size={24}
-                color={userDailyChallenge.is_completed ? 'white' : '#6262D9'}
+                size={isTablet ? 32 : 28}
+                color="white"
               />
-              {userDailyChallenge.is_completed && (
-                <View style={styles.completedBadge}>
-                  <Ionicons name="checkmark" size={12} color="white" />
-                </View>
-              )}
-            </View>
-            <View style={styles.challengeProgressContainer}>
-              <Text style={styles.challengeProgressText}>
-                {progress.toFixed(0)}/{target.toFixed(0)}
-              </Text>
-              <View style={styles.challengeProgressBar}>
-                <View
-                  style={[
-                    styles.challengeProgressFill,
-                    {
-                      width: `${progressPercentage}%`,
-                      backgroundColor: userDailyChallenge.is_completed ? '#4BB543' : '#6262D9',
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.challengeContent}>
-            <Text style={[styles.challengeTitle, userDailyChallenge.is_completed && styles.completedTitle]}>
-              {challenge.title}
-            </Text>
-            <Text style={[styles.challengeDescription, userDailyChallenge.is_completed && styles.completedDescription]}>
-              {challenge.description}
-            </Text>
-            {userDailyChallenge.is_completed && !userDailyChallenge.reward_claimed && (
-              <View style={styles.rewardContainer}>
-                <Ionicons name="gift" size={14} color="#FFD700" />
-                <Text style={styles.rewardText}>{challenge.reward_value}</Text>
+            </LinearGradient>
+            {challenge.isCompleted && (
+              <View style={styles.completedBadge}>
+                <Ionicons name="checkmark" size={isTablet ? 16 : 14} color="white" />
               </View>
             )}
           </View>
-
-          <View style={styles.challengeFooter}>
-            <Text style={[styles.challengeStatusText, userDailyChallenge.is_completed && styles.completedStatusText]}>
-              {userDailyChallenge.is_completed
-                ? 'Completed!'
-                : `${Math.round(progressPercentage)}% Complete`}
+          <View style={styles.challengeProgressContainer}>
+            <Text style={styles.challengeProgressText}>
+              {challenge.progress}/{challenge.maxProgress}
             </Text>
-            {!userDailyChallenge.is_completed && (
-              <Ionicons name="arrow-forward" size={16} color="#6262D9" />
-            )}
+            <View style={styles.challengeProgressBar}>
+              <LinearGradient
+                colors={challenge.isCompleted 
+                  ? ['#4BB543', '#45A03D'] 
+                  : ['#6262D9', '#4A4AC8']}
+                style={[
+                  styles.challengeProgressFill,
+                  {
+                    width: `${Math.min((challenge.progress / challenge.maxProgress) * 100, 100)}%`,
+                  },
+                ]}
+              />
+            </View>
           </View>
-        </LinearGradient>
-      </TouchableOpacity>
-    );
-  };
+        </View>
+
+        <View style={styles.challengeContent}>
+          <Text style={[styles.challengeTitle, challenge.isCompleted && styles.completedChallengeTitle]}>
+            {challenge.title}
+          </Text>
+          <Text style={[styles.challengeDescription, challenge.isCompleted && styles.completedChallengeDescription]}>
+            {challenge.description}
+          </Text>
+          {challenge.reward && (
+            <View style={styles.challengeRewardContainer}>
+              <LinearGradient
+                colors={['#FFD700', '#FFA500']}
+                style={styles.rewardIconContainer}>
+                <Ionicons name="gift" size={isTablet ? 18 : 16} color="white" />
+              </LinearGradient>
+              <Text style={styles.challengeRewardText}>{challenge.reward}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.challengeFooter}>
+          <Text style={[styles.challengeStatusText, challenge.isCompleted && styles.completedChallengeStatusText]}>
+            {challenge.isCompleted
+              ? '🎉 Completed!'
+              : `${Math.round((challenge.progress / challenge.maxProgress) * 100)}% Complete`}
+          </Text>
+          {!challenge.isCompleted && (
+            <Ionicons name="arrow-forward" size={isTablet ? 20 : 18} color="#6262D9" />
+          )}
+        </View>
+      </LinearGradient>
+    </View>
+  );
+
+  const totalAchievements = completedAchievements.length + incompleteAchievements.length;
 
   return (
     <SafeAreaView style={styles.container}>
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Achievements</Text>
-        <View style={styles.headerStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{completedAchievements.length}</Text>
-            <Text style={styles.statLabel}>Completed</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{incompleteAchievements.length}</Text>
-            <Text style={styles.statLabel}>Remaining</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{unreadNotificationsCount}</Text>
-            <Text style={styles.statLabel}>New</Text>
+      {/* Header with Gradient Background */}
+      <LinearGradient
+        colors={['#1A1D2F', '#2A2D3F', '#1A1D2F']}
+        style={styles.headerGradient}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>🏆 Achievements</Text>
+          
+          {/* Stats Row */}
+          <View style={styles.headerStats}>
+            <View style={styles.statItem}>
+              <LinearGradient
+                colors={['#4BB543', '#45A03D']}
+                style={styles.statGradient}>
+                <Text style={styles.statNumber}>{completedAchievements.length}</Text>
+              </LinearGradient>
+              <Text style={styles.statLabel}>Completed</Text>
+            </View>
+            <View style={styles.statItem}>
+              <LinearGradient
+                colors={['#6262D9', '#4A4AC8']}
+                style={styles.statGradient}>
+                <Text style={styles.statNumber}>{incompleteAchievements.length}</Text>
+              </LinearGradient>
+              <Text style={styles.statLabel}>In Progress</Text>
+            </View>
+            <View style={styles.statItem}>
+              <LinearGradient
+                colors={['#FF6B6B', '#FF5252']}
+                style={styles.statGradient}>
+                <Text style={styles.statNumber}>
+                  {totalAchievements > 0 
+                    ? Math.round((completedAchievements.length / totalAchievements) * 100) 
+                    : 0}%
+                </Text>
+              </LinearGradient>
+              <Text style={styles.statLabel}>Progress</Text>
+            </View>
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabScrollContainer}
+        style={styles.tabScrollView}>
         {[
-          { key: 'all', label: 'All', icon: 'trophy' },
-          { key: 'milestone', label: 'Milestones', icon: 'star' },
-          { key: 'badge', label: 'Badges', icon: 'medal' },
-          { key: 'daily', label: 'Daily', icon: 'calendar' },
-          { key: 'special', label: 'Special', icon: 'diamond' },
+          { key: 'all', label: 'All', icon: 'ribbon', color: '#6262D9' },
+          { key: 'milestone', label: 'Milestones', icon: 'star', color: '#FFD700' },
+          { key: 'badge', label: 'Badges', icon: 'medal', color: '#FF6B6B' },
+          { key: 'daily', label: 'Daily', icon: 'calendar', color: '#4BB543' },
+          { key: 'special', label: 'Special', icon: 'diamond', color: '#9C27B0' },
         ].map((tab) => (
           <TouchableOpacity
             key={tab.key}
             style={[styles.tab, activeTab === tab.key && styles.activeTab]}
-            onPress={() => setActiveTab(tab.key as any)}>
-            <Ionicons
-              name={tab.icon as any}
-              size={16}
-              color={activeTab === tab.key ? '#6262D9' : '#9DA3B4'}
-            />
-            <Text style={[styles.tabText, activeTab === tab.key && styles.activeTabText]}>
-              {tab.label}
-            </Text>
+            onPress={() => setActiveTab(tab.key as any)}
+            activeOpacity={0.7}>
+            <LinearGradient
+              colors={activeTab === tab.key 
+                ? [tab.color, tab.color + 'CC'] 
+                : ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
+              style={styles.tabGradient}>
+              <Ionicons
+                name={tab.icon as any}
+                size={isTablet ? 14 : 12}
+                color={activeTab === tab.key ? 'white' : '#9DA3B4'}
+              />
+              <Text style={[styles.tabText, activeTab === tab.key && styles.activeTabText]}>
+                {tab.label}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
 
       {/* Content */}
       <ScrollView
@@ -219,18 +247,31 @@ const AchievementsScreen = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={refresh} />
         }
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
         
         {/* Daily Challenges Section */}
         {activeTab === 'daily' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's Challenges</Text>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['#4BB543', '#45A03D']}
+                style={styles.sectionIconContainer}>
+                <Ionicons name="calendar" size={isTablet ? 24 : 20} color="white" />
+              </LinearGradient>
+              <Text style={styles.sectionTitle}>Today's Challenges</Text>
+            </View>
             {dailyChallengesProgress.length > 0 ? (
               dailyChallengesProgress.map(renderDailyChallengeCard)
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="calendar-outline" size={48} color="#9DA3B4" />
+                <LinearGradient
+                  colors={['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
+                  style={styles.emptyStateIconContainer}>
+                  <Ionicons name="calendar-outline" size={isTablet ? 72 : 56} color="#9DA3B4" />
+                </LinearGradient>
                 <Text style={styles.emptyStateText}>No daily challenges available</Text>
+                <Text style={styles.emptyStateSubtext}>Check back tomorrow for new challenges!</Text>
               </View>
             )}
           </View>
@@ -239,18 +280,39 @@ const AchievementsScreen = () => {
         {/* Achievements Section */}
         {activeTab !== 'daily' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {activeTab === 'all' ? 'All Achievements' : 
-               activeTab === 'milestone' ? 'Milestone Achievements' :
-               activeTab === 'badge' ? 'Badge Achievements' :
-               'Special Achievements'}
-            </Text>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={activeTab === 'all' ? ['#6262D9', '#4A4AC8'] :
+                       activeTab === 'milestone' ? ['#FFD700', '#FFA500'] :
+                       activeTab === 'badge' ? ['#FF6B6B', '#FF5252'] :
+                       ['#9C27B0', '#7B1FA2']}
+                style={styles.sectionIconContainer}>
+                <Ionicons 
+                  name={activeTab === 'all' ? 'ribbon' :
+                       activeTab === 'milestone' ? 'star' :
+                       activeTab === 'badge' ? 'medal' : 'diamond'} 
+                  size={isTablet ? 24 : 20} 
+                  color="white" 
+                />
+              </LinearGradient>
+              <Text style={styles.sectionTitle}>
+                {activeTab === 'all' ? 'All Achievements' : 
+                 activeTab === 'milestone' ? 'Milestone Achievements' :
+                 activeTab === 'badge' ? 'Badge Achievements' :
+                 'Special Achievements'}
+              </Text>
+            </View>
             {getFilteredAchievements().length > 0 ? (
               getFilteredAchievements().map(renderAchievementCard)
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="trophy-outline" size={48} color="#9DA3B4" />
+                <LinearGradient
+                  colors={['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
+                  style={styles.emptyStateIconContainer}>
+                  <Ionicons name="ribbon-outline" size={isTablet ? 72 : 56} color="#9DA3B4" />
+                </LinearGradient>
                 <Text style={styles.emptyStateText}>No achievements found</Text>
+                <Text style={styles.emptyStateSubtext}>Keep playing to unlock achievements!</Text>
               </View>
             )}
           </View>
@@ -258,27 +320,39 @@ const AchievementsScreen = () => {
 
         {/* Progress Summary */}
         <View style={styles.progressSummary}>
-          <Text style={styles.progressTitle}>Your Progress</Text>
-          <View style={styles.progressStats}>
-            <View style={styles.progressStat}>
-              <Text style={styles.progressNumber}>
-                {Math.round((completedAchievements.length / userAchievements.length) * 100) || 0}%
-              </Text>
-              <Text style={styles.progressLabel}>Overall</Text>
+          <LinearGradient
+            colors={['#2A2D3F', '#1A1D2F', '#0F1118']}
+            style={styles.progressSummaryGradient}>
+            <View style={styles.progressSummaryHeader}>
+              <LinearGradient
+                colors={['#6262D9', '#4A4AC8']}
+                style={styles.progressSummaryIconContainer}>
+                <Ionicons name="trophy" size={isTablet ? 24 : 20} color="white" />
+              </LinearGradient>
+              <Text style={styles.progressSummaryTitle}>Overall Progress</Text>
             </View>
-            <View style={styles.progressStat}>
-              <Text style={styles.progressNumber}>
-                {completedAchievements.filter(ua => ua.achievement?.difficulty === 'legendary').length}
-              </Text>
-              <Text style={styles.progressLabel}>Legendary</Text>
+            <View style={styles.progressSummaryBar}>
+              <LinearGradient
+                colors={['#6262D9', '#4A4AC8', '#3A3AB8']}
+                style={[
+                  styles.progressSummaryFill,
+                  {
+                    width: `${totalAchievements > 0 
+                      ? Math.round((completedAchievements.length / totalAchievements) * 100) 
+                      : 0}%`,
+                  },
+                ]}
+              />
             </View>
-            <View style={styles.progressStat}>
-              <Text style={styles.progressNumber}>
-                {userAchievements.filter(ua => ua.reward_claimed).length}
-              </Text>
-              <Text style={styles.progressLabel}>Rewards</Text>
-            </View>
-          </View>
+            <Text style={styles.progressSummaryText}>
+              {completedAchievements.length} of {totalAchievements} achievements completed
+            </Text>
+            <Text style={styles.progressSummarySubtext}>
+              {totalAchievements > 0 
+                ? Math.round((completedAchievements.length / totalAchievements) * 100) 
+                : 0}% of your journey complete!
+            </Text>
+          </LinearGradient>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -290,214 +364,375 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background as any,
   } as ViewStyle,
+  headerGradient: {
+    paddingTop: isTablet ? 16 : 8,
+    paddingBottom: isTablet ? 24 : 20,
+  } as ViewStyle,
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingHorizontal: isTablet ? 32 : 20,
   } as ViewStyle,
   headerTitle: {
-    fontSize: 28,
+    fontSize: isTablet ? 36 : 32,
     fontWeight: 'bold',
     color: colors.text as any,
-    marginBottom: 16,
+    marginBottom: isTablet ? 24 : 20,
+    textAlign: isTablet ? 'center' : 'left',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   } as TextStyle,
   headerStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    paddingHorizontal: isTablet ? 40 : 0,
+    gap: isTablet ? 16 : 12,
   } as ViewStyle,
   statItem: {
     alignItems: 'center',
+    flex: 1,
+  } as ViewStyle,
+  statGradient: {
+    width: isTablet ? 80 : 64,
+    height: isTablet ? 80 : 64,
+    borderRadius: isTablet ? 40 : 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: isTablet ? 12 : 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   } as ViewStyle,
   statNumber: {
-    fontSize: 24,
+    fontSize: isTablet ? 32 : 28,
     fontWeight: 'bold',
-    color: '#6262D9',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   } as TextStyle,
   statLabel: {
-    fontSize: 12,
+    fontSize: isTablet ? 16 : 14,
     color: '#9DA3B4',
-    marginTop: 4,
+    textAlign: 'center',
+    fontWeight: '600',
   } as TextStyle,
-  tabContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 16,
+  tabScrollView: {
+    marginBottom: isTablet ? 12 : 0,
+    maxHeight: 50,
+  } as ViewStyle,
+  tabScrollContainer: {
+    paddingHorizontal: isTablet ? 16 : 12,
+    gap: isTablet ? 8 : 6,
   } as ViewStyle,
   tab: {
-    flex: 1,
+    borderRadius: isTablet ? 12 : 10,
+    overflow: 'hidden',
+    minWidth: isTablet ? 80 : 70,
+  } as ViewStyle,
+  activeTab: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#6262D9',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  } as ViewStyle,
+  tabGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    marginHorizontal: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  } as ViewStyle,
-  activeTab: {
-    backgroundColor: 'rgba(98, 98, 217, 0.2)',
+    paddingVertical: isTablet ? 12 : 10,
+    paddingHorizontal: isTablet ? 16 : 12,
+    gap: isTablet ? 6 : 4,
   } as ViewStyle,
   tabText: {
-    fontSize: 12,
+    fontSize: isTablet ? 12 : 11,
     color: '#9DA3B4',
-    marginLeft: 4,
+    fontWeight: '600',
   } as TextStyle,
   activeTabText: {
-    color: '#6262D9',
-    fontWeight: '600',
+    color: 'white',
+    fontWeight: '700',
   } as TextStyle,
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+  } as ViewStyle,
+  scrollContent: {
+    paddingHorizontal: isTablet ? 32 : 20,
+    paddingBottom: isTablet ? 40 : 32,
   } as ViewStyle,
   section: {
-    marginBottom: 24,
+    marginBottom: isTablet ? 40 : 32,
+  } as ViewStyle,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: isTablet ? 24 : 20,
+    gap: isTablet ? 12 : 10,
+  } as ViewStyle,
+  sectionIconContainer: {
+    width: isTablet ? 48 : 40,
+    height: isTablet ? 48 : 40,
+    borderRadius: isTablet ? 24 : 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   } as ViewStyle,
   sectionTitle: {
-    fontSize: 20,
+    fontSize: isTablet ? 28 : 24,
     fontWeight: 'bold',
     color: colors.text,
-    marginBottom: 16,
+    flex: 1,
   } as any,
   challengeCard: {
-    borderRadius: 16,
+    borderRadius: isTablet ? 24 : 20,
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: isTablet ? 20 : 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   } as ViewStyle,
   completedChallengeCard: {
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#4BB543',
   } as ViewStyle,
   challengeGradient: {
-    padding: 16,
+    padding: isTablet ? 24 : 20,
   } as ViewStyle,
   challengeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: isTablet ? 20 : 16,
   } as ViewStyle,
   challengeIconContainer: {
     position: 'relative',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  } as ViewStyle,
+  challengeIconGradient: {
+    width: isTablet ? 56 : 48,
+    height: isTablet ? 56 : 48,
+    borderRadius: isTablet ? 28 : 24,
     justifyContent: 'center',
     alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
   } as ViewStyle,
   completedBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    top: isTablet ? -4 : -3,
+    right: isTablet ? -4 : -3,
+    width: isTablet ? 24 : 20,
+    height: isTablet ? 24 : 20,
+    borderRadius: isTablet ? 12 : 10,
     backgroundColor: '#4BB543',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
   } as ViewStyle,
   challengeProgressContainer: {
     alignItems: 'flex-end',
-    minWidth: 80,
+    minWidth: isTablet ? 120 : 100,
   } as ViewStyle,
   challengeProgressText: {
-    fontSize: 12,
+    fontSize: isTablet ? 16 : 14,
     color: '#9DA3B4',
-    marginBottom: 4,
+    marginBottom: isTablet ? 8 : 6,
+    fontWeight: '600',
   } as TextStyle,
   challengeProgressBar: {
-    width: 60,
-    height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 2,
+    width: isTablet ? 100 : 80,
+    height: isTablet ? 8 : 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: isTablet ? 4 : 3,
     overflow: 'hidden',
   } as ViewStyle,
   challengeProgressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: isTablet ? 4 : 3,
   } as ViewStyle,
   challengeContent: {
     flex: 1,
+    marginBottom: isTablet ? 16 : 12,
   } as ViewStyle,
   challengeTitle: {
-    fontSize: 16,
+    fontSize: isTablet ? 20 : 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: isTablet ? 8 : 6,
+    lineHeight: isTablet ? 26 : 22,
   } as TextStyle,
-  completedTitle: {
+  completedChallengeTitle: {
     color: '#FFFFFF',
   } as TextStyle,
   challengeDescription: {
-    fontSize: 12,
+    fontSize: isTablet ? 16 : 14,
     color: '#9DA3B4',
-    lineHeight: 16,
-    marginBottom: 6,
+    lineHeight: isTablet ? 22 : 18,
+    marginBottom: isTablet ? 12 : 8,
   } as TextStyle,
-  completedDescription: {
+  completedChallengeDescription: {
     color: 'rgba(255, 255, 255, 0.8)',
   } as TextStyle,
-  rewardContainer: {
+  challengeRewardContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: isTablet ? 8 : 6,
   } as ViewStyle,
-  rewardText: {
-    fontSize: 11,
+  rewardIconContainer: {
+    width: isTablet ? 32 : 28,
+    height: isTablet ? 32 : 28,
+    borderRadius: isTablet ? 16 : 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as ViewStyle,
+  challengeRewardText: {
+    fontSize: isTablet ? 15 : 13,
     color: '#FFD700',
-    fontWeight: '600',
+    fontWeight: '700',
   } as TextStyle,
   challengeFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: isTablet ? 16 : 12,
   } as ViewStyle,
   challengeStatusText: {
-    fontSize: 12,
+    fontSize: isTablet ? 16 : 14,
     color: '#6262D9',
-    fontWeight: '600',
+    fontWeight: '700',
   } as TextStyle,
-  completedStatusText: {
+  completedChallengeStatusText: {
     color: '#4BB543',
   } as TextStyle,
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 40,
+    justifyContent: 'center',
+    paddingVertical: isTablet ? 80 : 60,
+    paddingHorizontal: isTablet ? 40 : 20,
+  } as ViewStyle,
+  emptyStateIconContainer: {
+    width: isTablet ? 120 : 100,
+    height: isTablet ? 120 : 100,
+    borderRadius: isTablet ? 60 : 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: isTablet ? 24 : 20,
   } as ViewStyle,
   emptyStateText: {
-    fontSize: 16,
+    fontSize: isTablet ? 20 : 18,
     color: '#9DA3B4',
-    marginTop: 12,
+    textAlign: 'center',
+    marginBottom: isTablet ? 8 : 6,
+    fontWeight: '600',
+  } as TextStyle,
+  emptyStateSubtext: {
+    fontSize: isTablet ? 16 : 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: isTablet ? 22 : 18,
   } as TextStyle,
   progressSummary: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    marginTop: isTablet ? 40 : 32,
   } as ViewStyle,
-  progressTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 16,
-  } as any,
-  progressStats: {
+  progressSummaryGradient: {
+    padding: isTablet ? 32 : 24,
+    borderRadius: isTablet ? 24 : 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  } as ViewStyle,
+  progressSummaryHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: isTablet ? 20 : 16,
+    gap: isTablet ? 12 : 10,
   } as ViewStyle,
-  progressStat: {
+  progressSummaryIconContainer: {
+    width: isTablet ? 48 : 40,
+    height: isTablet ? 48 : 40,
+    borderRadius: isTablet ? 24 : 20,
+    justifyContent: 'center',
     alignItems: 'center',
   } as ViewStyle,
-  progressNumber: {
-    fontSize: 20,
+  progressSummaryTitle: {
+    fontSize: isTablet ? 24 : 20,
     fontWeight: 'bold',
-    color: '#6262D9',
+    color: colors.text as any,
+    flex: 1,
   } as TextStyle,
-  progressLabel: {
-    fontSize: 12,
+  progressSummaryBar: {
+    height: isTablet ? 12 : 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: isTablet ? 6 : 4,
+    marginBottom: isTablet ? 16 : 12,
+    overflow: 'hidden',
+  } as ViewStyle,
+  progressSummaryFill: {
+    height: '100%',
+    borderRadius: isTablet ? 6 : 4,
+  } as ViewStyle,
+  progressSummaryText: {
+    fontSize: isTablet ? 16 : 14,
     color: '#9DA3B4',
-    marginTop: 4,
+    textAlign: 'center',
+    lineHeight: isTablet ? 20 : 18,
+    marginBottom: isTablet ? 8 : 6,
+    fontWeight: '600',
+  } as TextStyle,
+  progressSummarySubtext: {
+    fontSize: isTablet ? 14 : 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: isTablet ? 18 : 16,
   } as TextStyle,
 });
 

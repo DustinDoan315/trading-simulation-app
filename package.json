@@ -24,7 +24,10 @@
     "publish:staging": "eas update --channel staging --message \"Staging update: $(git log -1 --pretty=format:'%s')\"",
     "publish:production": "eas update --channel production --message \"Production update: $(git log -1 --pretty=format:'%s')\"",
     "build:staging": "eas build --platform all --profile preview",
-    "build:production": "eas build --platform all --profile production"
+    "build:production": "eas build --platform all --profile production",
+    "build:dev": "node ./scripts/build-dev-client.js",
+    "build:dev:ios": "node ./scripts/build-dev-client.js ios",
+    "build:dev:android": "node ./scripts/build-dev-client.js android"
   },
   "jest": {
     "preset": "jest-expo"
