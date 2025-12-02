@@ -3,10 +3,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import UUIDService from './UUIDService';
 import { AsyncStorageService } from './AsyncStorageService';
 import { clearUser } from '@/features/userSlice';
+import { DEFAULT_BALANCE_STRING, DEFAULT_USER } from '@/utils/constant';
 import { getDeviceUUID } from '@/utils/deviceUtils';
 import { store } from '@/store';
 import { supabase } from './SupabaseService';
 import { UserSyncService } from './UserSyncService';
+
 
 
 export interface ResetResult {
@@ -162,9 +164,9 @@ export class ResetService {
       const userProfile = {
         id: newUuid,
         username: `user_${newUuid.slice(0, 8)}_${timestamp}`,
-        usdt_balance: "100000",
-        total_portfolio_value: "100000",
-        initial_balance: "100000",
+        usdt_balance: DEFAULT_BALANCE_STRING,
+        total_portfolio_value: DEFAULT_BALANCE_STRING,
+        initial_balance: DEFAULT_BALANCE_STRING,
         total_pnl: "0.00",
         total_pnl_percentage: "0.00",
         total_trades: 0,
@@ -362,7 +364,7 @@ export class ResetService {
       try {
         const { error: userError } = await supabase
           .from("users")
-          .update({ usdt_balance: "100000" })
+          .update({ usdt_balance: DEFAULT_BALANCE_STRING })
           .eq("id", uuid);
 
         if (userError) {
@@ -395,9 +397,9 @@ export class ResetService {
       const defaultProfile = {
         id: uuid,
         username: `user_${uuid.slice(0, 8)}_${timestamp}`,
-        usdt_balance: "100000",
-        total_portfolio_value: "100000",
-        initial_balance: "100000",
+        usdt_balance: DEFAULT_BALANCE_STRING,
+        total_portfolio_value: DEFAULT_BALANCE_STRING,
+        initial_balance: DEFAULT_BALANCE_STRING,
         total_pnl: "0.00",
         total_trades: 0,
         win_rate: "0.00",

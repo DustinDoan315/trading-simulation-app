@@ -1,10 +1,16 @@
-import Colors from "@/styles/colors";
-import Dimensions from "@/styles/dimensions";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Typography from "@/styles/typography";
-import { formatAmount } from "@/utils/formatters";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useLanguage } from "@/context/LanguageContext";
+import Colors from '@/styles/colors';
+import Dimensions from '@/styles/dimensions';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import Typography from '@/styles/typography';
+import { formatAmount } from '@/utils/formatters';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+  } from 'react-native';
+import { useLanguage } from '@/context/LanguageContext';
+
 
 // Symbol-specific fallback prices
 const getFallbackPrice = (symbol: string): number => {
@@ -84,29 +90,16 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
     const handleCirclePress = useCallback(
       (pos: number) => {
         setCurrentPosition(pos);
-        let amount = 0;
-        if (tradeType === "buy" && balanceType === "usdt") {
-          // For buy orders with USDT balance, calculate token amount
-          amount =
-            effectivePrice > 0
-              ? (availableAmount * (pos / 100)) / effectivePrice
-              : 0;
-        } else {
-          // For sell orders or token balance, calculate directly
-          amount = availableAmount * (pos / 100);
-        }
+        
+        // Simple calculation - always calculate based on available amount and percentage
+        const amount = availableAmount * (pos / 100);
+        
+        // Always call onChange to update the parent
         if (onChange) {
           onChange(amount);
         }
       },
-      [
-        setCurrentPosition,
-        tradeType,
-        balanceType,
-        effectivePrice,
-        availableAmount,
-        onChange,
-      ]
+      [setCurrentPosition, availableAmount, onChange]
     );
 
     const getFillColor = useCallback(() => {
@@ -141,6 +134,10 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
           setCurrentPosition(0);
           onChange(0);
         }
+      } else if (availableAmount === 0 && currentPosition > 0) {
+        // Reset position when available amount becomes 0
+        setCurrentPosition(0);
+        onChange(0);
       }
     }, [availableAmount, currentPosition, onChange]);
 

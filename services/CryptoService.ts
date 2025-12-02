@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import UserRepository from './UserRepository';
 import UUIDService from './UUIDService';
 import { AppDispatch } from '../store';
+import { DEFAULT_BALANCE } from '@/utils/constant';
 import { log } from 'console';
 import { resetBalance, setBalance } from '../features/balanceSlice';
 
@@ -490,15 +491,15 @@ export const getUserBalance = async (): Promise<UserBalance> => {
     const user = await UserRepository.getUser(uuid);
 
     return {
-      usdtBalance: user ? parseFloat(user.usdt_balance) : 100000,
-      totalPortfolioValue: user ? parseFloat(user.total_portfolio_value) : 100000,
+      usdtBalance: user ? parseFloat(user.usdt_balance) : DEFAULT_BALANCE,
+      totalPortfolioValue: user ? parseFloat(user.total_portfolio_value) : DEFAULT_BALANCE,
       holdings: {}, // Holdings will be loaded separately
     };
   } catch (error) {
     console.error("Error getting user balance:", error);
     return {
-      usdtBalance: 100000,
-      totalPortfolioValue: 100000,
+      usdtBalance: DEFAULT_BALANCE,
+      totalPortfolioValue: DEFAULT_BALANCE,
       holdings: {},
     };
   }
@@ -526,7 +527,7 @@ export const updateUserBalance = async (
 export const resetUserBalance = async (): Promise<void> => {
   try {
     const uuid = await UUIDService.getOrCreateUser();
-    await UserRepository.updateUserBalance(uuid, 100000);
+    await UserRepository.updateUserBalance(uuid, DEFAULT_BALANCE);
   } catch (error) {
     console.error("Error resetting user balance:", error);
   }

@@ -100,13 +100,12 @@ export const SUPABASE_SCHEMA = {
   },
 
   // Collection members table - Enhanced with better performance tracking
+  // Removed starting_balance and current_balance columns (were used by DualBalance)
   collection_members: {
     id: "UUID PRIMARY KEY DEFAULT gen_random_uuid()",
     collection_id: "UUID REFERENCES collections(id) ON DELETE CASCADE",
     user_id: "UUID REFERENCES users(id) ON DELETE CASCADE",
     role: "VARCHAR(20) DEFAULT 'MEMBER' CHECK (role IN ('OWNER', 'ADMIN', 'MEMBER'))",
-    starting_balance: "DECIMAL(30,10) DEFAULT 0",
-    current_balance: "DECIMAL(30,10) DEFAULT 0",
     total_pnl: "DECIMAL(30,10) DEFAULT 0",
     total_pnl_percentage: "DECIMAL(10,4) DEFAULT 0",
     total_trades: "INTEGER DEFAULT 0",

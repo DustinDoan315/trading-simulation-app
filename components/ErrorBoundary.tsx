@@ -1,5 +1,6 @@
 import React, { Component, ReactNode } from "react";
 import { logger } from "../utils/logger";
+import { captureException } from "../utils/sentry";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 // components/ErrorBoundary.tsx
 
@@ -31,6 +32,24 @@ export class ErrorBoundary extends Component<Props, State> {
       stack: error.stack,
       errorInfo,
     });
+
+    // Capture error with Sentry
+    try {
+      captureException(error, {
+        errorBoundary: {
+          componentStack: errorInfo?.componentStack,
+          errorInfo: errorInfo ? JSON.stringify(errorInfo) : undefined,
+        },
+        react: {
+          errorBoundary: true,
+        },
+      });
+    } catch (sentryError) {
+      // Silently fail if Sentry capture fails
+      if (__DEV__) {
+        console.warn("[ErrorBoundary] Failed to capture error with Sentry:", sentryError);
+      }
+    }
 
     // Call the onError callback if provided
     if (this.props.onError) {

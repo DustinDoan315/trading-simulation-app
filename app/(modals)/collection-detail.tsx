@@ -5,14 +5,12 @@ import React, {
   useMemo,
   useState
   } from 'react';
-import TradingContextIndicator from '@/components/trading/TradingContextIndicator';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RootState } from '@/store';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCollectionDetail } from '@/hooks/useCollectionDetail';
 import { useCollectionsData } from '@/hooks/useCollectionsData';
-import { useDualBalance } from '@/hooks/useDualBalance';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/context/UserContext';
 import {
@@ -32,8 +30,13 @@ import {
 const CollectionDetailScreen = () => {
   const { user } = useUser();
   const { leaveCollection } = useCollectionsData();
-  const { switchContext, loadCollection, currentBalance, currentPnL } =
-    useDualBalance();
+  // Removed DualBalance - using regular balance system
+  const { balance } = useSelector((state: RootState) => state.balance);
+  const currentBalance = balance;
+  const currentPnL = {
+    totalPnL: 0, // Calculate from holdings if needed
+    totalPnLPercentage: 0,
+  };
   const [loading, setLoading] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
 
@@ -106,10 +109,9 @@ const CollectionDetailScreen = () => {
   // Set collection trading context when component mounts
   useEffect(() => {
     if (collectionId && user?.id) {
-      switchContext({ type: "collection", collectionId });
-      loadCollection(collectionId);
+      // Removed collection context switching - using regular balance only
     }
-  }, [collectionId, user?.id, switchContext, loadCollection]);
+  }, [collectionId, user?.id]);
 
   const handleShareInvite = useCallback(() => {
     setShowQRModal(true);
@@ -240,11 +242,7 @@ const CollectionDetailScreen = () => {
           />
         }>
         <View style={styles.content}>
-          {/* Trading Context Indicator */}
-          <TradingContextIndicator
-            collectionName={collection.name}
-            showSwitchButton={false}
-          />
+          {/* Removed TradingContextIndicator - using regular balance only */}
 
           {/* Loading State */}
           {cloudLoading && (

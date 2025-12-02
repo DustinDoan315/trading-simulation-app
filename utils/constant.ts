@@ -29,19 +29,40 @@ export const ASYNC_STORAGE_KEYS = {
 
 // Default values
 export const DEFAULT_BALANCE = 100000;
+export const DEFAULT_BALANCE_STRING = "100000.00";
 export const DEFAULT_CURRENCY = "USD";
 export const DEFAULT_CRYPTO = "USDT";
 
 // Default user values
 export const DEFAULT_USER = {
   AVATAR_EMOJI: "🚀",
-  INITIAL_BALANCE: "100000.00",
+  INITIAL_BALANCE: DEFAULT_BALANCE_STRING,
   TOTAL_PNL: "0.00",
   TOTAL_PNL_PERCENTAGE: "0.00",
   TOTAL_TRADES: 0,
   TOTAL_BUY_VOLUME: "0.00",
   TOTAL_SELL_VOLUME: "0.00",
   WIN_RATE: "0.00",
+} as const;
+
+// Trading configuration
+export const TRADING_CONFIG = {
+  DEFAULT_DAILY_TRANSACTION_LIMIT: 10,
+  DEFAULT_STARTING_BALANCE: DEFAULT_BALANCE_STRING,
+  DEFAULT_STARTING_BALANCE_NUMBER: DEFAULT_BALANCE,
+} as const;
+
+// Number formatting thresholds
+export const FORMATTING_THRESHOLDS = {
+  MILLION: 1000000,
+  THOUSAND: 1000,
+  BILLION: 1000000000,
+} as const;
+
+// Transaction limits
+export const TRANSACTION_LIMITS = {
+  DEFAULT_DAILY_LIMIT: 10,
+  FETCH_LIMIT: 100,
 } as const;
 
 // Username generation

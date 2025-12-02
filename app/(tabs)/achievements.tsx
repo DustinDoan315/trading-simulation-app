@@ -32,9 +32,6 @@ const AchievementsScreen = () => {
   
   const {
     userAchievements,
-    dailyChallenges,
-    userDailyChallenges,
-    loading,
     refreshing,
     refresh,
     claimReward,
@@ -42,7 +39,6 @@ const AchievementsScreen = () => {
     incompleteAchievements,
     getAchievementsByCategory,
     dailyChallengesProgress,
-    unreadNotificationsCount,
   } = useAchievements();
 
   const handleClaimReward = async (achievementId: string) => {
@@ -426,7 +422,8 @@ const styles = StyleSheet.create({
   } as TextStyle,
   tabScrollView: {
     marginBottom: isTablet ? 12 : 0,
-    maxHeight: 50,
+    maxHeight: 75,
+    marginVertical: isTablet ? 12 : 10,
   } as ViewStyle,
   tabScrollContainer: {
     paddingHorizontal: isTablet ? 16 : 12,

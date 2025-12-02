@@ -9,6 +9,7 @@ import UUIDService from '@/services/UUIDService';
 import { BackgroundDataSyncService } from '@/services/BackgroundDataSyncService';
 import { createUser, fetchUser } from '@/features/userSlice';
 import { initializeApp } from '@/utils/initializeApp';
+import { initSentry, setSentryUser } from '@/utils/sentry';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { logger } from '@/utils/logger';
 import { NotificationProvider } from '@/components/ui/Notification';
@@ -40,6 +41,42 @@ import {
 
 
 SplashScreen.preventAutoHideAsync();
+
+// Initialize Sentry as early as possible
+initSentry();
+
+// Set up global error handlers
+if (typeof (global as any).ErrorUtils !== 'undefined') {
+  const ErrorUtils = (global as any).ErrorUtils;
+  const originalHandler = ErrorUtils.getGlobalHandler();
+  ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+    // Log to console in development
+    if (__DEV__) {
+      console.error('Global error handler:', error, { isFatal });
+    }
+    
+    // Sentry will automatically capture these errors
+    // Call original handler to maintain default behavior
+    if (originalHandler) {
+      originalHandler(error, isFatal);
+    }
+  });
+}
+
+// Handle unhandled promise rejections
+if (typeof global !== 'undefined') {
+  const originalUnhandledRejection = (global as any).onunhandledrejection;
+  (global as any).onunhandledrejection = (event: { reason?: any }) => {
+    if (__DEV__) {
+      console.error('Unhandled promise rejection:', event.reason);
+    }
+    
+    // Sentry will automatically capture these if configured
+    if (originalUnhandledRejection) {
+      originalUnhandledRejection(event);
+    }
+  };
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -179,6 +216,12 @@ export default function RootLayout() {
             userId: userData.currentUser.id,
             username: userData.currentUser.username,
           });
+          
+          // Set Sentry user context
+          setSentryUser(
+            userData.currentUser.id,
+            userData.currentUser.username || userData.currentUser.display_name
+          );
         } else {
           logger.warn(
             "No user data found in Redux store, checking database",
@@ -188,12 +231,20 @@ export default function RootLayout() {
 
           try {
             // Try to fetch existing user from database
-            await store.dispatch(fetchUser(userId)).unwrap();
+            const fetchedUser = await store.dispatch(fetchUser(userId)).unwrap();
             logger.info(
               "Existing user fetched successfully from database",
               "AppLayout",
               { userId }
             );
+            
+            // Set Sentry user context for fetched user
+            if (fetchedUser) {
+              setSentryUser(
+                fetchedUser.id || userId,
+                fetchedUser.username || fetchedUser.display_name
+              );
+            }
           } catch (error) {
             logger.info(
               "User not found in database, creating new user",
@@ -223,6 +274,12 @@ export default function RootLayout() {
                   userId: newUser?.id || userId,
                   username: newUser?.username || username,
                 }
+              );
+              
+              // Set Sentry user context for new user
+              setSentryUser(
+                newUser?.id || userId,
+                newUser?.username || username
               );
             } catch (createError) {
               logger.error("Failed to create user in database", "AppLayout", {

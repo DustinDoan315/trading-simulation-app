@@ -2,12 +2,13 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UUIDService from '@/services/UUIDService';
 import { Alert } from 'react-native';
-import { ASYNC_STORAGE_KEYS } from '@/utils/constant';
+import { ASYNC_STORAGE_KEYS, DEFAULT_BALANCE_STRING } from '@/utils/constant';
 import { AsyncStorageService } from '@/services/AsyncStorageService';
 import { logger } from '@/utils/logger';
 import { ResetService } from '@/services/ResetService';
 import { supabase } from '@/services/SupabaseService';
 import { UserService } from '@/services/UserService';
+
 
 
 export const clearAllCachedData = async (): Promise<void> => {
@@ -41,7 +42,6 @@ export const forceRefreshAllData = async (
       dispatch({ type: 'balance/resetBalance' });
       dispatch({ type: 'favorites/resetFavorites' });
       dispatch({ type: 'searchHistory/clearSearchHistory' });
-      dispatch({ type: 'dualBalance/resetAllBalances' });
     }
 
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -189,8 +189,8 @@ export const resetPortfolioData = async (): Promise<boolean> => {
 
     .from("users")
       .update({ 
-        usdt_balance: "100000.00",
-        total_portfolio_value: "100000.00",
+        usdt_balance: DEFAULT_BALANCE_STRING,
+        total_portfolio_value: DEFAULT_BALANCE_STRING,
         total_pnl: "0.00",
         total_trades: 0,
         updated_at: new Date().toISOString()

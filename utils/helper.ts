@@ -3,7 +3,7 @@ import * as bip39 from 'bip39';
 import * as Crypto from 'expo-crypto';
 import Toast from 'react-native-toast-message';
 import { Buffer } from 'buffer';
-import { DEFAULT_BALANCE } from '@/utils/constant';
+import { DEFAULT_BALANCE, FORMATTING_THRESHOLDS } from '@/utils/constant';
 import { logger } from '@/utils/logger';
 import { Order } from '@/types/crypto';
 import { Platform } from 'react-native';
@@ -424,9 +424,7 @@ export const handleOrderSubmissionWithLimitCheck = async (
   console.debug("[Order] Submitting with limit check:", order);
 
   try {
-    // Note: Balance validation is now handled in DualBalanceService.executeTrade
-    // before the transaction is created, so we skip validateOrder here to avoid
-    // duplicate validation and potential race conditions
+    // Balance validation is handled in handleOrderSubmissionWithLimitCheck
 
     const isBuy = order.type === "buy";
 
@@ -521,10 +519,10 @@ export const calculatePortfolioMetrics = (balance: any) => {
  * @returns Formatted string
  */
 export const formatPortfolioValue = (value: number): string => {
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(3)}M`;
-  } else if (value >= 1000) {
-    return `$${(value / 1000).toFixed(3)}K`;
+  if (value >= FORMATTING_THRESHOLDS.MILLION) {
+    return `$${(value / FORMATTING_THRESHOLDS.MILLION).toFixed(3)}M`;
+  } else if (value >= FORMATTING_THRESHOLDS.THOUSAND) {
+    return `$${(value / FORMATTING_THRESHOLDS.THOUSAND).toFixed(3)}K`;
   } else {
     return `$${value.toFixed(3)}`;
   }

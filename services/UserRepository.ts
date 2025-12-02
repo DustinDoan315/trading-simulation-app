@@ -1,8 +1,10 @@
+import UUIDService from './UUIDService';
 import { AsyncStorageService } from './AsyncStorageService';
+import { DEFAULT_BALANCE, DEFAULT_BALANCE_STRING, DEFAULT_USER } from '@/utils/constant';
 import { Holding } from '../types/crypto';
 import { SyncService } from './SupabaseService';
-import UUIDService from './UUIDService';
 import { UserService } from './UserService';
+
 
 // repositories/UserRepository.ts
 
@@ -15,10 +17,10 @@ class UserRepository {
         id: uuid,
         username: `user_${uuid.slice(0, 8)}_${timestamp}`,
         display_name: `User ${uuid.slice(0, 8)}`,
-        avatar_emoji: "🚀",
-        usdt_balance: "100000",
-        total_portfolio_value: "100000",
-        initial_balance: "100000",
+        avatar_emoji: DEFAULT_USER.AVATAR_EMOJI,
+        usdt_balance: DEFAULT_BALANCE_STRING,
+        total_portfolio_value: DEFAULT_BALANCE_STRING,
+        initial_balance: DEFAULT_BALANCE_STRING,
         total_pnl: "0.00",
         total_pnl_percentage: "0.00",
         total_trades: 0,
@@ -215,7 +217,7 @@ class UserRepository {
     }
   }
 
-  static async recreateUserData(uuid: string, balance: number = 100000) {
+  static async recreateUserData(uuid: string, balance: number = DEFAULT_BALANCE) {
     try {
       const userData = await AsyncStorageService.recreateUserData(uuid, balance);
       console.log("✅ User data recreated successfully:", uuid);

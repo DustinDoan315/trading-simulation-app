@@ -77,55 +77,7 @@ export interface CollectionPortfolio {
 }
 
 // Trading Context Types
-export type TradingContextType = 'individual' | 'collection';
-
-export interface TradingContext {
-  type: TradingContextType;
-  collectionId?: string;
-}
-
-// Enhanced Balance Types
-export interface IndividualBalance {
-  usdtBalance: number;
-  totalPortfolioValue: number;
-  holdings: Record<string, any>;
-  totalPnL: number;
-  totalPnLPercentage: number;
-  initialBalance: number;
-}
-
-export interface CollectionBalance {
-  usdtBalance: number;
-  totalPortfolioValue: number;
-  holdings: Record<string, any>;
-  totalPnL: number;
-  totalPnLPercentage: number;
-  startingBalance: number;
-  collectionId: string;
-}
-
-export interface DualBalanceState {
-  individual: IndividualBalance;
-  collections: Record<string, CollectionBalance>;
-  activeContext: TradingContext;
-}
-
-// PnL Calculation Results
-export interface PnLResult {
-  totalPnL: number;
-  totalPnLPercentage: number;
-  context: TradingContextType;
-  collectionId?: string;
-  startingBalance: number;
-  currentValue: number;
-}
-
-export interface CombinedPnLResult {
-  individual: PnLResult;
-  collections: PnLResult[];
-  totalCombinedPnL: number;
-  totalCombinedPnLPercentage: number;
-}
+// Removed DualBalance types - using regular balance system only
 
 // Enhanced Transaction with Context
 export interface Transaction {

@@ -9,7 +9,6 @@ import { formatAmount } from '@/utils/formatters';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RootState } from '@/store';
 import { StyleSheet, Text, View } from 'react-native';
-import { useDualBalance } from '@/hooks/useDualBalance';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSelector } from 'react-redux';
 import React, {
@@ -91,18 +90,18 @@ const OrderEntry = React.memo(
       (state: RootState) => state.cryptoPrices.prices[baseSymbol.toUpperCase()]
     );
 
-    const { currentHoldings } = useDualBalance();
+    const { balance } = useSelector((state: RootState) => state.balance);
 
     const tokenBalance = useMemo(() => {
       const holding =
-        currentHoldings[baseSymbol.toUpperCase()] ||
-        currentHoldings[baseSymbol.toLowerCase()] ||
-        Object.values(currentHoldings).find(
+        balance.holdings[baseSymbol.toUpperCase()] ||
+        balance.holdings[baseSymbol.toLowerCase()] ||
+        Object.values(balance.holdings).find(
           (h: any) => h.symbol.toUpperCase() === baseSymbol.toUpperCase()
         );
 
       return holding ? holding.amount : 0;
-    }, [currentHoldings, baseSymbol]);
+    }, [balance.holdings, baseSymbol]);
 
     const [price, setPrice] = useState("0");
     const [amount, setAmount] = useState("0");
@@ -119,16 +118,6 @@ const OrderEntry = React.memo(
       () => (selectedTab === "buy" ? availableBalance : tokenBalance),
       [selectedTab, availableBalance, tokenBalance]
     );
-
-    useEffect(() => {
-      if (currentBalance > 0) {
-        setSliderPosition(100);
-      } else {
-        setSliderPosition(0);
-      }
-      setAmount("0");
-      setResetCounter((prev) => prev + 1);
-    }, [currentBalance]);
 
     const canSell = useMemo(
       () => selectedTab === "buy" || tokenBalance > 0,
@@ -165,9 +154,12 @@ const OrderEntry = React.memo(
     }, [selectedTab]);
 
     const handleSliderChange = useCallback((calculatedAmount: number) => {
-      const percentagePosition = currentBalance > 0 ? (calculatedAmount / currentBalance) * 100 : 0;
-      setSliderPosition(percentagePosition);
-      setAmount(formatAmount(calculatedAmount));
+      // Update the current position based on the percentage
+      const percentage = currentBalance > 0 ? (calculatedAmount / currentBalance) * 100 : 0;
+      setCurrentPosition(Math.round(percentage));
+      
+      // Simply set the amount - let the parent handle the formatting
+      setAmount(calculatedAmount.toString());
     }, [currentBalance]);
 
     const handlePriceChange = useCallback((value: any) => {
@@ -176,21 +168,9 @@ const OrderEntry = React.memo(
 
     const handleAmountChange = useCallback(
       (value: string) => {
-        const cleanedValue = value.replace(/[^0-9.]/g, "");
-
-        const parts = cleanedValue.split(".");
-        const formattedValue =
-          parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 8)}` : parts[0];
-
-        setAmount(formattedValue);
-
-        if (currentBalance > 0 && formattedValue) {
-          const numericValue = parseFloat(formattedValue) || 0;
-          const newPosition = (numericValue / currentBalance) * 100;
-          setSliderPosition(Math.min(100, Math.max(0, newPosition)));
-        }
+        setAmount(value);
       },
-      [currentBalance]
+      []
     );
 
     const handleSubmitOrder = useCallback(() => {

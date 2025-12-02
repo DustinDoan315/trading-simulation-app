@@ -1,5 +1,5 @@
 import { AsyncStorageService } from './AsyncStorageService';
-import { DEFAULT_BALANCE } from '@/utils/constant';
+import { DEFAULT_BALANCE, DEFAULT_BALANCE_STRING, DEFAULT_USER, TRADING_CONFIG, TRANSACTION_LIMITS } from '@/utils/constant';
 import { logger } from '@/utils/logger';
 import { supabase } from './SupabaseService';
 import {
@@ -475,7 +475,7 @@ export class UserService {
         is_public: params.is_public ?? true,
         allow_invites: params.allow_invites ?? true,
         max_members: params.max_members ?? 50,
-        starting_balance: params.starting_balance ?? "100000.00",
+        starting_balance: params.starting_balance ?? TRADING_CONFIG.DEFAULT_STARTING_BALANCE,
         duration_days: params.duration_days ?? 30,
         rules: params.rules ?? {},
         total_volume: "0",
@@ -503,8 +503,8 @@ export class UserService {
           collection_id: data.id,
           user_id: params.owner_id,
           role: "OWNER",
-          starting_balance: params.starting_balance ?? "100000.00",
-          current_balance: params.starting_balance ?? "100000.00",
+          starting_balance: params.starting_balance ?? TRADING_CONFIG.DEFAULT_STARTING_BALANCE,
+          current_balance: params.starting_balance ?? TRADING_CONFIG.DEFAULT_STARTING_BALANCE,
           total_pnl: "0",
           total_pnl_percentage: "0",
           total_trades: 0,
@@ -735,8 +735,8 @@ export class UserService {
             collection_id: collectionId,
             user_id: collection.owner_id,
             role: "OWNER" as const,
-            starting_balance: collection.starting_balance || "100000.00",
-            current_balance: collection.starting_balance || "100000.00",
+            starting_balance: collection.starting_balance || TRADING_CONFIG.DEFAULT_STARTING_BALANCE,
+            current_balance: collection.starting_balance || TRADING_CONFIG.DEFAULT_STARTING_BALANCE,
             total_pnl: "0",
             total_pnl_percentage: "0",
             total_trades: 0,
@@ -1669,10 +1669,10 @@ export class UserService {
               id: params.user_id,
               username: `user_${params.user_id.slice(0, 8)}`,
               display_name: "Default User",
-              avatar_emoji: "🚀",
-              usdt_balance: "100000.00",
-              total_portfolio_value: "100000.00",
-              initial_balance: "100000.00",
+              avatar_emoji: DEFAULT_USER.AVATAR_EMOJI,
+              usdt_balance: DEFAULT_BALANCE_STRING,
+              total_portfolio_value: DEFAULT_BALANCE_STRING,
+              initial_balance: DEFAULT_BALANCE_STRING,
               is_active: true,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
@@ -1693,7 +1693,7 @@ export class UserService {
 
       const transactionDate =
         params.transaction_date || new Date().toISOString().split("T")[0];
-      const dailyLimit = params.daily_limit || 10;
+      const dailyLimit = params.daily_limit || TRANSACTION_LIMITS.DEFAULT_DAILY_LIMIT;
 
       const limitData = {
         user_id: params.user_id,

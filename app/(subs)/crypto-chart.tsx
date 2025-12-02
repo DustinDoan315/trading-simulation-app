@@ -12,8 +12,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '@/utils/logger';
 import { RootState, useAppDispatch } from '@/store';
 import { router } from 'expo-router';
-import { updateCollectionHolding } from '@/features/dualBalanceSlice';
-import { useDualBalance } from '@/hooks/useDualBalance';
 import { useLanguage } from '@/context/LanguageContext';
 import { useLocalSearchParams } from 'expo-router';
 import { UserService } from '@/services/UserService';
@@ -80,16 +78,11 @@ const CryptoChartScreen = () => {
     console.log("Popup data:", dailyLimitData);
   }, [showDailyLimitPopup, dailyLimitData]);
 
-  const {
-    activeContext,
-    currentBalance,
-    currentHoldings,
-    currentUsdtBalance,
-    executeTradeInContext,
-    switchContext,
-    loadCollection,
-    loadIndividual,
-  } = useDualBalance();
+  // Use regular balance system instead of DualBalance
+  const { balance } = useSelector((state: RootState) => state.balance);
+  const currentHoldings = balance.holdings;
+  const currentUsdtBalance = balance.usdtBalance;
+  const currentBalance = balance;
 
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
@@ -99,14 +92,7 @@ const CryptoChartScreen = () => {
     dispatch(loadBalance());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (collectionId) {
-      switchContext({ type: "collection", collectionId });
-      loadCollection(collectionId);
-    } else {
-      switchContext({ type: "individual" });
-    }
-  }, [collectionId, switchContext, loadCollection]);
+  // Removed collection context switching - using regular balance only
 
   useEffect(() => {
     return () => {
@@ -227,9 +213,7 @@ const CryptoChartScreen = () => {
         getUsdtBalance: () => currentUsdtBalance,
       };
 
-      // Note: Balance validation is now handled in DualBalanceService.executeTrade
-      // before the transaction is created, so we skip validateOrder here to avoid
-      // duplicate validation and potential race conditions
+      // Balance validation is handled in handleOrderSubmissionWithLimitCheck
 
       // Only check daily limit after order validation passes
       setSubmissionStatus(t("chart.checkingDailyLimit"));
@@ -262,26 +246,13 @@ const CryptoChartScreen = () => {
 
       const dispatchContext: OrderDispatchContext = {
         addTradeHistory: (order) => dispatch(addTradeHistory(order)),
-        updateHolding: (payload) => {
-          if (activeContext.type === "individual") {
-            dispatch(updateHolding(payload));
-          } else if (activeContext.collectionId) {
-            dispatch(
-              updateCollectionHolding({
-                collectionId: activeContext.collectionId,
-                holding: payload,
-              })
-            );
-          }
-        },
+        updateHolding: (payload) => dispatch(updateHolding(payload)),
         updateTrade: (payload) => dispatch(updateTrade(payload)),
         syncTransaction: async (order) => {},
       };
 
       setSubmissionStatus(t("chart.executingTrade"));
       setSubmissionProgress(40);
-
-      await executeTradeInContext(order);
 
       setSubmissionStatus(t("chart.processingTransaction"));
       setSubmissionProgress(70);
@@ -533,9 +504,7 @@ const CryptoChartScreen = () => {
 
           <View style={styles.contextInfo}>
             <Text style={styles.contextLabel}>
-              {activeContext.type === "collection"
-                ? t("chart.collectionTrade")
-                : t("chart.individualTrade")}
+              {t("chart.individualTrade")}
             </Text>
             <Text style={styles.contextSymbol}>{symbol}</Text>
           </View>

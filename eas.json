@@ -15,7 +15,8 @@
         "ENVIRONMENT": "development",
         "EXPO_PUBLIC_NEWS_API_KEY": "0b2bddf9eef5407eb519f8b389b06c38",
         "EXPO_PUBLIC_SUPABASE_URL": "https://qmiafrudmawctuazhluz.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtaWFmcnVkbWF3Y3R1YXpobHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDMzMTksImV4cCI6MjA2OTk3OTMxOX0.Oii5ylUbfJWe5OhLzZjMG0zBLUrrs2CRrtXhwTTCkVk"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtaWFmcnVkbWF3Y3R1YXpobHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDMzMTksImV4cCI6MjA2OTk3OTMxOX0.Oii5ylUbfJWe5OhLzZjMG0zBLUrrs2CRrtXhwTTCkVk",
+        "EXPO_PUBLIC_SENTRY_DSN": ""
       }
     },
     "preview": {

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DEFAULT_BALANCE } from '@/utils/constant';
 import { Holding } from '../types/crypto';
 
 // AsyncStorage keys
@@ -386,7 +387,7 @@ export class AsyncStorageService {
   }
 
 
-  static async recreateUserData(userId: string, balance: number = 100000): Promise<UserData> {
+  static async recreateUserData(userId: string, balance: number = DEFAULT_BALANCE): Promise<UserData> {
     try {
       const now = new Date().toISOString();
       const timestamp = Date.now().toString().slice(-6); 

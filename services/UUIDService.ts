@@ -1,9 +1,12 @@
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AsyncStorageService } from "./AsyncStorageService";
-import { getDeviceUUID } from "@/utils/deviceUtils";
-import { isInvalidUUIDFormat, validateUUIDFormat } from "@/utils/fixUUIDIssue";
-import { logger } from "@/utils/logger";
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorageService } from './AsyncStorageService';
+import { DEFAULT_BALANCE_STRING, DEFAULT_USER } from '@/utils/constant';
+import { getDeviceUUID } from '@/utils/deviceUtils';
+import { isInvalidUUIDFormat, validateUUIDFormat } from '@/utils/fixUUIDIssue';
+import { logger } from '@/utils/logger';
+
+
 
 // Enhanced UUIDService.ts
 
@@ -49,9 +52,9 @@ class UUIDService {
       const userProfile = {
         id: uuid,
         username: `user_${uuid.slice(0, 8)}_${timestamp}`,
-        usdt_balance: "100000",
-        total_portfolio_value: "100000",
-        initial_balance: "100000",
+        usdt_balance: DEFAULT_BALANCE_STRING,
+        total_portfolio_value: DEFAULT_BALANCE_STRING,
+        initial_balance: DEFAULT_BALANCE_STRING,
         total_pnl: "0.00",
         total_pnl_percentage: "0.00",
         total_trades: 0,
@@ -194,7 +197,7 @@ export async function initializeUserProfile() {
     if (!userProfile) {
       userProfile = {
         uuid,
-        balance: "100000",
+        balance: DEFAULT_BALANCE_STRING,
         createdAt: new Date().toISOString(),
         lastSyncAt: null,
       };

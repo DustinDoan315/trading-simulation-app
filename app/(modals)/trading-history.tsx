@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '@/utils/logger';
 import { router } from 'expo-router';
 import { Transaction } from '@/types/database';
+import { TRANSACTION_LIMITS } from '@/utils/constant';
 import { useAppDispatch } from '@/store';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUser } from '@/context/UserContext';
@@ -37,7 +38,7 @@ const TradingHistoryModal = () => {
 
   useEffect(() => {
     if (user?.id) {
-      dispatch(fetchTransactions({ userId: user.id, limit: 100 }));
+      dispatch(fetchTransactions({ userId: user.id, limit: TRANSACTION_LIMITS.FETCH_LIMIT }));
     }
   }, [user?.id, dispatch]);
 
@@ -119,10 +120,10 @@ const TradingHistoryModal = () => {
     }
 
     // For larger amounts, show fewer decimal
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(2)}M`;
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(2)}K`;
+    if (num >= FORMATTING_THRESHOLDS.MILLION) {
+      return `${(num / FORMATTING_THRESHOLDS.MILLION).toFixed(2)}M`;
+    } else if (num >= FORMATTING_THRESHOLDS.THOUSAND) {
+      return `${(num / FORMATTING_THRESHOLDS.THOUSAND).toFixed(2)}K`;
     } else {
       return num.toFixed(Math.min(2, decimals));
     }

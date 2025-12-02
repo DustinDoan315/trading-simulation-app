@@ -1,8 +1,9 @@
-import UUIDService from "@/services/UUIDService";
-import { logger } from "@/utils/logger";
-import { store } from "@/store";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { User } from "@/types/database";
+import UUIDService from '@/services/UUIDService';
+import { DEFAULT_BALANCE_STRING, DEFAULT_USER } from '@/utils/constant';
+import { logger } from '@/utils/logger';
+import { store } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { User } from '@/types/database';
 import React, {
   ReactNode,
   createContext,
@@ -19,6 +20,7 @@ import {
   fetchUser,
   fetchUserStats,
 } from "@/features/userSlice";
+
 
 interface UserContextType {
   user: User | null;
@@ -128,7 +130,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             username,
             display_name: username,
             avatar_emoji: "🚀",
-            usdt_balance: "100000.00",
+            usdt_balance: DEFAULT_BALANCE_STRING,
           })
         ).unwrap();
       }

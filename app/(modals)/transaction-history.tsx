@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchTransactions } from '@/features/userSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { TRANSACTION_LIMITS } from '@/utils/constant';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useUser } from '@/context/UserContext';
 import {
@@ -29,7 +30,7 @@ const TransactionHistoryScreen = () => {
 
   useEffect(() => {
     if (user?.id) {
-      dispatch(fetchTransactions({ userId: user.id, limit: 100 }));
+      dispatch(fetchTransactions({ userId: user.id, limit: TRANSACTION_LIMITS.FETCH_LIMIT }));
     }
   }, [dispatch, user?.id]);
 

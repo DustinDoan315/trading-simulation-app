@@ -1,6 +1,5 @@
 import balanceReducer from '@/features/balanceSlice';
 import cryptoPricesReducer from '@/features/cryptoPricesSlice';
-import dualBalanceReducer from '@/features/dualBalanceSlice';
 import favoritesReducer from '@/features/favoritesSlice';
 import languageReducer from '@/features/languageSlice';
 import searchHistoryReducer from '@/features/searchHistorySlice';
@@ -20,7 +19,6 @@ const persistConfig = {
     "favorites",
     "searchHistory",
     "balance",
-    "dualBalance",
     "cryptoPrices",
     "language",
     "user",
@@ -31,7 +29,6 @@ const rootReducer = combineReducers({
   cryptoPrices: cryptoPricesReducer,
   favorites: favoritesReducer,
   balance: balanceReducer,
-  dualBalance: dualBalanceReducer,
   searchHistory: searchHistoryReducer,
   language: languageReducer,
   user: userReducer,

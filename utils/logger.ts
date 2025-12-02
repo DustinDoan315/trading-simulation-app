@@ -1,4 +1,6 @@
+import { captureException } from './sentry';
 // utils/logger.ts
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LogEntry {
@@ -65,9 +67,49 @@ class Logger {
       }
     }
 
-    // TODO: In production, send error logs to monitoring service
+    // Send error logs to Sentry in production
     if (level === "error" && !this.isDevelopment) {
-      // this.sendToMonitoringService(entry);
+      try {
+        // If data is an Error object, capture it as an exception
+        if (data instanceof Error) {
+          const errorContext: Record<string, any> = {
+            logger: {
+              context: context || "Logger",
+              originalMessage: message,
+            },
+          };
+          
+          // Add any additional context from the error
+          if (data.message) {
+            errorContext.errorMessage = data.message;
+          }
+          
+          captureException(data, errorContext);
+        } else {
+          // Create an error from the message and capture it
+          const error = new Error(message);
+          const errorContext: Record<string, any> = {
+            logger: {
+              context: context || "Logger",
+            },
+          };
+          
+          // Add additional data as context if provided
+          if (data && typeof data === "object") {
+            errorContext.additionalData = data;
+          } else if (data !== undefined) {
+            errorContext.additionalData = { value: data };
+          }
+          
+          captureException(error, errorContext);
+        }
+      } catch (sentryError) {
+        // Silently fail if Sentry is not configured or fails
+        // This prevents logger errors from breaking the app
+        if (this.isDevelopment) {
+          console.warn("[Logger] Failed to send error to Sentry:", sentryError);
+        }
+      }
     }
   }
 
