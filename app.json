@@ -24,7 +24,10 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.dustindoan.tradecoinskills",
-      "permissions": ["CAMERA", "RECORD_AUDIO"],
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -35,7 +38,10 @@
               "host": "join-collection"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -64,7 +70,8 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice commands in practice sessions"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

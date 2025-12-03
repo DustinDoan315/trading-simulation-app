@@ -9,6 +9,7 @@ package-lock.json
 .expo/types
 expo-env.d.ts
 # @end expo-cli
+.expo/
 .expo/devices.json
 .tamagui
 android

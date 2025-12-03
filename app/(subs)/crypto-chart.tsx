@@ -21,7 +21,6 @@ import { WebView } from 'react-native-webview';
 import {
   ActivityIndicator,
   Alert,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -29,6 +28,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   OrderDispatchContext,
   OrderValidationContext,
@@ -79,7 +79,6 @@ const CryptoChartScreen = () => {
   }, [showDailyLimitPopup, dailyLimitData]);
 
   // Use regular balance system instead of DualBalance
-  const { balance } = useSelector((state: RootState) => state.balance);
   const currentHoldings = balance.holdings;
   const currentUsdtBalance = balance.usdtBalance;
   const currentBalance = balance;

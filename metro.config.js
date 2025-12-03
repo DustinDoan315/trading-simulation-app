@@ -13,7 +13,6 @@ config.transformer = {
 config.resolver = {
   ...config.resolver,
   // Enable tree shaking
-  unstable_enableSymlinks: true,
 };
 
 // Enable production optimizations

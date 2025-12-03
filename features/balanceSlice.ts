@@ -1,20 +1,20 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import UserRepository from '../services/UserRepository';
-import UUIDService from '../services/UUIDService';
 import { ASYNC_STORAGE_KEYS, DEFAULT_BALANCE } from '../utils/constant';
-import { AsyncStorageService } from '../services/AsyncStorageService';
+import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
+import { PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import {
   calculateTotalPnL,
   calculateTotalPnLPercentage,
   calculateTotalPortfolioValue as calculateTotalPortfolioValueFromArray,
   calculateUSDTBalanceFromPortfolio,
   validateAndFixUserData
-  } from '../utils/helper';
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+} from '../utils/helper';
 import { getCryptoIdFromSymbol, getCryptoImageUrl } from '../utils/cryptoMapping';
-import { Holding, HoldingUpdatePayload, Order } from '../types/crypto';
-import { UserService } from '../services/UserService';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AsyncStorageService } from '../services/AsyncStorageService';
+import UUIDService from '../services/UUIDService';
+import UserRepository from '../services/UserRepository';
+import { UserService } from '../services/UserService';
 
 export interface UserBalance {
   usdtBalance: number;
@@ -282,9 +282,13 @@ export const balanceSlice = createSlice({
             : 0;
       }
 
+      const usdtBalance = state.balance.usdtBalance;
+      const totalPortfolioValue = state.balance.totalPortfolioValue;
+      const holdingsCopy = JSON.parse(JSON.stringify(state.balance.holdings));
+
       UUIDService.getOrCreateUser().then((uuid) => {
         let totalPnL = 0;
-        Object.values(state.balance.holdings).forEach((holding: any) => {
+        Object.values(holdingsCopy).forEach((holding: any) => {
           if (holding.symbol !== "USDT") {
             totalPnL += holding.profitLoss || 0;
           }
@@ -293,12 +297,12 @@ export const balanceSlice = createSlice({
         const totalPnLPercentage = DEFAULT_BALANCE > 0 ? (totalPnL / DEFAULT_BALANCE) * 100 : 0;
         UserRepository.updateUserBalanceAndPortfolioValue(
           uuid, 
-          state.balance.usdtBalance, 
-          state.balance.totalPortfolioValue, 
+          usdtBalance, 
+          totalPortfolioValue, 
           totalPnL,
           totalPnLPercentage
         );
-        const portfolioItems = Object.entries(state.balance.holdings)
+        const portfolioItems = Object.entries(holdingsCopy)
           .filter(([symbol, holding]) => symbol.toUpperCase() !== 'USDT')
           .map(([symbol, holding]) => ({
             id: `${uuid}-${symbol}`,
@@ -470,9 +474,14 @@ export const balanceSlice = createSlice({
         action.payload.usdtBalance
       );
 
+
+      const usdtBalance = action.payload.usdtBalance;
+      const totalPortfolioValue = action.payload.totalPortfolioValue;
+      const holdingsCopy = JSON.parse(JSON.stringify(action.payload.holdings));
+
       UUIDService.getOrCreateUser().then((uuid) => {
         let totalPnL = 0;
-        Object.values(action.payload.holdings).forEach((holding: any) => {
+        Object.values(holdingsCopy).forEach((holding: any) => {
           if (holding.symbol !== "USDT") {
             totalPnL += holding.profitLoss || 0;
           }
@@ -481,12 +490,12 @@ export const balanceSlice = createSlice({
         const totalPnLPercentage = DEFAULT_BALANCE > 0 ? (totalPnL / DEFAULT_BALANCE) * 100 : 0;
         UserRepository.updateUserBalanceAndPortfolioValue(
           uuid, 
-          action.payload.usdtBalance, 
-          action.payload.totalPortfolioValue, 
+          usdtBalance, 
+          totalPortfolioValue, 
           totalPnL,
           totalPnLPercentage
         );
-        const portfolioItems = Object.entries(action.payload.holdings)
+        const portfolioItems = Object.entries(holdingsCopy)
           .filter(([symbol, holding]: [string, any]) => symbol.toUpperCase() !== 'USDT')
           .map(([symbol, holding]: [string, any]) => ({
             id: `${uuid}-${symbol}`,
@@ -526,8 +535,12 @@ export const balanceSlice = createSlice({
           state.balance.usdtBalance
         );
 
+        const usdtBalance = state.balance.usdtBalance;
+        const totalPortfolioValue = state.balance.totalPortfolioValue;
+        const holdingsCopy = JSON.parse(JSON.stringify(state.balance.holdings));
+
         UUIDService.getOrCreateUser().then(async (uuid) => {
-          const portfolioItems = Object.entries(state.balance.holdings)
+          const portfolioItems = Object.entries(holdingsCopy)
             .filter(([symbol, holding]: [string, any]) => symbol.toUpperCase() !== 'USDT')
             .map(([symbol, holding]: [string, any]) => ({
               id: `${uuid}-${symbol}`,
@@ -548,7 +561,7 @@ export const balanceSlice = createSlice({
           
           await UserService.updateLeaderboardRankings(uuid);
           
-          const realTimeTotalPnL = Object.values(state.balance.holdings).reduce((sum: number, holding: any) => {
+          const realTimeTotalPnL = Object.values(holdingsCopy).reduce((sum: number, holding: any) => {
             return sum + (holding.symbol !== "USDT" ? (holding.profitLoss || 0) : 0);
           }, 0);
           
@@ -557,7 +570,7 @@ export const balanceSlice = createSlice({
           await UserService.updateUser(uuid, {
             total_pnl: realTimeTotalPnL.toString(),
             total_pnl_percentage: realTimeTotalPnLPercentage.toString(),
-            total_portfolio_value: state.balance.totalPortfolioValue.toString(),
+            total_portfolio_value: totalPortfolioValue.toString(),
           } as any);
         });
       }

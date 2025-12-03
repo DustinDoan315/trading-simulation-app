@@ -29,7 +29,7 @@ const ImportWalletScreen = () => {
           colors={["#8AD4EC", "#EF96FF", "#FF56A9", "#FFAA6C"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          locations={[0, 0.22, 0.54, 0.85, 1]}>
+          locations={[0, 0.33, 0.67, 1]}>
           <Pressable onPress={createNewWallet} style={styles.createBtn}>
             <Text style={styles.buttonText}>Create New Wallet</Text>
           </Pressable>

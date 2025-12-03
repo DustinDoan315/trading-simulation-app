@@ -281,7 +281,7 @@ const OnboardingScreen = () => {
           colors={["#6366F1", "#8B5CF6"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          locations={[0, 0.22, 0.54, 0.85, 1]}>
+          locations={[0, 1]}>
           <Pressable
             onPress={handleNext}
             style={[styles.createBtn, isCreating && styles.createBtnDisabled]}
