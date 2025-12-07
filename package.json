@@ -19,6 +19,7 @@
     "web:optimized": "NODE_ENV=production expo start --web",
     "build:analyze": "NODE_ENV=production expo export --platform web",
     "test": "jest --watchAll",
+    "test:ci": "jest --ci --runInBand --coverage",
     "update:staging": "eas update --branch main --message \"Staging update\"",
     "update:production": "eas update --branch production --message \"Production update\"",
     "publish:staging": "eas update --channel staging --message \"Staging update: $(git log -1 --pretty=format:'%s')\"",
