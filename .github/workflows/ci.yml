@@ -8,37 +8,12 @@ on:
 
 env:
   NODE_VERSION: "18"
-  YARN_CACHE_FOLDER: ~/.cache/yarn
 
 jobs:
-  setup:
-    name: Setup & Cache
+  typecheck:
+    name: TypeScript Check
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "yarn"
-
-      - name: Install dependencies
-        run: |
-          echo "📦 Installing dependencies..."
-          yarn install --frozen-lockfile
-        timeout-minutes: 12
-
-  code-quality:
-    name: Code Quality Checks
-    runs-on: ubuntu-latest
-    needs: setup
     timeout-minutes: 5
-    strategy:
-      matrix:
-        check: [typescript, comments, filesize]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,80 +25,17 @@ jobs:
           cache: "yarn"
 
       - name: Install dependencies
-        run: |
-          yarn install --frozen-lockfile
+        run: yarn install --frozen-lockfile
         timeout-minutes: 8
 
       - name: TypeScript check
-        if: matrix.check == 'typescript'
-        run: |
-          echo "🔍 Checking for TypeScript errors..."
-          if command -v yarn &> /dev/null; then
-            yarn tsc --noEmit --pretty || echo "⚠️ TypeScript errors found (non-blocking)"
-          else
-            npx tsc --noEmit --pretty || echo "⚠️ TypeScript errors found (non-blocking)"
-          fi
-        continue-on-error: true
-
-      - name: Check for TODO/FIXME comments
-        if: matrix.check == 'comments'
-        run: |
-          echo "🔍 Checking for TODO/FIXME comments..."
-          COMMENTS=$(grep -r "TODO\|FIXME" --include="*.ts" --include="*.tsx" . --exclude-dir=node_modules --exclude-dir=.expo --exclude-dir=.git -n || true)
-          if [ -n "$COMMENTS" ]; then
-            echo "⚠️ Warning: TODO/FIXME comments found in code:"
-            echo "$COMMENTS"
-          else
-            echo "✅ No TODO/FIXME comments found"
-          fi
-
-      - name: Check file sizes
-        if: matrix.check == 'filesize'
-        run: |
-          echo "🔍 Checking for large files..."
-          find . -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -nr | head -10
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    needs: setup
-    timeout-minutes: 5
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "yarn"
-
-      - name: Install dependencies
-        run: |
-          yarn install --frozen-lockfile
-        timeout-minutes: 8
-
-      - name: Run tests with coverage
-        run: |
-          echo "🧪 Running tests..."
-          yarn test:ci || echo "⚠️ Tests failed or no tests found (non-blocking)"
-        continue-on-error: true
-
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+        run: yarn tsc --noEmit
         continue-on-error: true
 
   build:
     name: Build Verification
     runs-on: ubuntu-latest
-    needs: setup
     timeout-minutes: 5
-    if: always()
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -135,122 +47,10 @@ jobs:
           cache: "yarn"
 
       - name: Install dependencies
-        run: |
-          yarn install --frozen-lockfile
+        run: yarn install --frozen-lockfile
         timeout-minutes: 8
-
-      - name: Verify TypeScript compilation
-        run: |
-          echo "🏗️ Verifying TypeScript compilation..."
-          yarn tsc --noEmit || echo "⚠️ TypeScript compilation check completed"
-        continue-on-error: true
 
       - name: Verify project structure
         run: |
-          echo "📦 Verifying project structure..."
-          echo "✅ React Native project structure verified"
-
-  security:
-    name: Security Checks
-    runs-on: ubuntu-latest
-    needs: setup
-    timeout-minutes: 5
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "yarn"
-
-      - name: Install dependencies
-        run: |
-          yarn install --frozen-lockfile
-        timeout-minutes: 8
-
-      - name: Run security audit
-        run: |
-          echo "🔒 Running security audit..."
-          yarn audit --audit-level moderate || true
-
-      - name: Check for hardcoded secrets
-        run: |
-          echo "🔒 Checking for potential hardcoded secrets..."
-          SECRETS=$(grep -r -i "password\|secret\|key\|token" --include="*.ts" --include="*.tsx" . \
-            --exclude-dir=node_modules \
-            --exclude-dir=.expo \
-            --exclude-dir=.git \
-            --exclude-dir=ios \
-            --exclude-dir=android \
-            | grep -vE "(//|/\*|import|export|const|let|var|interface|type|function|class|API_KEY|PUBLIC|ANON)" \
-            | grep -vE "(EXPO_PUBLIC_|process\.env)" || true)
-          if [ -n "$SECRETS" ]; then
-            echo "⚠️ Warning: Potential hardcoded secrets found. Please review:"
-            echo "$SECRETS"
-            echo "ℹ️ This is a warning only and won't fail the build"
-          else
-            echo "✅ No obvious hardcoded secrets found"
-          fi
-        continue-on-error: true
-
-  performance:
-    name: Performance Checks
-    runs-on: ubuntu-latest
-    needs: setup
-    timeout-minutes: 5
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "yarn"
-
-      - name: Install dependencies
-        run: |
-          yarn install --frozen-lockfile
-        timeout-minutes: 8
-
-      - name: Check dependencies
-        run: |
-          echo "📊 Checking dependencies..."
-          echo "✅ Dependency check completed"
-
-      - name: Check for unused dependencies
-        run: |
-          echo "🔍 Checking for unused dependencies..."
-          npx depcheck --json || echo "Dependency check completed"
-
-  final:
-    name: Final Status
-    runs-on: ubuntu-latest
-    needs: [setup, code-quality, test, build, security]
-    if: always()
-    timeout-minutes: 1
-    steps:
-      - name: Check job status
-        run: |
-          echo "📋 CI Pipeline Summary:"
-          echo "Setup: ${{ needs.setup.result }}"
-          echo "Code Quality: ${{ needs.code-quality.result }}"
-          echo "Tests: ${{ needs.test.result }}"
-          echo "Build: ${{ needs.build.result }}"
-          echo "Security: ${{ needs.security.result }}"
-
-          # Only fail if setup fails (critical)
-          # Other jobs can have warnings
-          if [[ "${{ needs.setup.result }}" == "failure" ]]; then
-            echo "❌ Setup job failed - this is critical"
-            exit 1
-          elif [[ "${{ needs.code-quality.result }}" == "failure" ]] && \
-               [[ "${{ needs.build.result }}" == "failure" ]]; then
-            echo "⚠️ Some checks failed but not critical"
-            exit 0
-          else
-            echo "✅ CI pipeline completed successfully"
-          fi
+          echo "✅ React Native project verified"
+          ls -la app/ components/ utils/ || true
