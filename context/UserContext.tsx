@@ -1,15 +1,16 @@
 import UUIDService from '@/services/UUIDService';
-import { DEFAULT_BALANCE_STRING, DEFAULT_USER } from '@/utils/constant';
+import { DEFAULT_BALANCE_STRING } from '@/utils/constant';
 import { logger } from '@/utils/logger';
-import { store } from '@/store';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { store, useAppDispatch, useAppSelector } from '@/store';
 import { User } from '@/types/database';
+import { widgetDataManager } from '@/utils/widgetDataManager';
 import React, {
   ReactNode,
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
 } from "react";
 import {
   clearUser,
@@ -116,11 +117,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         logger.info("Existing user fetched successfully", "UserContext");
 
         await refreshUserData(userId);
-      } catch (error) {
+      } catch (fetchError) {
         logger.info(
           "User not found in database, creating new user",
           "UserContext",
-          { userId }
+          { userId, error: fetchError }
         );
         const timestamp = Date.now().toString().slice(-6);
         const username = `user_${userId.slice(0, 8)}_${timestamp}`;
@@ -141,26 +142,83 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [dispatch, refreshUserData]);
 
   const logout = () => {
+    // Clear widget data on logout
+    widgetDataManager.clearWidgetData().catch((error) => {
+      logger.error(
+        "Failed to clear widget data on logout",
+        "UserContext",
+        error
+      );
+    });
     dispatch(clearUser());
   };
 
+  // Update widget when user data changes
+  useEffect(() => {
+    if (user) {
+      const updateWidget = async () => {
+        try {
+          await widgetDataManager.updateWidgetData({
+            totalPortfolioValue: Number.parseFloat(
+              user.total_portfolio_value || "0"
+            ),
+            usdtBalance: Number.parseFloat(user.usdt_balance || "0"),
+            totalPnl: Number.parseFloat(user.total_pnl || "0"),
+            totalPnlPercentage: Number.parseFloat(
+              user.total_pnl_percentage || "0"
+            ),
+            winRate: Number.parseFloat(user.win_rate || "0"),
+            globalRank: user.global_rank ?? null,
+            totalTrades: user.total_trades || 0,
+            username: user.display_name || user.username,
+            avatarEmoji: user.avatar_emoji ?? null,
+            lastUpdated: new Date().toISOString(),
+          });
+        } catch (error) {
+          // Silently fail - widget updates are not critical
+          logger.debug(
+            "Widget update failed (non-critical)",
+            "UserContext",
+            error
+          );
+        }
+      };
+
+      updateWidget();
+    }
+  }, [user]);
+
+  const contextValue = useMemo(
+    () => ({
+      user,
+      userStats,
+      portfolio,
+      transactions,
+      favorites,
+      loading,
+      error,
+      refreshUser,
+      refreshUserData,
+      reinitializeUser,
+      logout,
+    }),
+    [
+      user,
+      userStats,
+      portfolio,
+      transactions,
+      favorites,
+      loading,
+      error,
+      refreshUser,
+      refreshUserData,
+      reinitializeUser,
+      logout,
+    ]
+  );
+
   return (
-    <UserContext.Provider
-      value={{
-        user,
-        userStats,
-        portfolio,
-        transactions,
-        favorites,
-        loading,
-        error,
-        refreshUser,
-        refreshUserData,
-        reinitializeUser,
-        logout,
-      }}>
-      {children}
-    </UserContext.Provider>
+    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
 };
 
