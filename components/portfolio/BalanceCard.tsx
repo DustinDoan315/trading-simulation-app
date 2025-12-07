@@ -9,6 +9,8 @@ import { formatAmount } from '@/utils/formatters';
 import { height, width } from '@/utils/response';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '@/context/LanguageContext';
+import { useTheme } from '@/context/ThemeContext';
+import { getColors } from '@/styles/colors';
 import {
   Animated,
   Easing,
@@ -206,9 +208,9 @@ const SegmentRenderer = React.memo(
 );
 
 // Memoized legend item
-const LegendItem = React.memo(({ segment, isActive, onPress }: any) => (
+const LegendItem = React.memo(({ segment, isActive, onPress, colors }: any) => (
   <TouchableWithoutFeedback onPress={() => onPress(segment.id)}>
-    <View style={styles.legendItem}>
+    <View style={[styles.legendItem, { backgroundColor: colors.background.card }]}>
       <View
         style={[
           styles.legendColor,
@@ -216,7 +218,11 @@ const LegendItem = React.memo(({ segment, isActive, onPress }: any) => (
           isActive && styles.legendColorActive,
         ]}
       />
-      <Text style={[styles.legendText, isActive && styles.legendTextActive]}>
+      <Text style={[
+        styles.legendText, 
+        { color: colors.text.muted },
+        isActive && [styles.legendTextActive, { color: colors.text.primary }]
+      ]}>
         {segment.symbol}
       </Text>
     </View>
@@ -232,6 +238,8 @@ const BalanceCard = ({
   onResetBalance,
 }: BalanceCardProps) => {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const colors = getColors(theme);
   const [activeSegment, setActiveSegment] = React.useState<string | null>(null);
   const timeoutRef = useRef<any>(null);
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -422,7 +430,7 @@ const BalanceCard = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#2A2D3E"
+          stroke={colors.border.card}
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -444,9 +452,9 @@ const BalanceCard = ({
 
       <View style={styles.contentContainer}>
         <View style={styles.balanceHeader}>
-          <Text style={styles.label}>{t("portfolio.availableBalance")}</Text>
+          <Text style={[styles.label, { color: colors.text.muted }]}>{t("portfolio.availableBalance")}</Text>
         </View>
-        <Text style={styles.balance}>{balance}</Text>
+        <Text style={[styles.balance, { color: colors.text.primary }]}>{balance}</Text>
       </View>
 
       {/* Legend items */}
@@ -457,6 +465,7 @@ const BalanceCard = ({
             segment={segment}
             isActive={isSegmentActive(segment.id)}
             onPress={handleSegmentPress}
+            colors={colors}
           />
         ))}
       </View>
@@ -467,6 +476,8 @@ const BalanceCard = ({
             styles.tokenInfoContainer,
             {
               opacity: fadeAnim,
+              backgroundColor: colors.background.card,
+              borderColor: colors.border.card,
             },
           ]}>
           <View
@@ -481,18 +492,18 @@ const BalanceCard = ({
                 { backgroundColor: activeSegmentDetails.colors[0] },
               ]}
             />
-            <Text style={styles.tokenName}>{activeSegmentDetails.name}</Text>
+            <Text style={[styles.tokenName, { color: colors.text.primary }]}>{activeSegmentDetails.name}</Text>
           </View>
-          <Text style={styles.tokenPercentage}>
+          <Text style={[styles.tokenPercentage, { color: colors.text.muted }]}>
             {Math.round(activeSegmentDetails.percentage)}%{" "}
             {t("portfolio.ofPortfolio")}
           </Text>
 
-          <Text style={styles.tokenValue}>{`$${formatAmount(
+          <Text style={[styles.tokenValue, { color: colors.text.primary }]}>{`$${formatAmount(
             activeSegmentDetails.value,
             2
           )}`}</Text>
-          <Text style={styles.tokenAmount}>
+          <Text style={[styles.tokenAmount, { color: colors.text.primary }]}>
             {formatAmount(activeSegmentDetails.amount, 2)}{" "}
             {activeSegmentDetails.symbol}
           </Text>
@@ -546,7 +557,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 8,
     padding: 5,
-    backgroundColor: "rgba(26, 29, 47, 0.7)",
     borderRadius: 12,
     paddingHorizontal: 10,
   },
@@ -564,12 +574,10 @@ const styles = StyleSheet.create({
     borderColor: "white",
   },
   legendText: {
-    color: "#9DA3B4",
     fontSize: 12,
     fontWeight: "500",
   },
   legendTextActive: {
-    color: "white",
     fontWeight: "bold",
   },
   svg: {
@@ -585,14 +593,12 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: "#9DA3B4",
     fontWeight: "bold",
     marginTop: -height * 0.03,
   },
   balance: {
     fontSize: 26,
     fontWeight: "bold",
-    color: "white",
     textShadowColor: "rgba(255, 255, 255, 0.1)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
@@ -618,7 +624,6 @@ const styles = StyleSheet.create({
   },
   tokenInfoContainer: {
     position: "absolute",
-    backgroundColor: "rgba(26, 29, 47, 0.9)",
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderRadius: 12,
@@ -630,7 +635,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 8,
     borderWidth: 1,
-    borderColor: "rgba(140, 158, 255, 0.3)",
   },
   colorIndicator: {
     width: 16,
@@ -639,22 +643,18 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   tokenName: {
-    color: "white",
     fontWeight: "bold",
     fontSize: 16,
   },
   tokenValue: {
-    color: "white",
     fontSize: 14,
     marginTop: 2,
   },
   tokenPercentage: {
-    color: "#9DA3B4",
     fontSize: 12,
     marginTop: 4,
   },
   tokenAmount: {
-    color: "white",
     fontSize: 12,
     marginTop: 6,
     fontWeight: "600",

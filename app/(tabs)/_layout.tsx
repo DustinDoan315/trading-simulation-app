@@ -1,4 +1,5 @@
-import colors from '@/styles/colors';
+import { getColors } from '@/styles/colors';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Platform,
@@ -54,6 +55,8 @@ const ICON_MAP: IconMapping = {
 
 function CustomTabBar({ state, navigation, descriptors }: any) {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const colors = getColors(theme);
 
   const orderedRoutes: Array<{ name: RouteName; key: string }> = [];
 
@@ -83,7 +86,11 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
   });
 
   return (
-    <View style={[styles.container, { paddingBottom: 10 }]}>
+    <View style={[styles.container, { 
+      paddingBottom: 10,
+      backgroundColor: colors.background.primary,
+      borderTopColor: colors.border.card,
+    }]}>
       {orderedRoutes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isActive =
@@ -118,7 +125,7 @@ function CustomTabBar({ state, navigation, descriptors }: any) {
             <Ionicons
               name={iconName}
               size={24}
-              color={isActive ? "#7878FA" : "#FFFFFF"}
+              color={isActive ? colors.action.accent : colors.text.muted}
             />
           </TouchableOpacity>
         );
@@ -175,9 +182,7 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: "#131523",
     borderTopWidth: 1,
-    borderTopColor: colors.border.dark,
     paddingTop: 10,
   },
   tabButton: {

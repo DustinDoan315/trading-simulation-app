@@ -8,6 +8,8 @@ import { logger } from '@/utils/logger';
 import { router, useFocusEffect } from 'expo-router';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUser } from '@/context/UserContext';
+import { useTheme } from '@/context/ThemeContext';
+import { getColors } from '@/styles/colors';
 import {
   ActivityIndicator,
   Alert,
@@ -28,6 +30,8 @@ const CollectionsScreen = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
   const { user } = useUser();
   const { t } = useLanguage();
+  const { theme, isDark } = useTheme();
+  const colors = getColors(theme);
 
   const {
     myCollections,
@@ -180,8 +184,8 @@ const CollectionsScreen = () => {
       <RefreshControl
         refreshing={refreshing}
         onRefresh={handleImmediateRefresh}
-        tintColor="#6674CC"
-        colors={["#6674CC"]}
+        tintColor={colors.action.accent}
+        colors={[colors.action.accent]}
       />
     );
 
@@ -209,7 +213,7 @@ const CollectionsScreen = () => {
           contentContainerStyle={styles.scrollContent}
           refreshControl={refreshControl}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#6674CC" />
+            <ActivityIndicator size="large" color={colors.action.accent} />
             <Text style={styles.loadingText}>Loading collections...</Text>
           </View>
         </ScrollView>
@@ -301,8 +305,8 @@ const CollectionsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background.primary} />
 
       {/* Header */}
       <View style={styles.header}>

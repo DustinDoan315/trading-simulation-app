@@ -11,6 +11,8 @@ import { createUser, fetchUser } from '@/features/userSlice';
 import { initializeApp } from '@/utils/initializeApp';
 import { initSentry, setSentryUser } from '@/utils/sentry';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { ThemeProvider as AppThemeProvider, useTheme } from '@/context/ThemeContext';
+import { getColors } from '@/styles/colors';
 import { logger } from '@/utils/logger';
 import { NotificationProvider } from '@/components/ui/Notification';
 import { Provider } from 'react-redux';
@@ -41,6 +43,54 @@ import {
 
 
 SplashScreen.preventAutoHideAsync();
+
+// Inner component that uses theme
+function ThemedLayoutContent() {
+  const { theme, isDark } = useTheme();
+  const colors = getColors(theme);
+
+  return (
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <NotificationProvider>
+        <UserProvider>
+          <LanguageProvider>
+            <SafeAreaView
+              style={{
+                flex: 1,
+                backgroundColor: colors.background.primary,
+              }}>
+              <Stack>
+                <Stack.Screen
+                  name="(subs)"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="(onboarding)"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="(auth)"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="(tabs)"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="(modals)"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <StatusBar style={isDark ? "light" : "dark"} />
+            </SafeAreaView>
+          </LanguageProvider>
+        </UserProvider>
+        <Toast />
+      </NotificationProvider>
+    </ThemeProvider>
+  );
+}
 
 // Initialize Sentry as early as possible
 initSentry();
@@ -357,45 +407,9 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <NotificationProvider>
-          <UserProvider>
-            <LanguageProvider>
-              <SafeAreaView
-                style={{
-                  flex: 1,
-                  backgroundColor: DarkTheme.colors.background,
-                }}>
-                <Stack>
-                  <Stack.Screen
-                    name="(subs)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="(onboarding)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="(auth)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="(modals)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen name="+not-found" />
-                </Stack>
-                <StatusBar style="auto" />
-              </SafeAreaView>
-            </LanguageProvider>
-          </UserProvider>
-          <Toast />
-        </NotificationProvider>
-      </ThemeProvider>
+      <AppThemeProvider>
+        <ThemedLayoutContent />
+      </AppThemeProvider>
     </Provider>
   );
 }

@@ -351,6 +351,15 @@
     "manageAlerts": "Quản lý cảnh báo",
     "language": "Ngôn ngữ",
     "changeLanguage": "Thay đổi ngôn ngữ",
+    "theme": "Giao diện",
+    "lightMode": "Chế độ sáng",
+    "darkMode": "Chế độ tối",
+    "systemTheme": "Mặc định hệ thống",
+    "themeMode": {
+      "light": "Sáng",
+      "dark": "Tối",
+      "system": "Hệ thống"
+    },
     "resetData": "Đặt lại dữ liệu",
     "resetToDefault": "Đặt lại về giá trị mặc định",
     "collections": "Bộ sưu tập",

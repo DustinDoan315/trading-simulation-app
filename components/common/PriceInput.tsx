@@ -5,6 +5,8 @@ import Typography from "@/styles/typography";
 import { formatAmount } from "@/utils/formatters";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useTheme } from "@/context/ThemeContext";
+import { getColors } from "@/styles/colors";
 
 const PriceInput = ({
   label,
@@ -15,6 +17,8 @@ const PriceInput = ({
   suffix,
   editable = true,
 }: any) => {
+  const { theme } = useTheme();
+  const colors = getColors(theme);
   const [rawValue, setRawValue] = React.useState(value?.toString() || "");
   const [isFocused, setIsFocused] = React.useState(false);
 
@@ -65,32 +69,65 @@ const PriceInput = ({
     }
   }, [value]);
 
+  const getGradientColors = () => {
+    if (theme === 'dark') {
+      return isFocused
+        ? ["rgba(102, 116, 204, 0.15)", "rgba(102, 116, 204, 0.08)"]
+        : ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"];
+    } else {
+      return isFocused
+        ? [colors.action.accent + "15", colors.action.accent + "08"]
+        : [colors.background.cardSecondary, colors.background.cardSecondary];
+    }
+  };
+
+  const inputWrapperStyle = theme === 'dark' 
+    ? [styles.inputWrapper, { borderColor: isFocused ? colors.action.accent + "40" : colors.border.card }, !editable && styles.inputDisabled]
+    : [styles.inputWrapper, {
+        backgroundColor: colors.background.cardSecondary,
+        borderColor: isFocused ? colors.action.accent : colors.border.card,
+      }, !editable && styles.inputDisabled];
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      <LinearGradient
-        colors={
-          isFocused
-            ? ["rgba(102, 116, 204, 0.15)", "rgba(102, 116, 204, 0.08)"]
-            : ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"]
-        }
-        style={[styles.inputWrapper, !editable && styles.inputDisabled]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}>
-        <TextInput
-          style={styles.input}
-          value={isFocused ? rawValue : safeParseAndFormat(rawValue)}
-          onChangeText={handleChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          keyboardType={keyboardType}
-          placeholder={placeholder}
-          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-          selectionColor="#6674CC"
-          editable={editable}
-        />
-        {suffix && <Text style={styles.suffix}>{suffix}</Text>}
-      </LinearGradient>
+      <Text style={[styles.label, { color: colors.text.secondary }]}>{label}</Text>
+      {theme === 'dark' ? (
+        <LinearGradient
+          colors={getGradientColors()}
+          style={inputWrapperStyle}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}>
+          <TextInput
+            style={[styles.input, { color: colors.text.primary }]}
+            value={isFocused ? rawValue : safeParseAndFormat(rawValue)}
+            onChangeText={handleChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            keyboardType={keyboardType}
+            placeholder={placeholder}
+            placeholderTextColor={colors.text.tertiary}
+            selectionColor={colors.action.accent}
+            editable={editable}
+          />
+          {suffix && <Text style={[styles.suffix, { color: colors.text.secondary }]}>{suffix}</Text>}
+        </LinearGradient>
+      ) : (
+        <View style={inputWrapperStyle}>
+          <TextInput
+            style={[styles.input, { color: colors.text.primary }]}
+            value={isFocused ? rawValue : safeParseAndFormat(rawValue)}
+            onChangeText={handleChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            keyboardType={keyboardType}
+            placeholder={placeholder}
+            placeholderTextColor={colors.text.tertiary}
+            selectionColor={colors.action.accent}
+            editable={editable}
+          />
+          {suffix && <Text style={[styles.suffix, { color: colors.text.secondary }]}>{suffix}</Text>}
+        </View>
+      )}
     </View>
   );
 };
@@ -102,14 +139,12 @@ const styles = StyleSheet.create({
   label: {
     ...Typography.longLabel,
     marginBottom: Dimensions.spacing.xs,
-    color: "rgba(255, 255, 255, 0.8)",
     fontSize: Dimensions.fontSize.sm,
     fontWeight: "500",
   },
   inputWrapper: {
     borderRadius: Dimensions.radius.md,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
     height: Dimensions.components.inputHeight,
     flexDirection: "row",
     alignItems: "center",
@@ -128,14 +163,12 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: "#FFFFFF",
     fontSize: Dimensions.fontSize.md,
     height: Dimensions.components.inputHeight,
     padding: 0,
     fontWeight: "500",
   },
   suffix: {
-    color: "rgba(255, 255, 255, 0.6)",
     fontSize: Dimensions.fontSize.sm,
     marginLeft: Dimensions.spacing.xs,
     fontWeight: "500",

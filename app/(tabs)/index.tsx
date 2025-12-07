@@ -12,6 +12,8 @@ import { useHomeData } from '@/hooks/useHomeData';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/context/UserContext';
+import { useTheme } from '@/context/ThemeContext';
+import { getColors } from '@/styles/colors';
 import {
   ActivityIndicator,
   Animated,
@@ -53,6 +55,8 @@ const HomeScreen = () => {
     onResetBalance,
   } = useHomeData();
   const { t } = useLanguage();
+  const { theme, isDark } = useTheme();
+  const colors = getColors(theme);
 
   const reduxBalance = useSelector((state: RootState) => state.balance.balance);
 
@@ -161,7 +165,7 @@ const HomeScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -188,15 +192,20 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F0F23" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background.primary} />
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={handleRefresh}
+            tintColor={colors.action.accent}
+            colors={[colors.action.accent]}
+          />
         }>
         <Animated.View
           style={[
@@ -205,7 +214,7 @@ const HomeScreen = () => {
           ]}>
           {user ? (
             <>
-              <Text style={styles.welcomeText}>
+              <Text style={[styles.welcomeText, { color: colors.text.primary }]}>
                 {t("home.welcomeBack", {
                   name: user.display_name || user.username,
                 })}
@@ -229,8 +238,8 @@ const HomeScreen = () => {
             </>
           ) : (
             <>
-              <Text style={styles.welcomeText}>{t("home.welcomeToApp")}</Text>
-              <Text style={styles.welcomeSubtext}>
+              <Text style={[styles.welcomeText, { color: colors.text.primary }]}>{t("home.welcomeToApp")}</Text>
+              <Text style={[styles.welcomeSubtext, { color: colors.text.muted }]}>
                 {t("home.welcomeSubtext")}
               </Text>
             </>
@@ -249,7 +258,7 @@ const HomeScreen = () => {
               styles.quickActionsSection,
               { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
             ]}>
-            <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
+            <Text style={[styles.sectionTitle, { marginTop: 12, color: colors.text.primary }]}>
               {t("home.getStarted")}
             </Text>
             <View style={styles.quickActionsGrid}>
@@ -312,7 +321,7 @@ const HomeScreen = () => {
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               {t("home.portfolioSummary")}
             </Text>
           </View>
@@ -399,13 +408,13 @@ const HomeScreen = () => {
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t("home.cryptoNews")}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>{t("home.cryptoNews")}</Text>
           </View>
 
           {loadingNews ? (
             <View style={styles.newsLoadingContainer}>
-              <ActivityIndicator size="small" color="#6366F1" />
-              <Text style={styles.newsLoadingText}>
+              <ActivityIndicator size="small" color={colors.action.accent} />
+              <Text style={[styles.newsLoadingText, { color: colors.text.muted }]}>
                 {t("home.loadingLatestNews")}
               </Text>
             </View>
@@ -419,12 +428,12 @@ const HomeScreen = () => {
             ))
           ) : (
             <View style={styles.newsErrorContainer}>
-              <Ionicons name="newspaper-outline" size={32} color="#9DA3B4" />
-              <Text style={styles.newsErrorText}>
+              <Ionicons name="newspaper-outline" size={32} color={colors.text.muted} />
+              <Text style={[styles.newsErrorText, { color: colors.text.muted }]}>
                 {t("home.noNewsAvailable")}
               </Text>
               <TouchableOpacity
-                style={styles.retryButton}
+                style={[styles.retryButton, { backgroundColor: colors.action.accent }]}
                 onPress={() => loadCryptoNews()}>
                 <Text style={styles.retryButtonText}>{t("common.retry")}</Text>
               </TouchableOpacity>

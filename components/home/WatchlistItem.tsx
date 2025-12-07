@@ -3,6 +3,8 @@ import { CryptoCurrency } from "@/services/CryptoService";
 import { formatCurrency, formatPercentage } from "@/utils/formatters";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/context/ThemeContext";
+import { getColors } from "@/styles/colors";
 
 interface WatchListItemProps {
   crypto: CryptoCurrency;
@@ -18,7 +20,9 @@ const ChangeIndicator: React.FC<ChangeIndicatorProps> = ({
   isPositive,
   crypto,
 }) => {
-  const color = isPositive ? "#6674CC" : "#FF6B6B";
+  const { theme } = useTheme();
+  const colors = getColors(theme);
+  const color = isPositive ? colors.action.accent : colors.action.sell;
   return (
     <View style={styles.changeContainer}>
       <Ionicons
@@ -28,7 +32,10 @@ const ChangeIndicator: React.FC<ChangeIndicatorProps> = ({
         style={styles.arrow}
       />
       <Text
-        style={[styles.change, isPositive ? styles.positive : styles.negative]}>
+        style={[
+          styles.change, 
+          { color: isPositive ? colors.action.accent : colors.action.sell }
+        ]}>
         {formatPercentage(crypto.price_change_percentage_24h)}
       </Text>
     </View>
@@ -62,6 +69,8 @@ const areWatchListItemPropsEqual = (
 
 export const WatchListChild: React.FC<WatchListItemProps> = React.memo(
   ({ crypto, onPress }) => {
+    const { theme } = useTheme();
+    const colors = getColors(theme);
     const isPositive = useMemo(
       () => crypto.price_change_percentage_24h >= 0,
       [crypto.price_change_percentage_24h]
@@ -69,18 +78,18 @@ export const WatchListChild: React.FC<WatchListItemProps> = React.memo(
 
     return (
       <TouchableOpacity
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.background.card }]}
         onPress={() => onPress(crypto.symbol.toUpperCase())}>
         <View style={styles.leftSection}>
           <Image source={{ uri: crypto.image }} style={styles.icon} />
           <View style={styles.nameContainer}>
-            <Text style={styles.name}>{crypto.name}</Text>
-            <Text style={styles.symbol}>{crypto.symbol.toUpperCase()}</Text>
+            <Text style={[styles.name, { color: colors.text.primary }]}>{crypto.name}</Text>
+            <Text style={[styles.symbol, { color: colors.text.muted }]}>{crypto.symbol.toUpperCase()}</Text>
           </View>
         </View>
 
         <View style={styles.rightSection}>
-          <Text style={styles.price}>
+          <Text style={[styles.price, { color: colors.text.primary }]}>
             {formatCurrency(crypto.current_price)}
           </Text>
           <MemoizedChangeIndicator isPositive={isPositive} crypto={crypto} />
@@ -99,7 +108,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 12,
-    backgroundColor: "#1A1D2F",
     marginVertical: 6,
   },
   leftSection: {
@@ -117,11 +125,9 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: "600",
-    color: "white",
   },
   symbol: {
     fontSize: 14,
-    color: "#9DA3B4",
     marginTop: 2,
   },
   rightSection: {
@@ -130,7 +136,6 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 18,
     fontWeight: "600",
-    color: "white",
   },
   changeContainer: {
     flexDirection: "row",
@@ -144,9 +149,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   positive: {
-    color: "#6674CC",
+    // Color will be set dynamically
   },
   negative: {
-    color: "#FF6B6B",
+    // Color will be set dynamically
   },
 });

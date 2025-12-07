@@ -6,6 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { RootState } from '@/store';
 import { styles } from './styles';
 import { useSelector } from 'react-redux';
+import { useTheme } from '@/context/ThemeContext';
+import { getColors } from '@/styles/colors';
 import {
   Animated,
   Image,
@@ -28,6 +30,9 @@ interface AssetItemProps {
 }
 
 const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
+  const { theme } = useTheme();
+  const colors = getColors(theme);
+  
   // Get holding data from Redux store for PnL information
   const holding = useSelector((state: RootState) => {
     const holdings = state.balance.balance.holdings;
@@ -55,7 +60,9 @@ const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
       onPress={handlePress}
       activeOpacity={0.8}>
       <LinearGradient
-        colors={["rgba(26, 29, 47, 0.8)", "rgba(26, 29, 47, 0.6)"]}
+        colors={theme === 'dark' 
+          ? ["rgba(26, 29, 47, 0.8)", "rgba(26, 29, 47, 0.6)"]
+          : [colors.background.card, colors.background.cardSecondary]}
         style={styles.assetGradient}>
         <View style={styles.leftSection}>
           <View style={styles.imageContainer}>
@@ -63,21 +70,21 @@ const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
             <View style={styles.imageBorder} />
           </View>
           <View style={styles.nameContainer}>
-            <Text style={styles.name}>{asset.name}</Text>
-            <Text style={styles.amount}>
+            <Text style={[styles.name, { color: colors.text.primary }]}>{asset.name}</Text>
+            <Text style={[styles.amount, { color: colors.text.muted }]}>
               {formatAmount(asset.amount, 2)} {asset.symbol.toUpperCase()}
             </Text>
           </View>
         </View>
 
         <View style={styles.rightSection}>
-          <Text style={styles.value}>${formatAmount(Number(asset.value))}</Text>
+          <Text style={[styles.value, { color: colors.text.primary }]}>${formatAmount(Number(asset.value))}</Text>
 
           <View style={styles.percentageContainer}>
             <View style={styles.percentageIndicator}>
-              <Ionicons name="pie-chart" size={12} color="#8C9EFF" />
+              <Ionicons name="pie-chart" size={12} color={colors.action.accent} />
             </View>
-            <Text style={styles.percentage}>{percentage.toFixed(1)}%</Text>
+            <Text style={[styles.percentage, { color: colors.text.primary }]}>{percentage.toFixed(1)}%</Text>
           </View>
 
           {hasPnL && (
@@ -87,20 +94,20 @@ const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
                   styles.pnlIndicator,
                   {
                     backgroundColor: isPositive
-                      ? "rgba(76, 175, 80, 0.1)"
-                      : "rgba(244, 67, 54, 0.1)",
+                      ? colors.action.buyLight
+                      : colors.action.sellLight,
                   },
                 ]}>
                 <Ionicons
                   name={isPositive ? "arrow-up" : "arrow-down"}
                   size={10}
-                  color={isPositive ? "#4CAF50" : "#F44336"}
+                  color={isPositive ? colors.action.buy : colors.action.sell}
                 />
               </View>
               <Text
                 style={[
                   styles.pnlValue,
-                  { color: isPositive ? "#4CAF50" : "#F44336" },
+                  { color: isPositive ? colors.action.buy : colors.action.sell },
                 ]}>
                 {isPositive ? "+" : ""}
                 {pnlValue.toFixed(2)}
@@ -108,7 +115,7 @@ const AssetItem = memo<AssetItemProps>(({ asset, totalBalance, onPress }) => {
               <Text
                 style={[
                   styles.pnlPercentage,
-                  { color: isPositive ? "#4CAF50" : "#F44336" },
+                  { color: isPositive ? colors.action.buy : colors.action.sell },
                 ]}>
                 ({isPositive ? "+" : ""}
                 {pnlPercentage.toFixed(2)}%)

@@ -2,6 +2,8 @@ import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { TimeframeOption } from "../../types/crypto";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTheme } from "../../context/ThemeContext";
+import { getColors } from "../../styles/colors";
 import {
   ScrollView,
   StyleSheet,
@@ -24,22 +26,26 @@ const TimeframeSelector = ({
   toggleIndicators,
 }: TimeframeSelectorProps) => {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const colors = getColors(theme);
+  
   const getTimeframeButtonStyle = (tf: TimeframeOption) => {
     return [
       styles.timeframeButton,
-      timeframe === tf ? styles.timeframeButtonActive : null,
+      timeframe === tf ? [styles.timeframeButtonActive, { borderBottomColor: colors.action.primary }] : null,
     ];
   };
 
   const getTimeframeTextStyle = (tf: TimeframeOption) => {
     return [
       styles.timeframeText,
+      { color: timeframe === tf ? colors.text.primary : colors.text.tertiary },
       timeframe === tf ? styles.timeframeTextActive : null,
     ];
   };
 
   return (
-    <View style={styles.timeframeContainer}>
+    <View style={[styles.timeframeContainer, { borderBottomColor: colors.border.medium }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {["1m", "3m", "15m", "1h", "4h", "1d"].map((tf: any) => (
           <TouchableOpacity
@@ -56,13 +62,13 @@ const TimeframeSelector = ({
       <TouchableOpacity
         style={styles.indicatorButton}
         onPress={toggleIndicators}>
-        <Text style={styles.indicatorText}>
+        <Text style={[styles.indicatorText, { color: colors.text.primary }]}>
           {showIndicators ? t("common.hide") : t("common.show")}
         </Text>
         <Ionicons
           name={showIndicators ? "chevron-down" : "chevron-up"}
           size={16}
-          color="white"
+          color={colors.text.primary}
         />
       </TouchableOpacity>
     </View>
@@ -76,7 +82,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#111",
     paddingBottom: 8,
   },
   timeframeButton: {
@@ -86,14 +91,11 @@ const styles = StyleSheet.create({
   },
   timeframeButtonActive: {
     borderBottomWidth: 2,
-    borderBottomColor: "#0078FF",
   },
   timeframeText: {
-    color: "#777",
     fontSize: 14,
   },
   timeframeTextActive: {
-    color: "white",
     fontWeight: "bold",
   },
   indicatorButton: {
@@ -101,7 +103,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   indicatorText: {
-    color: "white",
     fontSize: 14,
     marginRight: 4,
   },

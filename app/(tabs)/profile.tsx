@@ -1,21 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import colors from '@/styles/colors';
 import React, { useEffect, useState } from 'react';
 import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import { ASYNC_STORAGE_KEYS } from '@/utils/constant';
 import { clearSearchHistory } from '@/features/searchHistorySlice';
 import { forceRefreshAllData } from '@/utils/resetUtils';
+import { getColors } from '@/styles/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '@/utils/logger';
-import { persistor } from '@/store';
+import { persistor, useAppDispatch } from '@/store';
 import { resetBalance } from '@/features/balanceSlice';
 import { resetFavorites } from '@/features/favoritesSlice';
 import { router } from 'expo-router';
-import { useAppDispatch } from '@/store';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
 import { UserService } from '@/services/UserService';
+import { useTheme } from '@/context/ThemeContext';
 import { useTransactionCount } from '@/hooks/useTransactionCount';
 import { useUser } from '@/context/UserContext';
 import {
@@ -36,6 +36,8 @@ const ProfileScreen = () => {
   const dispatch = useAppDispatch();
   const { user, userStats, loading, error, refreshUser } = useUser();
   const { t } = useLanguage();
+  const { theme, themeMode, setThemeMode, isDark } = useTheme();
+  const colors = getColors(theme);
   const {
     totalBalance,
     totalPnL,
@@ -171,28 +173,50 @@ const ProfileScreen = () => {
     onPress,
     showChevron = true,
     isBottom = false,
+    isFirst = false,
   }: any) => (
     <TouchableOpacity
       style={[
         styles.settingItem,
         {
           borderBottomWidth: isBottom ? 0 : 1,
+          borderBottomColor: colors.border.card,
+          backgroundColor: colors.background.card,
+          borderTopLeftRadius: isFirst ? 16 : 0,
+          borderTopRightRadius: isFirst ? 16 : 0,
+          borderBottomLeftRadius: isBottom ? 16 : 0,
+          borderBottomRightRadius: isBottom ? 16 : 0,
         },
       ]}
       onPress={onPress}
       disabled={!onPress}>
       <View style={styles.settingLeft}>
-        <View style={styles.iconContainer}>
-          <Ionicons name={icon} size={20} color="#FFFFFF" />
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: colors.ui.iconContainer },
+          ]}>
+          <Ionicons name={icon} size={20} color={colors.action.accent} />
         </View>
         <View style={styles.settingContent}>
-          <Text style={styles.settingTitle}>{title}</Text>
-          {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+          <Text style={[styles.settingTitle, { color: colors.text.primary }]}>
+            {title}
+          </Text>
+          {subtitle && (
+            <Text
+              style={[styles.settingSubtitle, { color: colors.text.muted }]}>
+              {subtitle}
+            </Text>
+          )}
         </View>
       </View>
       <View style={styles.settingRight}>
         {showChevron && (
-          <Ionicons name="chevron-forward" size={16} color="#9DA3B4" />
+          <Ionicons
+            name="chevron-forward"
+            size={16}
+            color={colors.text.muted}
+          />
         )}
       </View>
     </TouchableOpacity>
@@ -212,6 +236,8 @@ const ProfileScreen = () => {
         styles.statCard,
         {
           alignItems: isCenter ? "center" : "flex-start",
+          backgroundColor: colors.background.card,
+          borderColor: colors.border.card,
         },
       ]}>
       <View style={styles.statHeader}>
@@ -225,15 +251,25 @@ const ProfileScreen = () => {
           style={styles.statLoading}
         />
       ) : (
-        <Text style={[styles.statValue, { color }]}>{value}</Text>
+        <Text style={[styles.statValue, { color: colors.text.primary }]}>
+          {value}
+        </Text>
       )}
-      {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
+      {subtitle && (
+        <Text style={[styles.statSubtitle, { color: colors.text.light }]}>
+          {subtitle}
+        </Text>
+      )}
     </View>
   );
 
   if (loading || realTimeLoading || transactionCountLoading) {
     return (
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}>
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <ShimmerPlaceHolder
@@ -418,11 +454,20 @@ const ProfileScreen = () => {
 
   if (!user) {
     return (
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{t("profile.userNotFound")}</Text>
+          <Text style={[styles.errorText, { color: colors.action.sell }]}>
+            {t("profile.userNotFound")}
+          </Text>
           <TouchableOpacity
-            style={styles.retryButton}
+            style={[
+              styles.retryButton,
+              { backgroundColor: colors.action.accent },
+            ]}
             onPress={async () => {
               try {
                 const userId = await AsyncStorage.getItem(
@@ -443,8 +488,15 @@ const ProfileScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.primary },
+      ]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.background.primary}
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -453,24 +505,41 @@ const ProfileScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#6674CC"
-            colors={["#6674CC"]}
+            tintColor={colors.action.accent}
+            colors={[colors.action.accent]}
           />
         }>
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
+            <View
+              style={[
+                styles.avatar,
+                {
+                  backgroundColor: colors.background.card,
+                  borderColor: colors.action.accent,
+                },
+              ]}>
               <Text style={styles.avatarText}>{user.avatar_emoji || "🚀"}</Text>
             </View>
             <TouchableOpacity
-              style={styles.editAvatarButton}
+              style={[
+                styles.editAvatarButton,
+                {
+                  backgroundColor: colors.action.accent,
+                  borderColor: colors.background.primary,
+                },
+              ]}
               onPress={handleEditProfile}>
               <Ionicons name="camera" size={16} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.name}>{user.display_name || user.username}</Text>
-          <Text style={styles.username}>@{user.username}</Text>
-          <Text style={styles.joinDate}>
+          <Text style={[styles.name, { color: colors.text.primary }]}>
+            {user.display_name || user.username}
+          </Text>
+          <Text style={[styles.username, { color: colors.text.muted }]}>
+            @{user.username}
+          </Text>
+          <Text style={[styles.joinDate, { color: colors.text.light }]}>
             {t("profile.memberSince", {
               date: new Date(user.join_date).toLocaleDateString(),
             })}
@@ -479,7 +548,11 @@ const ProfileScreen = () => {
 
         <View style={styles.statsContainer}>
           <View style={styles.statsHeader}>
-            <Text style={styles.statsSectionTitle}>
+            <Text
+              style={[
+                styles.statsSectionTitle,
+                { color: colors.text.primary },
+              ]}>
               {t("profile.tradingStatistics")}
             </Text>
           </View>
@@ -488,7 +561,7 @@ const ProfileScreen = () => {
               title={t("profile.totalTrades")}
               value={transactionCount}
               subtitle={t("profile.trades")}
-              color="#6674CC"
+              color={colors.action.accent}
               icon="trending-up"
             />
             <StatsCard
@@ -502,43 +575,91 @@ const ProfileScreen = () => {
           </View>
         </View>
 
-        <View style={styles.portfolioCard}>
+        <View
+          style={[
+            styles.portfolioCard,
+            {
+              backgroundColor: colors.background.card,
+              borderColor: colors.border.card,
+            },
+          ]}>
           <View style={styles.portfolioHeader}>
-            <Ionicons name="pie-chart" size={20} color="#6674CC" />
-            <Text style={styles.portfolioTitle}>
+            <Ionicons name="pie-chart" size={20} color={colors.action.accent} />
+            <Text style={[styles.portfolioTitle, { color: colors.text.muted }]}>
               {t("profile.portfolioValue")}
             </Text>
           </View>
-          <Text style={styles.portfolioValue}>{formattedTotalBalance}</Text>
-          <Text style={styles.portfolioSubtitle}>
+          <Text style={[styles.portfolioValue, { color: colors.text.primary }]}>
+            {formattedTotalBalance}
+          </Text>
+          <Text
+            style={[styles.portfolioSubtitle, { color: colors.text.light }]}>
             {t("profile.realTimePortfolioValue")}
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
             {t("profile.accountInformation")}
           </Text>
-          <View style={styles.settingsGroup}>
+          <View
+            style={[
+              styles.settingsGroup,
+              {
+                backgroundColor: colors.background.card,
+                borderColor: colors.border.card,
+              },
+            ]}>
             <SettingItem
               icon="trending-up-outline"
               title={t("profile.tradingHistory")}
               subtitle={t("profile.viewYourPastTrades")}
               onPress={() => router.push("/trading-history" as any)}
+              isFirst={true}
+              isBottom={true}
             />
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
             {t("profile.accountManagement")}
           </Text>
-          <View style={styles.settingsGroup}>
+          <View
+            style={[
+              styles.settingsGroup,
+              {
+                backgroundColor: colors.background.card,
+                borderColor: colors.border.card,
+              },
+            ]}>
             <SettingItem
               icon="language-outline"
               title={t("profile.language")}
               subtitle={t("profile.changeLanguage")}
               onPress={() => router.push("/language" as any)}
+              isFirst={true}
+            />
+            <SettingItem
+              icon={isDark ? "moon" : "sunny"}
+              title={t("profile.theme") || "Theme"}
+              subtitle={
+                themeMode === "system"
+                  ? t("profile.systemTheme") || "System Default"
+                  : isDark
+                  ? t("profile.darkMode") || "Dark Mode"
+                  : t("profile.lightMode") || "Light Mode"
+              }
+              onPress={async () => {
+                const newMode =
+                  themeMode === "system"
+                    ? "light"
+                    : themeMode === "light"
+                    ? "dark"
+                    : "system";
+                await setThemeMode(newMode);
+              }}
+              showChevron={false}
             />
             <SettingItem
               isBottom={true}
@@ -550,21 +671,20 @@ const ProfileScreen = () => {
           </View>
         </View>
         {lastUpdated && (
-          <Text style={styles.lastUpdatedText}>
+          <Text style={[styles.lastUpdatedText, { color: colors.text.light }]}>
             {t("profile.lastUpdated", {
               time: lastUpdated.toLocaleTimeString(),
             })}
           </Text>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#131523",
   },
   scrollView: {
     flex: 1,
@@ -743,6 +863,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#2A2E42",
+    overflow: "hidden",
   },
   settingItem: {
     flexDirection: "row",

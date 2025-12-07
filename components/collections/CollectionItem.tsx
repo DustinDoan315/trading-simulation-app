@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTheme } from "@/context/ThemeContext";
+import { getColors } from "@/styles/colors";
 
 interface CollectionItemProps {
   collection: CollectionData;
@@ -22,6 +24,8 @@ const CollectionItem: React.FC<CollectionItemProps> = ({
   onPress,
   onLongPress,
 }) => {
+  const { theme } = useTheme();
+  const colors = getColors(theme);
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -82,7 +86,9 @@ const CollectionItem: React.FC<CollectionItemProps> = ({
         onPressOut={handlePressOut}
         activeOpacity={0.8}>
         <LinearGradient
-          colors={["#1A1D2F", "#2A2D3F"]}
+          colors={theme === 'dark'
+            ? ["#1A1D2F", "#2A2D3F"]
+            : [colors.background.card, colors.background.cardSecondary]}
           style={styles.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}>
@@ -90,7 +96,7 @@ const CollectionItem: React.FC<CollectionItemProps> = ({
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.nameContainer}>
-                <Text style={styles.name} numberOfLines={1}>
+                <Text style={[styles.name, { color: colors.text.primary }]} numberOfLines={1}>
                   {collection.name}
                 </Text>
                 {collection.isOwner && (
@@ -112,7 +118,7 @@ const CollectionItem: React.FC<CollectionItemProps> = ({
                     size={12}
                     color="#9DA3B4"
                   />
-                  <Text style={styles.metaText}>
+                  <Text style={[styles.metaText, { color: colors.text.muted }]}>
                     {collection.members} members
                   </Text>
                 </View>
@@ -147,10 +153,10 @@ const CollectionItem: React.FC<CollectionItemProps> = ({
           {/* Stats */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>
+              <Text style={[styles.statValue, { color: colors.text.primary }]}>
                 {formatCurrency(collection.totalValue)}
               </Text>
-              <Text style={styles.statLabel}>Total Value</Text>
+              <Text style={[styles.statLabel, { color: colors.text.muted }]}>Total Value</Text>
             </View>
 
             <View style={styles.statDivider} />
@@ -159,21 +165,21 @@ const CollectionItem: React.FC<CollectionItemProps> = ({
               <Text
                 style={[
                   styles.statValue,
-                  { color: collection.avgPnl >= 0 ? "#10B981" : "#EF4444" },
+                  { color: collection.avgPnl >= 0 ? colors.action.buy : colors.action.sell },
                 ]}>
                 {formatPercentage(collection.avgPnl)}
               </Text>
-              <Text style={styles.statLabel}>Avg P&L</Text>
+              <Text style={[styles.statLabel, { color: colors.text.muted }]}>Avg P&L</Text>
             </View>
 
             {!collection.isOwner && collection.owner && (
               <>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue} numberOfLines={1}>
+                  <Text style={[styles.statValue, { color: colors.text.primary }]} numberOfLines={1}>
                     {collection.owner}
                   </Text>
-                  <Text style={styles.statLabel}>Owner</Text>
+                  <Text style={[styles.statLabel, { color: colors.text.muted }]}>Owner</Text>
                 </View>
               </>
             )}
@@ -185,7 +191,7 @@ const CollectionItem: React.FC<CollectionItemProps> = ({
               <View style={styles.progressBar}>
                 <View style={[styles.progressFill, { width: "75%" }]} />
               </View>
-              <Text style={styles.progressText}>75% complete</Text>
+              <Text style={[styles.progressText, { color: colors.text.muted }]}>75% complete</Text>
             </View>
           )}
         </LinearGradient>
@@ -229,7 +235,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
     flex: 1,
   },
   ownerBadge: {
@@ -259,7 +264,6 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: "#9DA3B4",
   },
   statusContainer: {
     flexDirection: "row",
@@ -302,12 +306,10 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 11,
-    color: "#9DA3B4",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -328,7 +330,6 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 11,
-    color: "#9DA3B4",
     textAlign: "center",
   },
 });

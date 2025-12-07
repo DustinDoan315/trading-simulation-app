@@ -9,6 +9,8 @@ import {
   View
   } from 'react-native';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
+import { getColors } from '../../styles/colors';
 
 
 interface SymbolHeaderProps {
@@ -29,6 +31,8 @@ const SymbolHeader = ({
   onBackPress,
 }: SymbolHeaderProps) => {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const colors = getColors(theme);
   const showListCrypto = () => {
     router.push("/(subs)/crypto-list");
   };
@@ -41,19 +45,22 @@ const SymbolHeader = ({
     }
   };
 
+  const isPositive = priceChange.includes("+");
+  const priceChangeColor = isPositive ? colors.action.buy : colors.action.sell;
+
   return (
     <View style={styles.symbolContainer}>
       <View style={styles.symbolLeft}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <TouchableOpacity onPress={showListCrypto} style={styles.symbolSection}>
-          <Text style={styles.symbolText}>{`${symbol}`}</Text>
-          <Ionicons name="chevron-down" size={16} color="white" />
+          <Text style={[styles.symbolText, { color: colors.text.primary }]}>{`${symbol}`}</Text>
+          <Ionicons name="chevron-down" size={16} color={colors.text.primary} />
           <Text
             style={[
               styles.priceChangeText,
-              { color: priceChange.includes("+") ? "#4ADE80" : "#FF4D4F" },
+              { color: priceChangeColor },
             ]}>
             {priceChange}
           </Text>
@@ -67,14 +74,14 @@ const SymbolHeader = ({
           <Feather
             name={chartType === "candlestick" ? "bar-chart-2" : "trending-up"}
             size={22}
-            color="white"
+            color={colors.text.primary}
           />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.iconButton}
           onPress={toggleIndicators}
           accessibilityLabel={t("chart.indicators")}>
-          <Feather name="layers" size={22} color="white" />
+          <Feather name="layers" size={22} color={colors.text.primary} />
         </TouchableOpacity>
 
       </View>
@@ -104,13 +111,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   symbolText: {
-    color: "white",
     fontSize: 20,
     fontWeight: "bold",
     marginRight: 8,
   },
   priceChangeText: {
-    color: "#4ADE80",
     fontSize: 14,
     marginLeft: 8,
   },

@@ -1,5 +1,4 @@
 import Chart from '@/components/crypto/Chart';
-import colors from '@/styles/colors';
 import DailyLimitPopup from '@/components/ui/DailyLimitPopup';
 import OrderEntry from '@/components/trading/OrderEntry';
 import React, { useEffect, useRef, useState } from 'react';
@@ -18,6 +17,8 @@ import { UserService } from '@/services/UserService';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/context/UserContext';
 import { WebView } from 'react-native-webview';
+import { useTheme } from '@/context/ThemeContext';
+import { getColors } from '@/styles/colors';
 import {
   ActivityIndicator,
   Alert,
@@ -48,6 +49,8 @@ import {
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
+  const { theme, isDark } = useTheme();
+  const colors = getColors(theme);
   const { user, reinitializeUser } = useUser();
   const { id, symbol, name, image, collectionId, collectionName }: any =
     useLocalSearchParams();
@@ -465,47 +468,54 @@ const CryptoChartScreen = () => {
 
     return (
       <TouchableOpacity
-        style={styles.loadingOverlay}
+        style={[styles.loadingOverlay, { backgroundColor: theme === 'dark' ? "rgba(0, 0, 0, 0.9)" : "rgba(0, 0, 0, 0.7)" }]}
         activeOpacity={1}
         onPress={() => {
           console.log("User dismissed loading overlay");
           resetLoadingState();
         }}>
         <TouchableOpacity
-          style={styles.loadingContainer}
+          style={[styles.loadingContainer, {
+            backgroundColor: colors.background.card,
+            borderColor: colors.border.card,
+          }]}
           activeOpacity={1}
           onPress={(e) => {
             e.stopPropagation();
           }}>
           <View style={styles.loadingIconContainer}>
-            <ActivityIndicator size="large" color="#6674CC" />
-            <View style={styles.loadingIconGlow} />
+            <ActivityIndicator size="large" color={colors.action.accent} />
+            <View style={[styles.loadingIconGlow, { backgroundColor: colors.action.accent }]} />
           </View>
 
-          <Text style={styles.loadingTitle}>{t("chart.processingOrder")}</Text>
-          <Text style={styles.loadingStatus}>{submissionStatus}</Text>
+          <Text style={[styles.loadingTitle, { color: colors.text.primary }]}>{t("chart.processingOrder")}</Text>
+          <Text style={[styles.loadingStatus, { color: colors.text.secondary }]}>{submissionStatus}</Text>
 
           <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
+            <View style={[styles.progressBar, {
+              backgroundColor: colors.background.cardSecondary,
+              borderColor: colors.border.card,
+            }]}>
               <View
                 style={[
                   styles.progressFill,
                   {
                     width: `${submissionProgress}%`,
+                    backgroundColor: colors.action.accent,
                   },
                 ]}
               />
             </View>
-            <Text style={styles.progressText}>
+            <Text style={[styles.progressText, { color: colors.text.secondary }]}>
               {Math.round(submissionProgress)}%
             </Text>
           </View>
 
-          <View style={styles.contextInfo}>
-            <Text style={styles.contextLabel}>
+          <View style={[styles.contextInfo, { borderTopColor: colors.border.card }]}>
+            <Text style={[styles.contextLabel, { color: colors.text.secondary }]}>
               {t("chart.individualTrade")}
             </Text>
-            <Text style={styles.contextSymbol}>{symbol}</Text>
+            <Text style={[styles.contextSymbol, { color: colors.action.accent }]}>{symbol}</Text>
           </View>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -513,8 +523,8 @@ const CryptoChartScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background.primary} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -550,28 +560,49 @@ const CryptoChartScreen = () => {
 
         <View style={styles.bottomSection}>
           <View style={styles.orderSection}>
-            <LinearGradient
-              colors={[
-                "rgba(102, 116, 204, 0.15)",
-                "rgba(102, 116, 204, 0.08)",
-              ]}
-              style={styles.orderEntryCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}>
-              <View style={styles.orderEntryHeader}>
-                <Text style={styles.orderEntryTitle}>{symbol}</Text>
+            {theme === 'dark' ? (
+              <LinearGradient
+                colors={[
+                  "rgba(102, 116, 204, 0.15)",
+                  "rgba(102, 116, 204, 0.08)",
+                ]}
+                style={[styles.orderEntryCard, { borderColor: colors.border.card }]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}>
+                <View style={[styles.orderEntryHeader, { borderBottomColor: colors.border.card }]}>
+                  <Text style={[styles.orderEntryTitle, { color: colors.text.primary }]}>{symbol}</Text>
+                </View>
+                <OrderEntry
+                  key={`${symbol}-${currentUsdtBalance}`}
+                  symbol={symbol}
+                  name={name}
+                  orderType={orderType}
+                  currentPrice={currentPrice ? Number(currentPrice) : undefined}
+                  availableBalance={currentUsdtBalance}
+                  onSubmitOrder={submitOrder}
+                  disabled={isSubmitting}
+                />
+              </LinearGradient>
+            ) : (
+              <View style={[styles.orderEntryCard, {
+                backgroundColor: colors.background.card,
+                borderColor: colors.border.card,
+              }]}>
+                <View style={[styles.orderEntryHeader, { borderBottomColor: colors.border.card }]}>
+                  <Text style={[styles.orderEntryTitle, { color: colors.text.primary }]}>{symbol}</Text>
+                </View>
+                <OrderEntry
+                  key={`${symbol}-${currentUsdtBalance}`}
+                  symbol={symbol}
+                  name={name}
+                  orderType={orderType}
+                  currentPrice={currentPrice ? Number(currentPrice) : undefined}
+                  availableBalance={currentUsdtBalance}
+                  onSubmitOrder={submitOrder}
+                  disabled={isSubmitting}
+                />
               </View>
-              <OrderEntry
-                key={`${symbol}-${currentUsdtBalance}`}
-                symbol={symbol}
-                name={name}
-                orderType={orderType}
-                currentPrice={currentPrice ? Number(currentPrice) : undefined}
-                availableBalance={currentUsdtBalance}
-                onSubmitOrder={submitOrder}
-                disabled={isSubmitting}
-              />
-            </LinearGradient>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -595,7 +626,6 @@ const CryptoChartScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
   },
   scrollView: {
     flex: 1,
@@ -621,17 +651,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 20,
     elevation: 16,
+    borderWidth: 1,
   },
   orderEntryHeader: {
     alignItems: "center",
     paddingBottom: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   orderEntryTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#FFFFFF",
     marginBottom: 4,
   },
   orderEntrySubtitle: {
@@ -646,19 +675,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.9)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 9999,
   },
   loadingContainer: {
-    backgroundColor: "#1A1D2F",
     borderRadius: 24,
     padding: 32,
     alignItems: "center",
     minWidth: 300,
     borderWidth: 1,
-    borderColor: "rgba(102, 116, 204, 0.3)",
     shadowColor: "#6674CC",
     shadowOffset: {
       width: 0,
@@ -679,18 +705,15 @@ const styles = StyleSheet.create({
     right: -10,
     bottom: -10,
     borderRadius: 30,
-    backgroundColor: "#6674CC",
     opacity: 0.2,
   },
   loadingTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#FFFFFF",
     marginBottom: 8,
   },
   loadingStatus: {
     fontSize: 14,
-    color: "#9DA3B4",
     textAlign: "center",
     marginBottom: 20,
     minHeight: 20,
@@ -701,16 +724,13 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 8,
-    backgroundColor: "#2A2D3E",
     borderRadius: 4,
     overflow: "hidden",
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "rgba(102, 116, 204, 0.2)",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#6674CC",
     borderRadius: 4,
     shadowColor: "#6674CC",
     shadowOffset: {
@@ -722,25 +742,21 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 12,
-    color: "#9DA3B4",
     textAlign: "center",
   },
   contextInfo: {
     alignItems: "center",
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: "#2A2D3E",
     width: "100%",
   },
   contextLabel: {
     fontSize: 12,
-    color: "#9DA3B4",
     marginBottom: 4,
   },
   contextSymbol: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#6674CC",
   },
 });
 

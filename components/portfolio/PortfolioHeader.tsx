@@ -3,6 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 import { useLanguage } from '@/context/LanguageContext';
+import { useTheme } from '@/context/ThemeContext';
+import { getColors } from '@/styles/colors';
 
 
 type PortfolioHeaderProps = {
@@ -17,48 +19,63 @@ const PortfolioHeader = ({
   changeValue,
 }: PortfolioHeaderProps) => {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const colors = getColors(theme);
   const isPositive = changePercentage >= 0;
 
-  return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={["rgba(140, 158, 255, 0.1)", "rgba(140, 158, 255, 0.05)"]}
-        style={styles.gradientBackground}>
-        <View style={styles.content}>
-          <View style={styles.labelContainer}>
-            <Ionicons name="wallet" size={20} color="#8C9EFF" />
-            <Text style={styles.label}>{t("portfolio.totalValue")}</Text>
-          </View>
+  const content = (
+    <View style={styles.content}>
+      <View style={styles.labelContainer}>
+        <Ionicons name="wallet" size={20} color={colors.action.accent} />
+        <Text style={[styles.label, { color: colors.action.accent }]}>{t("portfolio.totalValue")}</Text>
+      </View>
 
-          <Text style={styles.totalValue}>{totalValue}</Text>
+      <Text style={[styles.totalValue, { color: colors.text.primary }]}>{totalValue}</Text>
 
-          <View style={styles.changeContainer}>
-            <View
-              style={[
-                styles.changeIndicator,
-                {
-                  backgroundColor: isPositive
-                    ? "rgba(76, 175, 80, 0.1)"
-                    : "rgba(244, 67, 54, 0.1)",
-                },
-              ]}>
-              <Ionicons
-                name={isPositive ? "trending-up" : "trending-down"}
-                size={16}
-                color={isPositive ? "#4CAF50" : "#F44336"}
-              />
-            </View>
-            <Text
-              style={[
-                styles.changeText,
-                isPositive ? styles.positive : styles.negative,
-              ]}>
-              {changeValue} ({changePercentage.toFixed(2)}%)
-            </Text>
-            <Text style={styles.overallText}>{t("portfolio.overall")}</Text>
-          </View>
+      <View style={styles.changeContainer}>
+        <View
+          style={[
+            styles.changeIndicator,
+            {
+              backgroundColor: isPositive
+                ? colors.action.buyLight
+                : colors.action.sellLight,
+            },
+          ]}>
+          <Ionicons
+            name={isPositive ? "trending-up" : "trending-down"}
+            size={16}
+            color={isPositive ? colors.action.buy : colors.action.sell}
+          />
         </View>
-      </LinearGradient>
+        <Text
+          style={[
+            styles.changeText,
+            { color: isPositive ? colors.action.buy : colors.action.sell },
+          ]}>
+          {changeValue} ({changePercentage.toFixed(2)}%)
+        </Text>
+        <Text style={[styles.overallText, { color: colors.text.primary }]}>{t("portfolio.overall")}</Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={[styles.container, { 
+      backgroundColor: colors.background.card,
+      borderColor: colors.border.card 
+    }]}>
+      {theme === 'dark' ? (
+        <LinearGradient
+          colors={["rgba(140, 158, 255, 0.1)", "rgba(140, 158, 255, 0.05)"]}
+          style={styles.gradientBackground}>
+          {content}
+        </LinearGradient>
+      ) : (
+        <View style={[styles.gradientBackground, { backgroundColor: colors.background.card }]}>
+          {content}
+        </View>
+      )}
     </View>
   );
 };
@@ -68,6 +85,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
     marginBottom: 10,
+    borderWidth: 1,
   },
   gradientBackground: {
     padding: 24,
@@ -90,9 +108,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 36,
     fontWeight: "bold",
-    color: "white",
     marginBottom: 12,
-    textShadowColor: "rgba(140, 158, 255, 0.3)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
@@ -116,14 +132,11 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   positive: {
-    color: "#4CAF50",
   },
   negative: {
-    color: "#F44336",
   },
   overallText: {
     fontSize: 16,
-    color: "white",
     fontWeight: "500",
   },
 });

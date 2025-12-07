@@ -5,11 +5,13 @@ import PriceInput from '../common/PriceInput';
 import RealTimeDataService from '@/services/RealTimeDataService';
 import TabSelector from './TableSelector';
 import { formatAmount } from '@/utils/formatters';
+import { getColors } from '@/styles/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RootState } from '@/store';
 import { StyleSheet, Text, View } from 'react-native';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSelector } from 'react-redux';
+import { useTheme } from '@/context/ThemeContext';
 import {
   CRYPTO_FALLBACK_PRICES,
   DEFAULT_CRYPTO,
@@ -80,6 +82,8 @@ const OrderEntry = React.memo(
     disabled = false,
   }: OrderEntryProps) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
+    const colors = getColors(theme);
 
     const baseSymbol = useMemo(() => symbol?.split("/")[0] || symbol, [symbol]);
 
@@ -331,21 +335,49 @@ const OrderEntry = React.memo(
         </View>
 
         <View style={styles.balanceSection}>
-          <LinearGradient
-            colors={["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"]}
-            style={styles.balanceCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}>
-            <Text style={styles.balanceLabel}>
-              {selectedTab === "buy"
-                ? "Available USDT"
-                : `Available ${baseSymbol}`}
-            </Text>
-            <Text style={styles.balanceAmount}>
-              {formatAmount(currentBalance, selectedTab === "buy" ? 2 : 6)}{" "}
-              {selectedTab === "buy" ? "USDT" : baseSymbol}
-            </Text>
-          </LinearGradient>
+          {theme === "dark" ? (
+            <LinearGradient
+              colors={[
+                "rgba(255, 255, 255, 0.08)",
+                "rgba(255, 255, 255, 0.03)",
+              ]}
+              style={[styles.balanceCard, { borderColor: colors.border.card }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}>
+              <Text
+                style={[styles.balanceLabel, { color: colors.text.secondary }]}>
+                {selectedTab === "buy"
+                  ? "Available USDT"
+                  : `Available ${baseSymbol}`}
+              </Text>
+              <Text
+                style={[styles.balanceAmount, { color: colors.text.primary }]}>
+                {formatAmount(currentBalance, selectedTab === "buy" ? 2 : 6)}{" "}
+                {selectedTab === "buy" ? "USDT" : baseSymbol}
+              </Text>
+            </LinearGradient>
+          ) : (
+            <View
+              style={[
+                styles.balanceCard,
+                {
+                  backgroundColor: colors.background.cardSecondary,
+                  borderColor: colors.border.card,
+                },
+              ]}>
+              <Text
+                style={[styles.balanceLabel, { color: colors.text.secondary }]}>
+                {selectedTab === "buy"
+                  ? "Available USDT"
+                  : `Available ${baseSymbol}`}
+              </Text>
+              <Text
+                style={[styles.balanceAmount, { color: colors.text.primary }]}>
+                {formatAmount(currentBalance, selectedTab === "buy" ? 2 : 6)}{" "}
+                {selectedTab === "buy" ? "USDT" : baseSymbol}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.inputSection}>
@@ -386,51 +418,114 @@ const OrderEntry = React.memo(
         </View>
 
         <View style={styles.totalSection}>
-          <LinearGradient
-            colors={["rgba(102, 116, 204, 0.1)", "rgba(102, 116, 204, 0.05)"]}
-            style={styles.totalCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>{t("order.total")}:</Text>
-              <Text style={styles.totalAmount}>
-                $
-                {formatAmount(
-                  (() => {
-                    const cleanAmount = safeParseFloat(amount);
-                    const cleanPrice = safeParseFloat(price);
-                    const calculated = cleanAmount * cleanPrice;
-                    return Number.isFinite(calculated) && calculated >= 0
-                      ? calculated
-                      : 0;
-                  })(),
-                  2
-                )}
-              </Text>
+          {theme === "dark" ? (
+            <LinearGradient
+              colors={["rgba(102, 116, 204, 0.1)", "rgba(102, 116, 204, 0.05)"]}
+              style={[styles.totalCard, { borderColor: colors.border.card }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}>
+              <View style={styles.totalRow}>
+                <Text
+                  style={[styles.totalLabel, { color: colors.text.secondary }]}>
+                  {t("order.total")}:
+                </Text>
+                <Text
+                  style={[styles.totalAmount, { color: colors.text.primary }]}>
+                  $
+                  {formatAmount(
+                    (() => {
+                      const cleanAmount = safeParseFloat(amount);
+                      const cleanPrice = safeParseFloat(price);
+                      const calculated = cleanAmount * cleanPrice;
+                      return Number.isFinite(calculated) && calculated >= 0
+                        ? calculated
+                        : 0;
+                    })(),
+                    2
+                  )}
+                </Text>
+              </View>
+              <View style={styles.totalRow}>
+                <Text
+                  style={[styles.feeLabel, { color: colors.text.secondary }]}>
+                  {t("order.fee")} ({TRADING_CONFIG.TRADING_FEE_DISPLAY}):
+                </Text>
+                <Text
+                  style={[styles.feeAmount, { color: colors.text.primary }]}>
+                  $
+                  {formatAmount(
+                    (() => {
+                      const cleanAmount = safeParseFloat(amount);
+                      const cleanPrice = safeParseFloat(price);
+                      const calculated =
+                        cleanAmount *
+                        cleanPrice *
+                        TRADING_CONFIG.TRADING_FEE_PERCENTAGE;
+                      return Number.isFinite(calculated) && calculated >= 0
+                        ? calculated
+                        : 0;
+                    })(),
+                    2
+                  )}
+                </Text>
+              </View>
+            </LinearGradient>
+          ) : (
+            <View
+              style={[
+                styles.totalCard,
+                {
+                  backgroundColor: colors.background.cardSecondary,
+                  borderColor: colors.border.card,
+                },
+              ]}>
+              <View style={styles.totalRow}>
+                <Text
+                  style={[styles.totalLabel, { color: colors.text.secondary }]}>
+                  {t("order.total")}:
+                </Text>
+                <Text
+                  style={[styles.totalAmount, { color: colors.text.primary }]}>
+                  $
+                  {formatAmount(
+                    (() => {
+                      const cleanAmount = safeParseFloat(amount);
+                      const cleanPrice = safeParseFloat(price);
+                      const calculated = cleanAmount * cleanPrice;
+                      return Number.isFinite(calculated) && calculated >= 0
+                        ? calculated
+                        : 0;
+                    })(),
+                    2
+                  )}
+                </Text>
+              </View>
+              <View style={styles.totalRow}>
+                <Text
+                  style={[styles.feeLabel, { color: colors.text.secondary }]}>
+                  {t("order.fee")} ({TRADING_CONFIG.TRADING_FEE_DISPLAY}):
+                </Text>
+                <Text
+                  style={[styles.feeAmount, { color: colors.text.primary }]}>
+                  $
+                  {formatAmount(
+                    (() => {
+                      const cleanAmount = safeParseFloat(amount);
+                      const cleanPrice = safeParseFloat(price);
+                      const calculated =
+                        cleanAmount *
+                        cleanPrice *
+                        TRADING_CONFIG.TRADING_FEE_PERCENTAGE;
+                      return Number.isFinite(calculated) && calculated >= 0
+                        ? calculated
+                        : 0;
+                    })(),
+                    2
+                  )}
+                </Text>
+              </View>
             </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.feeLabel}>
-                {t("order.fee")} ({TRADING_CONFIG.TRADING_FEE_DISPLAY}):
-              </Text>
-              <Text style={styles.feeAmount}>
-                $
-                {formatAmount(
-                  (() => {
-                    const cleanAmount = safeParseFloat(amount);
-                    const cleanPrice = safeParseFloat(price);
-                    const calculated =
-                      cleanAmount *
-                      cleanPrice *
-                      TRADING_CONFIG.TRADING_FEE_PERCENTAGE;
-                    return Number.isFinite(calculated) && calculated >= 0
-                      ? calculated
-                      : 0;
-                  })(),
-                  2
-                )}
-              </Text>
-            </View>
-          </LinearGradient>
+          )}
         </View>
 
         <View style={styles.buttonSection}>
@@ -464,17 +559,14 @@ const styles = StyleSheet.create({
     padding: Dimensions.spacing.md,
     borderRadius: Dimensions.radius.md,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   balanceLabel: {
     fontSize: Dimensions.fontSize.sm,
-    color: "rgba(255, 255, 255, 0.7)",
     marginBottom: Dimensions.spacing.xs,
   },
   balanceAmount: {
     fontSize: Dimensions.fontSize.xl,
     fontWeight: "bold",
-    color: "#fff",
   },
   inputSection: {
     marginBottom: Dimensions.spacing.md,
@@ -497,7 +589,6 @@ const styles = StyleSheet.create({
     padding: Dimensions.spacing.md,
     borderRadius: Dimensions.radius.md,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   totalRow: {
     flexDirection: "row",
@@ -506,21 +597,17 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: Dimensions.fontSize.sm,
-    color: "rgba(255, 255, 255, 0.7)",
   },
   totalAmount: {
     fontSize: Dimensions.fontSize.md,
     fontWeight: "bold",
-    color: "#fff",
   },
   feeLabel: {
     fontSize: Dimensions.fontSize.sm,
-    color: "rgba(255, 255, 255, 0.7)",
   },
   feeAmount: {
     fontSize: Dimensions.fontSize.md,
     fontWeight: "bold",
-    color: "#fff",
   },
   buttonSection: {
     marginTop: Dimensions.spacing.md,

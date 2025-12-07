@@ -1,9 +1,9 @@
-import Colors from '@/styles/colors';
 import Dimensions from '@/styles/dimensions';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import Typography from '@/styles/typography';
 import { CRYPTO_FALLBACK_PRICES, TRADING_CONFIG } from '@/utils/constant';
 import { formatAmount } from '@/utils/formatters';
+import { getColors } from '@/styles/colors';
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,7 @@ import {
   View
   } from 'react-native';
 import { useLanguage } from '@/context/LanguageContext';
+import { useTheme } from '@/context/ThemeContext';
 
 
 const getFallbackPrice = (symbol: string): number => {
@@ -47,6 +48,8 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
     balanceType = "token",
     resetTrigger,
   }) => {
+    const { theme } = useTheme();
+    const colors = getColors(theme);
     const { t } = useLanguage();
 
     // Extract base symbol from amountUnit if it contains "/" (e.g., "SOL/USDT" -> "SOL")
@@ -107,8 +110,8 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
     );
 
     const getFillColor = useCallback(() => {
-      return tradeType === "buy" ? Colors.action.buy : Colors.action.sell;
-    }, [tradeType]);
+      return tradeType === "buy" ? colors.action.buy : colors.action.sell;
+    }, [tradeType, colors]);
 
     const getMaxAmountText = useCallback(() => {
       if (tradeType === "buy" && balanceType === "usdt") {
@@ -145,7 +148,7 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
                 backgroundColor:
                   currentPosition === pos
                     ? getFillColor()
-                    : Colors.background.tertiary,
+                    : colors.background.tertiary,
                 borderColor: getFillColor(),
               },
             ]}>
@@ -153,17 +156,14 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
               style={[
                 Typography.bodySmall,
                 {
-                  color:
-                    currentPosition === pos
-                      ? Colors.background.secondary
-                      : Colors.text.primary,
+                  color: colors.text.primary,
                 },
               ]}>
               {pos}%
             </Text>
           </TouchableOpacity>
         )),
-      [currentPosition, getFillColor, handleCirclePress]
+      [currentPosition, getFillColor, handleCirclePress, colors]
     );
 
     return (
@@ -172,8 +172,11 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
 
         <View style={styles.labelsContainer}>
           <View style={styles.labelRow}>
-            <Text style={Typography.label}>{t("trading.available")}</Text>
-            <Text style={Typography.bodySmall}>
+            <Text style={[Typography.label, { color: colors.text.secondary }]}>
+              {t("trading.available")}
+            </Text>
+            <Text
+              style={[Typography.bodySmall, { color: colors.text.primary }]}>
               {formatAmount(availableAmount, 2)}{" "}
               {tradeType === "buy" ? "USDT" : baseAmountUnit}
             </Text>
@@ -181,10 +184,14 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
 
           {tradeType === "buy" && (
             <View style={styles.labelRow}>
-              <Text style={Typography.label}>
+              <Text
+                style={[Typography.label, { color: colors.text.secondary }]}>
                 {t(tradeType === "buy" ? "trading.maxBuy" : "trading.maxSell")}
               </Text>
-              <Text style={Typography.bodySmall}>{getMaxAmountText()}</Text>
+              <Text
+                style={[Typography.bodySmall, { color: colors.text.primary }]}>
+                {getMaxAmountText()}
+              </Text>
             </View>
           )}
         </View>

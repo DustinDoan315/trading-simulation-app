@@ -351,6 +351,15 @@
     "manageAlerts": "Manage alerts",
     "language": "Language",
     "changeLanguage": "Change language",
+    "theme": "Theme",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "systemTheme": "System Default",
+    "themeMode": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
     "resetData": "Reset Data",
     "resetToDefault": "Reset to default values",
     "collections": "Collections",

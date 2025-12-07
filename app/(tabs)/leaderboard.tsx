@@ -1,4 +1,5 @@
-import colors from '@/styles/colors';
+import { getColors } from '@/styles/colors';
+import { useTheme } from '@/context/ThemeContext';
 import LeaderboardService from '@/services/LeaderboardService';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { useFocusEffect } from '@react-navigation/native';
@@ -42,6 +43,8 @@ const LeaderboardScreen = () => {
   const { showNotification } = useNotification();
   const { user } = useUser();
   const { t } = useLanguage();
+  const { theme, isDark } = useTheme();
+  const colors = getColors(theme);
 
   const {
     data: leaderboardData,
@@ -217,7 +220,14 @@ const LeaderboardScreen = () => {
 
   const RankedItem = ({ item, type }: any) => (
     <View
-      style={[styles.rankedItem, item.isCurrentUser && styles.currentUserItem]}>
+      style={[
+        styles.rankedItem, 
+        { backgroundColor: colors.background.card },
+        item.isCurrentUser && [
+          styles.currentUserItem,
+          { backgroundColor: colors.background.cardSecondary, borderColor: colors.action.accent }
+        ]
+      ]}>
       <View style={styles.rankSection}>
         <View
           style={[
@@ -227,7 +237,7 @@ const LeaderboardScreen = () => {
           <Text
             style={[
               styles.rankText,
-              { color: item.rank <= 3 ? "#000" : "#fff" },
+              { color: item.rank <= 3 ? "#000" : colors.text.primary },
             ]}>
             {item.rank}
           </Text>
@@ -254,18 +264,19 @@ const LeaderboardScreen = () => {
                 ellipsizeMode="tail"
                 style={[
                   styles.name,
-                  item.isCurrentUser && styles.currentUserName,
+                  { color: colors.text.primary },
+                  item.isCurrentUser && [styles.currentUserName, { color: colors.action.accent }],
                 ]}>
                 {item.name}
               </Text>
             </View>
             {type === "collections" && (
-              <Text style={styles.members}>
+              <Text style={[styles.members, { color: colors.text.muted }]}>
                 {item.members} {t("leaderboard.members")}
               </Text>
             )}
             {!type.includes("collections") && item.lastActive && (
-              <Text style={styles.lastActiveText}>
+              <Text style={[styles.lastActiveText, { color: colors.text.muted }]}>
                 {item.isActive
                   ? t("leaderboard.onlineNow")
                   : formatTimeSince(item.lastActive)}
@@ -277,10 +288,10 @@ const LeaderboardScreen = () => {
         <View style={styles.statsContainer}>
           {type === "collections" ? (
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>
+              <Text style={[styles.statValue, { color: colors.text.primary }]}>
                 ${item.totalValue.toLocaleString()}
               </Text>
-              <Text style={styles.statLabel}>
+              <Text style={[styles.statLabel, { color: colors.text.muted }]}>
                 {t("leaderboard.totalValue")}
               </Text>
             </View>
@@ -290,22 +301,22 @@ const LeaderboardScreen = () => {
                 <Text
                   style={[
                     styles.statValue,
-                    { color: item.pnl >= 0 ? "#10BA68" : "#F9335D" },
+                    { color: item.pnl >= 0 ? colors.action.buy : colors.action.sell },
                   ]}>
                   {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
                 </Text>
-                <Text style={styles.statLabel}>P&L</Text>
+                <Text style={[styles.statLabel, { color: colors.text.muted }]}>P&L</Text>
               </View>
               <View style={styles.statItem}>
                 <Text
                   style={[
                     styles.statValue,
-                    { color: item.percentage >= 0 ? "#10BA68" : "#F9335D" },
+                    { color: item.percentage >= 0 ? colors.action.buy : colors.action.sell },
                   ]}>
                   {item.percentage >= 0 ? "+" : ""}
                   {item.percentage.toFixed(2)}%
                 </Text>
-                <Text style={styles.statLabel}>{t("leaderboard.return")}</Text>
+                <Text style={[styles.statLabel, { color: colors.text.muted }]}>{t("leaderboard.return")}</Text>
               </View>
             </>
           )}
@@ -383,15 +394,15 @@ const LeaderboardScreen = () => {
   };
 
   const LeaderboardHeader = () => (
-    <View style={styles.headerContainer}>
+    <View style={[styles.headerContainer, { backgroundColor: colors.background.card }]}>
       <View style={styles.userRankSection}>
         <View style={styles.rankDisplay}>
-          <View style={styles.rankBadgeContainer}>
-            <Text style={styles.rankNumber}>
+          <View style={[styles.rankBadgeContainer, { backgroundColor: colors.action.accent }]}>
+            <Text style={[styles.rankNumber, { color: colors.text.primary }]}>
               {currentRank ? `#${currentRank}` : "—"}
             </Text>
           </View>
-          <Text style={styles.rankLabel}>
+          <Text style={[styles.rankLabel, { color: colors.text.muted }]}>
             {activeTab === "friends"
               ? currentRank
                 ? t("leaderboard.yourGlobalPosition")
@@ -406,20 +417,20 @@ const LeaderboardScreen = () => {
       {(stats || leaderboardData.activeUsers !== undefined) && (
         <View style={styles.statsSection}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>
+            <Text style={[styles.statNumber, { color: colors.text.primary }]}>
               {stats?.totalUsers || leaderboardData.global.length}
             </Text>
-            <Text style={styles.statLabel}>
+            <Text style={[styles.statLabel, { color: colors.text.muted }]}>
               {activeTab === "friends"
                 ? t("leaderboard.globalTraders")
                 : t("leaderboard.totalTraders")}
             </Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>
+            <Text style={[styles.statNumber, { color: colors.text.primary }]}>
               {leaderboardData.activeUsers || stats?.activeUsers || 0}
             </Text>
-            <Text style={styles.statLabel}>
+            <Text style={[styles.statLabel, { color: colors.text.muted }]}>
               {t("leaderboard.activeTraders")}
             </Text>
           </View>
@@ -470,27 +481,35 @@ const LeaderboardScreen = () => {
   }, [user?.id]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background.primary} />
 
-      <View style={styles.tabContainer}>
+      <View style={[styles.tabContainer, { backgroundColor: colors.background.card }]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === "global" && styles.activeTab]}
+          style={[
+            styles.tab, 
+            activeTab === "global" && [styles.activeTab, { backgroundColor: colors.action.accent }]
+          ]}
           onPress={() => setActiveTab("global")}>
           <Text
             style={[
               styles.tabText,
+              { color: activeTab === "global" ? colors.text.primary : colors.text.muted },
               activeTab === "global" && styles.activeTabText,
             ]}>
             {t("leaderboard.global")}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === "friends" && styles.activeTab]}
+          style={[
+            styles.tab, 
+            activeTab === "friends" && [styles.activeTab, { backgroundColor: colors.action.accent }]
+          ]}
           onPress={() => setActiveTab("friends")}>
           <Text
             style={[
               styles.tabText,
+              { color: activeTab === "friends" ? colors.text.primary : colors.text.muted },
               activeTab === "friends" && styles.activeTabText,
             ]}>
             {t("leaderboard.friends")}
@@ -523,8 +542,8 @@ const LeaderboardScreen = () => {
           <RefreshControl
             refreshing={isLoading || rankLoading || friendsLoading}
             onRefresh={handleRefresh}
-            tintColor="#6674CC"
-            colors={["#6674CC"]}
+            tintColor={colors.action.accent}
+            colors={[colors.action.accent]}
           />
         }
         ListHeaderComponent={
@@ -537,7 +556,7 @@ const LeaderboardScreen = () => {
         ListEmptyComponent={
           isLoading || rankLoading || friendsLoading ? null : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
+              <Text style={[styles.emptyStateText, { color: colors.text.muted }]}>
                 {activeTab === "friends"
                   ? friendsData.length === 0
                     ? t("leaderboard.noFriendsFound")
@@ -553,8 +572,8 @@ const LeaderboardScreen = () => {
 
       {/* Last Updated Indicator */}
       {lastUpdated && (
-        <View style={styles.lastUpdatedContainer}>
-          <Text style={styles.syncStatusText}>
+        <View style={[styles.lastUpdatedContainer, { backgroundColor: colors.background.card }]}>
+          <Text style={[styles.syncStatusText, { color: colors.action.buy }]}>
             {t("leaderboard.lastUpdated", {
               time: lastUpdated.toLocaleTimeString(),
             })}
@@ -602,7 +621,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginHorizontal: 16,
     marginVertical: 16,
-    backgroundColor: "#1A1D2F",
     borderRadius: 16,
     padding: 6,
     shadowColor: "#000",
@@ -618,20 +636,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   activeTab: {
-    backgroundColor: "#6674CC",
-    shadowColor: "#6674CC",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
   },
   tabText: {
-    color: "#9DA3B4",
     fontSize: 16,
     fontWeight: "600",
   },
   activeTabText: {
-    color: "#FFFFFF",
     fontWeight: "700",
   },
   list: {
@@ -643,7 +657,6 @@ const styles = StyleSheet.create({
   headerContainer: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: "#1A1D2F",
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 16,
@@ -659,11 +672,9 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "#6674CC",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
-    shadowColor: "#6674CC",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -672,11 +683,9 @@ const styles = StyleSheet.create({
   rankNumber: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#FFFFFF",
   },
   rankLabel: {
     fontSize: 14,
-    color: "#9DA3B4",
     textAlign: "center",
   },
 
@@ -691,12 +700,10 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#FFFFFF",
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: "#9DA3B4",
     textAlign: "center",
   },
   rankedItem: {
@@ -704,7 +711,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: "#1A1D2F",
     marginHorizontal: 16,
     marginBottom: 8,
     borderRadius: 16,
@@ -715,9 +721,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   currentUserItem: {
-    backgroundColor: "#2A2F45",
     borderWidth: 2,
-    borderColor: "#6674CC",
   },
   rankSection: {
     marginRight: 16,
@@ -764,11 +768,9 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 13,
-    color: "#FFFFFF",
     marginBottom: 2,
   },
   currentUserName: {
-    color: "#6674CC",
     fontWeight: "700",
   },
   activeBadge: {
@@ -785,11 +787,9 @@ const styles = StyleSheet.create({
   },
   members: {
     fontSize: 12,
-    color: "#9DA3B4",
   },
   lastActiveText: {
     fontSize: 12,
-    color: "#9DA3B4",
     marginTop: 4,
   },
   activeIndicator: {
@@ -841,26 +841,22 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 14,
-    color: "#9DA3B4",
     textAlign: "center",
     lineHeight: 24,
   },
   lastUpdatedContainer: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: "#1A1D2F",
     marginHorizontal: 20,
     marginBottom: 16,
     borderRadius: 12,
   },
   lastUpdatedText: {
     fontSize: 12,
-    color: "#9DA3B4",
     textAlign: "center",
   },
   syncStatusText: {
     fontSize: 12,
-    color: "#4CAF50",
     textAlign: "center",
     marginTop: 4,
   },

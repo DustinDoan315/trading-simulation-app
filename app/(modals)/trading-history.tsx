@@ -9,6 +9,8 @@ import { TRANSACTION_LIMITS } from '@/utils/constant';
 import { useAppDispatch } from '@/store';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUser } from '@/context/UserContext';
+import { useTheme } from '@/context/ThemeContext';
+import { getColors } from '@/styles/colors';
 import {
   ActivityIndicator,
   FlatList,
@@ -25,6 +27,8 @@ import {
 
 const TradingHistoryModal = () => {
   const dispatch = useAppDispatch();
+  const { theme, isDark } = useTheme();
+  const colors = getColors(theme);
   const { user, transactions, loading, error, refreshUserData } = useUser();
   const { t } = useLanguage();
 
@@ -108,6 +112,11 @@ const TradingHistoryModal = () => {
     return date.toLocaleDateString();
   };
 
+  const FORMATTING_THRESHOLDS = {
+    THOUSAND: 1000,
+    MILLION: 1000000,
+  };
+
   const formatAmount = (value: string | number, decimals: number = 8) => {
     const num = typeof value === "string" ? parseFloat(value) : value;
 
@@ -164,102 +173,202 @@ const TradingHistoryModal = () => {
     }
   };
 
-  const TradeItem = ({ trade }: { trade: Transaction }) => (
-    <View style={styles.tradeItem}>
-      <LinearGradient
-        colors={["#1A1D2F", "#2A2E42"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.tradeItemGradient}>
-        {/* Header Section */}
-        <View style={styles.tradeHeader}>
-          <View style={styles.symbolContainer}>
-            <View style={styles.symbolIcon}>
-              <Text style={styles.symbolIconText}>
-                {trade.symbol.charAt(0)}
-              </Text>
+  const TradeItem = ({ trade }: { trade: Transaction }) => {
+    const gradientColors = theme === 'dark' 
+      ? [colors.background.card, colors.background.cardSecondary]
+      : [colors.background.card, colors.background.card];
+    
+    return (
+      <View style={styles.tradeItem}>
+        {theme === 'dark' ? (
+          <LinearGradient
+            colors={gradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.tradeItemGradient, { borderColor: colors.border.card }]}>
+            {/* Header Section */}
+            <View style={styles.tradeHeader}>
+              <View style={styles.symbolContainer}>
+                <View style={[styles.symbolIcon, { backgroundColor: colors.action.accent }]}>
+                  <Text style={[styles.symbolIconText, { color: colors.text.primary }]}>
+                    {trade.symbol.charAt(0)}
+                  </Text>
+                </View>
+                <View style={styles.symbolInfo}>
+                  <Text style={[styles.symbol, { color: colors.text.primary }]}>{trade.symbol}</Text>
+                  <Text style={[styles.symbolName, { color: colors.text.secondary }]}>
+                    {trade.symbol} {t("tradingHistory.token")}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.headerRight}>
+                <LinearGradient
+                  colors={getTypeGradient(trade.type)}
+                  style={styles.typeBadge}>
+                  <Ionicons
+                    name={trade.type === "BUY" ? "arrow-down" : "arrow-up"}
+                    size={12}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.typeText}>{trade.type}</Text>
+                </LinearGradient>
+                <Text style={[styles.timestamp, { color: colors.text.secondary }]}>{formatDate(trade.timestamp)}</Text>
+              </View>
             </View>
-            <View style={styles.symbolInfo}>
-              <Text style={styles.symbol}>{trade.symbol}</Text>
-              <Text style={styles.symbolName}>
-                {trade.symbol} {t("tradingHistory.token")}
-              </Text>
+
+            {/* Amount and Price Section */}
+            <View style={styles.amountSection}>
+              <View style={styles.amountRow}>
+                <Text style={[styles.amountLabel, { color: colors.text.secondary }]}>{t("tradingHistory.amount")}</Text>
+                <Text style={[styles.amountValue, { color: colors.text.primary }]}>
+                  {formatAmount(trade.quantity)} {trade.symbol}
+                </Text>
+              </View>
+              <View style={styles.amountRow}>
+                <Text style={[styles.amountLabel, { color: colors.text.secondary }]}>{t("tradingHistory.price")}</Text>
+                <Text style={[styles.amountValue, { color: colors.text.primary }]}>
+                  {formatCurrency(trade.price)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Total and Fee Section */}
+            <View style={[styles.totalSection, { borderTopColor: colors.border.card }]}>
+              <View style={styles.totalRow}>
+                <Text style={[styles.totalLabel, { color: colors.text.secondary }]}>
+                  {t("tradingHistory.totalValue")}
+                </Text>
+                <Text style={[styles.totalValue, { color: colors.text.primary }]}>
+                  {formatCurrency(trade.total_value)}
+                </Text>
+              </View>
+              {parseFloat(trade.fee) > 0 && (
+                <View style={styles.feeRow}>
+                  <Text style={[styles.feeLabel, { color: colors.text.secondary }]}>{t("tradingHistory.fee")}</Text>
+                  <Text style={[styles.feeValue, { color: colors.action.sell }]}>{formatCurrency(trade.fee)}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Status Section */}
+            <View style={[styles.statusSection, { borderTopColor: colors.border.card }]}>
+              <View style={styles.statusContainer}>
+                <View
+                  style={[
+                    styles.statusDot,
+                    { backgroundColor: getStatusColor(trade.status) },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.statusText,
+                    { color: getStatusColor(trade.status) },
+                  ]}>
+                  {trade.status}
+                </Text>
+              </View>
+              <View style={[styles.orderTypeContainer, { backgroundColor: colors.background.cardSecondary }]}>
+                <Text style={[styles.orderTypeText, { color: colors.text.secondary }]}>{trade.order_type}</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        ) : (
+          <View style={[styles.tradeItemGradient, {
+            backgroundColor: colors.background.card,
+            borderColor: colors.border.card,
+          }]}>
+            {/* Header Section */}
+            <View style={styles.tradeHeader}>
+              <View style={styles.symbolContainer}>
+                <View style={[styles.symbolIcon, { backgroundColor: colors.action.accent }]}>
+                  <Text style={[styles.symbolIconText, { color: colors.text.primary }]}>
+                    {trade.symbol.charAt(0)}
+                  </Text>
+                </View>
+                <View style={styles.symbolInfo}>
+                  <Text style={[styles.symbol, { color: colors.text.primary }]}>{trade.symbol}</Text>
+                  <Text style={[styles.symbolName, { color: colors.text.secondary }]}>
+                    {trade.symbol} {t("tradingHistory.token")}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.headerRight}>
+                <LinearGradient
+                  colors={getTypeGradient(trade.type)}
+                  style={styles.typeBadge}>
+                  <Ionicons
+                    name={trade.type === "BUY" ? "arrow-down" : "arrow-up"}
+                    size={12}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.typeText}>{trade.type}</Text>
+                </LinearGradient>
+                <Text style={[styles.timestamp, { color: colors.text.secondary }]}>{formatDate(trade.timestamp)}</Text>
+              </View>
+            </View>
+
+            {/* Amount and Price Section */}
+            <View style={styles.amountSection}>
+              <View style={styles.amountRow}>
+                <Text style={[styles.amountLabel, { color: colors.text.secondary }]}>{t("tradingHistory.amount")}</Text>
+                <Text style={[styles.amountValue, { color: colors.text.primary }]}>
+                  {formatAmount(trade.quantity)} {trade.symbol}
+                </Text>
+              </View>
+              <View style={styles.amountRow}>
+                <Text style={[styles.amountLabel, { color: colors.text.secondary }]}>{t("tradingHistory.price")}</Text>
+                <Text style={[styles.amountValue, { color: colors.text.primary }]}>
+                  {formatCurrency(trade.price)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Total and Fee Section */}
+            <View style={[styles.totalSection, { borderTopColor: colors.border.card }]}>
+              <View style={styles.totalRow}>
+                <Text style={[styles.totalLabel, { color: colors.text.secondary }]}>
+                  {t("tradingHistory.totalValue")}
+                </Text>
+                <Text style={[styles.totalValue, { color: colors.text.primary }]}>
+                  {formatCurrency(trade.total_value)}
+                </Text>
+              </View>
+              {parseFloat(trade.fee) > 0 && (
+                <View style={styles.feeRow}>
+                  <Text style={[styles.feeLabel, { color: colors.text.secondary }]}>{t("tradingHistory.fee")}</Text>
+                  <Text style={[styles.feeValue, { color: colors.action.sell }]}>{formatCurrency(trade.fee)}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Status Section */}
+            <View style={[styles.statusSection, { borderTopColor: colors.border.card }]}>
+              <View style={styles.statusContainer}>
+                <View
+                  style={[
+                    styles.statusDot,
+                    { backgroundColor: getStatusColor(trade.status) },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.statusText,
+                    { color: getStatusColor(trade.status) },
+                  ]}>
+                  {trade.status}
+                </Text>
+              </View>
+              <View style={[styles.orderTypeContainer, { backgroundColor: colors.background.cardSecondary }]}>
+                <Text style={[styles.orderTypeText, { color: colors.text.secondary }]}>{trade.order_type}</Text>
+              </View>
             </View>
           </View>
-
-          <View style={styles.headerRight}>
-            <LinearGradient
-              colors={getTypeGradient(trade.type)}
-              style={styles.typeBadge}>
-              <Ionicons
-                name={trade.type === "BUY" ? "arrow-down" : "arrow-up"}
-                size={12}
-                color="#FFFFFF"
-              />
-              <Text style={styles.typeText}>{trade.type}</Text>
-            </LinearGradient>
-            <Text style={styles.timestamp}>{formatDate(trade.timestamp)}</Text>
-          </View>
-        </View>
-
-        {/* Amount and Price Section */}
-        <View style={styles.amountSection}>
-          <View style={styles.amountRow}>
-            <Text style={styles.amountLabel}>{t("tradingHistory.amount")}</Text>
-            <Text style={styles.amountValue}>
-              {formatAmount(trade.quantity)} {trade.symbol}
-            </Text>
-          </View>
-          <View style={styles.amountRow}>
-            <Text style={styles.amountLabel}>{t("tradingHistory.price")}</Text>
-            <Text style={styles.amountValue}>
-              {formatCurrency(trade.price)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Total and Fee Section */}
-        <View style={styles.totalSection}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>
-              {t("tradingHistory.totalValue")}
-            </Text>
-            <Text style={styles.totalValue}>
-              {formatCurrency(trade.total_value)}
-            </Text>
-          </View>
-          {parseFloat(trade.fee) > 0 && (
-            <View style={styles.feeRow}>
-              <Text style={styles.feeLabel}>{t("tradingHistory.fee")}</Text>
-              <Text style={styles.feeValue}>{formatCurrency(trade.fee)}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Status Section */}
-        <View style={styles.statusSection}>
-          <View style={styles.statusContainer}>
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: getStatusColor(trade.status) },
-              ]}
-            />
-            <Text
-              style={[
-                styles.statusText,
-                { color: getStatusColor(trade.status) },
-              ]}>
-              {trade.status}
-            </Text>
-          </View>
-          <View style={styles.orderTypeContainer}>
-            <Text style={styles.orderTypeText}>{trade.order_type}</Text>
-          </View>
-        </View>
-      </LinearGradient>
-    </View>
-  );
+        )}
+      </View>
+    );
+  };
 
   const FilterButton = ({
     title,
@@ -269,23 +378,46 @@ const TradingHistoryModal = () => {
     title: string;
     value: "all" | "buy" | "sell";
     isActive: boolean;
-  }) => (
-    <TouchableOpacity
-      style={[styles.filterButton, isActive && styles.activeFilterButton]}
-      onPress={() => setActiveFilter(value)}>
-      <LinearGradient
-        colors={isActive ? ["#6674CC", "#5A6BC0"] : ["#1A1D2F", "#2A2E42"]}
-        style={styles.filterButtonGradient}>
-        <Text
-          style={[
-            styles.filterButtonText,
-            isActive && styles.activeFilterButtonText,
-          ]}>
-          {title}
-        </Text>
-      </LinearGradient>
-    </TouchableOpacity>
-  );
+  }) => {
+    const gradientColors = isActive 
+      ? [colors.action.accent, colors.action.accent]
+      : theme === 'dark'
+        ? [colors.background.card, colors.background.cardSecondary]
+        : [colors.background.card, colors.background.card];
+    
+    return (
+      <TouchableOpacity
+        style={[styles.filterButton, isActive && { borderColor: colors.action.accent }]}
+        onPress={() => setActiveFilter(value)}>
+        {theme === 'dark' ? (
+          <LinearGradient
+            colors={gradientColors}
+            style={[styles.filterButtonGradient, { borderColor: isActive ? colors.action.accent : colors.border.card }]}>
+            <Text
+              style={[
+                styles.filterButtonText,
+                { color: isActive ? colors.text.primary : colors.text.secondary },
+              ]}>
+              {title}
+            </Text>
+          </LinearGradient>
+        ) : (
+          <View style={[styles.filterButtonGradient, {
+            backgroundColor: isActive ? colors.action.accent : colors.background.card,
+            borderColor: isActive ? colors.action.accent : colors.border.card,
+          }]}>
+            <Text
+              style={[
+                styles.filterButtonText,
+                { color: isActive ? colors.text.primary : colors.text.secondary },
+              ]}>
+              {title}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const TimeButton = ({
     title,
@@ -295,23 +427,46 @@ const TradingHistoryModal = () => {
     title: string;
     value: "1d" | "1w" | "1m" | "3m" | "1y";
     isActive: boolean;
-  }) => (
-    <TouchableOpacity
-      style={[styles.timeButton, isActive && styles.activeTimeButton]}
-      onPress={() => setTimePeriod(value)}>
-      <LinearGradient
-        colors={isActive ? ["#6674CC", "#5A6BC0"] : ["#1A1D2F", "#2A2E42"]}
-        style={styles.timeButtonGradient}>
-        <Text
-          style={[
-            styles.timeButtonText,
-            isActive && styles.activeTimeButtonText,
-          ]}>
-          {title}
-        </Text>
-      </LinearGradient>
-    </TouchableOpacity>
-  );
+  }) => {
+    const gradientColors = isActive 
+      ? [colors.action.accent, colors.action.accent]
+      : theme === 'dark'
+        ? [colors.background.card, colors.background.cardSecondary]
+        : [colors.background.card, colors.background.card];
+    
+    return (
+      <TouchableOpacity
+        style={[styles.timeButton, isActive && { borderColor: colors.action.accent }]}
+        onPress={() => setTimePeriod(value)}>
+        {theme === 'dark' ? (
+          <LinearGradient
+            colors={gradientColors}
+            style={[styles.timeButtonGradient, { borderColor: isActive ? colors.action.accent : colors.border.card }]}>
+            <Text
+              style={[
+                styles.timeButtonText,
+                { color: isActive ? colors.text.primary : colors.text.secondary },
+              ]}>
+              {title}
+            </Text>
+          </LinearGradient>
+        ) : (
+          <View style={[styles.timeButtonGradient, {
+            backgroundColor: isActive ? colors.action.accent : colors.background.card,
+            borderColor: isActive ? colors.action.accent : colors.border.card,
+          }]}>
+            <Text
+              style={[
+                styles.timeButtonText,
+                { color: isActive ? colors.text.primary : colors.text.secondary },
+              ]}>
+              {title}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const filteredHistory = getFilteredHistory();
   const buyCount = filteredHistory.filter((t) => t.type === "BUY").length;
@@ -319,20 +474,20 @@ const TradingHistoryModal = () => {
 
   if (loading && !refreshing) {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#121212" />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background.primary} />
         <View style={styles.header}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.background.card }]}
             onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.title}>{t("tradingHistory.title")}</Text>
+          <Text style={[styles.title, { color: colors.text.primary }]}>{t("tradingHistory.title")}</Text>
           <View style={styles.exportButton} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6674CC" />
-          <Text style={styles.loadingText}>
+          <ActivityIndicator size="large" color={colors.action.accent} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
             {t("tradingHistory.loadingTradingHistory")}
           </Text>
         </View>
@@ -341,16 +496,16 @@ const TradingHistoryModal = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background.primary} />
 
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: colors.background.card }]}
           onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.title}>{t("tradingHistory.title")}</Text>
+        <Text style={[styles.title, { color: colors.text.primary }]}>{t("tradingHistory.title")}</Text>
 
       </View>
 
@@ -386,58 +541,106 @@ const TradingHistoryModal = () => {
 
       {/* Statistics Summary */}
       <View style={styles.statsContainer}>
-        <LinearGradient colors={["#1A1D2F", "#2A2E42"]} style={styles.statCard}>
-          <Text style={styles.statLabel}>
-            {t("tradingHistory.totalTrades")}
-          </Text>
-          <Text style={styles.statValue}>{filteredHistory.length}</Text>
-        </LinearGradient>
-        {activeFilter === "all" && (
+        {theme === 'dark' ? (
           <>
-            <LinearGradient
-              colors={["#1A1D2F", "#2A2E42"]}
-              style={styles.statCard}>
-              <Text style={styles.statLabel}>
-                {t("tradingHistory.buyOrders")}
+            <LinearGradient colors={[colors.background.card, colors.background.cardSecondary]} style={[styles.statCard, { borderColor: colors.border.card }]}>
+              <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                {t("tradingHistory.totalTrades")}
               </Text>
-              <Text style={styles.statValue}>{buyCount}</Text>
+              <Text style={[styles.statValue, { color: colors.text.primary }]}>{filteredHistory.length}</Text>
             </LinearGradient>
-            <LinearGradient
-              colors={["#1A1D2F", "#2A2E42"]}
-              style={styles.statCard}>
-              <Text style={styles.statLabel}>
-                {t("tradingHistory.sellOrders")}
-              </Text>
-              <Text style={styles.statValue}>{sellCount}</Text>
-            </LinearGradient>
+            {activeFilter === "all" && (
+              <>
+                <LinearGradient
+                  colors={[colors.background.card, colors.background.cardSecondary]}
+                  style={[styles.statCard, { borderColor: colors.border.card }]}>
+                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                    {t("tradingHistory.buyOrders")}
+                  </Text>
+                  <Text style={[styles.statValue, { color: colors.text.primary }]}>{buyCount}</Text>
+                </LinearGradient>
+                <LinearGradient
+                  colors={[colors.background.card, colors.background.cardSecondary]}
+                  style={[styles.statCard, { borderColor: colors.border.card }]}>
+                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                    {t("tradingHistory.sellOrders")}
+                  </Text>
+                  <Text style={[styles.statValue, { color: colors.text.primary }]}>{sellCount}</Text>
+                </LinearGradient>
+              </>
+            )}
+            {activeFilter === "buy" && (
+              <LinearGradient
+                colors={[colors.background.card, colors.background.cardSecondary]}
+                style={[styles.statCard, { borderColor: colors.border.card }]}>
+                <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                  {t("tradingHistory.buyOrders")}
+                </Text>
+                <Text style={[styles.statValue, { color: colors.text.primary }]}>{buyCount}</Text>
+              </LinearGradient>
+            )}
+            {activeFilter === "sell" && (
+              <LinearGradient
+                colors={[colors.background.card, colors.background.cardSecondary]}
+                style={[styles.statCard, { borderColor: colors.border.card }]}>
+                <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                  {t("tradingHistory.sellOrders")}
+                </Text>
+                <Text style={[styles.statValue, { color: colors.text.primary }]}>{sellCount}</Text>
+              </LinearGradient>
+            )}
           </>
-        )}
-        {activeFilter === "buy" && (
-          <LinearGradient
-            colors={["#1A1D2F", "#2A2E42"]}
-            style={styles.statCard}>
-            <Text style={styles.statLabel}>
-              {t("tradingHistory.buyOrders")}
-            </Text>
-            <Text style={styles.statValue}>{buyCount}</Text>
-          </LinearGradient>
-        )}
-        {activeFilter === "sell" && (
-          <LinearGradient
-            colors={["#1A1D2F", "#2A2E42"]}
-            style={styles.statCard}>
-            <Text style={styles.statLabel}>
-              {t("tradingHistory.sellOrders")}
-            </Text>
-            <Text style={styles.statValue}>{sellCount}</Text>
-          </LinearGradient>
+        ) : (
+          <>
+            <View style={[styles.statCard, { backgroundColor: colors.background.card, borderColor: colors.border.card }]}>
+              <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                {t("tradingHistory.totalTrades")}
+              </Text>
+              <Text style={[styles.statValue, { color: colors.text.primary }]}>{filteredHistory.length}</Text>
+            </View>
+            {activeFilter === "all" && (
+              <>
+                <View style={[styles.statCard, { backgroundColor: colors.background.card, borderColor: colors.border.card }]}>
+                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                    {t("tradingHistory.buyOrders")}
+                  </Text>
+                  <Text style={[styles.statValue, { color: colors.text.primary }]}>{buyCount}</Text>
+                </View>
+                <View style={[styles.statCard, { backgroundColor: colors.background.card, borderColor: colors.border.card }]}>
+                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                    {t("tradingHistory.sellOrders")}
+                  </Text>
+                  <Text style={[styles.statValue, { color: colors.text.primary }]}>{sellCount}</Text>
+                </View>
+              </>
+            )}
+            {activeFilter === "buy" && (
+              <View style={[styles.statCard, { backgroundColor: colors.background.card, borderColor: colors.border.card }]}>
+                <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                  {t("tradingHistory.buyOrders")}
+                </Text>
+                <Text style={[styles.statValue, { color: colors.text.primary }]}>{buyCount}</Text>
+              </View>
+            )}
+            {activeFilter === "sell" && (
+              <View style={[styles.statCard, { backgroundColor: colors.background.card, borderColor: colors.border.card }]}>
+                <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                  {t("tradingHistory.sellOrders")}
+                </Text>
+                <Text style={[styles.statValue, { color: colors.text.primary }]}>{sellCount}</Text>
+              </View>
+            )}
+          </>
         )}
       </View>
 
       {error && (
-        <View style={styles.errorContainer}>
-          <Ionicons name="warning-outline" size={24} color="#F9335D" />
-          <Text style={styles.errorText}>{error}</Text>
+        <View style={[styles.errorContainer, {
+          backgroundColor: colors.background.card,
+          borderColor: colors.action.sell,
+        }]}>
+          <Ionicons name="warning-outline" size={24} color={colors.action.sell} />
+          <Text style={[styles.errorText, { color: colors.action.sell }]}>{error}</Text>
         </View>
       )}
 
@@ -453,17 +656,17 @@ const TradingHistoryModal = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#6674CC"
-            colors={["#6674CC"]}
+            tintColor={colors.action.accent}
+            colors={[colors.action.accent]}
           />
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Ionicons name="receipt-outline" size={48} color="#9DA3B4" />
-            <Text style={styles.emptyText}>
+            <Ionicons name="receipt-outline" size={48} color={colors.text.secondary} />
+            <Text style={[styles.emptyText, { color: colors.text.primary }]}>
               {t("tradingHistory.noTradingHistoryFound")}
             </Text>
-            <Text style={styles.emptySubtext}>
+            <Text style={[styles.emptySubtext, { color: colors.text.secondary }]}>
               {filteredHistory.length === 0 && transactions.length > 0
                 ? t("tradingHistory.tryAdjustingFilters")
                 : t("tradingHistory.startTradingToSeeHistory")}
@@ -478,7 +681,6 @@ const TradingHistoryModal = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#131523",
   },
   header: {
     flexDirection: "row",
@@ -491,14 +693,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#1A1D2F",
     justifyContent: "center",
     alignItems: "center",
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#FFFFFF",
   },
   exportButton: {
     width: 40,
@@ -516,23 +716,19 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: "#9DA3B4",
   },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A1D2F",
     marginHorizontal: 20,
     marginBottom: 16,
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#F9335D",
   },
   errorText: {
     marginLeft: 8,
     fontSize: 14,
-    color: "#F9335D",
     flex: 1,
   },
   emptyContainer: {
@@ -544,12 +740,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#FFFFFF",
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#9DA3B4",
     marginTop: 8,
     textAlign: "center",
   },
@@ -567,7 +761,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#2A2E42",
   },
   activeTimeButton: {
     borderColor: "#6674CC",
@@ -575,7 +768,6 @@ const styles = StyleSheet.create({
   timeButtonText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#9DA3B4",
   },
   activeTimeButtonText: {
     color: "#FFFFFF",
@@ -596,7 +788,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2A2E42",
   },
   activeFilterButton: {
     borderColor: "#6674CC",
@@ -604,7 +795,6 @@ const styles = StyleSheet.create({
   filterButtonText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#9DA3B4",
   },
   activeFilterButtonText: {
     color: "#FFFFFF",
@@ -621,18 +811,15 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2A2E42",
   },
   statLabel: {
     fontSize: 12,
-    color: "#9DA3B4",
     marginBottom: 8,
     fontWeight: "500",
   },
   statValue: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#FFFFFF",
   },
   historyList: {
     flex: 1,
@@ -658,7 +845,6 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#2A2E42",
   },
   tradeHeader: {
     flexDirection: "row",
@@ -675,7 +861,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#6674CC",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -683,7 +868,6 @@ const styles = StyleSheet.create({
   symbolIconText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#FFFFFF",
   },
   symbolInfo: {
     flex: 1,
@@ -691,12 +875,10 @@ const styles = StyleSheet.create({
   symbol: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FFFFFF",
     marginBottom: 2,
   },
   symbolName: {
     fontSize: 12,
-    color: "#9DA3B4",
   },
   headerRight: {
     alignItems: "flex-end",
@@ -717,7 +899,6 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 11,
-    color: "#9DA3B4",
   },
   amountSection: {
     marginBottom: 16,
@@ -730,19 +911,16 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     fontSize: 13,
-    color: "#9DA3B4",
     fontWeight: "500",
   },
   amountValue: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
   totalSection: {
     marginBottom: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#2A2E42",
   },
   totalRow: {
     flexDirection: "row",
@@ -752,13 +930,11 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 14,
-    color: "#9DA3B4",
     fontWeight: "500",
   },
   totalValue: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#FFFFFF",
   },
   feeRow: {
     flexDirection: "row",
@@ -767,13 +943,11 @@ const styles = StyleSheet.create({
   },
   feeLabel: {
     fontSize: 13,
-    color: "#9DA3B4",
     fontWeight: "500",
   },
   feeValue: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#F9335D",
   },
   statusSection: {
     flexDirection: "row",
@@ -781,7 +955,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#2A2E42",
   },
   statusContainer: {
     flexDirection: "row",
@@ -799,14 +972,12 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   orderTypeContainer: {
-    backgroundColor: "#2A2E42",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   orderTypeText: {
     fontSize: 10,
-    color: "#9DA3B4",
     fontWeight: "500",
     textTransform: "uppercase",
   },

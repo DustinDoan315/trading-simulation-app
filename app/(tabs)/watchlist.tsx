@@ -8,6 +8,8 @@ import { useAppSelector } from "@/store";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useLanguage } from "@/context/LanguageContext";
 import { WatchListSection } from "@/components/home/WatchlistSection";
+import { useTheme } from "@/context/ThemeContext";
+import { getColors } from "@/styles/colors";
 import {
   Dimensions,
   RefreshControl,
@@ -31,6 +33,8 @@ const WatchlistScreen = () => {
   const { trending, onRefresh, loading } = useHomeData();
   const [refreshing, setRefreshing] = useState(false);
   const favoriteIds = useAppSelector((state) => state.favorites.favoriteIds);
+  const { theme, isDark } = useTheme();
+  const colors = getColors(theme);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -61,7 +65,7 @@ const WatchlistScreen = () => {
   // Show shimmer loading when data is loading or refreshing
   if (loading || refreshing) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -82,7 +86,7 @@ const WatchlistScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -91,8 +95,8 @@ const WatchlistScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#667eea"
-            colors={["#667eea"]}
+            tintColor={colors.action.accent}
+            colors={[colors.action.accent]}
           />
         }>
         {filteredList.length === 0 ? (
