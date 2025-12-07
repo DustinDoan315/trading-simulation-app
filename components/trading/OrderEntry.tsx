@@ -4,13 +4,18 @@ import Dimensions from '@/styles/dimensions';
 import PriceInput from '../common/PriceInput';
 import RealTimeDataService from '@/services/RealTimeDataService';
 import TabSelector from './TableSelector';
-import { DEFAULT_CRYPTO, DEFAULT_CURRENCY } from '@/utils/constant';
 import { formatAmount } from '@/utils/formatters';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RootState } from '@/store';
 import { StyleSheet, Text, View } from 'react-native';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSelector } from 'react-redux';
+import {
+  CRYPTO_FALLBACK_PRICES,
+  DEFAULT_CRYPTO,
+  DEFAULT_CURRENCY,
+  TRADING_CONFIG,
+} from "@/utils/constant";
 import React, {
   useCallback,
   useEffect,
@@ -20,33 +25,25 @@ import React, {
 } from "react";
 
 
-// Symbol-specific fallback prices
 const getFallbackPrice = (symbol: string): number => {
   const symbolUpper = symbol.toUpperCase();
-  switch (symbolUpper) {
-    case "BTC":
-      return 120000;
-    case "ETH":
-      return 3100;
-    case "SOL":
-      return 166;
-    case "BNB":
-      return 700;
-    case "ADA":
-      return 0.5;
-    case "DOT":
-      return 7;
-    case "LINK":
-      return 15;
-    case "UNI":
-      return 7;
-    case "MATIC":
-      return 0.8;
-    case "LTC":
-      return 70;
-    default:
-      return 100; // Generic fallback
+  return (
+    CRYPTO_FALLBACK_PRICES[
+      symbolUpper as keyof typeof CRYPTO_FALLBACK_PRICES
+    ] || CRYPTO_FALLBACK_PRICES.DEFAULT
+  );
+};
+
+const safeParseFloat = (value: string | number): number => {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
   }
+  if (typeof value !== "string") {
+    return 0;
+  }
+  const cleaned = value.replaceAll(",", "").replace(/[^0-9.]/g, "");
+  const parsed = Number.parseFloat(cleaned);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 };
 
 interface OrderEntryProps {
@@ -109,10 +106,19 @@ const OrderEntry = React.memo(
     const [marginEnabled, setMarginEnabled] = useState(false);
     const firstRender = useRef(true);
 
-    const effectivePrice = useMemo(
-      () => realTimePrice || currentPrice || getFallbackPrice(baseSymbol),
-      [realTimePrice, currentPrice, baseSymbol]
-    );
+    const effectivePrice = useMemo(() => {
+      const price =
+        realTimePrice || currentPrice || getFallbackPrice(baseSymbol);
+      if (
+        !Number.isFinite(price) ||
+        price <= 0 ||
+        price > 1000000000 ||
+        price < 0.00000001
+      ) {
+        return getFallbackPrice(baseSymbol);
+      }
+      return price;
+    }, [realTimePrice, currentPrice, baseSymbol]);
 
     const currentBalance = useMemo(
       () => (selectedTab === "buy" ? availableBalance : tokenBalance),
@@ -125,7 +131,9 @@ const OrderEntry = React.memo(
     );
 
     const [sliderPosition, setSliderPosition] = useState(
-      currentBalance > 0 ? 100 : 0
+      currentBalance > 0
+        ? TRADING_CONFIG.MAX_PERCENTAGE
+        : TRADING_CONFIG.MIN_PERCENTAGE
     );
     const [currentPosition, setCurrentPosition] = useState(0);
     const [resetCounter, setResetCounter] = useState(0);
@@ -138,8 +146,16 @@ const OrderEntry = React.memo(
     }, []);
 
     useEffect(() => {
-      if (baseSymbol) {
-        setPrice(effectivePrice.toString());
+      if (
+        baseSymbol &&
+        effectivePrice > 0 &&
+        Number.isFinite(effectivePrice) &&
+        effectivePrice < 1000000000
+      ) {
+        const priceStr = effectivePrice.toString();
+        if (!priceStr.includes(",")) {
+          setPrice(priceStr);
+        }
       }
     }, [baseSymbol, effectivePrice]);
 
@@ -149,36 +165,129 @@ const OrderEntry = React.memo(
         return;
       }
 
-      handleSliderChange(0);
+      setAmount("0");
+      setCurrentPosition(0);
       setResetCounter((prev) => prev + 1);
-    }, [selectedTab]);
 
-    const handleSliderChange = useCallback((calculatedAmount: number) => {
-      // Update the current position based on the percentage
-      const percentage = currentBalance > 0 ? (calculatedAmount / currentBalance) * 100 : 0;
-      setCurrentPosition(Math.round(percentage));
-      
-      // Simply set the amount - let the parent handle the formatting
-      setAmount(calculatedAmount.toString());
-    }, [currentBalance]);
+      if (selectedTab === "buy") {
+        if (
+          baseSymbol &&
+          effectivePrice > 0 &&
+          Number.isFinite(effectivePrice) &&
+          effectivePrice < 1000000000
+        ) {
+          const cleanPrice = effectivePrice.toString();
+          setPrice(cleanPrice);
+        }
+      }
+    }, [selectedTab, baseSymbol, effectivePrice]);
+
+    const handleSliderChange = useCallback(
+      (calculatedAmount: number) => {
+        const formattedAmount =
+          calculatedAmount > 0 &&
+          calculatedAmount < TRADING_CONFIG.SMALL_NUMBER_THRESHOLD
+            ? calculatedAmount.toFixed(
+                TRADING_CONFIG.SMALL_NUMBER_DECIMAL_PLACES
+              )
+            : calculatedAmount.toString();
+        setAmount(formattedAmount);
+
+        if (
+          currentBalance <= 0 ||
+          calculatedAmount < 0 ||
+          Number.isNaN(calculatedAmount) ||
+          Number.isNaN(currentBalance)
+        ) {
+          if (calculatedAmount === 0) {
+            setCurrentPosition(TRADING_CONFIG.MIN_PERCENTAGE);
+          }
+          return;
+        }
+
+        let percentage: number;
+
+        if (selectedTab === "buy") {
+          const usdtValue = calculatedAmount * effectivePrice;
+          percentage =
+            (usdtValue / currentBalance) * TRADING_CONFIG.MAX_PERCENTAGE;
+        } else {
+          percentage =
+            (calculatedAmount / currentBalance) * TRADING_CONFIG.MAX_PERCENTAGE;
+        }
+
+        for (const buttonValue of TRADING_CONFIG.PERCENTAGE_BUTTONS) {
+          let expectedAmount: number;
+          if (selectedTab === "buy") {
+            let expectedUsdt =
+              currentBalance * (buttonValue / TRADING_CONFIG.MAX_PERCENTAGE);
+            if (buttonValue === TRADING_CONFIG.MAX_PERCENTAGE) {
+              const feesRate = TRADING_CONFIG.TRADING_FEE_PERCENTAGE;
+              expectedUsdt = currentBalance / (1 + feesRate);
+            }
+            expectedAmount = expectedUsdt / effectivePrice;
+          } else {
+            expectedAmount =
+              currentBalance * (buttonValue / TRADING_CONFIG.MAX_PERCENTAGE);
+          }
+
+          const tolerance =
+            selectedTab === "buy"
+              ? (currentBalance * TRADING_CONFIG.PERCENTAGE_TOLERANCE) /
+                effectivePrice
+              : currentBalance * TRADING_CONFIG.PERCENTAGE_TOLERANCE;
+
+          if (Math.abs(calculatedAmount - expectedAmount) <= tolerance) {
+            setCurrentPosition(buttonValue);
+            return;
+          }
+        }
+
+        const roundedPercentage = Math.max(
+          TRADING_CONFIG.MIN_PERCENTAGE,
+          Math.min(TRADING_CONFIG.MAX_PERCENTAGE, Math.round(percentage))
+        );
+        setCurrentPosition(roundedPercentage);
+      },
+      [currentBalance, selectedTab, effectivePrice]
+    );
 
     const handlePriceChange = useCallback((value: any) => {
       setPrice(value);
     }, []);
 
-    const handleAmountChange = useCallback(
-      (value: string) => {
-        setAmount(value);
-      },
-      []
-    );
+    const handleAmountChange = useCallback((value: string) => {
+      setAmount(value);
+    }, []);
 
     const handleSubmitOrder = useCallback(() => {
-      const parsedPrice = parseFloat(price.replace(",", "."));
-      const parsedAmount = parseFloat(amount.replace(",", "."));
+      const parsedPrice = safeParseFloat(price);
+      const parsedAmount = safeParseFloat(amount);
+
+      if (parsedPrice <= 0) {
+        console.error("Invalid price:", parsedPrice);
+        return;
+      }
+
+      if (parsedAmount <= 0) {
+        console.error("Invalid amount:", parsedAmount);
+        return;
+      }
+
       const orderPrice = orderType === "market" ? effectivePrice : parsedPrice;
+
+      if (!Number.isFinite(orderPrice) || orderPrice <= 0) {
+        console.error("Invalid order price:", orderPrice);
+        return;
+      }
+
       const total = orderPrice * parsedAmount;
-      const fees = total * 0.001;
+      const fees = total * TRADING_CONFIG.TRADING_FEE_PERCENTAGE;
+
+      if (!Number.isFinite(total) || !Number.isFinite(fees)) {
+        console.error("Invalid calculation:", { total, fees });
+        return;
+      }
 
       if (onSubmitOrder && baseSymbol) {
         onSubmitOrder({
@@ -287,17 +396,36 @@ const OrderEntry = React.memo(
               <Text style={styles.totalAmount}>
                 $
                 {formatAmount(
-                  (parseFloat(amount) || 0) * (parseFloat(price) || 0),
+                  (() => {
+                    const cleanAmount = safeParseFloat(amount);
+                    const cleanPrice = safeParseFloat(price);
+                    const calculated = cleanAmount * cleanPrice;
+                    return Number.isFinite(calculated) && calculated >= 0
+                      ? calculated
+                      : 0;
+                  })(),
                   2
                 )}
               </Text>
             </View>
             <View style={styles.totalRow}>
-              <Text style={styles.feeLabel}>{t("order.fee")} (0.1%):</Text>
+              <Text style={styles.feeLabel}>
+                {t("order.fee")} ({TRADING_CONFIG.TRADING_FEE_DISPLAY}):
+              </Text>
               <Text style={styles.feeAmount}>
                 $
                 {formatAmount(
-                  (parseFloat(amount) || 0) * (parseFloat(price) || 0) * 0.001,
+                  (() => {
+                    const cleanAmount = safeParseFloat(amount);
+                    const cleanPrice = safeParseFloat(price);
+                    const calculated =
+                      cleanAmount *
+                      cleanPrice *
+                      TRADING_CONFIG.TRADING_FEE_PERCENTAGE;
+                    return Number.isFinite(calculated) && calculated >= 0
+                      ? calculated
+                      : 0;
+                  })(),
                   2
                 )}
               </Text>

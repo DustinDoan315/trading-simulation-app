@@ -12,7 +12,6 @@ import { persistor } from '@/store';
 import { resetBalance } from '@/features/balanceSlice';
 import { resetFavorites } from '@/features/favoritesSlice';
 import { router } from 'expo-router';
-import { updateUser } from '@/features/userSlice';
 import { useAppDispatch } from '@/store';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRealTimeBalance } from '@/hooks/useRealTimeBalance';
@@ -83,7 +82,7 @@ const ProfileScreen = () => {
 
   const handleEditProfile = () => {
     if (!user) return;
-    
+
     // Navigate to dedicated edit profile screen
     router.push({
       pathname: "/(modals)/edit-profile" as any,
@@ -94,8 +93,6 @@ const ProfileScreen = () => {
       },
     });
   };
-
-
 
   const handleResetData = async () => {
     if (!user?.id) return;
@@ -236,7 +233,7 @@ const ProfileScreen = () => {
 
   if (loading || realTimeLoading || transactionCountLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <ShimmerPlaceHolder
@@ -415,13 +412,13 @@ const ProfileScreen = () => {
             ))}
           </View>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{t("profile.userNotFound")}</Text>
           <TouchableOpacity
@@ -441,7 +438,7 @@ const ProfileScreen = () => {
             <Text style={styles.retryButtonText}>{t("common.retry")}</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -502,15 +499,6 @@ const ProfileScreen = () => {
               icon="star"
               isLoading={refreshing}
             />
-
-            <StatsCard
-              title={t("profile.totalPnL")}
-              value={formattedTotalPnL}
-              subtitle={formattedTotalPnLPercentage}
-              color={totalPnL >= 0 ? "#10BA68" : "#F9335D"}
-              icon="wallet"
-              isCenter={true}
-            />
           </View>
         </View>
 
@@ -538,13 +526,6 @@ const ProfileScreen = () => {
               subtitle={t("profile.viewYourPastTrades")}
               onPress={() => router.push("/trading-history" as any)}
             />
-            <SettingItem
-              icon="trophy-outline"
-              title={t("profile.leaderboard")}
-              subtitle={t("profile.seeYourRanking")}
-              onPress={() => router.push("/leaderboard" as any)}
-            />
-
           </View>
         </View>
 

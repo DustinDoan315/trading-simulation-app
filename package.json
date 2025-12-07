@@ -1,5 +1,5 @@
 {
-  "name": "Trade Coin Skills",
+  "name": "trade-coin-skills",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {

@@ -38,13 +38,8 @@ export const formatTime = (time: number) => {
 
 export const generateSeedPhrase = async () => {
   try {
-    // Generate random bytes using expo-crypto
     const randomBytes = await Crypto.getRandomBytesAsync(16);
-
-    // Convert to a Buffer that bip39 can use
     const buffer = Buffer.from(randomBytes);
-
-    // Generate mnemonic directly from the buffer
     const mnemonic = bip39.entropyToMnemonic(buffer);
 
     console.log("Generated Seed Phrase:", mnemonic);
@@ -55,7 +50,6 @@ export const generateSeedPhrase = async () => {
   }
 };
 
-// --- Error Class ---
 export class OrderError extends Error {
   public readonly userFriendlyMessage: string;
   constructor(internalMessage: string, userFriendlyMessage: string) {
@@ -65,37 +59,27 @@ export class OrderError extends Error {
   }
 }
 
-// --- Timestamp Utilities ---
 export class TimestampUtils {
-  /**
-   * Converts various timestamp formats to ISO string for Supabase
-   */
   static toISOTimestamp(timestamp: number | string | Date): string {
     if (timestamp instanceof Date) {
       return timestamp.toISOString();
     }
 
     if (typeof timestamp === "string") {
-      // If it's already an ISO string, return as is
       if (timestamp.includes("T") && timestamp.includes("Z")) {
         return timestamp;
       }
-      // Try to parse as number
       const num = parseInt(timestamp, 10);
       if (!isNaN(num)) {
         return new Date(num * 1000).toISOString();
       }
-      // Try to parse as date string
       return new Date(timestamp).toISOString();
     }
 
     if (typeof timestamp === "number") {
-      // Check if it's Unix timestamp in seconds (10 digits) or milliseconds (13 digits)
       if (timestamp < 10000000000) {
-        // Unix timestamp in seconds
         return new Date(timestamp * 1000).toISOString();
       } else {
-        // Unix timestamp in milliseconds
         return new Date(timestamp).toISOString();
       }
     }
@@ -103,9 +87,6 @@ export class TimestampUtils {
     throw new Error(`Invalid timestamp format: ${timestamp}`);
   }
 
-  /**
-   * Converts timestamp to Unix timestamp in seconds for local storage
-   */
   static toUnixTimestamp(timestamp: number | string | Date): number {
     if (timestamp instanceof Date) {
       return Math.floor(timestamp.getTime() / 1000);
@@ -116,11 +97,9 @@ export class TimestampUtils {
     }
 
     if (typeof timestamp === "number") {
-      // Check if it's already in seconds
       if (timestamp < 10000000000) {
         return timestamp;
       } else {
-        // Convert from milliseconds to seconds
         return Math.floor(timestamp / 1000);
       }
     }
@@ -128,15 +107,12 @@ export class TimestampUtils {
     throw new Error(`Invalid timestamp format: ${timestamp}`);
   }
 
-  /**
-   * Validates if a timestamp is reasonable (not too far in past or future)
-   */
   static isValidTimestamp(timestamp: number | string | Date): boolean {
     try {
       const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
       const now = new Date();
-      const minDate = new Date("2020-01-01"); // Reasonable minimum date
-      const maxDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year in future
+      const minDate = new Date("2020-01-01");
+      const maxDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
 
       return date >= minDate && date <= maxDate;
     } catch {
@@ -145,7 +121,6 @@ export class TimestampUtils {
   }
 }
 
-// --- Toast Helper ---
 const showToast = (
   type: ToastType,
   text1: string,
@@ -162,13 +137,11 @@ const showToast = (
   });
 };
 
-// --- Core Logic ---
 const MIN_AMOUNT = 0.1;
 
-// Define types for the functions we need
 export interface OrderValidationContext {
   getHoldings: () => Record<string, any>;
-  getUsdtBalance?: () => number; // Optional USDT balance getter
+  getUsdtBalance?: () => number;
 }
 
 export interface OrderDispatchContext {
@@ -178,8 +151,10 @@ export interface OrderDispatchContext {
   updateTrade?: (payload: { cryptoUpdate: any; usdtUpdate: any }) => void;
 }
 
-/** Throws OrderError on validation failure */
-export function validateOrder(order: Order, context: OrderValidationContext): void {
+export function validateOrder(
+  order: Order,
+  context: OrderValidationContext
+): void {
   console.log("🔍 Validating order:", {
     symbol: order.symbol,
     type: order.type,
@@ -194,12 +169,11 @@ export function validateOrder(order: Order, context: OrderValidationContext): vo
     const msg = `Minimum order amount is ${MIN_AMOUNT} ${order.symbol}`;
     throw new OrderError("amount.tooSmall", msg);
   }
-  
+
   const holdings = context.getHoldings();
   console.log("📊 Current holdings:", holdings);
 
   if (order.type === "sell") {
-    // Try both uppercase and lowercase to handle case sensitivity
     const h =
       holdings[order.symbol.toUpperCase()] ||
       holdings[order.symbol.toLowerCase()];
@@ -227,20 +201,17 @@ export function validateOrder(order: Order, context: OrderValidationContext): vo
 
     console.log("✅ Sufficient balance for sell order");
   } else if (order.type === "buy") {
-    // For buy orders, check USDT balance
     let usdtBalance = 0;
-    
-    // First try to get USDT balance from context if available
+
     if (context.getUsdtBalance) {
       usdtBalance = context.getUsdtBalance();
       console.log("🔍 USDT balance from context:", usdtBalance);
     }
-    
-    // Fallback to checking holdings if no context balance
+
     if (usdtBalance === 0) {
       const usdtHolding = holdings.USDT || holdings.usdt;
       console.log("🔍 USDT holding for buy order:", usdtHolding);
-      
+
       if (usdtHolding) {
         usdtBalance = usdtHolding.amount;
       }
@@ -252,11 +223,26 @@ export function validateOrder(order: Order, context: OrderValidationContext): vo
       throw new OrderError("balance.insufficient", msg);
     }
 
-    if (usdtBalance < order.total) {
-      const msg = `Insufficient USDT balance. You have ${usdtBalance} USDT, trying to spend ${order.total} USDT`;
+    const totalWithFees = order.total + (order.fees || 0);
+    const balanceBuffer = 0.01;
+
+    if (usdtBalance < totalWithFees + balanceBuffer) {
+      const shortfall = totalWithFees - usdtBalance;
+      const msg = `Insufficient USDT balance. You have ${usdtBalance.toFixed(
+        2
+      )} USDT, trying to spend ${totalWithFees.toFixed(
+        2
+      )} USDT (${order.total.toFixed(2)} + ${(order.fees || 0).toFixed(
+        2
+      )} fees). Shortfall: ${
+        shortfall > 0 ? shortfall.toFixed(2) : "0.00"
+      } USDT`;
       console.error("❌ Insufficient USDT balance:", {
         available: usdtBalance,
-        requested: order.total,
+        requested: totalWithFees,
+        total: order.total,
+        fees: order.fees || 0,
+        shortfall: shortfall > 0 ? shortfall : 0,
       });
       throw new OrderError("balance.insufficient", msg);
     }
@@ -265,18 +251,38 @@ export function validateOrder(order: Order, context: OrderValidationContext): vo
   }
 }
 
-/** Dispatch both crypto and USDT adjustments with improved logic */
 function dispatchUpdates(
   order: Order,
   isBuy: boolean,
   imageUrl: string,
   context: OrderDispatchContext
 ) {
+  if (!order.amount || order.amount <= 0 || !Number.isFinite(order.amount)) {
+    throw new OrderError(
+      "amount.invalid",
+      `Invalid order amount: ${order.amount}`
+    );
+  }
+  if (!order.total || order.total <= 0 || !Number.isFinite(order.total)) {
+    throw new OrderError(
+      "total.invalid",
+      `Invalid order total: ${order.total}`
+    );
+  }
+  if (
+    order.fees === undefined ||
+    order.fees < 0 ||
+    !Number.isFinite(order.fees)
+  ) {
+    throw new OrderError("fees.invalid", `Invalid order fees: ${order.fees}`);
+  }
+
   console.log("🔄 Dispatching order updates:", {
     orderType: order.type,
     symbol: order.symbol,
     amount: order.amount,
     total: order.total,
+    fees: order.fees,
     isBuy,
   });
 
@@ -284,11 +290,21 @@ function dispatchUpdates(
 
   const normalizedSymbol = order.symbol.toUpperCase();
 
-  // Only process if it's not a USDT trade
   if (normalizedSymbol !== "USDT") {
     const cryptoUpdateAmount = isBuy ? order.amount : -order.amount;
     const cryptoUpdateValue = isBuy ? order.total : -order.total;
-    const usdtUpdateAmount = isBuy ? -order.total : order.total;
+
+    const totalFees = order.fees || 0;
+    const usdtUpdateAmount = isBuy
+      ? -(order.total + totalFees)
+      : order.total - totalFees;
+
+    if (!Number.isFinite(usdtUpdateAmount)) {
+      throw new OrderError(
+        "calculation.invalid",
+        `Invalid USDT update amount: ${usdtUpdateAmount}`
+      );
+    }
 
     console.log("🔄 Updating trade (crypto + USDT):", {
       cryptoSymbol: normalizedSymbol,
@@ -298,7 +314,6 @@ function dispatchUpdates(
       operation: isBuy ? "buy" : "sell",
     });
 
-    // Use the new updateTrade action to handle both updates in a single call
     if (context.updateTrade) {
       context.updateTrade({
         cryptoUpdate: {
@@ -315,13 +330,15 @@ function dispatchUpdates(
           valueInUSD: usdtUpdateAmount,
           symbol: "USDT",
           name: "Tether",
-          image: "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
+          image:
+            "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
         },
       });
     } else {
-      // Fallback to the old method if updateTrade is not available
-      console.warn("⚠️ updateTrade not available, falling back to separate updates");
-      
+      console.warn(
+        "⚠️ updateTrade not available, falling back to separate updates"
+      );
+
       context.updateHolding({
         cryptoId: normalizedSymbol.toLowerCase(),
         amount: cryptoUpdateAmount,
@@ -337,15 +354,14 @@ function dispatchUpdates(
         valueInUSD: usdtUpdateAmount,
         symbol: "USDT",
         name: "Tether",
-        image: "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
+        image:
+          "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661",
       });
     }
   }
 
-  // Sync transaction to cloud
   if (context.syncTransaction) {
     console.log("☁️ Syncing transaction to cloud...");
-    // Fire and forget - don't block the order processing
     context.syncTransaction(order);
   } else {
     console.warn(
@@ -354,13 +370,6 @@ function dispatchUpdates(
   }
 }
 
-/**
- * Submits an order, updates state, and shows notifications.
- * @param order Order details
- * @param imageUrl URL for the asset image
- * @param validationContext Context for validation
- * @param dispatchContext Context for dispatching actions
- */
 export const handleOrderSubmission = async (
   order: Order,
   imageUrl: string,
@@ -408,13 +417,6 @@ export const handleOrderSubmission = async (
   }
 };
 
-/**
- * Enhanced order submission with daily transaction limit checking
- * @param order Order details
- * @param imageUrl URL for the asset image
- * @param validationContext Context for validation
- * @param dispatchContext Context for dispatching actions
- */
 export const handleOrderSubmissionWithLimitCheck = async (
   order: Order,
   imageUrl: string,
@@ -424,7 +426,7 @@ export const handleOrderSubmissionWithLimitCheck = async (
   console.debug("[Order] Submitting with limit check:", order);
 
   try {
-    // Balance validation is handled in handleOrderSubmissionWithLimitCheck
+    validateOrder(order, validationContext);
 
     const isBuy = order.type === "buy";
 
@@ -436,7 +438,6 @@ export const handleOrderSubmissionWithLimitCheck = async (
       image: imageUrl,
     };
 
-    // Dispatch updates (this handles the local state changes)
     dispatchUpdates(completed, isBuy, imageUrl, dispatchContext);
 
     const successMsg = `${isBuy ? "Bought" : "Sold"} ${order.amount} ${
@@ -463,11 +464,6 @@ export const handleOrderSubmissionWithLimitCheck = async (
   }
 };
 
-/**
- * Calculate portfolio metrics from balance holdings
- * @param balance - The user's balance object from Redux store
- * @returns Object containing portfolio metrics
- */
 export const calculatePortfolioMetrics = (balance: any) => {
   if (!balance || !balance.holdings) {
     return {
@@ -487,21 +483,21 @@ export const calculatePortfolioMetrics = (balance: any) => {
   let assetCount = 0;
   let cryptoValue = 0;
 
-  // Calculate values for all holdings (excluding USDT to avoid double counting)
   Object.values(holdings).forEach((holding: any) => {
     if (holding.symbol !== "USDT") {
       const marketValue = holding.amount * holding.currentPrice;
       const costBasis = holding.amount * holding.averageBuyPrice;
-      
+
       totalValue += marketValue;
       cryptoValue += marketValue;
-      totalPnL += (marketValue - costBasis);
+      totalPnL += marketValue - costBasis;
       totalCostBasis += costBasis;
       assetCount++;
     }
   });
 
-  const totalPnLPercentage = totalCostBasis > 0 ? (totalPnL / totalCostBasis) * 100 : 0;
+  const totalPnLPercentage =
+    totalCostBasis > 0 ? (totalPnL / totalCostBasis) * 100 : 0;
 
   return {
     totalValue,
@@ -513,11 +509,6 @@ export const calculatePortfolioMetrics = (balance: any) => {
   };
 };
 
-/**
- * Format portfolio value for display
- * @param value - The portfolio value to format
- * @returns Formatted string
- */
 export const formatPortfolioValue = (value: number): string => {
   if (value >= FORMATTING_THRESHOLDS.MILLION) {
     return `$${(value / FORMATTING_THRESHOLDS.MILLION).toFixed(3)}M`;
@@ -528,20 +519,10 @@ export const formatPortfolioValue = (value: number): string => {
   }
 };
 
-/**
- * Get color for P&L display
- * @param value - The P&L value
- * @returns Color string
- */
 export const getPnLColor = (value: number): string => {
   return value >= 0 ? "#10BA68" : "#F9335D";
 };
 
-/**
- * Format P&L for display
- * @param value - The P&L value
- * @returns Formatted string with sign
- */
 export const formatPnL = (value: number): string => {
   const sign = value >= 0 ? "+" : "";
   return `${sign}$${value.toLocaleString(undefined, {
@@ -550,182 +531,175 @@ export const formatPnL = (value: number): string => {
   })}`;
 };
 
-/**
- * Utility function to handle user re-initialization when authentication is lost
- * This can be used across the app to handle "User not authenticated" errors
- */
 export const handleUserReinitialization = async <T>(
   error: any,
   reinitializeUser: () => Promise<void>,
   retryFunction: () => Promise<T>
 ): Promise<T> => {
-  // Check if this is an authentication error
   if (
     error.message?.includes("User not authenticated") ||
     error.message?.includes("Failed to initialize user authentication") ||
     error.message?.includes("User not found")
   ) {
-    logger.info("Authentication error detected, attempting to re-initialize user", "helper");
-    
+    logger.info(
+      "Authentication error detected, attempting to re-initialize user",
+      "helper"
+    );
+
     try {
-      // Try to re-initialize user data
       await reinitializeUser();
-      
-      // Retry the original function
       logger.info("User re-initialized, retrying operation", "helper");
       return await retryFunction();
     } catch (reinitError) {
       logger.error("Failed to re-initialize user", "helper", reinitError);
-      throw new Error("Authentication failed. Please restart the app and try again.");
+      throw new Error(
+        "Authentication failed. Please restart the app and try again."
+      );
     }
   }
-  
-  // If it's not an authentication error, re-throw the original error
+
   throw error;
 };
 
-/**
- * Calculate USDT balance from portfolio data
- * This function calculates the USDT balance by finding the USDT entry in the portfolio
- * and returning its quantity as the available USDT balance
- * If portfolio is empty (fresh reset), returns default balance
- */
 export const calculateUSDTBalanceFromPortfolio = (portfolio: any[]): number => {
   try {
     // Handle undefined or null portfolio
     if (!portfolio || !Array.isArray(portfolio)) {
-      console.warn('calculateUSDTBalanceFromPortfolio: portfolio is undefined or not an array, returning default balance');
+      console.warn(
+        "calculateUSDTBalanceFromPortfolio: portfolio is undefined or not an array, returning default balance"
+      );
       return DEFAULT_BALANCE; // Return default balance instead of 0
     }
-    
-    // If portfolio is empty, this likely means a fresh reset - return default balance
+
     if (portfolio.length === 0) {
-      console.log('calculateUSDTBalanceFromPortfolio: portfolio is empty (fresh reset), returning default balance');
+      console.log(
+        "calculateUSDTBalanceFromPortfolio: portfolio is empty (fresh reset), returning default balance"
+      );
       return DEFAULT_BALANCE;
     }
-    
-    const usdtEntry = portfolio.find(item => 
-      item && item.symbol && item.symbol.toUpperCase() === 'USDT'
+
+    const usdtEntry = portfolio.find(
+      (item) => item && item.symbol && item.symbol.toUpperCase() === "USDT"
     );
-    
+
     if (usdtEntry) {
-      return parseFloat(usdtEntry.quantity || '0');
+      return parseFloat(usdtEntry.quantity || "0");
     }
-    
-    // If no USDT entry found but portfolio has other items, return 0
-    // This means user has spent all their USDT
-    console.log('calculateUSDTBalanceFromPortfolio: no USDT entry found in portfolio, returning 0');
+
+    console.log(
+      "calculateUSDTBalanceFromPortfolio: no USDT entry found in portfolio, returning 0"
+    );
     return 0;
   } catch (error) {
-    console.error('Error calculating USDT balance from portfolio:', error);
+    console.error("Error calculating USDT balance from portfolio:", error);
     return DEFAULT_BALANCE; // Return default balance on error instead of 0
   }
 };
 
-/**
- * Calculate total portfolio value including USDT
- * This function sums up the total_value of all portfolio items
- */
 export const calculateTotalPortfolioValue = (portfolio: any[]): number => {
   try {
     // Handle undefined or null portfolio
     if (!portfolio || !Array.isArray(portfolio)) {
-      console.warn('calculateTotalPortfolioValue: portfolio is undefined or not an array, returning 0');
+      console.warn(
+        "calculateTotalPortfolioValue: portfolio is undefined or not an array, returning 0"
+      );
       return 0;
     }
-    
+
     return portfolio.reduce((total, item) => {
       if (!item) return total;
-      const itemValue = parseFloat(item.total_value || '0');
+      const itemValue = parseFloat(item.total_value || "0");
       return total + itemValue;
     }, 0);
   } catch (error) {
-    console.error('Error calculating total portfolio value:', error);
+    console.error("Error calculating total portfolio value:", error);
     return 0;
   }
 };
 
-/**
- * Calculate total PnL from portfolio data
- * This function sums up the profit_loss of all portfolio items
- */
 export const calculateTotalPnL = (portfolio: any[]): number => {
   try {
     // Handle undefined or null portfolio
     if (!portfolio || !Array.isArray(portfolio)) {
-      console.warn('calculateTotalPnL: portfolio is undefined or not an array, returning 0');
+      console.warn(
+        "calculateTotalPnL: portfolio is undefined or not an array, returning 0"
+      );
       return 0;
     }
-    
+
     return portfolio.reduce((total, item) => {
       if (!item) return total;
-      const itemPnL = parseFloat(item.profit_loss || '0');
+      const itemPnL = parseFloat(item.profit_loss || "0");
       return total + itemPnL;
     }, 0);
   } catch (error) {
-    console.error('Error calculating total PnL:', error);
+    console.error("Error calculating total PnL:", error);
     return 0;
   }
 };
 
-/**
- * Calculate total PnL percentage based on initial balance
- */
-export const calculateTotalPnLPercentage = (totalPnL: number, initialBalance: number = DEFAULT_BALANCE): number => {
+export const calculateTotalPnLPercentage = (
+  totalPnL: number,
+  initialBalance: number = DEFAULT_BALANCE
+): number => {
   try {
     if (initialBalance <= 0) return 0;
     return (totalPnL / initialBalance) * 100;
   } catch (error) {
-    console.error('Error calculating total PnL percentage:', error);
+    console.error("Error calculating total PnL percentage:", error);
     return 0;
   }
 };
 
-/**
- * Ensure URL uses HTTPS protocol for iOS App Transport Security compliance
- * @param url - The URL to validate and fix
- * @returns HTTPS URL or the original URL if it's not HTTP/HTTPS
- */
 export const ensureHttpsUrl = (url: string): string => {
-  if (!url || typeof url !== 'string') {
+  if (!url || typeof url !== "string") {
     return url;
   }
 
-  // If it's an HTTP URL, convert to HTTPS
-  if (url.startsWith('http://')) {
-    const httpsUrl = url.replace('http://', 'https://');
+  if (url.startsWith("http://")) {
+    const httpsUrl = url.replace("http://", "https://");
     logger.info(`Converted HTTP to HTTPS: ${url} -> ${httpsUrl}`, "helper");
     return httpsUrl;
   }
 
-  // Return as-is if already HTTPS or not HTTP-based
   return url;
 };
 
-/**
- * Validate and fix user data consistency
- * This function ensures all required fields are present and calculates missing values
- */
-export const validateAndFixUserData = (userData: any, portfolio: any[] = []): any => {
+export const validateAndFixUserData = (
+  userData: any,
+  portfolio: any[] = []
+): any => {
   try {
     const now = new Date().toISOString();
-    
-    // Ensure portfolio is an array
+
     const safePortfolio = Array.isArray(portfolio) ? portfolio : [];
-    
-    // Calculate values from portfolio if not present
-    const usdtBalance = userData.usdt_balance ? parseFloat(userData.usdt_balance) : calculateUSDTBalanceFromPortfolio(safePortfolio);
-    const totalPortfolioValue = userData.total_portfolio_value ? parseFloat(userData.total_portfolio_value) : calculateTotalPortfolioValue(safePortfolio);
-    const totalPnL = userData.total_pnl ? parseFloat(userData.total_pnl) : calculateTotalPnL(safePortfolio);
-    const initialBalance = userData.initial_balance ? parseFloat(userData.initial_balance) : DEFAULT_BALANCE;
-    const totalPnLPercentage = userData.total_pnl_percentage ? parseFloat(userData.total_pnl_percentage) : calculateTotalPnLPercentage(totalPnL, initialBalance);
-    
+
+    const usdtBalance = userData.usdt_balance
+      ? parseFloat(userData.usdt_balance)
+      : calculateUSDTBalanceFromPortfolio(safePortfolio);
+    const totalPortfolioValue = userData.total_portfolio_value
+      ? parseFloat(userData.total_portfolio_value)
+      : calculateTotalPortfolioValue(safePortfolio);
+    const totalPnL = userData.total_pnl
+      ? parseFloat(userData.total_pnl)
+      : calculateTotalPnL(safePortfolio);
+    const initialBalance = userData.initial_balance
+      ? parseFloat(userData.initial_balance)
+      : DEFAULT_BALANCE;
+    const totalPnLPercentage = userData.total_pnl_percentage
+      ? parseFloat(userData.total_pnl_percentage)
+      : calculateTotalPnLPercentage(totalPnL, initialBalance);
+
     // Ensure all required fields are present
     const timestamp = Date.now().toString().slice(-6); // Get last 6 digits of timestamp
     const fixedUserData = {
       id: userData.id,
-      username: userData.username || `user_${userData.id?.slice(0, 8) || 'unknown'}_${timestamp}`,
-      display_name: userData.display_name || `User ${userData.id?.slice(0, 8) || 'unknown'}`,
+      username:
+        userData.username ||
+        `user_${userData.id?.slice(0, 8) || "unknown"}_${timestamp}`,
+      display_name:
+        userData.display_name ||
+        `User ${userData.id?.slice(0, 8) || "unknown"}`,
       avatar_emoji: userData.avatar_emoji || "🚀",
       usdt_balance: usdtBalance.toString(),
       total_portfolio_value: totalPortfolioValue.toString(),
@@ -743,18 +717,18 @@ export const validateAndFixUserData = (userData: any, portfolio: any[] = []): an
       created_at: userData.created_at || now,
       updated_at: now,
     };
-    
-    console.log('✅ User data validated and fixed:', {
+
+    console.log("✅ User data validated and fixed:", {
       id: fixedUserData.id,
       usdt_balance: fixedUserData.usdt_balance,
       total_portfolio_value: fixedUserData.total_portfolio_value,
       total_pnl: fixedUserData.total_pnl,
       total_pnl_percentage: fixedUserData.total_pnl_percentage,
     });
-    
+
     return fixedUserData;
   } catch (error) {
-    console.error('Error validating and fixing user data:', error);
+    console.error("Error validating and fixing user data:", error);
     return userData;
   }
 };

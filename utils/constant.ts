@@ -4,23 +4,23 @@ export const ASYNC_STORAGE_KEYS = {
   USER_ID: "@user_id",
   USER_PROFILE: "user_profile",
   USER_UUID: "user_uuid_13",
-  
+
   // Onboarding
   ONBOARDING_COMPLETED: "@onboarding_completed",
-  
+
   // Portfolio and transactions
   PORTFOLIO_DATA: "portfolio_data",
   TRANSACTIONS_DATA: "transactions_data",
-  
+
   // Sync and queue
   SYNC_QUEUE: "sync_queue",
   SYNC_STATUS: "sync_status",
   LAST_SYNC: "last_sync",
-  
+
   // Balance and user data
   USER_BALANCE: "user_balance",
   LAST_APP_RESET: "last_app_reset",
-  
+
   // Crypto service cache
   RATE_LIMIT_CACHE: "rate_limit_cache",
   MARKET_DATA_CACHE: "market_data_cache",
@@ -50,6 +50,30 @@ export const TRADING_CONFIG = {
   DEFAULT_DAILY_TRANSACTION_LIMIT: 10,
   DEFAULT_STARTING_BALANCE: DEFAULT_BALANCE_STRING,
   DEFAULT_STARTING_BALANCE_NUMBER: DEFAULT_BALANCE,
+  TRADING_FEE_PERCENTAGE: 0.001,
+  TRADING_FEE_DISPLAY: "0.1%",
+  PERCENTAGE_BUTTONS: [25, 50, 75, 100] as const,
+  PERCENTAGE_TOLERANCE: 0.01,
+  PERCENTAGE_MATCH_TOLERANCE: 0.02,
+  MAX_PERCENTAGE: 100,
+  MIN_PERCENTAGE: 0,
+  SMALL_NUMBER_THRESHOLD: 0.000001,
+  SMALL_NUMBER_DECIMAL_PLACES: 8,
+} as const;
+
+// Crypto fallback prices (used when real-time price is unavailable)
+export const CRYPTO_FALLBACK_PRICES = {
+  BTC: 120000,
+  ETH: 3100,
+  SOL: 166,
+  BNB: 700,
+  ADA: 0.5,
+  DOT: 7,
+  LINK: 15,
+  UNI: 7,
+  MATIC: 0.8,
+  LTC: 70,
+  DEFAULT: 100,
 } as const;
 
 // Number formatting thresholds

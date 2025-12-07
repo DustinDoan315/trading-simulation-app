@@ -19,14 +19,29 @@ const PriceInput = ({
   const [isFocused, setIsFocused] = React.useState(false);
 
   const cleanInput = (text: string) => {
-    // Remove all non-numeric characters except decimal point
     const cleaned = text.replace(/[^0-9.]/g, "");
-    // Ensure only one decimal point
     const parts = cleaned.split(".");
     if (parts.length > 2) {
       return `${parts[0]}.${parts.slice(1).join("")}`;
     }
     return cleaned;
+  };
+
+  const safeParseAndFormat = (val: string | number): string => {
+    if (typeof val === "number") {
+      if (!Number.isFinite(val) || val < 0) return "0.00";
+      return val.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
+    const cleaned = val.replace(/,/g, "").replace(/[^0-9.]/g, "");
+    const parsed = Number.parseFloat(cleaned);
+    if (!Number.isFinite(parsed) || parsed < 0) return "0.00";
+    return parsed.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const handleChange = (text: string) => {
@@ -36,7 +51,18 @@ const PriceInput = ({
   };
 
   React.useEffect(() => {
-    setRawValue(value?.toString() || "");
+    if (value === undefined || value === null) {
+      setRawValue("0");
+      return;
+    }
+    const valueStr = value.toString();
+    const cleanValue = valueStr.replace(/,/g, "").replace(/[^0-9.]/g, "");
+    const parsed = Number.parseFloat(cleanValue);
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed < 1000000000) {
+      setRawValue(cleanValue);
+    } else if (cleanValue === "" || cleanValue === "0") {
+      setRawValue("0");
+    }
   }, [value]);
 
   return (
@@ -53,7 +79,7 @@ const PriceInput = ({
         end={{ x: 1, y: 1 }}>
         <TextInput
           style={styles.input}
-          value={isFocused ? rawValue : formatAmount(rawValue, 2)}
+          value={isFocused ? rawValue : safeParseAndFormat(rawValue)}
           onChangeText={handleChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}

@@ -2,6 +2,7 @@ import Colors from '@/styles/colors';
 import Dimensions from '@/styles/dimensions';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import Typography from '@/styles/typography';
+import { CRYPTO_FALLBACK_PRICES, TRADING_CONFIG } from '@/utils/constant';
 import { formatAmount } from '@/utils/formatters';
 import {
   StyleSheet,
@@ -12,33 +13,13 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 
 
-// Symbol-specific fallback prices
 const getFallbackPrice = (symbol: string): number => {
   const symbolUpper = symbol.toUpperCase();
-  switch (symbolUpper) {
-    case "BTC":
-      return 122000;
-    case "ETH":
-      return 3100;
-    case "SOL":
-      return 166;
-    case "BNB":
-      return 300;
-    case "ADA":
-      return 0.5;
-    case "DOT":
-      return 7;
-    case "LINK":
-      return 15;
-    case "UNI":
-      return 7;
-    case "MATIC":
-      return 0.8;
-    case "LTC":
-      return 70;
-    default:
-      return 100; // Generic fallback
-  }
+  return (
+    CRYPTO_FALLBACK_PRICES[
+      symbolUpper as keyof typeof CRYPTO_FALLBACK_PRICES
+    ] || CRYPTO_FALLBACK_PRICES.DEFAULT
+  );
 };
 
 interface AmountPercentButtonProps {
@@ -89,17 +70,40 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
 
     const handleCirclePress = useCallback(
       (pos: number) => {
+        if (availableAmount <= 0 || effectivePrice <= 0) {
+          return;
+        }
+
+        let amount: number;
+        if (tradeType === "buy" && balanceType === "usdt") {
+          let usdtToSpend =
+            availableAmount * (pos / TRADING_CONFIG.MAX_PERCENTAGE);
+
+          if (pos === TRADING_CONFIG.MAX_PERCENTAGE) {
+            const feesRate = TRADING_CONFIG.TRADING_FEE_PERCENTAGE;
+            const maxUsdtAfterFees = availableAmount / (1 + feesRate);
+            usdtToSpend = Math.max(0, maxUsdtAfterFees);
+          }
+
+          amount = usdtToSpend / effectivePrice;
+        } else {
+          amount = availableAmount * (pos / TRADING_CONFIG.MAX_PERCENTAGE);
+        }
+
         setCurrentPosition(pos);
-        
-        // Simple calculation - always calculate based on available amount and percentage
-        const amount = availableAmount * (pos / 100);
-        
-        // Always call onChange to update the parent
+
         if (onChange) {
           onChange(amount);
         }
       },
-      [setCurrentPosition, availableAmount, onChange]
+      [
+        setCurrentPosition,
+        availableAmount,
+        onChange,
+        tradeType,
+        balanceType,
+        effectivePrice,
+      ]
     );
 
     const getFillColor = useCallback(() => {
@@ -121,30 +125,17 @@ const AmountPercentButton = React.memo<AmountPercentButtonProps>(
       baseAmountUnit,
     ]);
 
-    // Reset position when available amount changes significantly
     useEffect(() => {
-      if (availableAmount > 0 && currentPosition > 0) {
-        // Recalculate position based on new available amount
-        const newPosition = Math.min(
-          100,
-          (currentPosition * availableAmount) / Math.max(availableAmount, 1)
-        );
-        if (Math.abs(newPosition - currentPosition) > 5) {
-          // Only reset if change is significant
-          setCurrentPosition(0);
-          onChange(0);
-        }
-      } else if (availableAmount === 0 && currentPosition > 0) {
-        // Reset position when available amount becomes 0
+      if (availableAmount === 0 && currentPosition > 0) {
         setCurrentPosition(0);
         onChange(0);
       }
-    }, [availableAmount, currentPosition, onChange]);
+    }, [availableAmount, currentPosition, onChange, setCurrentPosition]);
 
     // Memoize the percentage buttons to prevent unnecessary re-renders
     const percentageButtons = useMemo(
       () =>
-        [25, 50, 75, 100].map((pos) => (
+        TRADING_CONFIG.PERCENTAGE_BUTTONS.map((pos) => (
           <TouchableOpacity
             key={`button-${pos}`}
             onPress={() => handleCirclePress(pos)}
