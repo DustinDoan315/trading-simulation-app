@@ -8,19 +8,23 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "androidStatusBar": {
+      "backgroundColor": "#000000"
+    },
     "description": "Master cryptocurrency trading skills with virtual money in a completely risk-free simulation environment. Practice trading strategies, track portfolio performance, and compete with other traders - all without using real money. Perfect for beginners developing essential crypto trading skills.",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.dustindoan.tradecoinskills",
       "buildNumber": "3",
       "infoPlist": {
+        "NSSupportsLiveActivities": true,
         "NSCameraUsageDescription": "Camera access is used to scan QR codes for joining trading collections and sharing invite codes.",
         "NSMicrophoneUsageDescription": "Microphone access is used for voice commands in trading practice sessions."
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/splashscreen.png",
+        "foregroundImage": "./assets/images/rocket.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.dustindoan.tradecoinskills",
@@ -60,7 +64,7 @@
           "image": "./assets/images/splashscreen.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "transparent"
+          "backgroundColor": "#000000"
         }
       ],
       "expo-font",
