@@ -2,7 +2,7 @@
   "expo": {
     "name": "Trade Coin Skills",
     "slug": "trading-simulation-app",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -15,7 +15,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.dustindoan.tradecoinskills",
-      "buildNumber": "3",
+      "buildNumber": "4",
+      "version": "1.0.2",
+      "icon": "./assets/images/rocket.png",
       "infoPlist": {
         "NSSupportsLiveActivities": true,
         "NSCameraUsageDescription": "Camera access is used to scan QR codes for joining trading collections and sharing invite codes.",
