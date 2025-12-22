@@ -1,34 +1,32 @@
-import * as Linking from 'expo-linking';
-import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import LeaderboardService from '@/services/LeaderboardService';
-import RealTimeDataService from '@/services/RealTimeDataService';
-import scheduler from '@/utils/scheduler';
-import Toast from 'react-native-toast-message';
-import UUIDService from '@/services/UUIDService';
-import { BackgroundDataSyncService } from '@/services/BackgroundDataSyncService';
-import { createUser, fetchUser } from '@/features/userSlice';
-import { initializeApp } from '@/utils/initializeApp';
-import { initSentry, setSentryUser } from '@/utils/sentry';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { ThemeProvider as AppThemeProvider, useTheme } from '@/context/ThemeContext';
-import { getColors } from '@/styles/colors';
-import { logger } from '@/utils/logger';
-import { NotificationProvider } from '@/components/ui/Notification';
-import { Provider } from 'react-redux';
-import { router, Stack } from 'expo-router';
-import { SafeAreaView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { store } from '../store';
-import { updateDailyBalance } from '@/utils/balanceUpdater';
-import { useCallback, useEffect } from 'react';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useFonts } from 'expo-font';
-import { useOTAUpdates } from '@/hooks/useOTAUpdates';
-import { UserProvider } from '@/context/UserContext';
-import { UserService } from '@/services/UserService';
-import 'react-native-reanimated';
-
+import * as Linking from "expo-linking";
+import * as SplashScreen from "expo-splash-screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import LeaderboardService from "@/services/LeaderboardService";
+import RealTimeDataService from "@/services/RealTimeDataService";
+import scheduler from "@/utils/scheduler";
+import Toast from "react-native-toast-message";
+import UUIDService from "@/services/UUIDService";
+import { BackgroundDataSyncService } from "@/services/BackgroundDataSyncService";
+import { createUser, fetchUser } from "@/features/userSlice";
+import { getColors } from "@/styles/colors";
+import { initializeApp } from "@/utils/initializeApp";
+import { initSentry, setSentryUser } from "@/utils/sentry";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { logger } from "@/utils/logger";
+import { NotificationProvider } from "@/components/ui/Notification";
+import { Provider } from "react-redux";
+import { router, Stack } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { store } from "../store";
+import { updateDailyBalance } from "@/utils/balanceUpdater";
+import { useCallback, useEffect } from "react";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useFonts } from "expo-font";
+import { useOTAUpdates } from "@/hooks/useOTAUpdates";
+import { UserProvider } from "@/context/UserContext";
+import { UserService } from "@/services/UserService";
+import "react-native-reanimated";
 
 import {
   ASYNC_STORAGE_KEYS,
@@ -36,15 +34,17 @@ import {
   DEFAULT_USER,
 } from "@/utils/constant";
 import {
+  ThemeProvider as AppThemeProvider,
+  useTheme,
+} from "@/context/ThemeContext";
+import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
 
-
 SplashScreen.preventAutoHideAsync();
 
-// Inner component that uses theme
 function ThemedLayoutContent() {
   const { theme, isDark } = useTheme();
   const colors = getColors(theme);
@@ -60,22 +60,13 @@ function ThemedLayoutContent() {
                 backgroundColor: colors.background.primary,
               }}>
               <Stack>
-                <Stack.Screen
-                  name="(subs)"
-                  options={{ headerShown: false }}
-                />
+                <Stack.Screen name="(subs)" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="(onboarding)"
                   options={{ headerShown: false }}
                 />
-                <Stack.Screen
-                  name="(auth)"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="(tabs)"
-                  options={{ headerShown: false }}
-                />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="(modals)"
                   options={{ headerShown: false }}
@@ -92,36 +83,28 @@ function ThemedLayoutContent() {
   );
 }
 
-// Initialize Sentry as early as possible
 initSentry();
 
-// Set up global error handlers
-if (typeof (global as any).ErrorUtils !== 'undefined') {
+if (typeof (global as any).ErrorUtils !== "undefined") {
   const ErrorUtils = (global as any).ErrorUtils;
   const originalHandler = ErrorUtils.getGlobalHandler();
   ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
-    // Log to console in development
     if (__DEV__) {
-      console.error('Global error handler:', error, { isFatal });
+      console.error("Global error handler:", error, { isFatal });
     }
-    
-    // Sentry will automatically capture these errors
-    // Call original handler to maintain default behavior
     if (originalHandler) {
       originalHandler(error, isFatal);
     }
   });
 }
 
-// Handle unhandled promise rejections
-if (typeof global !== 'undefined') {
+if (typeof global !== "undefined") {
   const originalUnhandledRejection = (global as any).onunhandledrejection;
   (global as any).onunhandledrejection = (event: { reason?: any }) => {
     if (__DEV__) {
-      console.error('Unhandled promise rejection:', event.reason);
+      console.error("Unhandled promise rejection:", event.reason);
     }
-    
-    // Sentry will automatically capture these if configured
+
     if (originalUnhandledRejection) {
       originalUnhandledRejection(event);
     }
@@ -129,22 +112,21 @@ if (typeof global !== 'undefined') {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
   // Initialize OTA updates
-  const { 
-    isEnabled: otaEnabled, 
-    channel: otaChannel, 
+  const {
+    isEnabled: otaEnabled,
+    channel: otaChannel,
     error: otaError,
-    isExpoGo
+    isExpoGo,
   } = useOTAUpdates({
     checkOnMount: true,
     showUpdateAvailableAlert: true,
     autoRestart: false,
-    checkInterval: 300000, // Check every 5 minutes
+    checkInterval: 300000,
   });
 
   useEffect(() => {
@@ -189,7 +171,10 @@ export default function RootLayout() {
 
         // Log OTA update information
         if (isExpoGo) {
-          logger.info("Running in Expo Go - OTA updates not available", "AppLayout");
+          logger.info(
+            "Running in Expo Go - OTA updates not available",
+            "AppLayout"
+          );
         } else if (otaEnabled) {
           logger.info("OTA Updates enabled", "AppLayout", {
             channel: otaChannel,
@@ -266,7 +251,7 @@ export default function RootLayout() {
             userId: userData.currentUser.id,
             username: userData.currentUser.username,
           });
-          
+
           // Set Sentry user context
           setSentryUser(
             userData.currentUser.id,
@@ -281,13 +266,15 @@ export default function RootLayout() {
 
           try {
             // Try to fetch existing user from database
-            const fetchedUser = await store.dispatch(fetchUser(userId)).unwrap();
+            const fetchedUser = await store
+              .dispatch(fetchUser(userId))
+              .unwrap();
             logger.info(
               "Existing user fetched successfully from database",
               "AppLayout",
               { userId }
             );
-            
+
             // Set Sentry user context for fetched user
             if (fetchedUser) {
               setSentryUser(
@@ -296,10 +283,11 @@ export default function RootLayout() {
               );
             }
           } catch (error) {
-            logger.info(
-              "User not found in database, creating new user",
+            // Log the error for debugging, but proceed with user creation
+            logger.warn(
+              "User not found in database or fetch failed, creating new user",
               "AppLayout",
-              { userId }
+              { userId, error }
             );
             isNewUser = true;
             const timestamp = Date.now().toString().slice(-6);
@@ -325,7 +313,7 @@ export default function RootLayout() {
                   username: newUser?.username || username,
                 }
               );
-              
+
               // Set Sentry user context for new user
               setSentryUser(
                 newUser?.id || userId,

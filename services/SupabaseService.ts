@@ -1,11 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-import NetInfo from '@react-native-community/netinfo';
-import UUIDService from './UUIDService';
-import { AsyncStorageService } from './AsyncStorageService';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { logger } from '@/utils/logger';
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import NetInfo from "@react-native-community/netinfo";
+import UUIDService from "./UUIDService";
+import { AsyncStorageService } from "./AsyncStorageService";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/utils/logger";
 
 interface SyncResult<T = unknown> {
   success: boolean;
@@ -32,11 +31,15 @@ interface QueuedOperation {
 class SupabaseConfig {
   private static validateConfig(url: string, key: string): void {
     if (!url || !key) {
-      logger.warn("Supabase configuration missing, app will run in offline mode", "SupabaseService", {
-        hasUrl: !!url,
-        hasKey: !!key
-      });
-      
+      logger.warn(
+        "Supabase configuration missing, app will run in offline mode",
+        "SupabaseService",
+        {
+          hasUrl: !!url,
+          hasKey: !!key,
+        }
+      );
+
       throw new Error(`Supabase configuration missing:
         URL: ${url ? "Set" : "Missing"}
         Key: ${key ? "Set" : "Missing"}
@@ -77,11 +80,19 @@ class SupabaseConfig {
       finalValues: {
         hasUrl: !!url,
         hasKey: !!key,
-        urlSource: url === Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ? 'expo-config' : 
-                  url === process.env.EXPO_PUBLIC_SUPABASE_URL ? 'process-env' : 'unknown',
-        keySource: key === Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'expo-config' : 
-                  key === process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'process-env' : 'unknown'
-      }
+        urlSource:
+          url === Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL
+            ? "expo-config"
+            : url === process.env.EXPO_PUBLIC_SUPABASE_URL
+            ? "process-env"
+            : "unknown",
+        keySource:
+          key === Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY
+            ? "expo-config"
+            : key === process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+            ? "process-env"
+            : "unknown",
+      },
     });
 
     this.validateConfig(url, key);
@@ -122,7 +133,11 @@ const initializeSupabase = (): SupabaseClient | null => {
 
     return supabase;
   } catch (error) {
-    logger.error("Failed to initialize Supabase, app will run in offline mode", "SupabaseService", error);
+    logger.error(
+      "Failed to initialize Supabase, app will run in offline mode",
+      "SupabaseService",
+      error
+    );
     return null;
   }
 };
@@ -276,6 +291,11 @@ export class SyncService {
     baseDelay: 1000,
     maxDelay: 10000,
   };
+  private static portfolioSyncTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private static portfolioSyncCooldowns: Map<string, number> = new Map();
+  private static readonly PORTFOLIO_SYNC_DEBOUNCE_MS = 5000;
+  private static readonly PORTFOLIO_SYNC_COOLDOWN_MS = 10000;
+  private static readonly PORTFOLIO_SYNC_MAX_PENDING = 3;
 
   private static isUserSyncPayload(
     payload: unknown
@@ -531,9 +551,6 @@ export class SyncService {
       );
     }
 
-    console.log("🔄 Starting portfolio sync with MERGE strategy...");
-    console.log("📊 Local portfolio items:", portfolio.length);
-
     const { data: existingPortfolio, error: fetchError } = await supabase
       .from("portfolio")
       .select("*")
@@ -545,11 +562,6 @@ export class SyncService {
         `Failed to fetch existing portfolio: ${fetchError.message}`
       );
     }
-
-    console.log(
-      "☁️ Existing cloud portfolio items:",
-      existingPortfolio?.length || 0
-    );
 
     const existingPortfolioMap = new Map<string, any>();
     if (existingPortfolio) {
@@ -607,9 +619,6 @@ export class SyncService {
             last_updated: new Date().toISOString(),
           });
           symbolsToUpdate.add(symbol);
-          console.log(`🔄 Will update: ${symbol}`);
-        } else {
-          console.log(`✅ No changes needed: ${symbol}`);
         }
       } else {
         operations.push({
@@ -625,7 +634,6 @@ export class SyncService {
           last_updated: new Date().toISOString(),
         });
         symbolsToInsert.add(symbol);
-        console.log(`➕ Will insert: ${symbol}`);
       }
     });
 
@@ -634,15 +642,8 @@ export class SyncService {
       const symbol = cloudAsset.symbol.toUpperCase();
       if (!newPortfolioMap.has(symbol)) {
         symbolsToDelete.push(symbol);
-        console.log(`🗑️ Will delete: ${symbol} (not in local portfolio)`);
       }
     });
-
-    console.log(`📋 Operations summary:
-      - Insert: ${symbolsToInsert.size} items
-      - Update: ${symbolsToUpdate.size} items  
-      - Delete: ${symbolsToDelete.length} items
-      - Total operations: ${operations.length}`);
 
     if (operations.length > 0) {
       const { data: upsertData, error: upsertError } = await supabase
@@ -657,10 +658,6 @@ export class SyncService {
         console.error("❌ Supabase upsert error:", upsertError);
         throw new Error(`Portfolio sync failed: ${upsertError.message}`);
       }
-
-      console.log(
-        `✅ Successfully upserted ${upsertData?.length || 0} portfolio items`
-      );
     }
 
     if (symbolsToDelete.length > 0) {
@@ -672,87 +669,107 @@ export class SyncService {
 
       if (deleteError) {
         console.error("❌ Failed to delete removed assets:", deleteError);
-      } else {
-        console.log(
-          `✅ Successfully deleted ${symbolsToDelete.length} removed assets`
-        );
       }
     }
-
-    console.log(`✅ Portfolio sync completed successfully:
-      - Total items in cloud: ${
-        (existingPortfolio?.length || 0) +
-        symbolsToInsert.size -
-        symbolsToDelete.length
-      }
-      - Local items: ${portfolio.length}`);
   }
 
   static async syncPortfolio(
     uuid: string,
     portfolio: any[]
   ): Promise<SyncResult> {
-    logger.info("Starting portfolio sync", "SyncService", {
-      uuid,
-      portfolioLength: portfolio.length,
-    });
+    const lastSyncTime = this.portfolioSyncCooldowns.get(uuid) || 0;
+    const timeSinceLastSync = Date.now() - lastSyncTime;
 
-    try {
-      await this.updateSyncStatus("portfolioSync", "pending");
-
-      const result = await this.executeWithRetry(async () => {
-        await this.syncPortfolioToCloud(uuid, portfolio);
-        return portfolio;
-      }, "Portfolio Sync");
-
-      await this.updateSyncStatus("portfolioSync", "synced");
-
-      const successResult = {
-        success: true,
-        data: result,
-        timestamp: new Date().toISOString(),
-      };
-
-      logger.info(
-        "Portfolio sync completed successfully",
-        "SyncService",
-        successResult
-      );
-      return successResult;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      logger.error("Portfolio sync failed", "SyncService", {
-        error: errorMessage,
-        details: error,
+    if (timeSinceLastSync < this.PORTFOLIO_SYNC_COOLDOWN_MS) {
+      logger.info("Portfolio sync skipped due to cooldown", "SyncService", {
+        uuid,
+        timeSinceLastSync,
+        cooldownMs: this.PORTFOLIO_SYNC_COOLDOWN_MS,
       });
 
-      if (
-        errorMessage.includes("Network") ||
-        errorMessage.includes("network")
-      ) {
-        logger.info(
-          "Adding to offline queue due to network error",
-          "SyncService"
-        );
-        await OfflineQueue.addToQueue({
-          type: "portfolio_sync",
-          payload: { uuid, portfolio },
-          timestamp: new Date().toISOString(),
-          maxRetries: 5,
-        });
-      }
-
-      await this.updateSyncStatus("portfolioSync", "failed", errorMessage);
-
-      const errorResult = {
-        success: false,
-        error: errorMessage,
+      return {
+        success: true,
+        data: portfolio,
         timestamp: new Date().toISOString(),
       };
-
-      return errorResult;
     }
+
+    const existingTimeout = this.portfolioSyncTimeouts.get(uuid);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      this.portfolioSyncTimeouts.delete(uuid);
+    }
+
+    return new Promise((resolve) => {
+      const timeoutId = setTimeout(async () => {
+        this.portfolioSyncTimeouts.delete(uuid);
+        this.portfolioSyncCooldowns.set(uuid, Date.now());
+
+        logger.info("Starting portfolio sync", "SyncService", {
+          uuid,
+          portfolioLength: portfolio.length,
+        });
+
+        try {
+          await this.updateSyncStatus("portfolioSync", "pending");
+
+          const result = await this.executeWithRetry(async () => {
+            await this.syncPortfolioToCloud(uuid, portfolio);
+            return portfolio;
+          }, "Portfolio Sync");
+
+          await this.updateSyncStatus("portfolioSync", "synced");
+
+          const successResult = {
+            success: true,
+            data: result,
+            timestamp: new Date().toISOString(),
+          };
+
+          logger.info(
+            "Portfolio sync completed successfully",
+            "SyncService",
+            successResult
+          );
+          resolve(successResult);
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          logger.error("Portfolio sync failed", "SyncService", {
+            error: errorMessage,
+            details: error,
+          });
+
+          if (
+            errorMessage.includes("Network") ||
+            errorMessage.includes("network")
+          ) {
+            logger.info(
+              "Adding to offline queue due to network error",
+              "SyncService"
+            );
+            await OfflineQueue.addToQueue({
+              type: "portfolio_sync",
+              payload: { uuid, portfolio },
+              timestamp: new Date().toISOString(),
+              maxRetries: 5,
+            });
+          }
+
+          await this.updateSyncStatus("portfolioSync", "failed", errorMessage);
+
+          const errorResult = {
+            success: false,
+            error: errorMessage,
+            timestamp: new Date().toISOString(),
+          };
+
+          resolve(errorResult);
+        }
+      }, this.PORTFOLIO_SYNC_DEBOUNCE_MS);
+
+      this.portfolioSyncTimeouts.set(uuid, timeoutId);
+    });
   }
 
   static async clearUserPortfolio(uuid: string): Promise<SyncResult> {

@@ -1,35 +1,33 @@
-import Chart from '@/components/crypto/Chart';
-import DailyLimitPopup from '@/components/ui/DailyLimitPopup';
-import OrderEntry from '@/components/trading/OrderEntry';
-import React, { useEffect, useRef, useState } from 'react';
-import SymbolHeader from '@/components/crypto/SymbolHeader';
-import TimeframeSelector from '@/components/crypto/TimeframeSelector';
-import useCryptoAPI from '@/hooks/useCryptoAPI';
-import useHistoricalData from '@/hooks/useHistoricalData';
-import { ChartType, Order, TimeframeOption } from '../../types/crypto';
-import { LinearGradient } from 'expo-linear-gradient';
-import { logger } from '@/utils/logger';
-import { RootState, useAppDispatch } from '@/store';
-import { router } from 'expo-router';
-import { useLanguage } from '@/context/LanguageContext';
-import { useLocalSearchParams } from 'expo-router';
-import { UserService } from '@/services/UserService';
-import { useSelector } from 'react-redux';
-import { useUser } from '@/context/UserContext';
-import { WebView } from 'react-native-webview';
-import { useTheme } from '@/context/ThemeContext';
-import { getColors } from '@/styles/colors';
+import Chart from "@/components/crypto/Chart";
+import DailyLimitPopup from "@/components/ui/DailyLimitPopup";
+import OrderEntry from "@/components/trading/OrderEntry";
+import React, { useEffect, useRef, useState } from "react";
+import SymbolHeader from "@/components/crypto/SymbolHeader";
+import TimeframeSelector from "@/components/crypto/TimeframeSelector";
+import useCryptoAPI from "@/hooks/useCryptoAPI";
+import useHistoricalData from "@/hooks/useHistoricalData";
+import { ChartType, Order, TimeframeOption } from "../../types/crypto";
+import { createTransaction } from "@/features/userSlice";
+import { getColors } from "@/styles/colors";
+import { LinearGradient } from "expo-linear-gradient";
+import { logger } from "@/utils/logger";
+import { RootState, useAppDispatch } from "@/store";
+import { router, useLocalSearchParams } from "expo-router";
+import { useLanguage } from "@/context/LanguageContext";
+import { UserService } from "@/services/UserService";
+import { useSelector } from "react-redux";
+import { useTheme } from "@/context/ThemeContext";
+import { useUser } from "@/context/UserContext";
+import { WebView } from "react-native-webview";
 import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   OrderDispatchContext,
   OrderValidationContext,
@@ -41,11 +39,6 @@ import {
   updateHolding,
   updateTrade,
 } from "@/features/balanceSlice";
-import {
-  handleOrderSubmission,
-  handleUserReinitialization,
-} from "@/utils/helper";
-
 
 const CryptoChartScreen = () => {
   const { t } = useLanguage();
@@ -81,10 +74,8 @@ const CryptoChartScreen = () => {
     console.log("Popup data:", dailyLimitData);
   }, [showDailyLimitPopup, dailyLimitData]);
 
-  // Use regular balance system instead of DualBalance
   const currentHoldings = balance.holdings;
   const currentUsdtBalance = balance.usdtBalance;
-  const currentBalance = balance;
 
   const { loading, error, setError, fetchHistoricalData } = useHistoricalData();
 
@@ -93,8 +84,6 @@ const CryptoChartScreen = () => {
   useEffect(() => {
     dispatch(loadBalance());
   }, [dispatch]);
-
-  // Removed collection context switching - using regular balance only
 
   useEffect(() => {
     return () => {
@@ -206,7 +195,6 @@ const CryptoChartScreen = () => {
     }, 30000);
 
     try {
-      // First validate the order (balance, amounts, etc.) before checking daily limits
       setSubmissionStatus(t("chart.validatingOrder"));
       setSubmissionProgress(15);
 
@@ -215,9 +203,6 @@ const CryptoChartScreen = () => {
         getUsdtBalance: () => currentUsdtBalance,
       };
 
-      // Balance validation is handled in handleOrderSubmissionWithLimitCheck
-
-      // Only check daily limit after order validation passes
       setSubmissionStatus(t("chart.checkingDailyLimit"));
       setSubmissionProgress(25);
 
@@ -250,7 +235,44 @@ const CryptoChartScreen = () => {
         addTradeHistory: (order) => dispatch(addTradeHistory(order)),
         updateHolding: (payload) => dispatch(updateHolding(payload)),
         updateTrade: (payload) => dispatch(updateTrade(payload)),
-        syncTransaction: async (order) => {},
+        syncTransaction: async (order) => {
+          if (!user?.id) {
+            logger.warn(
+              "Cannot sync transaction: user ID not available",
+              "CryptoChart"
+            );
+            return;
+          }
+
+          try {
+            const transactionParams = {
+              user_id: user.id,
+              type: order.type.toUpperCase() as "BUY" | "SELL",
+              symbol: order.symbol.toUpperCase(),
+              quantity: order.amount.toString(),
+              price: order.price.toString(),
+              total_value: order.total.toString(),
+              fee: (order.fees || 0).toString(),
+              order_type: (order.orderType || "market").toUpperCase() as
+                | "MARKET"
+                | "LIMIT",
+              status: (order.status === "completed"
+                ? "COMPLETED"
+                : "PENDING") as "COMPLETED" | "PENDING",
+              timestamp: order.executedAt
+                ? new Date(order.executedAt).toISOString()
+                : new Date().toISOString(),
+            };
+
+            await dispatch(createTransaction(transactionParams)).unwrap();
+            logger.info("Transaction synced successfully", "CryptoChart", {
+              symbol: order.symbol,
+              type: order.type,
+            });
+          } catch (error) {
+            logger.error("Failed to sync transaction", "CryptoChart", error);
+          }
+        },
       };
 
       setSubmissionStatus(t("chart.executingTrade"));
@@ -284,13 +306,11 @@ const CryptoChartScreen = () => {
 
       resetLoadingState();
 
-      // Handle insufficient balance errors
       if (
         error.message?.includes("Insufficient USDT balance") ||
         (error.message?.includes("Insufficient") &&
           error.message?.includes("balance"))
       ) {
-        // Extract balance information from error message
         const balanceMatch = error.message.match(
           /You have ([\d.]+) USDT, trying to spend ([\d.]+) USDT/
         );
@@ -327,7 +347,6 @@ const CryptoChartScreen = () => {
         return;
       }
 
-      // Handle validation errors
       if (
         error.message?.includes("Invalid quantity") ||
         error.message?.includes("Invalid total value")
@@ -341,7 +360,6 @@ const CryptoChartScreen = () => {
         return;
       }
 
-      // Handle transaction creation errors
       if (error.message?.includes("Failed to create transaction")) {
         Alert.alert(t("order.orderFailedTitle"), t("order.transactionFailed"), [
           {
@@ -352,7 +370,6 @@ const CryptoChartScreen = () => {
         return;
       }
 
-      // Handle token selection errors
       if (error.message?.includes("No token selected")) {
         Alert.alert(t("order.orderFailedTitle"), t("order.selectToken"), [
           {
@@ -363,7 +380,6 @@ const CryptoChartScreen = () => {
         return;
       }
 
-      // Handle minimum amount errors
       if (error.message?.includes("Minimum order amount")) {
         Alert.alert(t("order.orderFailedTitle"), error.message, [
           {
@@ -374,7 +390,6 @@ const CryptoChartScreen = () => {
         return;
       }
 
-      // Handle daily transaction limit errors
       if (
         error.message?.includes("Daily transaction limit reached") ||
         error.message?.includes("daily transaction limit")
@@ -417,7 +432,6 @@ const CryptoChartScreen = () => {
         return;
       }
 
-      // Handle user authentication errors
       if (
         error.message?.includes("User not authenticated") ||
         error.message?.includes("Failed to initialize user authentication") ||
@@ -433,7 +447,6 @@ const CryptoChartScreen = () => {
         } catch (reinitError: any) {
           console.error("User reinitialization failed:", reinitError);
 
-          // Provide more specific error message
           if (reinitError.message?.includes("User creation failed")) {
             setSubmissionStatus(
               "Failed to create user account. Please try again."
@@ -446,7 +459,6 @@ const CryptoChartScreen = () => {
           resetLoadingState();
         }
       } else {
-        // Handle other generic errors with a user-friendly alert
         const errorMessage = error.message || t("order.unexpectedError");
 
         Alert.alert(t("order.orderFailedTitle"), errorMessage, [
@@ -468,34 +480,57 @@ const CryptoChartScreen = () => {
 
     return (
       <TouchableOpacity
-        style={[styles.loadingOverlay, { backgroundColor: theme === 'dark' ? "rgba(0, 0, 0, 0.9)" : "rgba(0, 0, 0, 0.7)" }]}
+        style={[
+          styles.loadingOverlay,
+          {
+            backgroundColor:
+              theme === "dark" ? "rgba(0, 0, 0, 0.9)" : "rgba(0, 0, 0, 0.7)",
+          },
+        ]}
         activeOpacity={1}
         onPress={() => {
           console.log("User dismissed loading overlay");
           resetLoadingState();
         }}>
         <TouchableOpacity
-          style={[styles.loadingContainer, {
-            backgroundColor: colors.background.card,
-            borderColor: colors.border.card,
-          }]}
+          style={[
+            styles.loadingContainer,
+            {
+              backgroundColor: colors.background.card,
+              borderColor: colors.border.card,
+            },
+          ]}
           activeOpacity={1}
           onPress={(e) => {
             e.stopPropagation();
           }}>
           <View style={styles.loadingIconContainer}>
             <ActivityIndicator size="large" color={colors.action.accent} />
-            <View style={[styles.loadingIconGlow, { backgroundColor: colors.action.accent }]} />
+            <View
+              style={[
+                styles.loadingIconGlow,
+                { backgroundColor: colors.action.accent },
+              ]}
+            />
           </View>
 
-          <Text style={[styles.loadingTitle, { color: colors.text.primary }]}>{t("chart.processingOrder")}</Text>
-          <Text style={[styles.loadingStatus, { color: colors.text.secondary }]}>{submissionStatus}</Text>
+          <Text style={[styles.loadingTitle, { color: colors.text.primary }]}>
+            {t("chart.processingOrder")}
+          </Text>
+          <Text
+            style={[styles.loadingStatus, { color: colors.text.secondary }]}>
+            {submissionStatus}
+          </Text>
 
           <View style={styles.progressContainer}>
-            <View style={[styles.progressBar, {
-              backgroundColor: colors.background.cardSecondary,
-              borderColor: colors.border.card,
-            }]}>
+            <View
+              style={[
+                styles.progressBar,
+                {
+                  backgroundColor: colors.background.cardSecondary,
+                  borderColor: colors.border.card,
+                },
+              ]}>
               <View
                 style={[
                   styles.progressFill,
@@ -506,16 +541,25 @@ const CryptoChartScreen = () => {
                 ]}
               />
             </View>
-            <Text style={[styles.progressText, { color: colors.text.secondary }]}>
+            <Text
+              style={[styles.progressText, { color: colors.text.secondary }]}>
               {Math.round(submissionProgress)}%
             </Text>
           </View>
 
-          <View style={[styles.contextInfo, { borderTopColor: colors.border.card }]}>
-            <Text style={[styles.contextLabel, { color: colors.text.secondary }]}>
+          <View
+            style={[
+              styles.contextInfo,
+              { borderTopColor: colors.border.card },
+            ]}>
+            <Text
+              style={[styles.contextLabel, { color: colors.text.secondary }]}>
               {t("chart.individualTrade")}
             </Text>
-            <Text style={[styles.contextSymbol, { color: colors.action.accent }]}>{symbol}</Text>
+            <Text
+              style={[styles.contextSymbol, { color: colors.action.accent }]}>
+              {symbol}
+            </Text>
           </View>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -523,9 +567,11 @@ const CryptoChartScreen = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background.primary} />
-
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.primary },
+      ]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}>
@@ -560,17 +606,30 @@ const CryptoChartScreen = () => {
 
         <View style={styles.bottomSection}>
           <View style={styles.orderSection}>
-            {theme === 'dark' ? (
+            {theme === "dark" ? (
               <LinearGradient
                 colors={[
                   "rgba(102, 116, 204, 0.15)",
                   "rgba(102, 116, 204, 0.08)",
                 ]}
-                style={[styles.orderEntryCard, { borderColor: colors.border.card }]}
+                style={[
+                  styles.orderEntryCard,
+                  { borderColor: colors.border.card },
+                ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}>
-                <View style={[styles.orderEntryHeader, { borderBottomColor: colors.border.card }]}>
-                  <Text style={[styles.orderEntryTitle, { color: colors.text.primary }]}>{symbol}</Text>
+                <View
+                  style={[
+                    styles.orderEntryHeader,
+                    { borderBottomColor: colors.border.card },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.orderEntryTitle,
+                      { color: colors.text.primary },
+                    ]}>
+                    {symbol}
+                  </Text>
                 </View>
                 <OrderEntry
                   key={`${symbol}-${currentUsdtBalance}`}
@@ -584,12 +643,26 @@ const CryptoChartScreen = () => {
                 />
               </LinearGradient>
             ) : (
-              <View style={[styles.orderEntryCard, {
-                backgroundColor: colors.background.card,
-                borderColor: colors.border.card,
-              }]}>
-                <View style={[styles.orderEntryHeader, { borderBottomColor: colors.border.card }]}>
-                  <Text style={[styles.orderEntryTitle, { color: colors.text.primary }]}>{symbol}</Text>
+              <View
+                style={[
+                  styles.orderEntryCard,
+                  {
+                    backgroundColor: colors.background.card,
+                    borderColor: colors.border.card,
+                  },
+                ]}>
+                <View
+                  style={[
+                    styles.orderEntryHeader,
+                    { borderBottomColor: colors.border.card },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.orderEntryTitle,
+                      { color: colors.text.primary },
+                    ]}>
+                    {symbol}
+                  </Text>
                 </View>
                 <OrderEntry
                   key={`${symbol}-${currentUsdtBalance}`}
@@ -619,7 +692,7 @@ const CryptoChartScreen = () => {
         dailyLimit={dailyLimitData.dailyLimit}
         remainingTransactions={dailyLimitData.remainingTransactions}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -668,7 +741,6 @@ const styles = StyleSheet.create({
     color: "#9DA3B4",
     fontWeight: "500",
   },
-  // Loading Overlay Styles
   loadingOverlay: {
     position: "absolute",
     top: 0,

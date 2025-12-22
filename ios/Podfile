@@ -38,6 +38,13 @@ target 'TradeCoinSkills' do
 
   config = use_native_modules!(config_command)
 
+  pre_install do |installer|
+    fix_script = File.join(__dir__, 'fix-podspecs.sh')
+    if File.exist?(fix_script)
+      system("bash #{fix_script}")
+    end
+  end
+
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
 
@@ -56,6 +63,12 @@ target 'TradeCoinSkills' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+    
+    # Remove duplicate header files with " 2" in their names
+    # These cause duplicate interface definition errors
+    Dir.glob("#{installer.sandbox.root}/Headers/**/* 2.h").each do |file|
+      File.delete(file) if File.exist?(file)
+    end
   end
 end
 

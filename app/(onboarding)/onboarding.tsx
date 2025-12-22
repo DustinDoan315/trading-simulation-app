@@ -1,13 +1,14 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import colors from '@/styles/colors';
-import GradientText from '@/components/GradientText';
-import UUIDService from '@/services/UUIDService';
-import { createUser, fetchUser } from '@/features/userSlice';
-import { LinearGradient } from 'expo-linear-gradient';
-import { logger } from '@/utils/logger';
-import { router } from 'expo-router';
-import { store, useAppDispatch } from '@/store';
-import { useCallback, useRef, useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import colors from "@/styles/colors";
+import GradientText from "@/components/GradientText";
+import UUIDService from "@/services/UUIDService";
+import { createUser, fetchUser } from "@/features/userSlice";
+import { LinearGradient } from "expo-linear-gradient";
+import { logger } from "@/utils/logger";
+import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { store, useAppDispatch } from "@/store";
+import { useCallback, useRef, useState } from "react";
 import {
   ASYNC_STORAGE_KEYS,
   DEFAULT_USER,
@@ -20,12 +21,10 @@ import {
   FlatList,
   Image,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-
 
 const { width } = Dimensions.get("window");
 

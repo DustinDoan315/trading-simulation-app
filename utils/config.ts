@@ -1,7 +1,6 @@
-import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
-import { logger } from './logger';
-
+import * as SecureStore from "expo-secure-store";
+import Constants from "expo-constants";
+import { logger } from "./logger";
 
 // Configuration interface
 interface AppConfig {
@@ -54,19 +53,33 @@ class ConfigService {
     }
   }
 
- 
   private async loadFromEnvironment(): Promise<void> {
     try {
       const expoConfig = Constants.expoConfig;
       const extra = expoConfig?.extra || {};
 
       logger.info("Loading environment configuration...", "ConfigService");
-      logger.info(`Expo Constants extra keys: ${Object.keys(extra).join(', ')}`, "ConfigService");
+      logger.info(
+        `Expo Constants extra keys: ${Object.keys(extra).join(", ")}`,
+        "ConfigService"
+      );
 
-     
+      // Check for NEWS_API_KEY (without prefix) in extra
       if (extra.NEWS_API_KEY) {
         this.config.NEWS_API_KEY = extra.NEWS_API_KEY;
-        logger.info("Loaded NEWS_API_KEY from Expo Constants", "ConfigService");
+        logger.info(
+          "Loaded NEWS_API_KEY from Expo Constants extra",
+          "ConfigService"
+        );
+      }
+
+      // Check for EXPO_PUBLIC_NEWS_API_KEY (with prefix) in extra
+      if (extra.EXPO_PUBLIC_NEWS_API_KEY) {
+        this.config.NEWS_API_KEY = extra.EXPO_PUBLIC_NEWS_API_KEY;
+        logger.info(
+          "Loaded EXPO_PUBLIC_NEWS_API_KEY from Expo Constants extra",
+          "ConfigService"
+        );
       }
 
       if (extra.SUPABASE_URL) {
@@ -81,8 +94,11 @@ class ConfigService {
         this.config.ENVIRONMENT = extra.ENVIRONMENT;
       }
 
-     logger.info("Checking process.env for environment variables...", "ConfigService");
-      
+      logger.info(
+        "Checking process.env for environment variables...",
+        "ConfigService"
+      );
+
       if (process.env.EXPO_PUBLIC_NEWS_API_KEY) {
         this.config.NEWS_API_KEY = process.env.EXPO_PUBLIC_NEWS_API_KEY;
         logger.info("Loaded NEWS_API_KEY from process.env", "ConfigService");
@@ -93,11 +109,16 @@ class ConfigService {
       }
 
       if (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) {
-        this.config.SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+        this.config.SUPABASE_ANON_KEY =
+          process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
       }
 
-      
-      logger.info(`Configuration loaded - NEWS_API_KEY: ${this.config.NEWS_API_KEY ? 'Available' : 'Missing'}`, "ConfigService");
+      logger.info(
+        `Configuration loaded - NEWS_API_KEY: ${
+          this.config.NEWS_API_KEY ? "Available" : "Missing"
+        }`,
+        "ConfigService"
+      );
       logger.info(`Environment: ${this.config.ENVIRONMENT}`, "ConfigService");
     } catch (error) {
       logger.warn(
@@ -213,23 +234,42 @@ class ConfigService {
     };
   }
 
-
   async testConfiguration(): Promise<void> {
     logger.info("=== Configuration Test ===", "ConfigService");
-    
+
     // Test environment variables
-    logger.info(`process.env.EXPO_PUBLIC_NEWS_API_KEY: ${process.env.EXPO_PUBLIC_NEWS_API_KEY ? 'Available' : 'Missing'}`, "ConfigService");
-    logger.info(`process.env.EXPO_PUBLIC_SUPABASE_URL: ${process.env.EXPO_PUBLIC_SUPABASE_URL ? 'Available' : 'Missing'}`, "ConfigService");
-    
+    logger.info(
+      `process.env.EXPO_PUBLIC_NEWS_API_KEY: ${
+        process.env.EXPO_PUBLIC_NEWS_API_KEY ? "Available" : "Missing"
+      }`,
+      "ConfigService"
+    );
+    logger.info(
+      `process.env.EXPO_PUBLIC_SUPABASE_URL: ${
+        process.env.EXPO_PUBLIC_SUPABASE_URL ? "Available" : "Missing"
+      }`,
+      "ConfigService"
+    );
+
     // Test Expo Constants
     const expoConfig = Constants.expoConfig;
     const extra = expoConfig?.extra || {};
-    logger.info(`Expo Constants NEWS_API_KEY: ${extra.NEWS_API_KEY ? 'Available' : 'Missing'}`, "ConfigService");
-    
+    logger.info(
+      `Expo Constants NEWS_API_KEY: ${
+        extra.NEWS_API_KEY ? "Available" : "Missing"
+      }`,
+      "ConfigService"
+    );
+
     // Test current config
-    logger.info(`Current config NEWS_API_KEY: ${this.config.NEWS_API_KEY ? 'Available' : 'Missing'}`, "ConfigService");
+    logger.info(
+      `Current config NEWS_API_KEY: ${
+        this.config.NEWS_API_KEY ? "Available" : "Missing"
+      }`,
+      "ConfigService"
+    );
     logger.info(`Config initialized: ${this.isInitialized}`, "ConfigService");
-    
+
     logger.info("=== End Configuration Test ===", "ConfigService");
   }
 

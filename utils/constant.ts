@@ -189,9 +189,8 @@ export const SYNC_CONFIG = {
   RETRY_DELAY_MS: 5000,
 } as const;
 
-// Background sync configuration
 export const BACKGROUND_SYNC_CONFIG = {
-  INTERVAL_MS: 30000,
+  INTERVAL_MS: 120000,
   MAX_CONCURRENT_UPDATES: 5,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY_MS: 5000,
